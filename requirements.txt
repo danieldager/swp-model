@@ -1,4 +1,7 @@
 pandas
 wordfreq
-nltk
+spacy
 morphemes
+g2p_en
+torch
+pillow
