@@ -9,8 +9,6 @@ import numpy as np
 data = np.load('data/dsprite_train.npz', allow_pickle= True, encoding='latin1')
 print(data.files)
 
-
-
 @author: aakash
 """
 import os, gc
