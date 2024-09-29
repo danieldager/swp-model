@@ -2,12 +2,13 @@ import torch.nn as nn
 
 class Decoder(nn.Module):
     def __init__(
-            self, hidden_size, output_size,
+            self, hidden_size, output_size, batch_size,
             num_layers=1, dropout=0.1
     ):
         super(Decoder, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
+        self.batch_size = batch_size
         self.num_layers = num_layers
         self.dropout = dropout
 
@@ -15,6 +16,9 @@ class Decoder(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden):
+        # Do we want to include a learned start token ?
+        # x = torch.zeros(self.batch_size, 1, self.hidden_size)
+
         output, _ = self.decoder(x, hidden)
         output = self.fc(output)
         return output

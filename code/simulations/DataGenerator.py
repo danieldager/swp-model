@@ -129,7 +129,7 @@ class DataGenerator():
 
         # Create one-hot encodings for each phoneme
         vocab_size = len(phoneme_to_index) + 1
-        phoneme_tensors = torch.nn.functional.one_hot(padded_sequences, num_classes=vocab_size).float()
+        phoneme_tensors = torch.nn.functional.one_hot(padded_sequences, num_classes=vocab_size)
 
         return phoneme_tensors
 
@@ -178,23 +178,25 @@ class DataGenerator():
 
     def generate_phonemes(self):
         phoneme_tensors = self.text_to_phoneme(self.words, self.g2p)
-        phoneme_dataset = TensorDataset(phoneme_tensors)
-        phoneme_dataloader = DataLoader(phoneme_dataset, batch_size=self.batch_size, shuffle=True)
 
-        # analyse the dataloader
-        print(f"Dataloader length: {len(phoneme_dataloader)}")
-        for batch in phoneme_dataloader:
-            print(f"Batch shape: {batch[0].shape}")
-            break
+        print(phoneme_tensors.shape)
+        seq_length = phoneme_tensors.shape[1]
+        vocab_size = phoneme_tensors.shape[2]
 
-        return phoneme_dataloader
+        inputs = phoneme_tensors
+        targets = phoneme_tensors.clone()
+
+        phoneme_dataset = TensorDataset(inputs, targets)
+        phoneme_dataloader = DataLoader(phoneme_dataset, batch_size=self.batch_size, 
+                                        shuffle=True, drop_last=True)
+
+        return phoneme_dataloader, seq_length, vocab_size
 
     def generate_graphemes(self):
         grapheme_tensors = self.text_to_grapheme(self.words, self.savepath)
         grapheme_dataset = TensorDataset(*grapheme_tensors)
-        grapheme_dataloader = DataLoader(grapheme_dataset, batch_size=self.batch_size, shuffle=True)
-
-        print(grapheme_tensors[0].shape)
+        grapheme_dataloader = DataLoader(grapheme_dataset, batch_size=self.batch_size, 
+                                         shuffle=True, drop_last=True)
 
         return grapheme_dataloader
 
