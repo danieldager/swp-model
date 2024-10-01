@@ -133,6 +133,7 @@ class DataGenerator():
 
         return phoneme_tensors
 
+    # refactored from @author: aakash
     def text_to_grapheme(
         self, words: list=["text"], savepath=None, index=1, 
         fontname='Arial', W = 64, H = 64, size=10, spacing=0,
@@ -179,7 +180,6 @@ class DataGenerator():
     def generate_phonemes(self):
         phoneme_tensors = self.text_to_phoneme(self.words, self.g2p)
 
-        print(phoneme_tensors.shape)
         seq_length = phoneme_tensors.shape[1]
         vocab_size = phoneme_tensors.shape[2]
 
@@ -192,6 +192,7 @@ class DataGenerator():
 
         return phoneme_dataloader, seq_length, vocab_size
 
+    # NOTE: This function needs to be checked, missing image transformations
     def generate_graphemes(self):
         grapheme_tensors = self.text_to_grapheme(self.words, self.savepath)
         grapheme_dataset = TensorDataset(*grapheme_tensors)

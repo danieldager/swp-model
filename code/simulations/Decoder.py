@@ -19,6 +19,8 @@ class Decoder(nn.Module):
         # Do we want to include a learned start token ?
         # x = torch.zeros(self.batch_size, 1, self.hidden_size)
 
+        # NOTE: should we include a stop token ? 
+
         output, _ = self.decoder(x, hidden)
         output = self.fc(output)
         return output

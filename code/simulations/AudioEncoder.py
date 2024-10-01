@@ -25,6 +25,9 @@ class AudioEncoder(nn.Module):
         # should we parameterize the hidden state ?
         # hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
 
+        # NOTE: should we forward pad the sequences ?
+        # NOTE: should we batch the data by sequence length ? 
+
         # if we use an embedding layer, we don't need one-hot vectors
         x = torch.argmax(x, dim=-1)
 
