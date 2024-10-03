@@ -6,6 +6,12 @@ from DataGenerator import DataGenerator
 from AudioEncoder import AudioEncoder
 from Decoder import Decoder
 
+from utils import seed_everything
+
+# Set seed for reproducibility
+seed_everything()
+
+# Generate audio data
 gen = DataGenerator(word_count=10000, batch_size=30)
 data, SEQ_LENGTH, VOCAB_SIZE = gen.generate_phonemes()
 
