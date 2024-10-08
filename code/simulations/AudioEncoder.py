@@ -30,4 +30,5 @@ class AudioEncoder(nn.Module):
         # x = torch.argmax(x, dim=-1)
         embedded = self.embedding(x)
         _, hidden = self.encoder(embedded)
+        
         return hidden

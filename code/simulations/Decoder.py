@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 class Decoder(nn.Module):
     def __init__(
@@ -20,4 +21,6 @@ class Decoder(nn.Module):
         # x = torch.zeros(self.batch_size, 1, self.hidden_size)
         output, _ = self.decoder(x, hidden)
         output = self.fc(output)
+        output = F.softmax(output, dim=-1)
+
         return output

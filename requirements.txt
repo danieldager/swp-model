@@ -5,3 +5,4 @@ morphemes
 g2p_en
 torch
 pillow
+levenshtein

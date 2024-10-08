@@ -25,16 +25,21 @@ class DataGenerator():
 
     @timeit
     def get_phoneme_dataloaders(self):
+        # Add stop token to phoneme sequences
+        self.train_phonemes = [word + ["<STOP>"] for word in self.train_phonemes]
+
         # Collect all phonemes and count their occurrences
         phoneme_counter = Counter(p for word in self.train_phonemes for p in word)
         phoneme_counter.update(p for word in self.eval_data['Phonemes'] for p in word)
-        
+
         # Create phoneme to index map, sorting by frequency
         sorted_phonemes = sorted(phoneme_counter, key=phoneme_counter.get, reverse=True)
         phoneme_to_index = {p: i+1 for i, p in enumerate(sorted_phonemes)}
         
-        # Add padding and stop tokens, create reverse map
-        phoneme_to_index.update({'<PAD>': 0, '<STOP>': len(phoneme_to_index) + 1})
+        # Add padding token to beginning of index map
+        phoneme_to_index["<PAD>"] = 0
+
+        # Create index to phoneme map
         index_to_phoneme = {i: p for p, i in phoneme_to_index.items()}
 
         # Get vocab size and max sequence length
@@ -46,8 +51,8 @@ class DataGenerator():
 
         # NOTE: certain phonemes in eval data may not be in train data
         # Encode phonemes to indices, add stop token at the end of each sequence
-        train_encoded = [[phoneme_to_index[p] for p in w] + [vocab_size] for w in self.train_phonemes]
-        eval_encoded = [[phoneme_to_index[p] for p in w] + [vocab_size] for w in self.eval_data['Phonemes']]
+        train_encoded = [[phoneme_to_index[p] for p in w] for w in self.train_phonemes]
+        eval_encoded = [[phoneme_to_index[p] for p in w] for w in self.eval_data['Phonemes']]
 
         # Left pad sequences to the same length
         train_padded = [[0] * (max_length - len(seq)) + seq for seq in train_encoded]
@@ -68,8 +73,7 @@ class DataGenerator():
                                         shuffle=True, drop_last=True)
         
         eval_dataset = TensorDataset(eval_inputs, eval_targets)
-        eval_dataloader = DataLoader(eval_dataset, batch_size=self.batch_size, 
-                                        shuffle=False, drop_last=True)
+        eval_dataloader = DataLoader(eval_dataset, batch_size=1)
 
         return train_dataloader, eval_dataloader, max_length, vocab_size, index_to_phoneme
     
