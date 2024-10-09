@@ -1,5 +1,13 @@
 # single-word-processing-model
 
+### Quick Start:
+```
+git clone git@github.com:danieldager/single-word-processing-model.git
+pip install -r requirements.txt
+python -m spacy download en
+```
+Models and be trained and evaluated on the train_models.ipynb notebook.
+
 ### Datasets:
 
 ### Architecture: 
