@@ -4,6 +4,9 @@ import random
 import numpy as np
 import pandas as pd
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import spacy
 from g2p_en import G2p
 from morphemes import Morphemes
@@ -178,3 +181,44 @@ def sample_words(word_count: int, language='en', max_words=100000) -> list:
     phonemes = [g2p(word) for word in sampled_words]
     
     return sampled_words, phonemes
+
+# Plot the operations and total distance for each word category
+def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
+    
+    # Function to calculate average operations and total distance
+    def calc_averages(group):
+        return pd.Series({
+            'Avg Insertions': group['Insertions'].mean(),
+            'Avg Deletions': group['Deletions'].mean(),
+            'Avg Substitutions': group['Substitutions'].mean(),
+            'Avg Total Distance': group['Levenshtein'].mean()
+        })
+
+    # Create a category column
+    df['Category'] = df.apply(lambda row: 
+        'Pseudo' if row['Lexicality'] == 'pseudo' else
+        f"Real {row['Morph Complexity']} {row['Frequency']}", axis=1)
+
+    # Group by the new category and calculate averages
+    grouped = df.groupby('Category').apply(calc_averages).reset_index()
+
+    # Melt the DataFrame for easier plotting
+    melted = pd.melt(grouped, id_vars=['Category'], 
+                     value_vars=['Avg Insertions', 'Avg Deletions', 
+                                 'Avg Substitutions', 'Avg Total Distance'])
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x='Category', y='value', hue='variable', data=melted)
+
+    plt.title('Average Levenshtein Operations and Total Distance by Word Category')
+    plt.xlabel('Word Category')
+    plt.ylabel('Average Count')
+    plt.xticks(rotation=70, ha='right')
+    plt.legend(title='Operation Type')
+    plt.tight_layout()
+    plt.savefig(f'../../figures/{model_name}_bar_graph.png')
+    plt.show()
+
+    # Drop the category column
+    df = df.drop(columns=['Category'])

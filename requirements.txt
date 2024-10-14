@@ -6,3 +6,5 @@ g2p_en
 torch
 pillow
 levenshtein
+matplotlib
+seaborn

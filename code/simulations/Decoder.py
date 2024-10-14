@@ -17,10 +17,13 @@ class Decoder(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden):
-        # NOTE: do we want to include a learned start token ?
-        # x = torch.zeros(self.batch_size, 1, self.hidden_size)
         output, _ = self.decoder(x, hidden)
         output = self.fc(output)
-        output = F.softmax(output, dim=-1)
+        
+        # NOTE: Don't need softmax with CrossEntropyLoss
+        # output = F.softmax(output, dim=-1)
+
+        # NOTE: do we want to include a learned start token ?
+        # x = torch.zeros(self.batch_size, 1, self.hidden_size)
 
         return output
