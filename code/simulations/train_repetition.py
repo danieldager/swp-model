@@ -26,13 +26,13 @@ else: print ("MPS device not found.")
 
 
 def train_repetition(
-        word_count      = 20000,
+        word_count      = 50000,
         num_epochs      = 10, 
         batch_size      = 30, 
-        hidden_size     = 128,
-        dropout         = 0.0,
-        num_layers      = 1,
-        learning_rate   = 1e-3,
+        hidden_size     = 64,
+        dropout         = 0.1,
+        num_layers      = 2,
+        learning_rate   = 1e-4,
         grid_search     = 1,
         plot_train      = True,
         plot_eval       = True,
@@ -205,3 +205,7 @@ def train_repetition(
     if plot_eval: levenshtein_bar_graph(gen.eval_data, model_name)
 
     return gen.eval_data
+
+
+if __name__ == "__main__":
+    eval_data = train_repetition()
