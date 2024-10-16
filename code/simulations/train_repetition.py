@@ -11,6 +11,7 @@ from Levenshtein import distance, editops
 
 from DataGenerator import DataGenerator
 from AudioEncoder import AudioEncoder
+from LSTMEncoder import LSTMEncoder
 from Decoder import Decoder
 
 from utils import seed_everything, levenshtein_bar_graph
@@ -29,12 +30,12 @@ else: print ("MPS device not found.")
 def train_repetition(
         G: DataGenerator,
         word_count      = 50000,
-        num_epochs      = 10, 
-        batch_size      = 30, 
-        hidden_size     = 64,
-        dropout         = 0.1,
-        num_layers      = 2,
-        learning_rate   = 1e-4,
+        num_epochs      = 20, 
+        batch_size      = 10, 
+        hidden_size     = 4,
+        dropout         = 0.2,
+        num_layers      = 1,
+        learning_rate   = 1e-2,
         grid_search     = 1,
         plot_train      = True,
         plot_test      = True,
@@ -69,7 +70,7 @@ def train_repetition(
         model_name = date + params
 
         # Initialize models, loss function, optimizer
-        encoder = AudioEncoder(
+        encoder = LSTMEncoder(
             input_size=vocab_size, hidden_size=hidden_size, batch_size=batch_size,
             num_layers=num_layers, dropout=dropout
         )
@@ -103,6 +104,8 @@ def train_repetition(
 
                 # Decoder forward pass
                 decoder_input = torch.zeros(batch_size, seq_length, hidden_size)
+                # Include start token
+
                 decoder_output = decoder(decoder_input, encoder_hidden)
 
                 # Reshape for CrossEntropyLoss (batch_size * seq_length)

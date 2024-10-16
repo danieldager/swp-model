@@ -11,14 +11,17 @@ class Decoder(nn.Module):
         self.output_size = output_size
         self.batch_size = batch_size
         self.num_layers = num_layers
-        self.dropout = dropout
 
-        self.decoder = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
+        self.embedding = nn.Embedding(hidden_size, hidden_size)
+        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden):
-        output, _ = self.decoder(x, hidden)
+        # embedded = self.embedding(x)
+        output, hidden = self.rnn(x, hidden)
         output = self.fc(output)
+
+        # Two connected embedding layers ? 
         
         # NOTE: Don't need softmax with CrossEntropyLoss
         # output = F.softmax(output, dim=-1)

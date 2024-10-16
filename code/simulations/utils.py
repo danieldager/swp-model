@@ -263,8 +263,8 @@ def print_examples(dataloader, encoder, decoder, index_to_phoneme, n=10):
             decoder_input = torch.zeros(
                 inputs.size(0), inputs.size(1), encoder_hidden.size(-1)) #.to(inputs.device)
             # print device of inputs and decoder_input
-            print(inputs.device, decoder_input.device)
-            
+            # print(inputs.device, decoder_input.device)
+
             decoder_output = decoder(decoder_input, encoder_hidden)
 
             # Get predictions
