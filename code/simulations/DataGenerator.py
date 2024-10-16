@@ -1,5 +1,3 @@
-
-
 import numpy as np
 from collections import Counter
 from PIL import Image, ImageDraw, ImageFont
@@ -8,7 +6,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, TensorDataset
 
-from utils import timeit, sample_words, get_evaluation_data
+from utils import sample_words, get_test_data
 
 """ 
 "phoneme tensors" are one-hot tensors of a list of phonemes for a single word
@@ -16,21 +14,26 @@ from utils import timeit, sample_words, get_evaluation_data
 """
 
 class DataGenerator():
-    def __init__(self, word_count=500, batch_size=10, savepath=None):
+    def __init__(self, word_count=50000, batch_size=30, savepath=None):
         self.savepath, self.batch_size = savepath, batch_size
 
-        # Generate training data and fetch evaluation data
-        self.train_words, self.train_phonemes = sample_words(word_count)
-        self.eval_data, self.real_words, self.pseudo_words = get_evaluation_data()
+        # Generate training data and fetch test data
+        self.train_phonemes, self.valid_phonemes = sample_words(word_count)
+        self.test_data, self.real_words, self.pseudo_words = get_test_data()
 
-    @timeit
-    def get_phoneme_dataloaders(self):
+    def phoneme_dataloaders(self):
         # Add stop token to phoneme sequences
-        self.train_phonemes = [word + ["<STOP>"] for word in self.train_phonemes]
+        train_phonemes = [seq + ["<STOP>"] for seq in self.train_phonemes]
+        valid_phonemes = [seq + ["<STOP>"] for seq in self.valid_phonemes]
+        test_phonemes = [seq + ["<STOP>"] for seq in self.test_data['Phonemes']]
+        
+        # print first test phoneme
+        print(test_phonemes[0])
 
         # Collect all phonemes and count their occurrences
-        phoneme_counter = Counter(p for word in self.train_phonemes for p in word)
-        phoneme_counter.update(p for word in self.eval_data['Phonemes'] for p in word)
+        phoneme_counter = Counter(p for seq in train_phonemes for p in seq)
+        phoneme_counter.update(p for seq in valid_phonemes for p in seq)
+        phoneme_counter.update(p for seq in test_phonemes for p in seq)
 
         # Create phoneme to index map, sorting by frequency
         sorted_phonemes = sorted(phoneme_counter, key=phoneme_counter.get, reverse=True)
@@ -45,37 +48,47 @@ class DataGenerator():
         # Get vocab size and max sequence length
         vocab_size = len(phoneme_to_index)
         max_length = max(
-            max(len(word) for word in self.train_phonemes), 
-            max(len(word) for word in self.eval_data['Phonemes'])
+            max(len(word) for word in train_phonemes), 
+            max(len(word) for word in valid_phonemes),
+            max(len(word) for word in test_phonemes)
         ) + 1
 
-        # NOTE: certain phonemes in eval data may not be in train data
+        # NOTE: certain phonemes in test data may not be in train data
         # Encode phonemes to indices, add stop token at the end of each sequence
-        train_encoded = [[phoneme_to_index[p] for p in w] for w in self.train_phonemes]
-        eval_encoded = [[phoneme_to_index[p] for p in w] for w in self.eval_data['Phonemes']]
+        train_encoded = [[phoneme_to_index[p] for p in w] for w in train_phonemes]
+        valid_encoded = [[phoneme_to_index[p] for p in w] for w in valid_phonemes]
+        test_encoded = [[phoneme_to_index[p] for p in w] for w in test_phonemes]
 
         # Left pad sequences to the same length
         train_padded = [[0] * (max_length - len(seq)) + seq for seq in train_encoded]
-        eval_padded = [[0] * (max_length - len(seq)) + seq for seq in eval_encoded]
+        valid_padded = [[0] * (max_length - len(seq)) + seq for seq in valid_encoded]
+        test_padded = [[0] * (max_length - len(seq)) + seq for seq in test_encoded]
 
         # NOTE: an embedding layer removes the need for one-hot vectors
         # phoneme_tensors = torch.nn.functional.one_hot(padded_sequences, num_classes=vocab_size)
 
         # Inputs are same as targets because of AE architecture
         train_inputs = torch.tensor(train_padded)
-        eval_inputs = torch.tensor(eval_padded)
+        valid_inputs = torch.tensor(valid_padded)
+        test_inputs = torch.tensor(test_padded)
         train_targets = train_inputs.clone()
-        eval_targets = eval_inputs.clone()
+        valid_targets = valid_inputs.clone()
+        test_targets = test_inputs.clone()
+
+        # Create datasets
+        train_dataset = TensorDataset(train_inputs, train_targets)
+        valid_dataset = TensorDataset(valid_inputs, valid_targets)
+        test_dataset = TensorDataset(test_inputs, test_targets)
 
         # Create dataloaders
-        train_dataset = TensorDataset(train_inputs, train_targets)
         train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, 
                                         shuffle=True, drop_last=True)
-        
-        eval_dataset = TensorDataset(eval_inputs, eval_targets)
-        eval_dataloader = DataLoader(eval_dataset, batch_size=1)
+        valid_dataloader = DataLoader(valid_dataset, batch_size=self.batch_size, 
+                                        shuffle=False, drop_last=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=1)
 
-        return train_dataloader, eval_dataloader, max_length, vocab_size, index_to_phoneme
+        return (train_dataloader, valid_dataloader, test_dataloader, 
+                max_length, vocab_size, index_to_phoneme)
     
     # refactored from @author: aakash
     # NOTE: Missing image transformations and perturbations 
@@ -131,7 +144,7 @@ class DataGenerator():
 
         return grapheme_dataloader
 
-    def get_image_eval_data(self):
+    def get_image_valid_data(self):
         pass
 
 if __name__ == "__main__":

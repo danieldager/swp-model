@@ -14,6 +14,7 @@ from AudioEncoder import AudioEncoder
 from Decoder import Decoder
 
 from utils import seed_everything, levenshtein_bar_graph
+from utils import remove_left_padding, print_examples
 
 # Set random seed for reproducibility
 seed_everything()
@@ -26,6 +27,7 @@ else: print ("MPS device not found.")
 
 
 def train_repetition(
+        G: DataGenerator,
         word_count      = 50000,
         num_epochs      = 10, 
         batch_size      = 30, 
@@ -35,17 +37,17 @@ def train_repetition(
         learning_rate   = 1e-4,
         grid_search     = 1,
         plot_train      = True,
-        plot_eval       = True,
+        plot_test      = True,
     ):
     
 
     """ LOAD DATA """
     # Initialize data generator
-    gen = DataGenerator(word_count, batch_size)
+    # G = DataGenerator(word_count, batch_size)
 
     # Get dataloaders, vocab size, sequence length, and index-phoneme map
-    (train_dl, eval_dl, seq_length, 
-     vocab_size, index_to_phoneme) = gen.get_phoneme_dataloaders()
+    (train_dl, valid_dl, test_dl, seq_length, vocab_size, index_to_phoneme
+    ) = G.phoneme_dataloaders()
 
 
     """ INITIALIZE MODEL """
@@ -55,7 +57,7 @@ def train_repetition(
         if grid_search > 1:
             num_epochs      = random.choice([10, 15, 20])
             batch_size      = random.choice([30, 60, 90])
-            hidden_size     = random.choice([64, 128, 256])
+            hidden_size     = random.choice([1, 2, 4, 8, 16])
             dropout         = random.choice([0.0, 0.1, 0.2])
             num_layers      = random.choice([1, 2, 3])
             learning_rate   = random.choice([1e-3, 1e-4, 1e-5])
@@ -83,12 +85,13 @@ def train_repetition(
 
 
         """ TRAINING LOOP """
-        epoch_losses = []
+        train_losses = []
+        valid_losses = []
+
         for epoch in range(num_epochs):
             encoder.train()
             decoder.train()
-            total_loss = 0
-            batch_losses = []
+            train_loss = 0
 
             for inputs, targets in train_dl:
 
@@ -98,12 +101,13 @@ def train_repetition(
                 # Encoder forward pass
                 encoder_hidden = encoder(inputs)
 
+                # Decoder forward pass
                 decoder_input = torch.zeros(batch_size, seq_length, hidden_size)
                 decoder_output = decoder(decoder_input, encoder_hidden)
 
-                # Reshape outputs and targets for CrossEntropyLoss
-                outputs = decoder_output.view(-1, vocab_size)  # Reshape to (batch_size * seq_length, vocab_size)
-                targets = targets.view(-1)                     # Reshape to (batch_size * seq_length)
+                # Reshape for CrossEntropyLoss (batch_size * seq_length)
+                outputs = decoder_output.view(-1, vocab_size)  
+                targets = targets.view(-1)       
                 loss = criterion(outputs, targets)
 
                 # Backward pass and optimization
@@ -115,28 +119,59 @@ def train_repetition(
                 # print(encoder.embedding.weight[0, 0])
 
                 # print(torch.isnan(loss).any(), torch.isinf(loss).any())
-                total_loss += loss.item()
-                batch_losses.append(loss.item())
+                train_loss += loss.item()
         
-            # Print epoch loss
-            avg_loss = total_loss / len(train_dl)
-            epoch_losses.append(avg_loss)
-            print(f"Epoch {epoch+1}: {avg_loss}")
+            # Calculate average training loss
+            train_loss /= len(train_dl)
+            train_losses.append(train_loss)
+ 
 
-        # Plot training loss
+            """ VALIDATION LOOP """
+            encoder.eval()
+            decoder.eval()
+            valid_loss = 0
+
+            with torch.no_grad():
+                for inputs, targets in valid_dl:
+                    encoder_hidden = encoder(inputs)
+                    decoder_input = torch.zeros(inputs.size(0), seq_length, hidden_size).to(inputs.device)
+                    decoder_output = decoder(decoder_input, encoder_hidden)
+
+                    outputs = decoder_output.view(-1, vocab_size)
+                    targets = targets.view(-1)
+                    loss = criterion(outputs, targets)
+
+                    valid_loss += loss.item()
+
+            valid_loss /= len(valid_dl)
+            valid_losses.append(valid_loss)
+
+            print(f"Epoch {epoch+1}: Training Loss: {train_loss:.4f} Validation Loss: {valid_loss:.4f}")
+
+        """ PRINTING OUTPUTS """
+        # Print examples after the final epoch
+        n = 5
+        print(f"\n--- {n} Examples from Final Training Loop ---")
+        print_examples(train_dl, encoder, decoder, index_to_phoneme, n=n)
+
+        print(f"\n--- {n} Examples from Final Validation Loop ---")
+        print_examples(valid_dl, encoder, decoder, index_to_phoneme, n=n)
+
+        """ PLOTTING LOSS """
         if plot_train:
             plt.figure(figsize=(10, 6))
-            sns.lineplot(x=range(1, num_epochs + 1), y=epoch_losses)
-            plt.title(f'Model {model+1} Training Loss Over Epochs')
+            sns.lineplot(x=range(1, num_epochs + 1), y=train_losses, label='Training Loss')
+            sns.lineplot(x=range(1, num_epochs + 1), y=valid_losses, label='Validation Loss')
+            plt.title(f'Training and Validation Loss Over Epochs')
             plt.xlabel('Epoch')
             plt.ylabel('Cross Entropy Loss')
+            plt.legend()
             plt.tight_layout()
-            plt.savefig(f"../../figures/{model_name}_training_loss.png")
+            plt.savefig(f"../../figures/{model_name}_loss.png")
             plt.show()
 
 
-        """ EVALUATION """
-        # Evaluation loop
+        """ TESTING LOOP """
         lev_distances = []
         model_phonemes = []
         avg_lev_distance = 0
@@ -145,7 +180,7 @@ def train_repetition(
         encoder.eval()
         decoder.eval()
         with torch.no_grad():
-            for inputs, targets in eval_dl:
+            for inputs, targets in test_dl:
                 insertion, deletion, substitution = 0, 0, 0
 
                 # Encoder forward pass
@@ -157,19 +192,12 @@ def train_repetition(
                 # Decoder forward pass
                 decoder_output = decoder(decoder_input, encoder_hidden)
 
-                # Argmax to get predicted phonemes
+                # Argmax to get predicted phonemes, remove padding
                 phonemes = torch.argmax(decoder_output, dim=-1)
-                phonemes = phonemes.tolist()[0]
-
-                # Remove left padding from phonemes
-                # NOTE: only remove padding at beginning
-                for i in range(seq_length):
-                    if phonemes[i] != 0:
-                        phonemes = phonemes[i:]
-                        break
+                phonemes = remove_left_padding(phonemes.tolist()[0])
 
                 # Remove left padding from targets
-                targets = [p for p in targets.tolist()[0] if p != 0]
+                targets = remove_left_padding(targets.tolist()[0])
 
                 # # Levenshtein distance with targets
                 # lev_distance = distance(phonemes, targets)
@@ -193,19 +221,21 @@ def train_repetition(
 
                 model_phonemes.append(phonemes)
 
-            print(f"Average Levenshtein distance: {avg_lev_distance/len(eval_dl)}")
+            print(f"Average Levenshtein distance: {avg_lev_distance/len(test_dl)}")
 
-    gen.eval_data['Model_Phonemes'] = model_phonemes
-    gen.eval_data['Levenshtein'] = lev_distances
-    gen.eval_data['Insertions'] = insertions
-    gen.eval_data['Deletions'] = deletions
-    gen.eval_data['Substitutions'] = substitutions
+        G.test_data['Model_Phonemes'] = model_phonemes
+        G.test_data['Levenshtein'] = lev_distances
+        G.test_data['Insertions'] = insertions
+        G.test_data['Deletions'] = deletions
+        G.test_data['Substitutions'] = substitutions
 
     # Plot levenshtein distances, insertions, deletions, substitutions
-    if plot_eval: levenshtein_bar_graph(gen.eval_data, model_name)
+    if plot_test: 
+        levenshtein_bar_graph(G.test_data, model_name)
+        G.test_data.drop(columns=['Category'])
 
-    return gen.eval_data
+    return G.test_data
 
 
 if __name__ == "__main__":
-    eval_data = train_repetition()
+    data = train_repetition()
