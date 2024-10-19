@@ -1,4 +1,4 @@
-import time, random
+import sys, time, random
 
 import torch
 import torch.nn as nn
@@ -9,10 +9,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from Levenshtein import distance, editops
 
-from DataGenerator import DataGenerator
-from code.models.AudioEncoder import AudioEncoder
-from code.models.LSTMEncoder import LSTMEncoder
-from code.models.DecoderRNN import Decoder
+# Add path to models folder
+sys.path.append('../models')
+
+from Dataset import Dataset
+from EncoderRNN import EncoderRNN
+from DecoderRNN import DecoderRNN
 
 from utils import seed_everything, levenshtein_bar_graph
 from utils import remove_left_padding, print_examples
@@ -26,12 +28,11 @@ if torch.backends.mps.is_available():
     print(torch.ones(1, device=mps_device))
 else: print ("MPS device not found.")
 
-
+""" TRAIN AND TEST PHONEME MODELS """
 def train_repetition(
-        G: DataGenerator,
+        G: Dataset,
         word_count      = 50000,
         num_epochs      = 20, 
-        batch_size      = 10, 
         hidden_size     = 8,
         dropout         = 0.2,
         num_layers      = 1,
@@ -41,23 +42,20 @@ def train_repetition(
         plot_test      = True,
     ):
     
-
     """ LOAD DATA """
     # Initialize data generator
-    # G = DataGenerator(word_count, batch_size)
+    G = Dataset(word_count)
 
     # Get dataloaders, vocab size, sequence length, and index-phoneme map
     (train_dl, valid_dl, test_dl, seq_length, vocab_size, index_to_phoneme
     ) = G.phoneme_dataloaders()
 
-
     """ INITIALIZE MODEL """
-    for model in range(grid_search):
+    for _ in range(grid_search):
         
         # Randomly sample hyperparameters
         if grid_search > 1:
             num_epochs      = random.choice([10, 15, 20])
-            batch_size      = random.choice([1])
             hidden_size     = random.choice([1, 2, 4, 8, 16, 32])
             dropout         = random.choice([0.0, 0.1, 0.2])
             num_layers      = random.choice([1, 2])
@@ -66,25 +64,23 @@ def train_repetition(
 
         # Create model name
         date = time.strftime("%d-%m_")
-        params = f'{num_epochs}_{batch_size}_{hidden_size}'
-        params += f'_{dropout}_{num_layers}_{learning_rate}'
-        model_name = date + params
+        model = date + f'{num_epochs}_{hidden_size}'
+        model += f'_{dropout}_{num_layers}_{learning_rate}'
 
         # Initialize models, loss function, optimizer
-        encoder = LSTMEncoder(
-            input_size=vocab_size, hidden_size=hidden_size, batch_size=batch_size,
+        encoder = EncoderRNN(
+            input_size=vocab_size, hidden_size=hidden_size,
             num_layers=num_layers, dropout=dropout
         )
 
-        decoder = Decoder(
-            hidden_size=hidden_size, output_size=vocab_size, batch_size=batch_size,
+        decoder = DecoderRNN(
+            hidden_size=hidden_size, output_size=vocab_size,
             num_layers=num_layers, dropout=dropout
         )
 
         criterion = nn.CrossEntropyLoss() # try focal loss for class imbalance
         parameters = list(encoder.parameters()) + list(decoder.parameters())
         optimizer = optim.Adam(parameters, lr=learning_rate)
-
 
         """ TRAINING LOOP """
         train_losses = []
@@ -104,7 +100,7 @@ def train_repetition(
                 encoder_hidden = encoder(inputs)
 
                 # Decoder forward pass
-                decoder_input = torch.zeros(batch_size, seq_length, hidden_size)
+                decoder_input = torch.zeros(seq_length, hidden_size)
                 # Include start token
 
                 decoder_output = decoder(decoder_input, encoder_hidden)
@@ -129,7 +125,6 @@ def train_repetition(
             train_loss /= len(train_dl)
             train_losses.append(train_loss)
  
-
             """ VALIDATION LOOP """
             encoder.eval()
             decoder.eval()
@@ -171,9 +166,8 @@ def train_repetition(
             plt.ylabel('Cross Entropy Loss')
             plt.legend()
             plt.tight_layout()
-            plt.savefig(f"../../figures/{model_name}_loss.png")
+            plt.savefig(f"../../figures/{model}_loss.png")
             plt.show()
-
 
         """ TESTING LOOP """
         lev_distances = []
@@ -235,11 +229,10 @@ def train_repetition(
 
     # Plot levenshtein distances, insertions, deletions, substitutions
     if plot_test: 
-        levenshtein_bar_graph(G.test_data, model_name)
+        levenshtein_bar_graph(G.test_data, model)
         G.test_data.drop(columns=['Category'])
 
     return G.test_data
-
 
 if __name__ == "__main__":
     data = train_repetition()
