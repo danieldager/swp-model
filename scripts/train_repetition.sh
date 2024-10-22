@@ -18,6 +18,12 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 python -c "import torch; print(f'cuda device: {torch.cuda.current_device()}')"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
+# create execution environment
+module load conda
+conda create -n myenv python=3.12
+conda activate myenv
+pip install -r requirements.txt
+
 # launch your computation
 echo "computation start $(date)"
 python code/simulations/train_repetition.py
