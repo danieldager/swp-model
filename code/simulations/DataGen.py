@@ -1,11 +1,10 @@
+import os, json
 import numpy as np
 from itertools import chain
-from collections import Counter
 from PIL import Image, ImageDraw, ImageFont
 
 import torch
-from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 
 from utils import sample_words, get_test_data
 
@@ -14,16 +13,48 @@ from utils import sample_words, get_test_data
 "grapheme tensors" are 1D image tensors of a 64x64 image of a single word
 """
 
-class Dataset():
-    def __init__(self, word_count: int, savepath=None):
-        # Generate training data and fetch test data
-        self.train_phonemes, self.valid_phonemes = sample_words(word_count)
+class CustomDataset(Dataset):
+    def __init__(self, phonemes):
+        # Convert phoneme sequences to tensors
+        self.data = [torch.tensor(seq) for seq in phonemes]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        # Return inputs and targets
+        return self.data[idx], self.data[idx].clone()
+
+class DataGen():
+    def __init__(self, word_count: int = 50000, savepath=None):
+
+        if (os.path.exists('cache/train_phonemes.json') and 
+            os.path.exists('cache/valid_phonemes.json')):
+
+            with open('cache/train_phonemes.json', 'r') as f:
+                self.train_phonemes = json.load(f)
+            
+            with open('cache/valid_phonemes.json', 'r') as f:
+                self.valid_phonemes = json.load(f)
+        
+        else:
+            # Generate train and validation phonemes
+            self.train_phonemes, self.valid_phonemes = sample_words(word_count)
+
+            # Save the sampled words to a JSON file
+            with open('cache/train_phonemes.json', 'w') as f:
+                json.dump(self.train_phonemes, f)
+
+            with open('cache/valid_phonemes.json', 'w') as f:
+                json.dump(self.valid_phonemes, f)
+
+        # Get test phonemes
         self.test_data, self.real_words, self.pseudo_words = get_test_data()
         
         # Path for saving images
         self.savepath = savepath
 
-    def phoneme_dataloaders(self) -> tuple:
+    def dataloaders(self) -> tuple:
         # Add stop token to phoneme sequences
         train_phonemes = [seq + ["<STOP>"] for seq in self.train_phonemes]
         valid_phonemes = [seq + ["<STOP>"] for seq in self.valid_phonemes]
@@ -43,34 +74,25 @@ class Dataset():
         # Create index to phoneme map
         index_to_phone = {i: p for p, i in phone_to_index.items()}
 
-        # Get vocab size and max sequence length
+        # Get vocab size
         vocab_size = len(phone_to_index)
-        max_length = max(
-            max(len(word) for word in train_phonemes), 
-            max(len(word) for word in valid_phonemes),
-            max(len(word) for word in test_phonemes)
-        ) + 1
 
         # Encode phonemes to indices
         train_encoded = [[phone_to_index[p] for p in w] for w in train_phonemes]
         valid_encoded = [[phone_to_index[p] for p in w] for w in valid_phonemes]
         test_encoded = [[phone_to_index[p] for p in w] for w in test_phonemes]
-        train_inputs = torch.tensor(train_encoded)
-        valid_inputs = torch.tensor(valid_encoded)
-        test_inputs = torch.tensor(test_encoded)
 
         # Inputs are same as targets because of AE architecture
-        train_dataset = TensorDataset(train_inputs, train_inputs.clone())
-        valid_dataset = TensorDataset(valid_inputs, valid_inputs.clone())
-        test_dataset = TensorDataset(test_inputs, test_inputs.clone())
+        train_dataset = CustomDataset(train_encoded)
+        valid_dataset = CustomDataset(valid_encoded)
+        test_dataset = CustomDataset(test_encoded)
 
         # Create dataloaders
         train_dataloader = DataLoader(train_dataset, shuffle=True)
         valid_dataloader = DataLoader(valid_dataset, shuffle=False)
         test_dataloader = DataLoader(test_dataset) 
 
-        return (train_dataloader, valid_dataloader, test_dataloader,
-                max_length, vocab_size, index_to_phone)
+        return train_dataloader, valid_dataloader, test_dataloader, vocab_size, index_to_phone
     
     # refactored from @author: aakash
     # NOTE: Missing image transformations and perturbations 

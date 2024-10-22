@@ -16,7 +16,6 @@ class DecoderRNN(nn.Module):
 
         # NOTE: pass decoder outputs to rnn
         output, hidden = self.rnn(x, hidden)
-        # 
         output = self.fc(output)
 
         # Two connected embedding layers ? 

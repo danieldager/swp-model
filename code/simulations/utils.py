@@ -152,7 +152,8 @@ def sample_words(word_count: int, language='en', split=0.9, freq_threshold=0.5) 
     total_freq = 0
 
     for i, word in enumerate(iter_wordlist(language)):
-        if i >= word_count: break # Limit the number of words
+        # Limit the number of words
+        if i >= word_count: break
         freq = word_frequency(word, language)
         word_list.append(word)
         freq_list.append(freq)
@@ -214,10 +215,10 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
     # Function to calculate average operations and total distance
     def calc_averages(group):
         return pd.Series({
-            'Avg Insertions': group['Insertions'].mean(),
             'Avg Deletions': group['Deletions'].mean(),
+            'Avg Insertions': group['Insertions'].mean(),
             'Avg Substitutions': group['Substitutions'].mean(),
-            'Avg Total Distance': group['Levenshtein'].mean()
+            'Avg Edit Distance': group['Edit Distance'].mean()
         })
 
     # Create a category column
@@ -230,53 +231,17 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
 
     # Melt the DataFrame for easier plotting
     melted = pd.melt(grouped, id_vars=['Category'], 
-                     value_vars=['Avg Insertions', 'Avg Deletions', 
-                                 'Avg Substitutions', 'Avg Total Distance'])
+                     value_vars=['Avg Deletions', 'Avg Insertions',
+                                 'Avg Substitutions', 'Avg Edit Distance'])
 
     # Create the plot
     plt.figure(figsize=(10, 6))
     sns.barplot(x='Category', y='value', hue='variable', data=melted)
 
-    plt.title('Average Levenshtein Operations and Total Distance by Word Category')
-    plt.xlabel('Word Category')
+    plt.title('Average Error Counts and Edit Distance by Test Category')
+    plt.xlabel('Test Category')
     plt.ylabel('Average Count')
-    # plt.xticks(rotation=70, ha='right')
-    plt.legend(title='Operation Type')
+    plt.legend()
     plt.tight_layout()
     plt.savefig(f'../../figures/{model_name}_errors.png')
     plt.show()
-
-# Remove left padding from phoneme sequences
-def remove_left_padding(indices: list):
-    for i in range(len(indices)):
-        if indices[i] != 0: 
-            return indices[i:]
-
-# Print examples of input, target, and predicted phonemes
-def print_examples(dataloader, encoder, decoder, index_to_phoneme, n=10):
-    encoder.eval()
-    decoder.eval()
-    
-    with torch.no_grad():
-        for inputs, targets in dataloader:
-            encoder_hidden = encoder(inputs)
-            decoder_input = torch.zeros(
-                inputs.size(0), inputs.size(1), encoder_hidden.size(-1)) #.to(inputs.device)
-            # print device of inputs and decoder_input
-            # print(inputs.device, decoder_input.device)
-
-            decoder_output = decoder(decoder_input, encoder_hidden)
-
-            # Get predictions
-            _, predicted = torch.max(decoder_output, dim=2)
-
-            for i in range(n):
-                target_indices = remove_left_padding(targets[i].tolist())
-                predicted_indices = remove_left_padding(predicted[i].tolist())
-                target_phonemes = [index_to_phoneme[idx] for idx in target_indices]
-                predicted_phonemes = [index_to_phoneme[idx] for idx in predicted_indices]
-
-                print(f"Target:    {', '.join(target_phonemes)}")
-                print(f"Predicted: {', '.join(predicted_phonemes)}\n")
-
-            break  # We only need examples from one batch
