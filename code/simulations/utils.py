@@ -42,7 +42,7 @@ def timeit(func):
 
 # NOTE: run in terminal: python -m spacy download en-core-web-lg
 g2p = G2p()
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_core_web_lg')
 mrp = Morphemes(str(DATA_DIR / "morphemes_data"))
 
 # Seed everything for reproducibility
