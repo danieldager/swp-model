@@ -19,8 +19,13 @@ nltk.download('averaged_perceptron_tagger_eng')
 import time
 from functools import wraps
 
-# Get project root directory
-PROJECT_ROOT = Path(__file__).parent.parent
+""" PATHS """
+SCRIPT_DIR = Path(__file__).resolve()
+ROOT_DIR = SCRIPT_DIR.parent.parent.parent
+DATA_DIR = ROOT_DIR / "data"
+FIGURES_DIR = ROOT_DIR / "figures"
+TEST_DATA_REAL = ROOT_DIR / "test_dataset_real"
+TEST_DATA_PSEUDO = ROOT_DIR / "test_dataset_pseudo"
 
 def timeit(func):
     @wraps(func)
@@ -38,7 +43,7 @@ def timeit(func):
 # NOTE: run in terminal: python -m spacy download en
 g2p = G2p()
 nlp = spacy.load('en_core_web_sm')
-# mrp = Morphemes(PROJECT_ROOT / "data/morphemes_data")
+mrp = Morphemes(DATA_DIR / "morphemes_data")
 
 # Seed everything for reproducibility
 def seed_everything(seed=42) -> None:
@@ -49,20 +54,17 @@ def seed_everything(seed=42) -> None:
   torch.backends.cudnn.deterministic = True
 
 # Process the hand-made test datasets
-def process_dataset(directory: str, real=False) -> pd.DataFrame:
+def process_dataset(directory: Path, real=False) -> pd.DataFrame:
     data = []
-    for file in os.listdir(directory):
-        if file.endswith('.csv'):
-            name_parts = file.split('.')[0].split('_')
-            df = pd.read_csv(os.path.join(directory, file))
-            
-            df['Lexicality'] = name_parts[1]
-            df['Morph Complexity'] = name_parts[-1]
+    for file in directory.glob('*.csv'):
+        name_parts = file.stem.split('_')
+        df = pd.read_csv(file)
+        df['Lexicality'] = name_parts[1]
+        df['Morph Complexity'] = name_parts[-1]
+        if real: df['Frequency'] = name_parts[2]
+        data.append(df)
 
-            if real: df['Frequency'] = name_parts[2]
-            data.append(df)
-    
-    data = pd.concat(data, join="outer") #, ignore_index=True)
+    data = pd.concat(data, join="outer")
     return data
 
 # Get morphological data for a word
@@ -247,5 +249,5 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
     plt.ylabel('Average Count')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'../../figures/{model_name}_errors.png')
+    plt.savefig(FIGURES_DIR / f'{model_name}_errors.png')
     plt.show()

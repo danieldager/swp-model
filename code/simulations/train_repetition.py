@@ -57,7 +57,7 @@ def train_repetition(
     train_dl, valid_dl, test_dl, vocab_size, index_to_phoneme = D.dataloaders()
 
     """ INITIALIZE MODEL """
-    for _ in range(grid_search):
+    for n in range(grid_search):
         
         # Randomly sample hyperparameters
         if grid_search > 1:
@@ -68,8 +68,11 @@ def train_repetition(
             learning_rate   = random.choice([1e-1, 5e-1, 1e-2, 5e-2, 1e-3])
             # early_stopping
 
+            print(f"Training model {n+1}/{grid_search} with hyperparameters:")
+
         # Create model name
         model = f'{num_epochs}_{hidden_size}_{num_layers}_{dropout}_{learning_rate}'
+        print(model)
 
         # Initialize models, loss function, optimizer
         encoder = EncoderRNN(
