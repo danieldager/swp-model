@@ -24,7 +24,7 @@ module load miniconda3/24.3.0-ui7c
 conda create -n swpm python=3.12
 conda activate swpm
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_lg
 
 # launch your computation
 echo "computation start $(date)"

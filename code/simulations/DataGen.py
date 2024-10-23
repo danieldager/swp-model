@@ -15,8 +15,8 @@ from utils import sample_words, get_test_data
 "grapheme tensors" are 1D image tensors of a 64x64 image of a single word
 """
 
-SCRIPT_DIR = Path(__file__).resolve()
-CACHE_DIR = SCRIPT_DIR.parent / "cache"
+CUR_DIR = Path(__file__).resolve()
+CACHE_DIR = CUR_DIR.parent / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
 
 class CustomDataset(Dataset):

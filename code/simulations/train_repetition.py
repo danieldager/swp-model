@@ -1,5 +1,6 @@
-import os, sys, random
+import sys, time, random
 from pathlib import Path
+from collections import defaultdict
 
 import torch
 import torch.nn as nn
@@ -9,9 +10,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from Levenshtein import editops
 
-# Get project root directory
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.append(str(PROJECT_ROOT / "models"))
+""" PATHS """
+CUR_DIR = Path(__file__)
+MODELS_DIR = CUR_DIR.parent.parent / "models"
+WEIGHTS_DIR = MODELS_DIR / "weights"
+WEIGHTS_DIR.mkdir(exist_ok=True)
+sys.path.append(str(MODELS_DIR))
 
 from DataGen import DataGen
 from EncoderRNN import EncoderRNN
@@ -22,7 +26,7 @@ from utils import seed_everything, levenshtein_bar_graph
 # Set random seed for reproducibility
 seed_everything()
 
-""" SET DEVICE """
+""" DEVICE """
 if torch.cuda.is_available():
     device = torch.device("cuda")
     device_name = torch.cuda.get_device_name(0)
@@ -36,37 +40,60 @@ else:
     device = torch.device("cpu")
     print("Using CPU device")
 
+""" TIMER """
+class Timer:
+    def __init__(self):
+        self.times = defaultdict(float)
+        self.counts = defaultdict(int)
+        
+    def start(self):
+        self._start_time = time.time()
+        
+    def stop(self, name):
+        elapsed = time.time() - self._start_time
+        self.times[name] += elapsed
+        self.counts[name] += 1
+        
+    def summary(self):
+        print("\nTiming Summary:")
+        print("-" * 60)
+        print(f"{'Operation':<30} {'Total Time (s)':<15} {'Avg Time (s)':<15}")
+        print("-" * 60)
+        for name in self.times:
+            total = self.times[name]
+            avg = total / self.counts[name]
+            print(f"{name:<30} {total:>13.3f}s {avg:>13.3f}s")
+
+
 """ TRAIN AND TEST PHONEME MODELS """
 def train_repetition(
         D: DataGen,
         num_epochs      = 3, 
-        hidden_size     = 8,
+        hidden_size     = 4,
         num_layers      = 1,
         dropout         = 0.0,
-        learning_rate   = 1e-3,
+        learning_rate   = 5e-3,
         grid_search     = 1,
         plot_train      = True,
         plot_test       = True,
     ):
     
+    timer = Timer()
+    
     """ LOAD DATA """
-    # Initialize data generator
-    # D = DataGen()
-
-    # Get dataloaders, vocab size, and index-phoneme map
     train_dl, valid_dl, test_dl, vocab_size, index_to_phoneme = D.dataloaders()
 
     """ INITIALIZE MODEL """
     for n in range(grid_search):
+        epoch_times = []
         
         # Randomly sample hyperparameters
         if grid_search > 1:
             num_epochs      = random.choice([5, 10])
             hidden_size     = random.choice([1, 2, 4, 8])
-            num_layers      = random.choice([1, 2])
-            dropout         = random.choice([0.0, 0.1, 0.2])
-            learning_rate   = random.choice([1e-1, 5e-2, 1e-2, 5e-3, 1e-1])
-            # early_stopping
+            num_layers     = random.choice([1, 2])
+            dropout        = random.choice([0.0, 0.1, 0.2])
+            learning_rate  = random.choice([1e-1, 5e-2, 1e-2, 5e-3, 1e-1])
 
             print(f"Training model {n+1}/{grid_search} with hyperparameters:")
 
@@ -74,7 +101,6 @@ def train_repetition(
         model = f'{num_epochs}_{hidden_size}_{num_layers}_{dropout}_{learning_rate}'
         print(model)
 
-        # Initialize models, loss function, optimizer
         encoder = EncoderRNN(
             input_size=vocab_size, hidden_size=hidden_size,
             num_layers=num_layers, dropout=dropout
@@ -85,7 +111,7 @@ def train_repetition(
             num_layers=num_layers, dropout=dropout
         ).to(device)
 
-        criterion = nn.CrossEntropyLoss() # try focal loss for class imbalance
+        criterion = nn.CrossEntropyLoss()
         parameters = list(encoder.parameters()) + list(decoder.parameters())
         optimizer = optim.Adam(parameters, lr=learning_rate)
 
@@ -94,46 +120,44 @@ def train_repetition(
         valid_losses = []
 
         for epoch in range(num_epochs):
+            epoch_start = time.time()
             encoder.train()
             decoder.train()
             train_loss = 0
 
+            timer.start()
             for inputs, targets in train_dl:
                 inputs = inputs.to(device)
                 targets = targets.to(device)
 
-                # Zero gradients from previous step
                 optimizer.zero_grad()
 
-                # Encoder forward pass
+                # Forward passes
+                timer.start()
                 encoder_hidden = encoder(inputs)
+                timer.stop("Encoder Forward Pass")
 
-                # Decoder forward pass
-                # NOTE: Include start token
+                timer.start()
                 decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
                 decoder_output = decoder(decoder_input, encoder_hidden)
+                timer.stop("Decoder Forward Pass")
 
-                # Reshape for CrossEntropyLoss (batch_size * seq_length)
+                # Loss computation and backward pass
+                timer.start()
                 outputs = decoder_output.view(-1, vocab_size)  
                 targets = targets.view(-1)
                 loss = criterion(outputs, targets)
-
-                # Backward pass and optimization
                 loss.backward()
-                # print(any(param.grad is not None and torch.sum(param.grad != 0) > 0 for param in parameters))
-
-                # print(encoder.embedding.weight[0, 0])    
                 optimizer.step()
-                # print(encoder.embedding.weight[0, 0])
+                timer.stop("Backward Pass")
 
-                # print(torch.isnan(loss).any(), torch.isinf(loss).any())
                 train_loss += loss.item()
         
-            # Calculate average training loss
             train_loss /= len(train_dl)
             train_losses.append(train_loss)
  
             """ VALIDATION LOOP """
+            timer.start()
             encoder.eval()
             decoder.eval()
             valid_loss = 0
@@ -143,12 +167,10 @@ def train_repetition(
                     inputs = inputs.to(device)
                     targets = targets.to(device)
 
-                    # Forward pass
                     encoder_hidden = encoder(inputs)
                     decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
                     decoder_output = decoder(decoder_input, encoder_hidden)
 
-                    # Calculate loss
                     outputs = decoder_output.view(-1, vocab_size)
                     targets = targets.view(-1)
                     loss = criterion(outputs, targets)
@@ -156,8 +178,11 @@ def train_repetition(
 
             valid_loss /= len(valid_dl)
             valid_losses.append(valid_loss)
+            timer.stop("Validation")
 
-            print(f"Epoch {epoch+1}: T Loss: {train_loss:.4f} V Loss: {valid_loss:.4f}")
+            epoch_time = time.time() - epoch_start
+            epoch_times.append(epoch_time)
+            print(f"Epoch {epoch+1}: T Loss: {train_loss:.4f} V Loss: {valid_loss:.4f} Time: {epoch_time:.2f}s")
 
         """ PLOTTING LOSS """
         if plot_train:
@@ -170,22 +195,17 @@ def train_repetition(
             plt.legend()
             plt.tight_layout()
             
-            # Create figures directory if it doesn't exist
-            figures_dir = PROJECT_ROOT / "figures"
+            figures_dir = CUR_DIR.parent.parent.parent / "figures"
             figures_dir.mkdir(exist_ok=True)
             plt.savefig(figures_dir / f"{model}_loss.png")
             plt.show()
 
         """ SAVE MODEL """
-        # Create weights directory if it doesn't exist
-        weights_dir = Path("weights")
-        weights_dir.mkdir(exist_ok=True)
-        
-        # Save encoder and decoder weights
-        torch.save(encoder.state_dict(), weights_dir / f"encoder_{model}.pth")
-        torch.save(decoder.state_dict(), weights_dir / f"decoder_{model}.pth")
+        torch.save(encoder.state_dict(), WEIGHTS_DIR / f"encoder_{model}.pth")
+        torch.save(decoder.state_dict(), WEIGHTS_DIR / f"decoder_{model}.pth")
 
         """ TESTING LOOP """
+        timer.start()
         predictions = []
         deletions = []
         insertions = []
@@ -200,17 +220,14 @@ def train_repetition(
                 targets = targets.to(device)
                 insertion, deletion, substitution = 0, 0, 0
 
-                # Foward pass
                 encoder_hidden = encoder(inputs)
                 decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
                 decoder_output = decoder(decoder_input, encoder_hidden)
 
-                # Argmax to get predicted phonemes
                 prediction = torch.argmax(decoder_output, dim=-1)
                 prediction = prediction.squeeze().cpu().tolist()
                 targets = targets.squeeze().cpu().tolist()
 
-                # Tabulate errors
                 ops = editops(prediction, targets)
                 for op, _, _ in ops:
                     if op == 'insert': insertion += 1
@@ -221,21 +238,21 @@ def train_repetition(
                 insertions.append(insertion)
                 substitutions.append(substitution)
                 edit_distance.append(len(ops))
-                
-                # Convert predicted indices to phonemes
                 predictions.append([index_to_phoneme[i] for i in prediction][:-1])
 
-        # Update test dataframe with predictions and errors
         D.test_data['Prediction'] = predictions
         D.test_data['Deletions'] = deletions
         D.test_data['Insertions'] = insertions
         D.test_data['Substitutions'] = substitutions
         D.test_data['Edit Distance'] = edit_distance
+        timer.stop("Testing")
 
-    # Plot levenshtein distances, insertions, deletions, substitutions
-    if plot_test: 
-        levenshtein_bar_graph(D.test_data, model)
-        D.test_data.drop(columns=['Category'])
+        if plot_test:
+            levenshtein_bar_graph(D.test_data, model)
+            D.test_data.drop(columns=['Category'])
+
+    # Print timing summary
+    timer.summary()
 
     return D.test_data
 
