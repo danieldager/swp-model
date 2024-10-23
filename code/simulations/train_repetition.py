@@ -29,6 +29,8 @@ seed_everything()
 """ DEVICE """
 if torch.cuda.is_available():
     device = torch.device("cuda")
+    print(torch.cuda.get_device_name(0))
+    print(torch.cuda.get_device_name())
     device_name = torch.cuda.get_device_name(0)
     print(f"Using CUDA device: {device_name}")
 
@@ -110,6 +112,11 @@ def train_repetition(
             hidden_size=hidden_size, output_size=vocab_size,
             num_layers=num_layers, dropout=dropout
         ).to(device)
+
+        # if CUDA, use DataParallel
+        if torch.cuda.device_count() > 1:
+            encoder = nn.DataParallel(encoder).to(device)
+            decoder = nn.DataParallel(decoder).to(device)
 
         criterion = nn.CrossEntropyLoss()
         parameters = list(encoder.parameters()) + list(decoder.parameters())
@@ -258,4 +265,4 @@ def train_repetition(
 
 if __name__ == "__main__":
     D = DataGen()
-    data = train_repetition(D, grid_search=20)
+    data = train_repetition(D, grid_search=10)
