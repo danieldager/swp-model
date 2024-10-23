@@ -14,7 +14,7 @@ from morphemes import Morphemes
 from wordfreq import zipf_frequency, iter_wordlist, word_frequency
 
 import nltk
-# nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('averaged_perceptron_tagger_eng')
 
 import time
 from functools import wraps
@@ -38,7 +38,7 @@ def timeit(func):
 # NOTE: run in terminal: python -m spacy download en
 g2p = G2p()
 nlp = spacy.load('en_core_web_sm')
-mrp = Morphemes(PROJECT_ROOT / "data/morphemes_data")
+# mrp = Morphemes(PROJECT_ROOT / "data/morphemes_data")
 
 # Seed everything for reproducibility
 def seed_everything(seed=42) -> None:

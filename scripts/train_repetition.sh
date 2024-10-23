@@ -3,7 +3,7 @@
 #SBATCH --partition=gpu               # Take a node from the 'gpu' partition
 #SBATCH --export=ALL                  # Export your environment to the compute node
 #SBATCH --cpus-per-task=4             # Ask for 4 CPU cores
-#SBATCH --gres=gpu:A100:1                  # Ask for 1 GPU
+#SBATCH --gres=gpu:A40:1                  # Ask for 1 GPU
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=1:00:00                # Time limit hrs:min:sec
 #SBATCH --output=%x-%j.log            # Standard output and error log

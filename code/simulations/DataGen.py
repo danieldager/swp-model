@@ -1,5 +1,7 @@
 import os, json
 import numpy as np
+from pathlib import Path
+
 from itertools import chain
 from PIL import Image, ImageDraw, ImageFont
 
@@ -12,6 +14,10 @@ from utils import sample_words, get_test_data
 "phoneme tensors" are one-hot tensors of a list of phonemes for a single word
 "grapheme tensors" are 1D image tensors of a 64x64 image of a single word
 """
+
+SCRIPT_DIR = Path(__file__).resolve()
+CACHE_DIR = SCRIPT_DIR.parent / "cache"
+CACHE_DIR.mkdir(exist_ok=True)
 
 class CustomDataset(Dataset):
     def __init__(self, phonemes):
@@ -27,32 +33,30 @@ class CustomDataset(Dataset):
 
 class DataGen():
     def __init__(self, word_count: int = 50000, savepath=None):
+        # Convert savepath to Path object if provided
+        self.savepath = Path(savepath) if savepath else None
 
-        if (os.path.exists('cache/train_phonemes.json') and 
-            os.path.exists('cache/valid_phonemes.json')):
+        train_cache = CACHE_DIR / "train_phonemes.json"
+        valid_cache = CACHE_DIR / "valid_phonemes.json"
 
-            with open('cache/train_phonemes.json', 'r') as f:
+        # Load train and validation phonemes from cache if available
+        if train_cache.exists() and valid_cache.exists():
+            with train_cache.open('r') as f:
                 self.train_phonemes = json.load(f)
-            
-            with open('cache/valid_phonemes.json', 'r') as f:
+    
+            with valid_cache.open('r') as f:
                 self.valid_phonemes = json.load(f)
-        
+
+        # Otherwise, generate and save train and validation phonemes
         else:
-            # Generate train and validation phonemes
             self.train_phonemes, self.valid_phonemes = sample_words(word_count)
-
-            # Save the sampled words to a JSON file
-            with open('cache/train_phonemes.json', 'w') as f:
+            with train_cache.open('w') as f:
                 json.dump(self.train_phonemes, f)
-
-            with open('cache/valid_phonemes.json', 'w') as f:
+            with valid_cache.open('w') as f:
                 json.dump(self.valid_phonemes, f)
 
         # Get test phonemes
         self.test_data, self.real_words, self.pseudo_words = get_test_data()
-        
-        # Path for saving images
-        self.savepath = savepath
 
     def dataloaders(self) -> tuple:
         # Add stop token to phoneme sequences
