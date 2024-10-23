@@ -14,7 +14,7 @@ from morphemes import Morphemes
 from wordfreq import zipf_frequency, iter_wordlist, word_frequency
 
 import nltk
-nltk.download('averaged_perceptron_tagger_eng')
+# nltk.download('averaged_perceptron_tagger_eng')
 
 import time
 from functools import wraps
@@ -24,8 +24,8 @@ SCRIPT_DIR = Path(__file__).resolve()
 ROOT_DIR = SCRIPT_DIR.parent.parent.parent
 DATA_DIR = ROOT_DIR / "data"
 FIGURES_DIR = ROOT_DIR / "figures"
-TEST_DATA_REAL = ROOT_DIR / "test_dataset_real"
-TEST_DATA_PSEUDO = ROOT_DIR / "test_dataset_pseudo"
+TEST_DATA_REAL = DATA_DIR / "test_dataset_real"
+TEST_DATA_PSEUDO = DATA_DIR / "test_dataset_pseudo"
 
 def timeit(func):
     @wraps(func)
@@ -40,10 +40,10 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-# NOTE: run in terminal: python -m spacy download en
+# NOTE: run in terminal: python -m spacy download en-core-web-lg
 g2p = G2p()
 nlp = spacy.load('en_core_web_sm')
-mrp = Morphemes(DATA_DIR / "morphemes_data")
+mrp = Morphemes(str(DATA_DIR / "morphemes_data"))
 
 # Seed everything for reproducibility
 def seed_everything(seed=42) -> None:
@@ -125,13 +125,12 @@ def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
 
 # Combine and reformat the real and pseudo word datasets
 def get_test_data():
-    
     # Process real words
-    real_words = process_dataset('../../data/test_dataset_real', real=True)
+    real_words = process_dataset(TEST_DATA_REAL, real=True)
     real_words = clean_and_enrich_data(real_words, real=True)
 
     # Process pseudo words
-    pseudo_words = process_dataset('../../data/test_dataset_pseudo')
+    pseudo_words = process_dataset(TEST_DATA_PSEUDO)
     pseudo_words = clean_and_enrich_data(pseudo_words)
 
     # Combine datasets

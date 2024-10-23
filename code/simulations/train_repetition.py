@@ -65,7 +65,7 @@ def train_repetition(
             hidden_size     = random.choice([1, 2, 4, 8])
             num_layers      = random.choice([1, 2])
             dropout         = random.choice([0.0, 0.1, 0.2])
-            learning_rate   = random.choice([1e-1, 5e-1, 1e-2, 5e-2, 1e-3])
+            learning_rate   = random.choice([1e-1, 5e-2, 1e-2, 5e-3, 1e-1])
             # early_stopping
 
             print(f"Training model {n+1}/{grid_search} with hyperparameters:")
