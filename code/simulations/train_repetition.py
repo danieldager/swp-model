@@ -29,15 +29,11 @@ seed_everything()
 """ DEVICE """
 if torch.cuda.is_available():
     device = torch.device("cuda")
-    print(torch.cuda.get_device_name(0))
-    print(torch.cuda.get_device_name())
     device_name = torch.cuda.get_device_name(0)
     print(f"Using CUDA device: {device_name}")
-
 elif torch.backends.mps.is_available():
     device = torch.device("mps")
     print("Using MPS device")
-
 else:
     device = torch.device("cpu")
     print("Using CPU device")
@@ -137,15 +133,27 @@ def train_repetition(
                 inputs = inputs.to(device)
                 targets = targets.to(device)
 
+                # check all details about inputs
+                print(inputs.shape)
+                print(inputs.device)
+                print(inputs)
+
                 optimizer.zero_grad()
 
                 # Forward passes
                 timer.start()
                 encoder_hidden = encoder(inputs)
+                print(encoder_hidden.shape)
+                print(encoder_hidden.device)
+
                 timer.stop("Encoder Forward Pass")
 
                 timer.start()
                 decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
+
+                print(decoder_input.shape)
+                print(decoder_input.device)
+
                 decoder_output = decoder(decoder_input, encoder_hidden)
                 timer.stop("Decoder Forward Pass")
 
