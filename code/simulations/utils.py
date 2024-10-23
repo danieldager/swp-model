@@ -3,6 +3,7 @@ import torch
 import random
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -17,6 +18,9 @@ import nltk
 
 import time
 from functools import wraps
+
+# Get project root directory
+PROJECT_ROOT = Path(__file__).parent.parent
 
 def timeit(func):
     @wraps(func)
@@ -34,7 +38,7 @@ def timeit(func):
 # NOTE: run in terminal: python -m spacy download en
 g2p = G2p()
 nlp = spacy.load('en_core_web_sm')
-mrp = Morphemes("../../data/morphemes_data")
+mrp = Morphemes(PROJECT_ROOT / "data/morphemes_data")
 
 # Seed everything for reproducibility
 def seed_everything(seed=42) -> None:
