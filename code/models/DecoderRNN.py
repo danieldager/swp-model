@@ -8,6 +8,8 @@ class DecoderRNN(nn.Module):
         self.num_layers = num_layers
 
         self.embedding = nn.Embedding(hidden_size, hidden_size)
+        self.dropout = nn.Dropout(dropout)
+        if num_layers == 1: dropout = 0
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
         self.fc = nn.Linear(hidden_size, output_size)
 

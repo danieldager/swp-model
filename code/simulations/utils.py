@@ -1,12 +1,9 @@
-import os
 import torch
 import random
 import numpy as np
 import pandas as pd
 from pathlib import Path
-
-import seaborn as sns
-import matplotlib.pyplot as plt
+from collections import defaultdict
 
 import spacy
 from g2p_en import G2p
@@ -20,13 +17,36 @@ import time
 from functools import wraps
 
 """ PATHS """
-SCRIPT_DIR = Path(__file__).resolve()
-ROOT_DIR = SCRIPT_DIR.parent.parent.parent
+FILE_DIR = Path(__file__).resolve()
+ROOT_DIR = FILE_DIR.parent.parent.parent
 DATA_DIR = ROOT_DIR / "data"
-FIGURES_DIR = ROOT_DIR / "figures"
 TEST_DATA_REAL = DATA_DIR / "test_dataset_real"
 TEST_DATA_PSEUDO = DATA_DIR / "test_dataset_pseudo"
 
+""" SEEDING """
+# Seed everything for reproducibility
+def seed_everything(seed=42) -> None:
+  random.seed(seed)
+  np.random.seed(seed)
+  torch.manual_seed(seed)
+  torch.backends.cudnn.benchmark = False
+  torch.backends.cudnn.deterministic = True
+
+""" DEVICE """
+def set_device() -> torch.device:
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        device_name = torch.cuda.get_device_name(0)
+        print(f"Using CUDA device: {device_name}")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using MPS device")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU device")
+    return device
+
+""" PERFORMANCE """
 def timeit(func):
     @wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -40,18 +60,35 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-# NOTE: run in terminal: python -m spacy download en-core-web-lg
+class Timer:
+    def __init__(self):
+        self.times = defaultdict(float)
+        self.counts = defaultdict(int)
+        
+    def start(self):
+        self._start_time = time.time()
+        
+    def stop(self, name):
+        elapsed = time.time() - self._start_time
+        self.times[name] += elapsed
+        self.counts[name] += 1
+        
+    def summary(self):
+        print("\nTiming Summary:")
+        print("-" * 60)
+        print(f"{'Operation':<30} {'Total Time (s)':<15} {'Avg Time (s)':<15}")
+        print("-" * 60)
+        for name in self.times:
+            total = self.times[name]
+            avg = total / self.counts[name]
+            print(f"{name:<30} {total:>13.3f}s {avg:>13.3f}s")
+
+
+""" TEST SET PROCESSING """
+# NOTE: python -m spacy download en_core_web_lg
 g2p = G2p()
 nlp = spacy.load('en_core_web_lg')
 mrp = Morphemes(str(DATA_DIR / "morphemes_data"))
-
-# Seed everything for reproducibility
-def seed_everything(seed=42) -> None:
-  random.seed(seed)
-  np.random.seed(seed)
-  torch.manual_seed(seed)
-  torch.backends.cudnn.benchmark = False
-  torch.backends.cudnn.deterministic = True
 
 # Process the hand-made test datasets
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -149,8 +186,9 @@ def get_test_data():
     
     return dataframe, real_words, pseudo_words
 
+""" WORD SAMPLING """
 # Sample words for training and validation datasets
-@timeit
+# @timeit
 def sample_words(word_count: int, language='en', split=0.9, freq_threshold=0.5) -> list:    
     word_list = []
     freq_list = []
@@ -213,40 +251,3 @@ def sample_words(word_count: int, language='en', split=0.9, freq_threshold=0.5) 
     # print(f"Time to get phonemes: {time.perf_counter() - start:.2f} seconds")
     
     return train_phonemes, valid_phonemes
-
-# Plot the operations and total distance for each word category
-def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
-    
-    # Function to calculate average operations and total distance
-    def calc_averages(group):
-        return pd.Series({
-            'Avg Deletions': group['Deletions'].mean(),
-            'Avg Insertions': group['Insertions'].mean(),
-            'Avg Substitutions': group['Substitutions'].mean(),
-            'Avg Edit Distance': group['Edit Distance'].mean()
-        })
-
-    # Create a category column
-    df['Category'] = df.apply(lambda row: 
-        'pseudo' if row['Lexicality'] == 'pseudo' else
-        f"real {row['Morph Complexity']} {row['Frequency']}", axis=1)
-
-    # Group by the new category and calculate averages
-    grouped = df.groupby('Category').apply(calc_averages).reset_index()
-
-    # Melt the DataFrame for easier plotting
-    melted = pd.melt(grouped, id_vars=['Category'], 
-                     value_vars=['Avg Deletions', 'Avg Insertions',
-                                 'Avg Substitutions', 'Avg Edit Distance'])
-
-    # Create the plot
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x='Category', y='value', hue='variable', data=melted)
-
-    plt.title('Average Error Counts and Edit Distance by Test Category')
-    plt.xlabel('Test Category')
-    plt.ylabel('Average Count')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(FIGURES_DIR / f'{model_name}_errors.png')
-    plt.show()

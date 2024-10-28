@@ -16,6 +16,8 @@ class EncoderLSTM(nn.Module):
         
         self.embedding = nn.Embedding(input_size + 1, hidden_size)
         self.dropout = nn.Dropout(dropout)
+        
+        if num_layers == 1: dropout = 0
         self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, dropout=dropout)
 
         # NOTE: if we use an embedding layer, we don't need one-hot vectors

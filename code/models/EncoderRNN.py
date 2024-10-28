@@ -16,6 +16,7 @@ class EncoderRNN(nn.Module):
         # vocab size = input_size + 1 because of num_embeddings
         self.embedding = nn.Embedding(input_size + 1, hidden_size)
         self.dropout = nn.Dropout(dropout)
+        if num_layers == 1: dropout = 0
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
 
 
