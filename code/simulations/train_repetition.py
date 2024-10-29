@@ -210,7 +210,7 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
     # Print timing summary
     timer.summary()
 
-    return model, D.test_data
+    return model
 
 if __name__ == "__main__":
     D = DataGen()
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     print(f"Dropout       : {args.dropout}")
     print(f"Learning Rate : {args.l_rate}")
 
-    model, data = train_repetition(D, vars(args))
+    model = train_repetition(D, vars(args))
 
     # Test the model
-    df = test_repetition(model, data)
+    df = test_repetition(D, model)

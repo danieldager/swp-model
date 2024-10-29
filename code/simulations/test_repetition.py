@@ -31,7 +31,7 @@ def parse_args():
     return args
 
 """ TESTING LOOP """
-def test_repetition(model: str, D: DataGen) -> pd.DataFrame:
+def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
     """ LOAD DATA """
     _, _, test_dl, vocab_size, index_to_phoneme = D.dataloaders()
     
