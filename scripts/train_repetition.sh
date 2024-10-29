@@ -23,7 +23,7 @@ fi
 # activate environment and install dependencies
 conda activate swpm
 pip install -r requirements.txt --quiet
-python -m spacy download en_core_web_lg --no-deps
+python -m spacy download en_core_web_lg
 
 # print environment information
 echo "python: $(which python)"

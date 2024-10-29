@@ -41,19 +41,14 @@ class DataGen():
 
         # Load train and validation phonemes from cache if available
         if train_cache.exists() and valid_cache.exists():
-            with train_cache.open('r') as f:
-                self.train_phonemes = json.load(f)
-    
-            with valid_cache.open('r') as f:
-                self.valid_phonemes = json.load(f)
+            with train_cache.open('r') as f: self.train_phonemes = json.load(f)
+            with valid_cache.open('r') as f: self.valid_phonemes = json.load(f)
 
         # Otherwise, generate and save train and validation phonemes
         else:
             self.train_phonemes, self.valid_phonemes = sample_words(word_count)
-            with train_cache.open('w') as f:
-                json.dump(self.train_phonemes, f)
-            with valid_cache.open('w') as f:
-                json.dump(self.valid_phonemes, f)
+            with train_cache.open('w') as f: json.dump(self.train_phonemes, f)
+            with valid_cache.open('w') as f: json.dump(self.valid_phonemes, f)
 
         # Get test phonemes
         self.test_data, self.real_words, self.pseudo_words = get_test_data()

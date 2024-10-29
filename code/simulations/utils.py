@@ -98,7 +98,11 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
         df = pd.read_csv(file)
         df['Lexicality'] = name_parts[1]
         df['Morph Complexity'] = name_parts[-1]
-        if real: df['Frequency'] = name_parts[2]
+        if real:
+            df['Size'] = name_parts[3]
+            df['Frequency'] = name_parts[2]
+        else:
+            df['Size'] = name_parts[2]
         data.append(df)
 
     data = pd.concat(data, join="outer")
@@ -175,7 +179,7 @@ def get_test_data():
 
     # Rearrange columns
     columns = [
-        "Word", "Length", "Frequency", "Zipf Frequency", 
+        "Word", "Size", "Length", "Frequency", "Zipf Frequency", 
         "Morph Complexity", "Lexicality", "Part of Speech", "Phonemes"
     ]
     dataframe = dataframe.reindex(columns=columns)

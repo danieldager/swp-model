@@ -19,7 +19,7 @@ def training_curves(train_losses:list, valid_losses:list, model:str, num_epochs:
     plt.ylabel('Cross Entropy Loss')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(FIGURES_DIR / f"{model}_loss.png")
+    plt.savefig(FIGURES_DIR / f"{model}_loss.png", dpi= 300, bbox_inches='tight')
 
 
 # Plot the operations and total distance for each word category
@@ -36,11 +36,24 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
 
     # Create a category column
     df['Category'] = df.apply(lambda row: 
-        'pseudo' if row['Lexicality'] == 'pseudo' else
-        f"real {row['Morph Complexity']} {row['Frequency']}", axis=1)
+        f"pseudo {row['Size']}" if row['Lexicality'] == 'pseudo' else
+        f"real {row['Size']} {row['Frequency']} {row['Morph Complexity']}", axis=1)
 
     # Group by the new category and calculate averages
     grouped = df.groupby('Category').apply(calc_averages).reset_index()
+
+    # Sort the categories in a meaningful order
+    order = []
+    for size in ['short', 'long']:
+        # Add pseudo categories first
+        order.append(f'pseudo {size}')
+        # Then add real categories
+        for complexity in df['Morph Complexity'].unique():
+            for freq in df['Frequency'].unique():
+                order.append(f'real {size} {freq} {complexity}')
+    
+    # Filter category order to only include categories that exist in the data
+    order = [cat for cat in order if cat in grouped['Category'].unique()]
 
     # Melt the DataFrame for easier plotting
     melted = pd.melt(grouped, id_vars=['Category'], 
@@ -48,16 +61,15 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
                                  'Avg Substitutions', 'Avg Edit Distance'])
 
     # Create the plot
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x='Category', y='value', hue='variable', data=melted)
+    plt.figure(figsize=(15, 8))
+    sns.barplot(x='Category', y='value', hue='variable', data=melted, order=order)
 
     plt.title('Average Error Counts and Edit Distance by Test Category')
     plt.xlabel('Test Category')
     plt.ylabel('Average Count')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(FIGURES_DIR / f'{model_name}_errors.png')
-    # plt.show()
+    plt.savefig(FIGURES_DIR / f'{model_name}_errors.png', dpi= 300, bbox_inches='tight')
 
 def confusion_matrix():
     pass

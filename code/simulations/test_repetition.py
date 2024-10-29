@@ -8,7 +8,7 @@ from Levenshtein import editops
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
 MODELS_DIR = FILE_DIR.parent.parent / "models"
-WEIGHTS_DIR = MODELS_DIR / "weights"
+WEIGHTS_DIR = MODELS_DIR.parent.parent / "weights"
 WEIGHTS_DIR.mkdir(exist_ok=True)
 sys.path.append(str(MODELS_DIR))
 
@@ -16,7 +16,7 @@ from DataGen import DataGen
 from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
 
-from utils import seed_everything, set_device, Timer
+from utils import seed_everything, set_device
 from plots import levenshtein_bar_graph
 
 seed_everything() 
@@ -51,8 +51,6 @@ def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
     decoder.load_state_dict(d)
 
     """ TESTING LOOP """
-    timer = Timer()
-    timer.start()
     predictions = []
     deletions = []
     insertions = []
@@ -92,13 +90,9 @@ def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
     D.test_data['Insertions'] = insertions
     D.test_data['Substitutions'] = substitutions
     D.test_data['Edit Distance'] = edit_distance
-    timer.stop("Testing")
 
     levenshtein_bar_graph(D.test_data, model)
     D.test_data.drop(columns=['Category'])
-
-    # Print timing summary
-    timer.summary()
 
     return D.test_data
 
