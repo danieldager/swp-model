@@ -61,13 +61,14 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
                                  'Avg Substitutions', 'Avg Edit Distance'])
 
     # Create the plot
-    plt.figure(figsize=(15, 8))
+    plt.figure(figsize=(14, 7))
     sns.barplot(x='Category', y='value', hue='variable', data=melted, order=order)
 
-    plt.title('Average Error Counts and Edit Distance by Test Category')
+    plt.title('Error Counts and Edit Distance by Test Category')
     plt.xlabel('Test Category')
     plt.ylabel('Average Count')
-    plt.legend()
+    plt.xticks(rotation=45, ha='right')
+    plt.legend(title='Error Type')
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / f'{model_name}_errors.png', dpi= 300, bbox_inches='tight')
 
