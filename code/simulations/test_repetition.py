@@ -45,8 +45,10 @@ def test_repetition(model: str, D: DataGen) -> pd.DataFrame:
     decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
 
     """ LOAD WEIGHTS """
-    encoder.load_state_dict(torch.load(WEIGHTS_DIR / f'encoder_{model}.pth'))
-    decoder.load_state_dict(torch.load(WEIGHTS_DIR / f'decoder_{model}.pth'))
+    e = torch.load(WEIGHTS_DIR / f'encoder_{model}.pth', map_location=device, weights_only=True)
+    d = torch.load(WEIGHTS_DIR / f'decoder_{model}.pth', map_location=device, weights_only=True)
+    encoder.load_state_dict(e)
+    decoder.load_state_dict(d)
 
     """ TESTING LOOP """
     timer = Timer()

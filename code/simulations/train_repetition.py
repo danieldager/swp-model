@@ -11,10 +11,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from Levenshtein import editops
 
+from test_repetition import test_repetition
+
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
 MODELS_DIR = FILE_DIR.parent.parent / "models"
-WEIGHTS_DIR = MODELS_DIR / "weights"
+WEIGHTS_DIR = MODELS_DIR.parent.parent / "weights"
 WEIGHTS_DIR.mkdir(exist_ok=True)
 sys.path.append(str(MODELS_DIR))
 
@@ -208,7 +210,7 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
     # Print timing summary
     timer.summary()
 
-    return D.test_data
+    return model, D.test_data
 
 if __name__ == "__main__":
     D = DataGen()
@@ -221,4 +223,7 @@ if __name__ == "__main__":
     print(f"Dropout       : {args.dropout}")
     print(f"Learning Rate : {args.l_rate}")
 
-    data = train_repetition(D, vars(args))
+    model, data = train_repetition(D, vars(args))
+
+    # Test the model
+    df = test_repetition(model, data)

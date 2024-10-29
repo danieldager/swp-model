@@ -28,5 +28,5 @@ python -m spacy download en_core_web_lg
 
 # launch your computation
 echo "computation start $(date)"
-python code/simulations/train_repetition.py
+python code/simulations/train_repetition.py --grid_search
 echo "computation end : $(date)"
