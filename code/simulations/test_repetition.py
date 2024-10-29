@@ -19,7 +19,6 @@ from DecoderRNN import DecoderRNN
 from utils import seed_everything, set_device
 from plots import levenshtein_bar_graph
 
-seed_everything() 
 device = set_device()
 
 """ COMMAND LINE INTERFACE """
@@ -99,5 +98,6 @@ def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
 if __name__ == "__main__":
     D = DataGen()
     args = parse_args()
+    seed_everything()
     test_repetition(args.name, D)
     

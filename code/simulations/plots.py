@@ -72,5 +72,82 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / f'{model_name}_errors.png', dpi= 300, bbox_inches='tight')
 
+
+def parametric_plots(df: pd.DataFrame, model_name: str):
+    plt.style.use('seaborn')  # For better-looking plots
+    
+    # Create figure with two subplots side by side
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Create dataset split column
+    df['Dataset'] = df['Split'].map({'train': 'Training', 'test': 'Test'})
+    
+    # Plot 1: Length vs Edit Distance
+    # --------------------------------
+    
+    # Calculate mean edit distance grouped by length, lexicality, complexity, and dataset
+    length_grouped = df.groupby(['Length', 'Lexicality', 'Morph Complexity', 'Dataset'])['Edit Distance'].mean().reset_index()
+    
+    # Plot for real words
+    real_data = length_grouped[length_grouped['Lexicality'] == 'real']
+    for dataset in ['Training', 'Test']:
+        for complexity in real_data['Morph Complexity'].unique():
+            mask = (real_data['Dataset'] == dataset) & (real_data['Morph Complexity'] == complexity)
+            linestyle = '-' if dataset == 'Training' else '--'
+            ax1.plot(real_data[mask]['Length'], 
+                    real_data[mask]['Edit Distance'],
+                    linestyle=linestyle,
+                    marker='o',
+                    label=f'Real {complexity} ({dataset})')
+    
+    # Plot for pseudo words
+    pseudo_data = length_grouped[length_grouped['Lexicality'] == 'pseudo']
+    for dataset in ['Training', 'Test']:
+        mask = pseudo_data['Dataset'] == dataset
+        linestyle = '-' if dataset == 'Training' else '--'
+        ax1.plot(pseudo_data[mask]['Length'],
+                pseudo_data[mask]['Edit Distance'],
+                linestyle=linestyle,
+                marker='s',  # Different marker for pseudo
+                label=f'Pseudo ({dataset})')
+    
+    ax1.set_xlabel('Word Length')
+    ax1.set_ylabel('Average Edit Distance')
+    ax1.set_title('Edit Distance vs. Word Length')
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax1.grid(True, alpha=0.3)
+    
+    # Plot 2: Zipf Frequency vs Edit Distance (real words only)
+    # ------------------------------------------------------
+    
+    # Filter for real words and group by frequency
+    real_df = df[df['Lexicality'] == 'real']
+    freq_grouped = real_df.groupby(['Zipf Frequency', 'Morph Complexity', 'Dataset'])['Edit Distance'].mean().reset_index()
+    
+    for dataset in ['Training', 'Test']:
+        for complexity in freq_grouped['Morph Complexity'].unique():
+            mask = (freq_grouped['Dataset'] == dataset) & (freq_grouped['Morph Complexity'] == complexity)
+            linestyle = '-' if dataset == 'Training' else '--'
+            ax2.plot(freq_grouped[mask]['Zipf Frequency'],
+                    freq_grouped[mask]['Edit Distance'],
+                    linestyle=linestyle,
+                    marker='o',
+                    label=f'{complexity} ({dataset})')
+    
+    ax2.set_xlabel('Zipf Frequency')
+    ax2.set_ylabel('Average Edit Distance')
+    ax2.set_title('Edit Distance vs. Zipf Frequency\n(Real Words Only)')
+    ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax2.grid(True, alpha=0.3)
+    
+    # Adjust layout and save
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / f'{model_name}_parametric_plots.png', 
+                bbox_inches='tight', 
+                dpi=300)
+    # plt.show()
+    plt.close()
+
+
 def confusion_matrix():
     pass

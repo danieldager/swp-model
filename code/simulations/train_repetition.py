@@ -27,7 +27,6 @@ from DecoderRNN import DecoderRNN
 from utils import seed_everything, set_device, Timer
 from plots import training_curves
 
-seed_everything()
 device = set_device()
 
 """ HYPERPARAMETERS """
@@ -223,6 +222,7 @@ if __name__ == "__main__":
     print(f"Dropout       : {args.dropout}")
     print(f"Learning Rate : {args.l_rate}")
 
+    seed_everything()
     model = train_repetition(D, vars(args))
 
     # Test the model
