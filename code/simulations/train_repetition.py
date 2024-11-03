@@ -20,7 +20,6 @@ from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
 
 from plots import training_curves
-from test_repetition import test_repetition
 from utils import seed_everything, set_device, Timer
 
 device = set_device()

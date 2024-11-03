@@ -2,13 +2,16 @@
 #SBATCH --job-name=swpm-seq2seq       # Job name
 #SBATCH --partition=gpu               # Take a node from the 'gpu' partition
 #SBATCH --export=ALL                  # Export your environment to the compute node
-#SBATCH --cpus-per-task=4             # Ask for 4 CPU cores
+#SBATCH --cpus-per-task=2             # Ask for 2 CPU cores
 #SBATCH --gres=gpu:A40:1              # Ask for 1 GPUs
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=2:00:00                # Time limit hrs:min:sec
-#SBATCH --output=%x-%j.log            # Standard output and error log
+#SBATCH --output=logs/%j.log          # Standard output and error log
 
 echo "Running job on $(hostname)"
+
+# Create logs directory if it doesn't exist
+mkdir -p logs
 
 # create execution environment
 module purge                        
@@ -23,7 +26,13 @@ fi
 # activate environment and install dependencies
 conda activate swpm
 pip install -r requirements.txt --quiet
-python -m spacy download en_core_web_lg
+
+# check if spacy model is already installed
+if ! python -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
+    python -m spacy download en_core_web_lg
+else
+    echo "SpaCy model already installed, skipping download"
+fi
 
 # print environment information
 echo "python: $(which python)"
@@ -43,5 +52,5 @@ python code/simulations/train_repetition.py \
     --n_layers "$N_LAYERS" \
     --dropout "$DROPOUT" \
     --l_rate "$L_RATE"
-    
+
 echo "computation end : $(date)"

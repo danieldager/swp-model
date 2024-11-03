@@ -33,3 +33,6 @@ for h_size in "${h_sizes[@]}"; do
 done
 
 echo "All jobs submitted! Total combinations: $total"
+
+# scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/weights ~/Desktop/single-word-processing-model/weights
+# scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/figures ~/Desktop/single-word-processing-model/figures

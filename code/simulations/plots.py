@@ -15,10 +15,13 @@ def training_curves(train_losses: list, valid_losses: list, model: str, num_epoc
     MODEL_FIGURES_DIR = FIGURES_DIR / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
 
+    # Extract parameters from the model name
+    h, l, d, r = [p[1:] for p in model.split('_')[1:]]
+
     plt.figure(figsize=(10, 6))
     sns.lineplot(x=range(1, num_epochs + 1), y=train_losses, label='Training')
     sns.lineplot(x=range(1, num_epochs + 1), y=valid_losses, label='Validation')
-    plt.title(f'Training and Validation Loss Over Epochs')
+    plt.title(f'Model: Hidden={h}, Layers={l}, Dropout={d}, LR={r}')
     plt.xlabel('Epoch')
     plt.ylabel('Cross Entropy Loss')
     plt.legend()

@@ -21,10 +21,11 @@ from plots import errors_bar_chart
 
 device = set_device()
 
-""" COMMAND LINE INTERFACE """
+""" ARGUMENT PARSING """
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('name', type=str)
+    parser.add_argument('--name', type=str)
+    parser.add_argument('--epoch', type=int, default=None)
     args = parser.parse_args()
     print(f"Testing model: {args.name}")
     return args
