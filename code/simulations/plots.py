@@ -10,7 +10,11 @@ ROOT_DIR = FILE_DIR.parent.parent.parent
 FIGURES_DIR = ROOT_DIR / "figures"
 FIGURES_DIR.mkdir(exist_ok=True)
 
-def training_curves(train_losses:list, valid_losses:list, model:str, num_epochs:int):
+def training_curves(train_losses: list, valid_losses: list, model: str, num_epochs: int):
+    # Create a directory for the model's figures
+    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
+
     plt.figure(figsize=(10, 6))
     sns.lineplot(x=range(1, num_epochs + 1), y=train_losses, label='Training')
     sns.lineplot(x=range(1, num_epochs + 1), y=valid_losses, label='Validation')
@@ -19,11 +23,19 @@ def training_curves(train_losses:list, valid_losses:list, model:str, num_epochs:
     plt.ylabel('Cross Entropy Loss')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(FIGURES_DIR / f"{model}_loss.png", dpi= 300, bbox_inches='tight')
+    save_path = MODEL_FIGURES_DIR / 'training_curves.png'
+    plt.savefig(save_path, dpi= 300, bbox_inches='tight')
 
 
 # Plot the operations and total distance for each word category
-def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
+def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
+    # Create a copy of the DataFrame
+    df = df.copy()
+
+    # Create a directory for the model's figures
+    if epoch:
+        MODEL_FIGS = FIGURES_DIR / model_name
+        MODEL_FIGS.mkdir(exist_ok=True)
     
     # Function to calculate average operations and total distance
     def calc_averages(group):
@@ -36,8 +48,8 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
 
     # Create a category column
     df['Category'] = df.apply(lambda row: 
-        f"pseudo {row['Size']}" if row['Lexicality'] == 'pseudo' else
-        f"real {row['Size']} {row['Frequency']} {row['Morph Complexity']}", axis=1)
+        f"pseudo {row['Size']} {row['Morphology']}" if row['Lexicality'] == 'pseudo' 
+        else f"real {row['Size']} {row['Frequency']} {row['Morphology']}", axis=1)
 
     # Group by the new category and calculate averages
     grouped = df.groupby('Category').apply(calc_averages).reset_index()
@@ -45,12 +57,14 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
     # Sort the categories in a meaningful order
     order = []
     for size in ['short', 'long']:
-        # Add pseudo categories first
-        order.append(f'pseudo {size}')
+        # Add pseudo categories for each morphology type
+        for morphology in df[df['Lexicality'] == 'pseudo']['Morphology'].unique():
+            order.append(f'pseudo {size} {morphology}')
         # Then add real categories
-        for complexity in df['Morph Complexity'].unique():
+        for morphology in df[df['Lexicality'] == 'real']['Morphology'].unique():
             for freq in df['Frequency'].unique():
-                order.append(f'real {size} {freq} {complexity}')
+                order.append(f'real {size} {freq} {morphology}')
+
     
     # Filter category order to only include categories that exist in the data
     order = [cat for cat in order if cat in grouped['Category'].unique()]
@@ -70,84 +84,95 @@ def levenshtein_bar_graph(df: pd.DataFrame, model_name: str):
     plt.xticks(rotation=45, ha='right')
     plt.legend(title='Error Type')
     plt.tight_layout()
-    plt.savefig(FIGURES_DIR / f'{model_name}_errors.png', dpi= 300, bbox_inches='tight')
+
+    if epoch: file = MODEL_FIGS / f'errors{epoch}.png'
+    else: file = MODEL_FIGS / 'errors.png'
+    plt.savefig(file, dpi= 300, bbox_inches='tight')
 
 
-def parametric_plots(df: pd.DataFrame, model_name: str):
-    plt.style.use('seaborn')  # For better-looking plots
+def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
+    if epoch:
+        MODEL_FIGS = FIGURES_DIR / model_name
+        MODEL_FIGS.mkdir(exist_ok=True)
+
+    # Set seaborn style
+    sns.set_style("whitegrid")
     
-    # Create figure with two subplots side by side
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    # Create figure with two subplots stacked vertically
+    # Increased height (15) and reduced width (8) for vertical stacking
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 7))
     
-    # Create dataset split column
-    df['Dataset'] = df['Split'].map({'train': 'Training', 'test': 'Test'})
+    # Check if Split column exists, if not assume it's all test data
+    if 'Split' in df.columns:
+        df['Dataset'] = df['Split'].map({'train': 'Training', 'test': 'Test'})
+    else:
+        df['Dataset'] = 'Test'  # Assume it's all test data
     
-    # Plot 1: Length vs Edit Distance
-    # --------------------------------
-    
+    """ LENGTH VS EDIT DISTANCE """
     # Calculate mean edit distance grouped by length, lexicality, complexity, and dataset
-    length_grouped = df.groupby(['Length', 'Lexicality', 'Morph Complexity', 'Dataset'])['Edit Distance'].mean().reset_index()
+    length_grouped = df.groupby(
+        ['Length', 'Lexicality', 'Morphology', 'Dataset']
+        )['Edit Distance'].mean().reset_index()
     
-    # Plot for real words
-    real_data = length_grouped[length_grouped['Lexicality'] == 'real']
-    for dataset in ['Training', 'Test']:
-        for complexity in real_data['Morph Complexity'].unique():
-            mask = (real_data['Dataset'] == dataset) & (real_data['Morph Complexity'] == complexity)
-            linestyle = '-' if dataset == 'Training' else '--'
-            ax1.plot(real_data[mask]['Length'], 
-                    real_data[mask]['Edit Distance'],
-                    linestyle=linestyle,
-                    marker='o',
-                    label=f'Real {complexity} ({dataset})')
+    # Use seaborn color palette
+    colors = {'real simple': sns.color_palette()[0], 
+              'real complex': sns.color_palette()[1], 
+              'pseudo simple': sns.color_palette()[2],
+              'pseudo complex': sns.color_palette()[3],
+    }
     
-    # Plot for pseudo words
-    pseudo_data = length_grouped[length_grouped['Lexicality'] == 'pseudo']
-    for dataset in ['Training', 'Test']:
-        mask = pseudo_data['Dataset'] == dataset
-        linestyle = '-' if dataset == 'Training' else '--'
-        ax1.plot(pseudo_data[mask]['Length'],
-                pseudo_data[mask]['Edit Distance'],
-                linestyle=linestyle,
-                marker='s',  # Different marker for pseudo
-                label=f'Pseudo ({dataset})')
+    # Plot for all categories
+    for dataset in length_grouped['Dataset'].unique():
+        for lexicality in length_grouped['Lexicality'].unique():
+            for morphology in length_grouped['Morphology'].unique():
+                
+                mask = ((length_grouped['Dataset'] == dataset) & 
+                       (length_grouped['Lexicality'] == lexicality) & 
+                       (length_grouped['Morphology'] == morphology))
+                linestyle = '-' if dataset == 'Training' else '--'
+                color = colors[morphology] if lexicality == 'real' else colors['pseudo']
+                marker = 'o' if lexicality == 'real' else 's'
+                
+                ax1.plot(length_grouped[mask]['Length'], 
+                         length_grouped[mask]['Edit Distance'],
+                         color=color,
+                         marker=marker,
+                         linestyle=linestyle,
+                         label=f"{lexicality} {morphology} ({dataset})")
     
     ax1.set_xlabel('Word Length')
     ax1.set_ylabel('Average Edit Distance')
     ax1.set_title('Edit Distance vs. Word Length')
-    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    ax1.grid(True, alpha=0.3)
+    ax1.legend(loc='best')
     
-    # Plot 2: Zipf Frequency vs Edit Distance (real words only)
-    # ------------------------------------------------------
-    
+    """ FREQUENCY VS EDIT DISTANCE """    
     # Filter for real words and group by frequency
     real_df = df[df['Lexicality'] == 'real']
-    freq_grouped = real_df.groupby(['Zipf Frequency', 'Morph Complexity', 'Dataset'])['Edit Distance'].mean().reset_index()
+    freq_grouped = real_df.groupby(['Zipf Frequency', 'Morphology', 'Dataset'])['Edit Distance'].mean().reset_index()
     
-    for dataset in ['Training', 'Test']:
-        for complexity in freq_grouped['Morph Complexity'].unique():
-            mask = (freq_grouped['Dataset'] == dataset) & (freq_grouped['Morph Complexity'] == complexity)
+    for dataset in freq_grouped['Dataset'].unique():
+        for complexity in freq_grouped['Morphology'].unique():
+            
+            mask = ((freq_grouped['Dataset'] == dataset) & 
+                    (freq_grouped['Morphology'] == complexity))
             linestyle = '-' if dataset == 'Training' else '--'
+            
             ax2.plot(freq_grouped[mask]['Zipf Frequency'],
-                    freq_grouped[mask]['Edit Distance'],
-                    linestyle=linestyle,
-                    marker='o',
-                    label=f'{complexity} ({dataset})')
+                     freq_grouped[mask]['Edit Distance'],
+                     marker='o',
+                     linestyle=linestyle,
+                     color=colors[complexity],
+                     label=f'{complexity} ({dataset})')
     
     ax2.set_xlabel('Zipf Frequency')
     ax2.set_ylabel('Average Edit Distance')
-    ax2.set_title('Edit Distance vs. Zipf Frequency\n(Real Words Only)')
-    ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    ax2.grid(True, alpha=0.3)
-    
-    # Adjust layout and save
+    ax2.set_title('Edit Distance vs. Zipf Frequency')
+    ax2.legend(loc='best')
     plt.tight_layout()
-    plt.savefig(FIGURES_DIR / f'{model_name}_parametric_plots.png', 
-                bbox_inches='tight', 
-                dpi=300)
-    # plt.show()
-    plt.close()
 
+    if epoch: file = MODEL_FIGS / f'parametric{epoch}.png'
+    else: file = FIGURES_DIR / f'{model_name}_parametric_plots.png'
+    plt.savefig(file, dpi= 300, bbox_inches='tight')
 
 def confusion_matrix():
     pass

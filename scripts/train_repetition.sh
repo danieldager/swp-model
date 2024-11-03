@@ -37,5 +37,11 @@ export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
 # launch your computation
 echo "computation start $(date)"
-python code/simulations/train_repetition.py --grid_search
+
+python code/simulations/train_repetition.py \
+    --h_size "$H_SIZE" \
+    --n_layers "$N_LAYERS" \
+    --dropout "$DROPOUT" \
+    --l_rate "$L_RATE"
+    
 echo "computation end : $(date)"

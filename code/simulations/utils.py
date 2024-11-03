@@ -97,7 +97,7 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
         name_parts = file.stem.split('_')
         df = pd.read_csv(file)
         df['Lexicality'] = name_parts[1]
-        df['Morph Complexity'] = name_parts[-1]
+        df['Morphology'] = name_parts[-1]
         if real:
             df['Size'] = name_parts[3]
             df['Frequency'] = name_parts[2]
@@ -159,7 +159,7 @@ def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
 
     # NOTE: Very slow
     # Add Morphological data
-    # columns = ["Prefixes", "Roots", "Frequencies", "Suffixes", "Morpheme Count", "Morphology"]
+    # columns = ["Prefixes", "Roots", "Frequencies", "Suffixes", "Morpheme Count", "Structure"]
     # df[columns] = df['Word'].apply(lambda word: pd.Series(get_morphological_data(word)))
     
     return df
@@ -180,7 +180,7 @@ def get_test_data():
     # Rearrange columns
     columns = [
         "Word", "Size", "Length", "Frequency", "Zipf Frequency", 
-        "Morph Complexity", "Lexicality", "Part of Speech", "Phonemes"
+        "Morphology", "Lexicality", "Part of Speech", "Phonemes"
     ]
     dataframe = dataframe.reindex(columns=columns)
 

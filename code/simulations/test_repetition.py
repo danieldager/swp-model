@@ -12,28 +12,24 @@ WEIGHTS_DIR = MODELS_DIR.parent.parent / "weights"
 WEIGHTS_DIR.mkdir(exist_ok=True)
 sys.path.append(str(MODELS_DIR))
 
-from DataGen import DataGen
+from Phonemes import Phonemes
 from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
 
 from utils import seed_everything, set_device
-from plots import levenshtein_bar_graph
+from plots import errors_bar_chart
 
 device = set_device()
 
 """ COMMAND LINE INTERFACE """
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('name', type=str, help='The model to be tested')
+    parser.add_argument('name', type=str)
     args = parser.parse_args()
     print(f"Testing model: {args.name}")
     return args
 
-""" TESTING LOOP """
-def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
-    """ LOAD DATA """
-    _, _, test_dl, vocab_size, index_to_phoneme = D.dataloaders()
-    
+def load_model(model: str, vocab_size: int) -> tuple:    
     """ PARAMETERS """
     # Unpack parameters from model name
     h, l, d = [p[1:] for p in model.split('_')[1:-1]]
@@ -49,6 +45,18 @@ def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
     encoder.load_state_dict(e)
     decoder.load_state_dict(d)
 
+    model_dict = {'n': model, 'e': encoder, 'd': decoder, 'h': hidden_size}
+    return model_dict
+
+""" TESTING LOOP """
+def test_repetition(P: Phonemes, M: dict, epoch: int=None) -> pd.DataFrame:
+
+    """ UNPACK VARIABLES """
+    test_data = P.test_data
+    test_dataloader = P.test_dataloader
+    index_to_phone = P.index_to_phone
+    model, encoder, decoder, hidden_size = M['n'], M['e'], M['d'], M['h']
+
     """ TESTING LOOP """
     predictions = []
     deletions = []
@@ -59,7 +67,7 @@ def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
     encoder.eval()
     decoder.eval()
     with torch.no_grad():
-        for inputs, targets in test_dl:
+        for inputs, targets in test_dataloader:
             inputs = inputs.to(device)
             targets = targets.to(device)
             insertion, deletion, substitution = 0, 0, 0
@@ -82,22 +90,23 @@ def test_repetition(D: DataGen, model: str) -> pd.DataFrame:
             insertions.append(insertion)
             substitutions.append(substitution)
             edit_distance.append(len(ops))
-            predictions.append([index_to_phoneme[i] for i in prediction][:-1])
+            predictions.append([index_to_phone[i] for i in prediction][:-1])
 
-    D.test_data['Prediction'] = predictions
-    D.test_data['Deletions'] = deletions
-    D.test_data['Insertions'] = insertions
-    D.test_data['Substitutions'] = substitutions
-    D.test_data['Edit Distance'] = edit_distance
+    test_data['Prediction'] = predictions
+    test_data['Deletions'] = deletions
+    test_data['Insertions'] = insertions
+    test_data['Substitutions'] = substitutions
+    test_data['Edit Distance'] = edit_distance
 
-    levenshtein_bar_graph(D.test_data, model)
-    D.test_data.drop(columns=['Category'])
+    errors_bar_chart(test_data, model, epoch)
+    test_data.drop(columns=['Category'])
 
-    return D.test_data
+    return test_data
 
 if __name__ == "__main__":
-    D = DataGen()
-    args = parse_args()
     seed_everything()
-    test_repetition(args.name, D)
+    P = Phonemes()
+    args = parse_args()
+    model_dict = load_model(P, args.name)
+    test_data = test_repetition(P, model_dict)
     

@@ -7,50 +7,35 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-from Levenshtein import editops
-
-from test_repetition import test_repetition
-
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
-MODELS_DIR = FILE_DIR.parent.parent / "models"
-WEIGHTS_DIR = MODELS_DIR.parent.parent / "weights"
+ROOT_DIR = FILE_DIR.parent.parent.parent
+MODELS_DIR = ROOT_DIR / "code" / "models"
+WEIGHTS_DIR = ROOT_DIR / "weights"
 WEIGHTS_DIR.mkdir(exist_ok=True)
 sys.path.append(str(MODELS_DIR))
 
-from DataGen import DataGen
+from Phonemes import Phonemes
 from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
 
-from utils import seed_everything, set_device, Timer
 from plots import training_curves
+from test_repetition import test_repetition
+from utils import seed_everything, set_device, Timer
 
 device = set_device()
 
-""" HYPERPARAMETERS """
-def get_random_parameters():
-    """Generate random parameters within specified ranges."""
-    return {
-        'n_epochs' : random.choice([5, 10]),
-        'h_size'   : random.choice([1, 2, 4, 8]),
-        'n_layers' : random.choice([1, 2]),
-        'dropout'  : random.choice([0.0, 0.1, 0.2]),
-        'l_rate'   : random.choice([1e-1, 5e-2, 1e-2, 5e-3, 1e-1])
-    }
-
-""" COMMAND LINE INTERFACE """
+""" ARGUMENT PARSER """
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--grid_search',
-                       action='store_true',
-                       help='Select parameters from predefined ranges')
+    # parser.add_argument('--grid_search',
+    #                    action='store_true',
+    #                    help='Select parameters from predefined ranges')
     
     parser.add_argument('--n_epochs', 
                        type=int, 
-                       default=5,
+                       default=10,
                        help='Number of training epochs')
     
     parser.add_argument('--h_size', 
@@ -73,33 +58,57 @@ def parse_args():
                        default=0.001,
                        help='Learning rate')
     
-    args = parser.parse_args()
-
-    if args.grid_search:
-        random_params = get_random_parameters()
-        args.n_epochs = random_params['n_epochs']
-        args.h_size = random_params['h_size']
-        args.n_layers = random_params['n_layers']
-        args.dropout = random_params['dropout']
-        args.l_rate = random_params['l_rate']
-        
+    args = parser.parse_args() 
     return args
 
-""" TRAINING LOOP """
-def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
+# """ HYPERPARAMETERS """
+# def get_random_parameters():
+#     """Generate random parameters within specified ranges."""
+#     return {
+#         'n_epochs' : random.choice([10]),
+#         'h_size'   : random.choice([1, 2, 4, 8]),
+#         'n_layers' : random.choice([1, 2]),
+#         'dropout'  : random.choice([0.0, 0.1, 0.2]),
+#         'l_rate'   : random.choice([5e-2, 1e-2, 5e-3, 1e-3])
+#     }
 
-    """ LOAD DATA """
-    train_dl, valid_dl, _, vocab_size, _ = D.dataloaders()
+# def get_weights(model: str=None) -> dict:
+#     # If weights already exist, get new parameters
+#     while ((WEIGHTS_DIR / f'encoder_{model}.pth').exists() and 
+#            (WEIGHTS_DIR / f'decoder_{model}.pth').exists()):
+#         params = get_random_parameters()
+#         model = f'e{params["n_epochs"]}_h{params["h_size"]}'
+#         model += f'l{params["n_layers"]}_d{params["dropout"]}_r{params["l_rate"]}'
+    
+#     return params
+
+""" TRAINING LOOP """
+def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
+
+    """ LOAD VARIABLES """
+    vocab_size = P.vocab_size
+    train_dataloader = P.train_dataloader
+    valid_dataloader = P.valid_dataloader
 
     """ UNPACK PARAMETERS """
-    num_epochs     = args['n_epochs']
-    hidden_size    = args['h_size']
-    num_layers     = args['n_layers']
-    dropout        = args['dropout']
-    learning_rate  = args['l_rate']
+    num_epochs     = params['n_epochs']
+    hidden_size    = params['h_size']
+    num_layers     = params['n_layers']
+    dropout        = params['dropout']
+    learning_rate  = params['l_rate']
+
+    # Print hyperparameters
+    print(f"Training model with hyperparameters:")
+    print(f"Epochs:    {num_epochs}")
+    print(f"Hidden:    {hidden_size}")
+    print(f"Layers:    {num_layers}")
+    print(f"Dropout:   {dropout}")
+    print(f"Learning:  {learning_rate}")
 
     """ INITIALIZE MODEL """
     model = f'e{num_epochs}_h{hidden_size}_l{num_layers}_d{dropout}_r{learning_rate}'
+    MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
+    MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
  
     encoder = EncoderRNN(
         input_size=vocab_size, hidden_size=hidden_size,
@@ -134,8 +143,8 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
         train_loss = 0
 
         timer.start()
-        for i, (inputs, targets) in enumerate(train_dl):
-            print(f"Batch {i+1}/{len(train_dl)}", end='\r')
+        for i, (inputs, targets) in enumerate(train_dataloader):
+            print(f"{i+1}/{len(train_dataloader)}", end='\r')
 
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -166,7 +175,7 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
 
             train_loss += loss.item()
     
-        train_loss /= len(train_dl)
+        train_loss /= len(train_dataloader)
         train_losses.append(train_loss)
 
         """ VALIDATION LOOP """
@@ -176,7 +185,7 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
         valid_loss = 0
 
         with torch.no_grad():
-            for inputs, targets in valid_dl:
+            for inputs, targets in valid_dataloader:
                 inputs = inputs.to(device)
                 targets = targets.to(device)
 
@@ -189,7 +198,7 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
                 loss = criterion(outputs, targets)
                 valid_loss += loss.item()
 
-        valid_loss /= len(valid_dl)
+        valid_loss /= len(valid_dataloader)
         valid_losses.append(valid_loss)
         timer.stop("Validation")
 
@@ -199,12 +208,21 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
         log += f"Valid: {valid_loss:.3f} Time: {epoch_time:.2f}s"
         print(log)
 
+        """ CHECKPOINT """
+        # Save model weights for every epoch
+        encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch+1}.pth"
+        decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch+1}.pth"
+        torch.save(encoder.state_dict(), encoder_path)
+        torch.save(decoder.state_dict(), decoder_path)
+
     """ PLOT LOSS """
     training_curves(train_losses, valid_losses, model, num_epochs)
 
     """ SAVE MODEL """
-    torch.save(encoder.state_dict(), WEIGHTS_DIR / f"encoder_{model}.pth")
-    torch.save(decoder.state_dict(), WEIGHTS_DIR / f"decoder_{model}.pth")
+    encoder_path = MODEL_WEIGHTS_DIR / f"encoder_{model}.pth"
+    decoder_path = MODEL_WEIGHTS_DIR / f"decoder_{model}.pth"
+    torch.save(encoder.state_dict(), encoder_path)
+    torch.save(decoder.state_dict(), decoder_path)
 
     # Print timing summary
     timer.summary()
@@ -212,18 +230,18 @@ def train_repetition(D:DataGen, args: dict, plot: bool=False) -> pd.DataFrame:
     return model
 
 if __name__ == "__main__":
-    D = DataGen()
-
-    args = parse_args()
-    print(f"Running with parameters:")
-    print(f"Num Epochs    : {args.n_epochs}")
-    print(f"Hidden Size   : {args.h_size}")
-    print(f"Num Layers    : {args.n_layers}")
-    print(f"Dropout       : {args.dropout}")
-    print(f"Learning Rate : {args.l_rate}")
-
     seed_everything()
-    model = train_repetition(D, vars(args))
+    P = Phonemes()
+    args = parse_args()
+    parameters = vars(args)
 
-    # Test the model
-    df = test_repetition(D, model)
+    # # Grid search generates random parameters
+    # if args.grid_search: params = get_weights()
+    # Otherwise, use the default parameters
+    # else: params = vars(args)
+    
+    # Train the model
+    train_repetition(P, parameters)
+
+    # # Test the model
+    # df = test_repetition(P, model)
