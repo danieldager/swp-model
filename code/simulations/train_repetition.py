@@ -1,6 +1,7 @@
-import sys, time
+import sys
+import time
+import argparse
 import pandas as pd
-import random, argparse
 from pathlib import Path
 
 import torch
@@ -27,10 +28,6 @@ device = set_device()
 """ ARGUMENT PARSER """
 def parse_args():
     parser = argparse.ArgumentParser()
-
-    # parser.add_argument('--grid_search',
-    #                    action='store_true',
-    #                    help='Select parameters from predefined ranges')
     
     parser.add_argument('--n_epochs', 
                        type=int, 
@@ -59,27 +56,6 @@ def parse_args():
     
     args = parser.parse_args() 
     return args
-
-# """ HYPERPARAMETERS """
-# def get_random_parameters():
-#     """Generate random parameters within specified ranges."""
-#     return {
-#         'n_epochs' : random.choice([10]),
-#         'h_size'   : random.choice([1, 2, 4, 8]),
-#         'n_layers' : random.choice([1, 2]),
-#         'dropout'  : random.choice([0.0, 0.1, 0.2]),
-#         'l_rate'   : random.choice([5e-2, 1e-2, 5e-3, 1e-3])
-#     }
-
-# def get_weights(model: str=None) -> dict:
-#     # If weights already exist, get new parameters
-#     while ((WEIGHTS_DIR / f'encoder_{model}.pth').exists() and 
-#            (WEIGHTS_DIR / f'decoder_{model}.pth').exists()):
-#         params = get_random_parameters()
-#         model = f'e{params["n_epochs"]}_h{params["h_size"]}'
-#         model += f'l{params["n_layers"]}_d{params["dropout"]}_r{params["l_rate"]}'
-    
-#     return params
 
 """ TRAINING LOOP """
 def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
@@ -207,7 +183,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         log += f"Valid: {valid_loss:.3f} Time: {epoch_time:.2f}s"
         print(log)
 
-        """ CHECKPOINT """
+        """ CHECKPOINTS """
         # Save model weights for every epoch
         encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch+1}.pth"
         decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch+1}.pth"
@@ -216,12 +192,6 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
     """ PLOT LOSS """
     training_curves(train_losses, valid_losses, model, num_epochs)
-
-    """ SAVE MODEL """
-    encoder_path = MODEL_WEIGHTS_DIR / f"encoder_{model}.pth"
-    decoder_path = MODEL_WEIGHTS_DIR / f"decoder_{model}.pth"
-    torch.save(encoder.state_dict(), encoder_path)
-    torch.save(decoder.state_dict(), decoder_path)
 
     # Print timing summary
     timer.summary()
@@ -233,14 +203,4 @@ if __name__ == "__main__":
     P = Phonemes()
     args = parse_args()
     parameters = vars(args)
-
-    # # Grid search generates random parameters
-    # if args.grid_search: params = get_weights()
-    # Otherwise, use the default parameters
-    # else: params = vars(args)
-    
-    # Train the model
     train_repetition(P, parameters)
-
-    # # Test the model
-    # df = test_repetition(P, model)

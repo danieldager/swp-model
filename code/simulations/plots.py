@@ -10,6 +10,7 @@ ROOT_DIR = FILE_DIR.parent.parent.parent
 FIGURES_DIR = ROOT_DIR / "figures"
 FIGURES_DIR.mkdir(exist_ok=True)
 
+# Plot the training and validation loss curves
 def training_curves(train_losses: list, valid_losses: list, model: str, num_epochs: int):
     # Create a directory for the model's figures
     MODEL_FIGURES_DIR = FIGURES_DIR / model
@@ -29,16 +30,12 @@ def training_curves(train_losses: list, valid_losses: list, model: str, num_epoc
     save_path = MODEL_FIGURES_DIR / 'training_curves.png'
     plt.savefig(save_path, dpi= 300, bbox_inches='tight')
 
-
-# Plot the operations and total distance for each word category
+# Plot the edit operations and distance for each test category
 def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
-    # Create a copy of the DataFrame
-    df = df.copy()
-
     # Create a directory for the model's figures
     if epoch:
-        MODEL_FIGS = FIGURES_DIR / model_name
-        MODEL_FIGS.mkdir(exist_ok=True)
+        MODEL_FIGURES_DIR = FIGURES_DIR / model_name
+        MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     
     # Function to calculate average operations and total distance
     def calc_averages(group):
@@ -88,15 +85,15 @@ def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
     plt.legend(title='Error Type')
     plt.tight_layout()
 
-    if epoch: file = MODEL_FIGS / f'errors{epoch}.png'
-    else: file = MODEL_FIGS / 'errors.png'
+    if epoch: file = MODEL_FIGURES_DIR / f'errors{epoch}.png'
+    else: file = MODEL_FIGURES_DIR / 'errors.png'
     plt.savefig(file, dpi= 300, bbox_inches='tight')
 
 
 def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
     if epoch:
-        MODEL_FIGS = FIGURES_DIR / model_name
-        MODEL_FIGS.mkdir(exist_ok=True)
+        MODEL_FIGURES_DIR = FIGURES_DIR / model_name
+        MODEL_FIGURES_DIR.mkdir(exist_ok=True)
 
     # Set seaborn style
     sns.set_style("whitegrid")
@@ -118,12 +115,17 @@ def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
         )['Edit Distance'].mean().reset_index()
     
     # Use seaborn color palette
-    colors = {'real simple': sns.color_palette()[0], 
-              'real complex': sns.color_palette()[1], 
-              'pseudo simple': sns.color_palette()[2],
-              'pseudo complex': sns.color_palette()[3],
+    colors = {
+        'real': {
+            'simple': sns.color_palette()[0],
+            'complex': sns.color_palette()[1]
+        },
+        'pseudo': {
+            'simple': sns.color_palette()[2],
+            'complex': sns.color_palette()[3]
+        }
     }
-    
+
     # Plot for all categories
     for dataset in length_grouped['Dataset'].unique():
         for lexicality in length_grouped['Lexicality'].unique():
@@ -133,7 +135,8 @@ def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
                        (length_grouped['Lexicality'] == lexicality) & 
                        (length_grouped['Morphology'] == morphology))
                 linestyle = '-' if dataset == 'Training' else '--'
-                color = colors[morphology] if lexicality == 'real' else colors['pseudo']
+
+                color = colors[lexicality][morphology]
                 marker = 'o' if lexicality == 'real' else 's'
                 
                 ax1.plot(length_grouped[mask]['Length'], 
@@ -164,7 +167,7 @@ def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
                      freq_grouped[mask]['Edit Distance'],
                      marker='o',
                      linestyle=linestyle,
-                     color=colors[complexity],
+                     color=colors[lexicality][complexity],
                      label=f'{complexity} ({dataset})')
     
     ax2.set_xlabel('Zipf Frequency')
@@ -173,8 +176,8 @@ def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
     ax2.legend(loc='best')
     plt.tight_layout()
 
-    if epoch: file = MODEL_FIGS / f'parametric{epoch}.png'
-    else: file = FIGURES_DIR / f'{model_name}_parametric_plots.png'
+    if epoch: file = MODEL_FIGURES_DIR / f'parametric{epoch}.png'
+    else: file = MODEL_FIGURES_DIR / 'parametric.png'
     plt.savefig(file, dpi= 300, bbox_inches='tight')
 
 def confusion_matrix():
