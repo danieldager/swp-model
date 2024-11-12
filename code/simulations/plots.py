@@ -3,6 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from pathlib import Path
+from typing import Optional
 
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
@@ -31,11 +32,10 @@ def training_curves(train_losses: list, valid_losses: list, model: str, num_epoc
     plt.savefig(save_path, dpi= 300, bbox_inches='tight')
 
 # Plot the edit operations and distance for each test category
-def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
+def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: Optional[int] = None) -> None:
     # Create a directory for the model's figures
-    if epoch:
-        MODEL_FIGURES_DIR = FIGURES_DIR / model_name
-        MODEL_FIGURES_DIR.mkdir(exist_ok=True)
+    MODEL_FIGURES_DIR = FIGURES_DIR / model_name
+    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     
     # Function to calculate average operations and total distance
     def calc_averages(group):
@@ -45,6 +45,9 @@ def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
             'Avg Substitutions': group['Substitutions'].mean(),
             'Avg Edit Distance': group['Edit Distance'].mean()
         })
+    
+    # Copy the df to avoid modifying the original
+    df = df.copy()
 
     # Create a category column
     df['Category'] = df.apply(lambda row: 
@@ -65,7 +68,6 @@ def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
             for freq in df['Frequency'].unique():
                 order.append(f'real {size} {freq} {morphology}')
 
-    
     # Filter category order to only include categories that exist in the data
     order = [cat for cat in order if cat in grouped['Category'].unique()]
 
@@ -88,97 +90,91 @@ def errors_bar_chart(df: pd.DataFrame, model_name: str, epoch: int):
     if epoch: file = MODEL_FIGURES_DIR / f'errors{epoch}.png'
     else: file = MODEL_FIGURES_DIR / 'errors.png'
     plt.savefig(file, dpi= 300, bbox_inches='tight')
+    plt.close()
 
-
-def parametric_plots(df: pd.DataFrame, model_name: str, epoch: int):
-    if epoch:
-        MODEL_FIGURES_DIR = FIGURES_DIR / model_name
-        MODEL_FIGURES_DIR.mkdir(exist_ok=True)
-
-    # Set seaborn style
-    sns.set_style("whitegrid")
+# Plot the edit operations and distance for each test category
+def parametric_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None, num_bins: int = 10) -> None:
+    """
+    Create parametric plots showing edit distance versus word length and
+    average edit distance versus word frequency.
+    """
+    # Create a directory for the model's figures
+    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     
-    # Create figure with two subplots stacked vertically
-    # Increased height (15) and reduced width (8) for vertical stacking
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 7))
-    
-    # Check if Split column exists, if not assume it's all test data
+    # Prepare data
+    df = df.copy()
     if 'Split' in df.columns:
-        df['Dataset'] = df['Split'].map({'train': 'Training', 'test': 'Test'})
+        df['Dataset'] = df['Split'].map(
+            {'train': 'Training', 'test': 'Test'},
+            na_value='Test'
+        )
     else:
-        df['Dataset'] = 'Test'  # Assume it's all test data
+        df['Dataset'] = 'Test'
     
-    """ LENGTH VS EDIT DISTANCE """
-    # Calculate mean edit distance grouped by length, lexicality, complexity, and dataset
-    length_grouped = df.groupby(
-        ['Length', 'Lexicality', 'Morphology', 'Dataset']
-        )['Edit Distance'].mean().reset_index()
+    # Create figure
+    fig, (length_ax, freq_ax) = plt.subplots(2, 1, figsize=(14, 7))
     
-    # Use seaborn color palette
-    colors = {
-        'real': {
-            'simple': sns.color_palette()[0],
-            'complex': sns.color_palette()[1]
-        },
-        'pseudo': {
-            'simple': sns.color_palette()[2],
-            'complex': sns.color_palette()[3]
-        }
-    }
+    # Plot 1: Length vs Edit Distance
+    sns.lineplot(
+        data=df,
+        x='Length',
+        y='Edit Distance',
+        hue='Lexicality',
+        style='Morphology',
+        dashes=[(None, None), (2, 2)],  # solid for simple, dashed for complex
+        markers=['o', 's'],  # circle for real, square for pseudo
+        estimator='mean',
+        errorbar=None,
+        ax=length_ax
+    )
+    
+    length_ax.set(
+        title='Edit Distance vs. Word Length',
+        xlabel='Word Length',
+        ylabel='Average Edit Distance'
+    )
+    
+    # Plot 2: Average Edit Distance vs Zipf Frequency (binned)
+    real_words = df[df['Lexicality'] == 'real'].copy()
+    real_words.loc[:, 'Frequency Bin'] = pd.cut(real_words['Zipf Frequency'], bins=num_bins)
+    
+    # Group by bins and calculate mean edit distance
+    binned_avg = real_words.groupby(
+        ['Frequency Bin', 'Morphology', 'Size'], observed=True)['Edit Distance'].mean().reset_index()
 
-    # Plot for all categories
-    for dataset in length_grouped['Dataset'].unique():
-        for lexicality in length_grouped['Lexicality'].unique():
-            for morphology in length_grouped['Morphology'].unique():
-                
-                mask = ((length_grouped['Dataset'] == dataset) & 
-                       (length_grouped['Lexicality'] == lexicality) & 
-                       (length_grouped['Morphology'] == morphology))
-                linestyle = '-' if dataset == 'Training' else '--'
+    # Format interval endpoints to rounded strings for better display
+    def format_interval(interval): return f"[{interval.left:.2f}, {interval.right:.2f})"
+    binned_avg['Frequency Bin'] = binned_avg['Frequency Bin'].apply(lambda x: format_interval(x))
 
-                color = colors[lexicality][morphology]
-                marker = 'o' if lexicality == 'real' else 's'
-                
-                ax1.plot(length_grouped[mask]['Length'], 
-                         length_grouped[mask]['Edit Distance'],
-                         color=color,
-                         marker=marker,
-                         linestyle=linestyle,
-                         label=f"{lexicality} {morphology} ({dataset})")
+    # Plot the average edit distance per bin
+    sns.lineplot(
+        data=binned_avg,
+        x='Frequency Bin',
+        y='Edit Distance',
+        hue='Morphology',
+        style='Size',
+        marker='o',
+        ax=freq_ax
+    )
+
+    # Remove legend titles for a cleaner look
+    if freq_ax.get_legend() is not None:
+        freq_ax.get_legend().set_title(None)
     
-    ax1.set_xlabel('Word Length')
-    ax1.set_ylabel('Average Edit Distance')
-    ax1.set_title('Edit Distance vs. Word Length')
-    ax1.legend(loc='best')
+    freq_ax.set(
+        title='Average Edit Distance vs. Zipf Frequency (Binned)',
+        xlabel='Zipf Frequency Bin',
+        ylabel='Average Edit Distance'
+    )
+    freq_ax.set_xticks(range(len(binned_avg)))
+    freq_ax.set_xticklabels(binned_avg['Frequency Bin'].astype(str), rotation=45, ha='right')
     
-    """ FREQUENCY VS EDIT DISTANCE """    
-    # Filter for real words and group by frequency
-    real_df = df[df['Lexicality'] == 'real']
-    freq_grouped = real_df.groupby(['Zipf Frequency', 'Morphology', 'Dataset'])['Edit Distance'].mean().reset_index()
-    
-    for dataset in freq_grouped['Dataset'].unique():
-        for complexity in freq_grouped['Morphology'].unique():
-            
-            mask = ((freq_grouped['Dataset'] == dataset) & 
-                    (freq_grouped['Morphology'] == complexity))
-            linestyle = '-' if dataset == 'Training' else '--'
-            
-            ax2.plot(freq_grouped[mask]['Zipf Frequency'],
-                     freq_grouped[mask]['Edit Distance'],
-                     marker='o',
-                     linestyle=linestyle,
-                     color=colors[lexicality][complexity],
-                     label=f'{complexity} ({dataset})')
-    
-    ax2.set_xlabel('Zipf Frequency')
-    ax2.set_ylabel('Average Edit Distance')
-    ax2.set_title('Edit Distance vs. Zipf Frequency')
-    ax2.legend(loc='best')
+    # Adjust layout and save
     plt.tight_layout()
-
-    if epoch: file = MODEL_FIGURES_DIR / f'parametric{epoch}.png'
-    else: file = MODEL_FIGURES_DIR / 'parametric.png'
-    plt.savefig(file, dpi= 300, bbox_inches='tight')
+    filename = f'parametric{epoch}.png' if epoch else 'parametric.png'
+    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches='tight')
+    plt.close()
 
 def confusion_matrix():
     pass

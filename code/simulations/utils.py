@@ -76,12 +76,10 @@ class Timer:
     def summary(self):
         print("\nTiming Summary:")
         print("-" * 60)
-        print(f"{'Operation':<30} {'Total Time (s)':<15} {'Avg Time (s)':<15}")
+        print(f"{'Operation':<30} {'Total (s)':<15}")
         print("-" * 60)
-        for name in self.times:
-            total = self.times[name]
-            avg = total / self.counts[name]
-            print(f"{name:<30} {total:>13.3f}s {avg:>13.3f}s")
+        for name in self.times: 
+            print(f"{name:<30} {self.times[name]:>13.3f}s")
 
 
 """ TEST SET PROCESSING """
@@ -188,20 +186,26 @@ def get_test_data():
     real_words = real_words[['Word', 'Phonemes']]
     pseudo_words = pseudo_words[['Word', 'Phonemes']]
     
-    return dataframe, real_words, pseudo_words
+    return dataframe, real_words["Word"].tolist()
 
 """ WORD SAMPLING """
 # Sample words for training and validation datasets
-# @timeit
-def sample_words(word_count: int, language='en', split=0.9, freq_threshold=0.5) -> list:    
+def sample_words(word_count: int, test_words: list, split=0.9, freq_threshold=0.95) -> list:    
     word_list = []
     freq_list = []
     total_freq = 0
 
-    for i, word in enumerate(iter_wordlist(language)):
+    for i, word in enumerate(iter_wordlist("en")):
         # Limit the number of words
-        if i >= word_count: break
-        freq = word_frequency(word, language)
+        if i >= 30000: break
+        # Skip any non-alphabetic words
+        if not word.isalpha(): continue
+        # Skip any words in the test set
+        if word in test_words: continue
+        # Skip any words that don't have vowels
+        if not any(char in 'aeiou' for char in word): continue
+
+        freq = word_frequency(word, "en")
         word_list.append(word)
         freq_list.append(freq)
         total_freq += freq
@@ -211,47 +215,30 @@ def sample_words(word_count: int, language='en', split=0.9, freq_threshold=0.5) 
 
     # Sort words by frequency (low to high)
     sorted_indices = np.argsort(freq_array)
-    sorted_words = [word_list[i] for i in sorted_indices]
     sorted_freqs = freq_array[sorted_indices]
-
-    # print(f"sorted indices: {sorted_indices[:10]}")
-    # print(f"sorted words: {sorted_words[:10]}")
-    # print(f"sorted freqs: {sorted_freqs[:10]}")
-
-    # Determine the index that separates low and high frequency words
-    lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_threshold)
-
-    # print(f"low frequency index: {lf_index}")
+    sorted_words = [word_list[i] for i in sorted_indices]
 
     # Sample training words
     train_count = int(word_count * split)
-    probs = freq_array / freq_array.sum()
-    indices = np.random.choice(len(sorted_words), train_count, replace=False, p=probs)
-    train_words = [sorted_words[i] for i in indices]
+    train_words = np.random.choice(sorted_words, train_count, p=sorted_freqs)
 
-    start = time.perf_counter()
-
-    # NOTE: Why is this so much slower than the previous step?
     # Sample validation words from low frequency words
     valid_count = word_count - train_count
+    
+    # Determine the index that separates low frequency words
+    lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_threshold)
+    
+    # Sample validation words from low frequency candidate words
     candidates = [w for i, w in enumerate(sorted_words) if i < lf_index and w not in train_words]
     valid_words = random.sample(candidates, min(valid_count, len(candidates)))
-
-    # print(f"Time to sample validation words: {time.perf_counter() - start:.2f} seconds")
-    # print(f"valid_words samples: {valid_words[:10]}")
-
-    # NOTE: Slow and probably unnecessary
-    # If we don't have enough low frequency words, sample from remaining words
-    # if len(valid_words) < valid_count:
-    #     remaining_words = [w for w in sorted_words if w not in train_words and w not in valid_words]
-    #     valid_words.extend(random.sample(remaining_words, valid_count - len(valid_words)))
-
-    # print(f'train_words: {len(train_words)}, valid_words: {len(valid_words)}')
 
     # Get phonemes for each word
     train_phonemes = [g2p(word) for word in train_words]
     valid_phonemes = [g2p(word) for word in valid_words]
-
-    # print(f"Time to get phonemes: {time.perf_counter() - start:.2f} seconds")
     
+    # start = time.perf_counter()
+    # print(f"{time.perf_counter() - start:.2f} seconds")
     return train_phonemes, valid_phonemes
+
+if __name__ == "__main__":
+    sample_words(50000)

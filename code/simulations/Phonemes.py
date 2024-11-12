@@ -33,22 +33,23 @@ class Phonemes():
         # Convert savepath to Path object if provided
         self.savepath = Path(savepath) if savepath else None
 
+        # Get test phonemes
+        self.test_data, self.real_words = get_test_data()
+
+        # Cache for train and validation phonemes
         train_cache = CACHE_DIR / "train_phonemes.json"
         valid_cache = CACHE_DIR / "valid_phonemes.json"
 
-        # Load train and validation phonemes from cache if available
+        # Load phonemes from cache if available
         if train_cache.exists() and valid_cache.exists():
             with train_cache.open('r') as f: self.train_phonemes = json.load(f)
             with valid_cache.open('r') as f: self.valid_phonemes = json.load(f)
 
-        # Otherwise, generate and save train and validation phonemes
+        # Otherwise, generate and save phonemes to cache
         else:
-            self.train_phonemes, self.valid_phonemes = sample_words(word_count)
+            self.train_phonemes, self.valid_phonemes = sample_words(word_count, self.real_words)
             with train_cache.open('w') as f: json.dump(self.train_phonemes, f)
             with valid_cache.open('w') as f: json.dump(self.valid_phonemes, f)
-
-        # Get test phonemes
-        self.test_data, self.real_words, self.pseudo_words = get_test_data()
 
         # Add stop token to phoneme sequences
         train_phonemes = [seq + ["<STOP>"] for seq in self.train_phonemes]

@@ -32,7 +32,6 @@ def parse_args():
 
 """ TESTING LOOP """
 def test_repetition(P: Phonemes, model_name: str) -> list:
-    """ UNPACK VARIABLES """
     # Unpack parameters from model name
     e, h, l, d = [p[1:] for p in model_name.split('_')[:-1]]
     num_epochs, hidden_size, num_layers, dropout = int(e), int(h), int(l), float(d)
@@ -43,8 +42,12 @@ def test_repetition(P: Phonemes, model_name: str) -> list:
     index_to_phone = P.index_to_phone
     test_dataloader = P.test_dataloader
 
+    # Add checkpoints for proper iteration
+    checkpoints = [f"1_{i}" for i in range(1, 11)]
+    epochs = checkpoints + list(range(2, num_epochs + 1))
+
     dataframes = []
-    for epoch in range(1, num_epochs + 1):
+    for epoch in epochs:
 
         """ LOAD MODEL """
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model_name
@@ -97,9 +100,7 @@ def test_repetition(P: Phonemes, model_name: str) -> list:
         test_data['Substitutions'] = substitutions
         test_data['Edit Distance'] = edit_distance
 
-
         errors_bar_chart(test_data, model_name, epoch)
-        test_data.drop(columns=['Category'])
         parametric_plots(test_data, model_name, epoch)
         dataframes.append(test_data)
     

@@ -57,6 +57,14 @@ def parse_args():
     args = parser.parse_args() 
     return args
 
+""" CHECKPOINTING """
+def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
+    if checkpoint: epoch = f"{epoch}_{checkpoint}"
+    encoder_path = filepath / f"encoder{epoch}.pth"
+    decoder_path = filepath / f"decoder{epoch}.pth"
+    torch.save(encoder.state_dict(), encoder_path)
+    torch.save(decoder.state_dict(), decoder_path)
+
 """ TRAINING LOOP """
 def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
@@ -110,15 +118,18 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     epoch_times = []
     timer = Timer()
 
-    for epoch in range(num_epochs):
-        print(f"Epoch {epoch+1}/{num_epochs}")
-        epoch_start = time.time()
+    for epoch in range(1, num_epochs+1):
+        print(f"Epoch {epoch}")
+        
+        train_loss = 0
         encoder.train()
         decoder.train()
-        train_loss = 0
+        epoch_start = time.time()
+        if epoch == 1: checkpoint = 1
 
         timer.start()
         for i, (inputs, targets) in enumerate(train_dataloader):
+            i += 1
             print(f"{i+1}/{len(train_dataloader)}", end='\r')
 
             inputs = inputs.to(device)
@@ -147,8 +158,11 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             loss.backward()
             optimizer.step()
             timer.stop("Backward Pass")
-
             train_loss += loss.item()
+
+            if epoch == 1 and i % (len(train_dataloader) // 10) == 0:
+                save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
+                checkpoint += 1
     
         train_loss /= len(train_dataloader)
         train_losses.append(train_loss)
@@ -179,16 +193,13 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)
-        log = f"Epoch {epoch+1}: Train: {train_loss:.3f} "
+        log = f"Epoch {epoch}: Train: {train_loss:.3f} "
         log += f"Valid: {valid_loss:.3f} Time: {epoch_time:.2f}s"
         print(log)
 
         """ CHECKPOINTS """
         # Save model weights for every epoch
-        encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch+1}.pth"
-        decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch+1}.pth"
-        torch.save(encoder.state_dict(), encoder_path)
-        torch.save(decoder.state_dict(), decoder_path)
+        save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
 
     """ PLOT LOSS """
     training_curves(train_losses, valid_losses, model, num_epochs)
