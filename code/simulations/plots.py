@@ -31,72 +31,17 @@ def training_curves(train_losses: list, valid_losses: list, model: str, num_epoc
     plt.savefig(filename, dpi= 300, bbox_inches='tight')
 
 # Plot the edit operations and distance for each test category
-def errors_bar_chart(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
-    df = df.copy()
+def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
     sns.set_palette("colorblind")
+    fig, (length_ax, freq_ax, errors_ax) = plt.subplots(3, 1, figsize=(12, 16))
+    # fig.suptitle(f"{model} (Epoch {epoch})" if epoch else model, fontsize=16, y=0.9)
 
-    # Function to calculate average operations and total distance
-    def calc_averages(group):
-        return pd.Series({
-            'Deletions': group['Deletions'].mean(),
-            'Insertions': group['Insertions'].mean(),
-            'Substitutions': group['Substitutions'].mean(),
-            'Edit Distance': group['Edit Distance'].mean()
-        })
+    # Figure 1: Edit Distance by Length
+    data = df.copy()
 
-    # Group by categories and calculate averages
-    df['Category'] = df.apply(lambda row: 
-        f"pseudo {row['Size']} {row['Morphology']}" if row['Lexicality'] == 'pseudo' 
-        else f"real {row['Size']} {row['Frequency']} {row['Morphology']}", axis=1)
-    grouped = df.groupby('Category').apply(calc_averages).reset_index()
-
-    # Sort the categories in a meaningful order
-    order = []
-    for size in ['short', 'long']:
-        # Add pseudo categories for each morphology type
-        for morphology in df[df['Lexicality'] == 'pseudo']['Morphology'].unique():
-            order.append(f'pseudo {size} {morphology}')
-        # Then add real categories
-        for morphology in df[df['Lexicality'] == 'real']['Morphology'].unique():
-            for freq in df['Frequency'].unique():
-                order.append(f'real {size} {freq} {morphology}')
-
-    # Filter category order to only include categories that exist in the data
-    order = [cat for cat in order if cat in grouped['Category'].unique()]
-
-    # Melt the DataFrame for easier plotting
-    melted = pd.melt(grouped, id_vars=['Category'], 
-                     value_vars=['Deletions', 'Insertions',
-                                 'Substitutions', 'Edit Distance'])
-
-    # Create the plot
-    plt.figure(figsize=(14, 7))
-    sns.barplot(x='Category', y='value', hue='variable', data=melted, order=order)
-
-    plt.title('Errors by Test Category')
-    plt.xlabel('Test Category')
-    plt.ylabel('Average Count')
-    plt.xticks(rotation=45, ha='right')
-    plt.legend(title='Error Type')
-    plt.tight_layout()
-
-    MODEL_FIGURES_DIR = FIGURES_DIR / model
-    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
-    filename = f'errors{epoch}.png' if epoch else 'errors.png'
-    plt.savefig(MODEL_FIGURES_DIR / filename, dpi= 300, bbox_inches='tight')
-    plt.close()
-
-# Plot the edit distance by word length and frequency
-def parametric_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
-    df = df.copy()
-    sns.set_palette("colorblind")
-
-    # Create figure with two subplots
-    fig, (length_ax, freq_ax) = plt.subplots(2, 1, figsize=(14, 7))
-    
-    # First subplot: Length vs Edit Distance
-    df['Lex_Morphology'] = df['Lexicality'] + '-' + df['Morphology']
-    grouped_length_df = df.groupby(
+    # Group and calculate average edit distance
+    data['Lex_Morphology'] = data['Lexicality'] + '-' + data['Morphology']
+    grouped_length_df = data.groupby(
         ['Length', 'Lex_Morphology'], observed=True)['Edit Distance'].mean().reset_index()
     
     sns.lineplot(
@@ -107,22 +52,22 @@ def parametric_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) 
         markers=True,
         marker='o',
         markersize=8,
-        ax=length_ax  # Specify which axis to use
+        ax=length_ax
     )
-
     length_ax.set_title('Edit Distance by Length')
     length_ax.set_xlabel('Word Length')
     length_ax.set_ylabel('Average Edit Distance')
     length_ax.legend(title='Lexicality & Morphology')
     length_ax.grid(True)
     
-    # Second subplot: Frequency vs Edit Distance
-    real_words = df[df['Lexicality'] == 'real'].copy()    
-    real_words['Size_Morphology'] = real_words['Size'] + '-' + real_words['Morphology']
-    real_words['Zipf Bin'] = pd.cut(
-        real_words['Zipf Frequency'], bins=[1, 2, 3, 4, 5, 6, 7], right=False)
+    # Figure 2: Frequency vs Edit Distance
+    data = df[df['Lexicality'] == 'real'].copy()
+
+    # Group and calculate average edit distance  
+    data['Size_Morphology'] = data['Size'] + '-' + data['Morphology']
+    data['Zipf Bin'] = pd.cut(data['Zipf Frequency'], bins=[1, 2, 3, 4, 5, 6, 7], right=False)
     
-    grouped_df = real_words.groupby(
+    grouped_df = data.groupby(
         ['Zipf Bin', 'Size_Morphology'], observed=True)['Edit Distance'].mean().reset_index()
     grouped_df['Zipf Bin'] = grouped_df['Zipf Bin'].astype(str)
 
@@ -134,19 +79,75 @@ def parametric_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) 
         s=100,
         ax=freq_ax
     )
-
     freq_ax.set_title('Edit Distance by Frequency')
     freq_ax.set_xlabel('Zipf Frequency')
     freq_ax.set_ylabel('Average Edit Distance')
     freq_ax.legend(title='Size & Morphology')
     freq_ax.grid(True)
-    plt.tight_layout()
+
+    # Function to calculate average operations and total distance
+    def calc_averages(group):
+        return pd.Series({
+            'Deletions': group['Deletions'].mean(),
+            'Insertions': group['Insertions'].mean(),
+            'Substitutions': group['Substitutions'].mean(),
+            'Edit Distance': group['Edit Distance'].mean()
+        })
+
+    # Figure 3: Errors by Test Category
+    data = df.copy()
+
+    # Group by categories and calculate averages
+    data['Category'] = data.apply(lambda row: 
+        f"pseudo {row['Size']} {row['Morphology']}" if row['Lexicality'] == 'pseudo' 
+        else f"real {row['Size']} {row['Frequency']} {row['Morphology']}", axis=1)
+    grouped = data.groupby('Category').apply(calc_averages).reset_index()
+
+    # Sort the categories in a meaningful order
+    order = []
+    # Add all real categories first
+    for size in ['short', 'long']:
+        for freq in ['high', 'low']:
+            for morph in ['simple', 'complex']:
+                order.append(f'real {size} {freq} {morph}')
+
+    # Add all pseudo categories
+    for size in ['short', 'long']:
+        for morph in ['simple', 'complex']:
+            order.append(f'pseudo {size} {morph}')
+
+    # Melt the DataFrame for easier plotting
+    melted = pd.melt(grouped, id_vars=['Category'], 
+                     value_vars=['Deletions', 'Insertions',
+                                 'Substitutions', 'Edit Distance'])
+
+    sns.barplot(
+        x='Category',
+        y='value',
+        hue='variable',
+        data=melted,
+        order=order,
+        ax=errors_ax
+    )
+    # Convert categories to a single letter for better readability
+    order = ["".join([cat[:1].capitalize() for cat in cats.split()]) for cats in order]
+    errors_ax.set_title('Errors by Category')
+    errors_ax.set_xlabel('Category (Lexicality Size Frequency Morphology)')
+    errors_ax.set_ylabel('Average Error Count')
+    errors_ax.set_xticks(range(len(order)))
+    errors_ax.set_xticklabels(order)
+    errors_ax.legend(title='Error Type')
+    errors_ax.grid(True)
+    
+    # plt.tight_layout()
+    plt.subplots_adjust(hspace=0.3)  # Adjust the vertical spacing between subplots
 
     MODEL_FIGURES_DIR = FIGURES_DIR / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
-    filename = f'parametric{epoch}.png' if epoch else 'parametric.png'
-    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches='tight')
+    filename = f'errors{epoch}.png' if epoch else 'errors.png'
+    plt.savefig(MODEL_FIGURES_DIR / filename, dpi= 300, bbox_inches='tight')
     plt.close()
 
+# Plot the confusion matrix for the test data
 def confusion_matrix():
     pass

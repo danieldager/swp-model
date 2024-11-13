@@ -2,7 +2,6 @@ import argparse
 import sys, torch
 import pandas as pd
 from pathlib import Path
-
 from Levenshtein import editops
 
 """ PATHS """
@@ -17,7 +16,7 @@ from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
 
 from utils import seed_everything, set_device
-from plots import errors_bar_chart, parametric_plots
+from plots import error_plots
 
 device = set_device()
 
@@ -28,7 +27,6 @@ def parse_args():
     args = parser.parse_args()
     print(f"Testing model: {args.name}")
     return args
-
 
 """ TESTING LOOP """
 def test_repetition(P: Phonemes, model_name: str) -> list:
@@ -101,8 +99,7 @@ def test_repetition(P: Phonemes, model_name: str) -> list:
         test_data['Substitutions'] = substitutions
         test_data['Edit Distance'] = edit_distance
 
-        errors_bar_chart(test_data, model_name, epoch)
-        parametric_plots(test_data, model_name, epoch)
+        error_plots(test_data, model_name, epoch)
         dataframes.append(test_data)
     
     return dataframes
