@@ -34,7 +34,7 @@ Number,word,PoS,percentile freq,num letters,morph structure
 3,bullet,N,29.89130435,6,0-1-0
 4,castle,N/V,30.97826087,6,0-1-0
 5,citrus,N,"3,58",6,0-1-0
-6,frivol,Adj,10.32608696,6,0-1-0
+6,trifle,N,10.32608696,6,0-1-0
 7,frugal,Adj,"3,11",6,0-1-0
 8,mingle,V,10.05434783,6,0-1-0
 9,needle,N,"3,98",6,0-1-0

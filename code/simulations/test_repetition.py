@@ -49,6 +49,7 @@ def test_repetition(P: Phonemes, model_name: str) -> list:
     dataframes = []
     for epoch in epochs:
 
+        print(f"Testing epoch {epoch}...")
         """ LOAD MODEL """
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model_name
         encoder_path = MODEL_WEIGHTS_DIR / f'encoder{epoch}.pth'
