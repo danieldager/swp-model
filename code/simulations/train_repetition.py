@@ -11,8 +11,11 @@ import torch.optim as optim
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
 ROOT_DIR = FILE_DIR.parent.parent.parent
+
 MODELS_DIR = ROOT_DIR / "code" / "models"
 WEIGHTS_DIR = ROOT_DIR / "weights"
+DATA_DIR = ROOT_DIR / "data"
+
 WEIGHTS_DIR.mkdir(exist_ok=True)
 sys.path.append(str(MODELS_DIR))
 
@@ -64,6 +67,22 @@ def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
     decoder_path = filepath / f"decoder{epoch}.pth"
     torch.save(encoder.state_dict(), encoder_path)
     torch.save(decoder.state_dict(), decoder_path)
+
+""" GRID SEARCH LOGGING """
+def grid_search_log(train_losses, valid_losses, model):
+    try: df = pd.read_csv(DATA_DIR / 'grid_search.csv')
+    except FileNotFoundError:
+        # Create a new DataFrame if the file doesn't exist
+        columns = ['model', 'hidden_size', 'num_layers', 'dropout', 'learning_rate']
+        columns += [f'T{i}' for i in range(1, 31)] + [f'V{i}' for i in range(1, 31)]
+        df = pd.DataFrame(columns=columns)
+
+    # Extract parameters from the model name
+    h, l, d, r = [p[1:] for p in model.split('_')[1:]]
+    df.loc[model] = [model, h, l, d, r] + train_losses + valid_losses
+
+    # Save the DataFrame to a CSV file
+    df.to_csv(DATA_DIR / 'grid_search.csv', index=False)
 
 """ TRAINING LOOP """
 def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
@@ -203,6 +222,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
     """ PLOT LOSS """
     training_curves(train_losses, valid_losses, model, num_epochs)
+    grid_search_log(train_losses, valid_losses, model)
 
     # Print timing summary
     timer.summary()

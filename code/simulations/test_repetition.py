@@ -6,8 +6,12 @@ from Levenshtein import editops
 
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
-MODELS_DIR = FILE_DIR.parent.parent / "models"
-WEIGHTS_DIR = MODELS_DIR.parent.parent / "weights"
+ROOT_DIR = FILE_DIR.parent.parent.parent.parent
+
+MODELS_DIR = ROOT_DIR / "code" / "models"
+WEIGHTS_DIR = ROOT_DIR / "weights"
+DATA_DIR = ROOT_DIR / "data"
+
 WEIGHTS_DIR.mkdir(exist_ok=True)
 sys.path.append(str(MODELS_DIR))
 
@@ -29,9 +33,9 @@ def parse_args():
     return args
 
 """ TESTING LOOP """
-def test_repetition(P: Phonemes, model_name: str) -> list:
+def test_repetition(P: Phonemes, model: str) -> list:
     # Unpack parameters from model name
-    e, h, l, d = [p[1:] for p in model_name.split('_')[:-1]]
+    e, h, l, d = [p[1:] for p in model.split('_')[:-1]]
     num_epochs, hidden_size, num_layers, dropout = int(e), int(h), int(l), float(d)
 
     # Unpack variables from Phonemes class
@@ -49,7 +53,7 @@ def test_repetition(P: Phonemes, model_name: str) -> list:
 
         print(f"Testing epoch {epoch}...")
         """ LOAD MODEL """
-        MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model_name
+        MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
         encoder_path = MODEL_WEIGHTS_DIR / f'encoder{epoch}.pth'
         decoder_path = MODEL_WEIGHTS_DIR / f'decoder{epoch}.pth'
         encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
@@ -99,7 +103,7 @@ def test_repetition(P: Phonemes, model_name: str) -> list:
         test_data['Substitutions'] = substitutions
         test_data['Edit Distance'] = edit_distance
 
-        error_plots(test_data, model_name, epoch)
+        error_plots(test_data, model, epoch)
         dataframes.append(test_data)
     
     return dataframes

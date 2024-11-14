@@ -71,12 +71,13 @@ def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> No
         ['Zipf Bin', 'Size_Morphology'], observed=True)['Edit Distance'].mean().reset_index()
     grouped_df['Zipf Bin'] = grouped_df['Zipf Bin'].astype(str)
 
-    sns.scatterplot(
+    sns.lineplot(
         data=grouped_df,
         x='Zipf Bin',
         y='Edit Distance',
         hue='Size_Morphology',
-        s=100,
+        marker='o',
+        markersize=8,
         ax=freq_ax
     )
     freq_ax.set_title('Edit Distance by Frequency')
