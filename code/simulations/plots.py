@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -150,5 +151,39 @@ def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> No
     plt.close()
 
 # Plot the confusion matrix for the test data
-def confusion_matrix():
-    pass
+def confusion_matrix(confusions: dict, model: str, epoch: Optional[int] = None) -> None:
+    df = pd.DataFrame.from_dict(confusions, orient='index')
+
+    # Separate the ALPAbet vowels and consonants
+
+    # Normalize the confusion matrix
+    # df = np.log1p(df) # log scale
+    # df = df.div(df.sum(axis=1), axis=0) # row normal
+    # df = (df - df.min().min()) / (df.max().max() - df.min().min()) # min max
+    df = (df - df.mean()) / df.std() # z score
+
+    # Create a confusion matrix
+    plt.figure(figsize=(8, 7))
+
+    # Plot the heatmap with enhanced aesthetics
+    sns.heatmap(df, annot=False, cmap='Blues', square=True, 
+                cbar_kws={'label': 'Counts', 'shrink': 0.2},
+                xticklabels=True, yticklabels=True)
+
+    # Display X-ticks on the top
+    plt.gca().xaxis.tick_top()
+    plt.gca().xaxis.set_label_position('top')
+
+    # Set axis labels and title
+    plt.title('Confusion Matrix', fontsize=14, pad=20)
+    plt.xlabel('Prediction', fontsize=10)
+    plt.ylabel('Ground Truth', fontsize=10)
+    plt.xticks(fontsize=5, rotation=90)
+    plt.yticks(fontsize=5, rotation=0)
+    plt.tight_layout()
+    
+    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
+    filename = f'confusion{epoch}.png' if epoch else 'confusion.png'
+    plt.savefig(MODEL_FIGURES_DIR / filename, dpi= 300, bbox_inches='tight')
+    plt.close()

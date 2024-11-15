@@ -6,7 +6,7 @@ from Levenshtein import editops
 
 """ PATHS """
 FILE_DIR = Path(__file__).resolve()
-ROOT_DIR = FILE_DIR.parent.parent.parent.parent
+ROOT_DIR = FILE_DIR.parent.parent.parent
 
 MODELS_DIR = ROOT_DIR / "code" / "models"
 WEIGHTS_DIR = ROOT_DIR / "weights"
@@ -20,7 +20,7 @@ from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
 
 from utils import seed_everything, set_device
-from plots import error_plots
+from plots import error_plots, confusion_matrix
 
 device = set_device()
 
@@ -44,14 +44,18 @@ def test_repetition(P: Phonemes, model: str) -> list:
     index_to_phone = P.index_to_phone
     test_dataloader = P.test_dataloader
 
+    # Sort index_to_phone alphabetically
+    index_to_phone = {i: p for i, p in sorted(
+        index_to_phone.items(), key=lambda x: x[1])}
+
     # Add checkpoints for proper iteration
     checkpoints = [f"1_{i}" for i in range(1, 11)]
     epochs = checkpoints + list(range(2, num_epochs + 1))
 
     dataframes = []
     for epoch in epochs:
-
         print(f"Testing epoch {epoch}...")
+        
         """ LOAD MODEL """
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
         encoder_path = MODEL_WEIGHTS_DIR / f'encoder{epoch}.pth'
@@ -69,12 +73,17 @@ def test_repetition(P: Phonemes, model: str) -> list:
         predictions = []
         test_data = test_data.copy()
 
+        # Initialize the confusion matrix
+        confusions = {}
+        for t in index_to_phone.values():
+            confusions[t] = {p: 0 for p in index_to_phone.values()}
+
         encoder.eval()
         decoder.eval()
         with torch.no_grad():
-            for inputs, targets in test_dataloader:
+            for inputs, target in test_dataloader:
                 inputs = inputs.to(device)
-                targets = targets.to(device)
+                target = target.to(device)
                 insertion, deletion, substitution = 0, 0, 0
 
                 encoder_hidden = encoder(inputs)
@@ -83,19 +92,28 @@ def test_repetition(P: Phonemes, model: str) -> list:
 
                 prediction = torch.argmax(decoder_output, dim=-1)
                 prediction = prediction.squeeze().cpu().tolist()
-                targets = targets.squeeze().cpu().tolist()
+                target = target.squeeze().cpu().tolist()
 
-                ops = editops(prediction, targets)
+                # Tabulate errors by type and calculate edit distance
+                ops = editops(prediction, target)
                 for op, _, _ in ops:
                     if op == 'insert': insertion += 1
                     elif op == 'delete': deletion += 1
                     elif op == 'replace': substitution += 1
-            
                 deletions.append(deletion)
                 insertions.append(insertion)
                 substitutions.append(substitution)
                 edit_distance.append(len(ops))
-                predictions.append([index_to_phone[i] for i in prediction][:-1])
+
+                # Convert indices to phonemes
+                prediction = [index_to_phone[i] for i in prediction]
+                target = [index_to_phone[i] for i in target]
+
+                # Tabulate confusion between prediction and target
+                if len(target) == len(prediction):
+                    for t,p in zip(target, prediction): confusions[t][p] += 1
+                
+                predictions.append(prediction[:-1])
 
         test_data['Prediction'] = predictions
         test_data['Deletions'] = deletions
@@ -104,6 +122,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
         test_data['Edit Distance'] = edit_distance
 
         error_plots(test_data, model, epoch)
+        confusion_matrix(confusions, model, epoch)
         dataframes.append(test_data)
     
     return dataframes
