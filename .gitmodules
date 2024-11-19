@@ -1,0 +1,3 @@
+[submodule "CORnet"]
+	path = CORnet
+	url = https://github.com/dicarlolab/CORnet
