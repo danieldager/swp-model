@@ -1,9 +1,9 @@
+import argparse
 import sys
 import time
-import argparse
-import pandas as pd
 from pathlib import Path
 
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,92 +12,93 @@ import torch.optim as optim
 FILE_DIR = Path(__file__).resolve()
 ROOT_DIR = FILE_DIR.parent.parent.parent
 
-MODELS_DIR = ROOT_DIR / "code" / "models"
 WEIGHTS_DIR = ROOT_DIR / "weights"
 DATA_DIR = ROOT_DIR / "data"
 
 WEIGHTS_DIR.mkdir(exist_ok=True)
-sys.path.append(str(MODELS_DIR))
 
 from Phonemes import Phonemes
-from EncoderRNN import EncoderRNN
-from DecoderRNN import DecoderRNN
-
 from plots import training_curves
-from utils import seed_everything, set_device, Timer
+from utils import Timer, seed_everything, set_device
+
+from ..models.DecoderRNN import DecoderRNN
+from ..models.EncoderRNN import EncoderRNN
 
 device = set_device()
 
 """ ARGUMENT PARSER """
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument('--n_epochs', 
-                       type=int, 
-                       default=30,
-                       help='Number of training epochs')
-    
-    parser.add_argument('--h_size', 
-                       type=int, 
-                       default=4,
-                       help='Hidden layer size')
-    
-    parser.add_argument('--n_layers', 
-                       type=int, 
-                       default=1,
-                       help='Number of hidden layers')
-    
-    parser.add_argument('--dropout', 
-                       type=float, 
-                       default=0.1,
-                       help='Dropout rate (0.0 to 1.0)')
-    
-    parser.add_argument('--l_rate', 
-                       type=float, 
-                       default=0.001,
-                       help='Learning rate')
-    
-    args = parser.parse_args() 
+
+    parser.add_argument(
+        "--n_epochs", type=int, default=30, help="Number of training epochs"
+    )
+
+    parser.add_argument("--h_size", type=int, default=4, help="Hidden layer size")
+
+    parser.add_argument(
+        "--n_layers", type=int, default=1, help="Number of hidden layers"
+    )
+
+    parser.add_argument(
+        "--dropout", type=float, default=0.1, help="Dropout rate (0.0 to 1.0)"
+    )
+
+    parser.add_argument("--l_rate", type=float, default=0.001, help="Learning rate")
+
+    args = parser.parse_args()
     return args
 
+
 """ CHECKPOINTING """
+
+
 def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
-    if checkpoint: epoch = f"{epoch}_{checkpoint}"
+    if checkpoint:
+        epoch = f"{epoch}_{checkpoint}"
     encoder_path = filepath / f"encoder{epoch}.pth"
     decoder_path = filepath / f"decoder{epoch}.pth"
     torch.save(encoder.state_dict(), encoder_path)
     torch.save(decoder.state_dict(), decoder_path)
 
+
 """ GRID SEARCH LOGGING """
+
+
 def grid_search_log(train_losses, valid_losses, model):
-    try: df = pd.read_csv(DATA_DIR / 'grid_search.csv')
+    try:
+        df = pd.read_csv(DATA_DIR / "grid_search.csv")
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
-        columns = ['model', 'hidden_size', 'num_layers', 'dropout', 'learning_rate']
-        columns += [f'T{i}' for i in range(1, 31)] + [f'V{i}' for i in range(1, 31)]
+        columns = ["model", "hidden_size", "num_layers", "dropout", "learning_rate"]
+        columns += [f"T{i}" for i in range(1, 31)] + [f"V{i}" for i in range(1, 31)]
         df = pd.DataFrame(columns=columns)
 
     # Extract parameters from the model name
-    h, l, d, r = [p[1:] for p in model.split('_')[1:]]
+    h, l, d, r = [p[1:] for p in model.split("_")[1:]]
     df.loc[model] = [model, h, l, d, r] + train_losses + valid_losses
 
     # Save the DataFrame to a CSV file
-    df.to_csv(DATA_DIR / 'grid_search.csv', index=False)
+    df.to_csv(DATA_DIR / "grid_search.csv", index=False)
+
 
 """ TRAINING LOOP """
-def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
-    """ LOAD VARIABLES """
+
+def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
+    """LOAD VARIABLES"""
     vocab_size = P.vocab_size
     train_dataloader = P.train_dataloader
     valid_dataloader = P.valid_dataloader
 
     """ UNPACK PARAMETERS """
-    num_epochs     = params['n_epochs']
-    hidden_size    = params['h_size']
-    num_layers     = params['n_layers']
-    dropout        = params['dropout']
-    learning_rate  = params['l_rate']
+    num_epochs = params["n_epochs"]
+    hidden_size = params["h_size"]
+    num_layers = params["n_layers"]
+    dropout = params["dropout"]
+    learning_rate = params["l_rate"]
 
     # Print hyperparameters
     print(f"Training model with hyperparameters:")
@@ -108,18 +109,22 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     print(f"Learning:  {learning_rate}")
 
     """ INITIALIZE MODEL """
-    model = f'e{num_epochs}_h{hidden_size}_l{num_layers}_d{dropout}_r{learning_rate}'
+    model = f"e{num_epochs}_h{hidden_size}_l{num_layers}_d{dropout}_r{learning_rate}"
     MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
- 
+
     encoder = EncoderRNN(
-        input_size=vocab_size, hidden_size=hidden_size,
-        num_layers=num_layers, dropout=dropout
+        input_size=vocab_size,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        dropout=dropout,
     ).to(device)
 
     decoder = DecoderRNN(
-        hidden_size=hidden_size, output_size=vocab_size,
-        num_layers=num_layers, dropout=dropout
+        hidden_size=hidden_size,
+        output_size=vocab_size,
+        num_layers=num_layers,
+        dropout=dropout,
     ).to(device)
 
     # # if CUDA, use DataParallel
@@ -137,19 +142,20 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     epoch_times = []
     timer = Timer()
 
-    for epoch in range(1, num_epochs+1):
+    for epoch in range(1, num_epochs + 1):
         print(f"Epoch {epoch}")
-        
+
         train_loss = 0
         encoder.train()
         decoder.train()
         epoch_start = time.time()
-        if epoch == 1: checkpoint = 1
+        if epoch == 1:
+            checkpoint = 1
 
         timer.start()
         for i, (inputs, targets) in enumerate(train_dataloader):
             i += 1
-            print(f"{i+1}/{len(train_dataloader)}", end='\r')
+            print(f"{i+1}/{len(train_dataloader)}", end="\r")
 
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -167,7 +173,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
             # Loss computation
             timer.start()
-            outputs = decoder_output.view(-1, vocab_size)  
+            outputs = decoder_output.view(-1, vocab_size)
             targets = targets.view(-1)
             loss = criterion(outputs, targets)
             timer.stop("Loss Computation")
@@ -182,7 +188,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             if epoch == 1 and i % (len(train_dataloader) // 10) == 0:
                 save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
                 checkpoint += 1
-    
+
         train_loss /= len(train_dataloader)
         train_losses.append(train_loss)
 
@@ -198,7 +204,9 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
                 targets = targets.to(device)
 
                 encoder_hidden = encoder(inputs)
-                decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
+                decoder_input = torch.zeros(
+                    1, inputs.shape[1], hidden_size, device=device
+                )
                 decoder_output = decoder(decoder_input, encoder_hidden)
 
                 outputs = decoder_output.view(-1, vocab_size)
@@ -228,6 +236,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     timer.summary()
 
     return model
+
 
 if __name__ == "__main__":
     seed_everything()
