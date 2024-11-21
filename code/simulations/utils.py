@@ -235,10 +235,30 @@ def sample_words(word_count: int, test_words: list, split=0.9, freq_threshold=0.
     # Get phonemes for each word
     train_phonemes = [g2p(word) for word in train_words]
     valid_phonemes = [g2p(word) for word in valid_words]
-    
+
     # start = time.perf_counter()
     # print(f"{time.perf_counter() - start:.2f} seconds")
     return train_phonemes, valid_phonemes
+
+def phoneme_statistics(phonemes: list):
+    # Get the counts for each phoneme
+    phoneme_stats = defaultdict(int)
+    for word in phonemes:
+        for phoneme in word:
+            phoneme_stats[phoneme] += 1
+
+    # Sort descending by count
+    phoneme_stats = dict(sorted(phoneme_stats.items(), key=lambda x: x[1], reverse=True))
+    phoneme_stats["<STOP>"] = 0 # Add stop token
+
+    # Get the bigram counts for each phoneme pair
+    bigram_stats = defaultdict(int)
+    for word in phonemes:
+        for i in range(len(word) - 1):
+            bigram = " ".join(word[i:i+2])
+            bigram_stats[bigram] += 1
+
+    return phoneme_stats, bigram_stats
 
 if __name__ == "__main__":
     sample_words(50000)
