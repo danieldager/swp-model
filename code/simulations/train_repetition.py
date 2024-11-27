@@ -31,14 +31,14 @@ from DecoderRNN import DecoderRNN
 # from ..models.EncoderRNN import EncoderRNN
 
 device = set_device()
-penalty = torch.tensor(0.5, device=device)
+penalty = torch.tensor(0.0, device=device)
 
 """ ARGUMENT PARSER """
 def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--n_epochs", type=int, default=30, help="Number of training epochs"
+        "--n_epochs", type=int, default=40, help="Number of training epochs"
     )
 
     parser.add_argument("--h_size", type=int, default=4, help="Hidden layer size")
@@ -86,7 +86,7 @@ def grid_search_log(train_losses, valid_losses, model):
 """ TRAINING LOOP """
 def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     # Unpack variables
-    tf_ratio = 0.5
+    tf_ratio = 0.0
     vocab_size = P.vocab_size
     phone_to_index = P.phone_to_index
     # stop_token = phone_to_index["<STOP>"]
@@ -164,7 +164,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             # timer.start()
             decoder_input = torch.zeros(1, hidden_size, device=device)
 
-            # embedded is the same as nn.embedding(target)
+            # embedded = nn.embedding(input)
             decoder_output = decoder(decoder_input, encoder_hidden, embedded, tf_ratio)
             # print(decoder_output.shape, target.shape)
             # timer.stop("Decoder Forward Pass")

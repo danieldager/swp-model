@@ -13,7 +13,7 @@ class DecoderRNN(nn.Module):
 
     def forward(self, x, hidden, embedded, tf_ratio:float=0.0):
         outputs = []
-        # print("embedded", embedded.shape)
+        # print("embedded", embedded)
 
         # Forward pass loop for each token in target
         for i in range(embedded.shape[0]):
@@ -25,13 +25,13 @@ class DecoderRNN(nn.Module):
 
             # Teacher forcing
             if torch.rand(1).item() < tf_ratio:
-                # print("1", embedded[i, :].unsqueeze(0).float().shape)
-                # print("2", embedded[i, :].shape)
                 x = embedded[i, :].unsqueeze(0).float()
 
             else:
                 # print("output", output.shape) 
                 x = output
+            
+            # print("x", x)
         
         # Return logits (pred_len, vocab_size)
         outputs = torch.stack(outputs, dim=0)

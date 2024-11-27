@@ -7,7 +7,7 @@ TRAIN_SCRIPT="./scripts/train_repetition.sh"
 h_sizes=(2 4 6 8 10)
 n_layers=(1 2)
 dropouts=(0.0)
-l_rates=(0.005 0.0025 0.001)
+l_rates=(0.075 0.005 0.0025 0.001)
 
 # Initialize counter for total combinations
 total=0
