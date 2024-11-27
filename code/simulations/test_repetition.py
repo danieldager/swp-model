@@ -9,10 +9,14 @@ from Levenshtein import editops
 FILE_DIR = Path(__file__).resolve()
 ROOT_DIR = FILE_DIR.parent.parent.parent
 
-WEIGHTS_DIR = ROOT_DIR / "weights"
+WEIGHTS_DIR = ROOT_DIR / "weights_other"
 DATA_DIR = ROOT_DIR / "data"
 
 WEIGHTS_DIR.mkdir(exist_ok=True)
+
+from Phonemes import Phonemes
+from utils import seed_everything, set_device
+from plots import confusion_matrix, error_plots, primacy_recency
 
 # TODO: replace this with comment below
 import sys
@@ -20,11 +24,6 @@ MODELS_DIR = ROOT_DIR / "code" / "models"
 sys.path.append(str(MODELS_DIR))
 from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
-
-from Phonemes import Phonemes
-from utils import seed_everything, set_device
-from plots import confusion_matrix, error_plots, primacy_recency
-
 # from ..models.DecoderRNN import DecoderRNN
 # from ..models.EncoderRNN import EncoderRNN
 

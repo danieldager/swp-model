@@ -19,16 +19,21 @@ WEIGHTS_DIR.mkdir(exist_ok=True)
 
 from Phonemes import Phonemes
 from plots import training_curves
-from utils import Timer, seed_everything, set_device
+from utils import Timer, seed_everything, set_device, alignment_loss
 
-from ..models.DecoderRNN import DecoderRNN
-from ..models.EncoderRNN import EncoderRNN
+# TODO: replace this with comment below
+import sys
+MODELS_DIR = ROOT_DIR / "code" / "models"
+sys.path.append(str(MODELS_DIR))
+from EncoderRNN import EncoderRNN
+from DecoderRNN import DecoderRNN
+# from ..models.DecoderRNN import DecoderRNN
+# from ..models.EncoderRNN import EncoderRNN
 
 device = set_device()
+penalty = torch.tensor(0.5, device=device)
 
 """ ARGUMENT PARSER """
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -51,10 +56,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 """ CHECKPOINTING """
-
-
 def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
     if checkpoint:
         epoch = f"{epoch}_{checkpoint}"
@@ -63,10 +65,7 @@ def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
     torch.save(encoder.state_dict(), encoder_path)
     torch.save(decoder.state_dict(), decoder_path)
 
-
 """ GRID SEARCH LOGGING """
-
-
 def grid_search_log(train_losses, valid_losses, model):
     try:
         df = pd.read_csv(DATA_DIR / "grid_search.csv")
@@ -85,22 +84,22 @@ def grid_search_log(train_losses, valid_losses, model):
 
 
 """ TRAINING LOOP """
-
-
 def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
-    """LOAD VARIABLES"""
+    # Unpack variables
+    tf_ratio = 0.5
     vocab_size = P.vocab_size
+    phone_to_index = P.phone_to_index
+    # stop_token = phone_to_index["<STOP>"]
     train_dataloader = P.train_dataloader
     valid_dataloader = P.valid_dataloader
 
-    """ UNPACK PARAMETERS """
+    # Unpack hyperparameters
     num_epochs = params["n_epochs"]
     hidden_size = params["h_size"]
     num_layers = params["n_layers"]
     dropout = params["dropout"]
     learning_rate = params["l_rate"]
 
-    # Print hyperparameters
     print(f"Training model with hyperparameters:")
     print(f"Epochs:    {num_epochs}")
     print(f"Hidden:    {hidden_size}")
@@ -108,7 +107,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     print(f"Dropout:   {dropout}")
     print(f"Learning:  {learning_rate}")
 
-    """ INITIALIZE MODEL """
+    # Initialize model
     model = f"e{num_epochs}_h{hidden_size}_l{num_layers}_d{dropout}_r{learning_rate}"
     MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
@@ -126,11 +125,6 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         num_layers=num_layers,
         dropout=dropout,
     ).to(device)
-
-    # # if CUDA, use DataParallel
-    # if torch.cuda.device_count() > 1:
-    #     encoder = nn.DataParallel(encoder).to(device)
-    #     decoder = nn.DataParallel(decoder).to(device)
 
     criterion = nn.CrossEntropyLoss()
     parameters = list(encoder.parameters()) + list(decoder.parameters())
@@ -153,30 +147,37 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             checkpoint = 1
 
         timer.start()
-        for i, (inputs, targets) in enumerate(train_dataloader):
-            i += 1
+        for i, (input, target) in enumerate(train_dataloader):
             print(f"{i+1}/{len(train_dataloader)}", end="\r")
 
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+            # print("target", target.shape)
+
+            input = input.to(device)
+            target = target.to(device)
             optimizer.zero_grad()
 
             # Forward passes
-            timer.start()
-            encoder_hidden = encoder(inputs)
-            timer.stop("Encoder Forward Pass")
+            # timer.start()
+            embedded, encoder_hidden = encoder(input)
+            # timer.stop("Encoder Forward Pass")
 
-            timer.start()
-            decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
-            decoder_output = decoder(decoder_input, encoder_hidden)
-            timer.stop("Decoder Forward Pass")
+            # timer.start()
+            decoder_input = torch.zeros(1, hidden_size, device=device)
+
+            # embedded is the same as nn.embedding(target)
+            decoder_output = decoder(decoder_input, encoder_hidden, embedded, tf_ratio)
+            # print(decoder_output.shape, target.shape)
+            # timer.stop("Decoder Forward Pass")
 
             # Loss computation
-            timer.start()
-            outputs = decoder_output.view(-1, vocab_size)
-            targets = targets.view(-1)
-            loss = criterion(outputs, targets)
-            timer.stop("Loss Computation")
+            # timer.start()
+            # print("before", decoder_output.shape, target.shape)
+            output = decoder_output.view(-1, vocab_size)
+            target = target.view(-1)
+            # print("after", output.shape, target.shape)
+
+            loss = criterion(output, target)       
+            # timer.stop("Loss Computation")
 
             # Backward pass
             timer.start()
@@ -185,11 +186,12 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             timer.stop("Backward Pass")
             train_loss += loss.item()
 
-            if epoch == 1 and i % (len(train_dataloader) // 10) == 0:
+            if epoch == 1 and i+1 % (len(train_dataloader) // 10) == 0:
                 save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
                 checkpoint += 1
 
         train_loss /= len(train_dataloader)
+        print(f"Train loss: {train_loss:.3f}")
         train_losses.append(train_loss)
 
         """ VALIDATION LOOP """
@@ -199,19 +201,17 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         valid_loss = 0
 
         with torch.no_grad():
-            for inputs, targets in valid_dataloader:
-                inputs = inputs.to(device)
-                targets = targets.to(device)
+            for input, target in valid_dataloader:
+                input = input.to(device)
+                target = target.to(device)
 
-                encoder_hidden = encoder(inputs)
-                decoder_input = torch.zeros(
-                    1, inputs.shape[1], hidden_size, device=device
-                )
-                decoder_output = decoder(decoder_input, encoder_hidden)
+                embedded, encoder_hidden = encoder(input)
+                decoder_input = torch.zeros(1, hidden_size, device=device)
+                decoder_output = decoder(decoder_input, encoder_hidden, embedded, 0.0)
 
-                outputs = decoder_output.view(-1, vocab_size)
-                targets = targets.view(-1)
-                loss = criterion(outputs, targets)
+                output = decoder_output.view(-1, vocab_size)
+                target = target.view(-1)
+                loss = criterion(output, target)
                 valid_loss += loss.item()
 
         valid_loss /= len(valid_dataloader)
@@ -224,11 +224,10 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         log += f"Valid: {valid_loss:.3f} Time: {epoch_time:.2f}s"
         print(log)
 
-        """ CHECKPOINTS """
         # Save model weights for every epoch
         save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
 
-    """ PLOT LOSS """
+    # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model, num_epochs)
     grid_search_log(train_losses, valid_losses, model)
 
@@ -236,7 +235,6 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     timer.summary()
 
     return model
-
 
 if __name__ == "__main__":
     seed_everything()

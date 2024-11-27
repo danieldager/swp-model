@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class DecoderRNN(nn.Module):
@@ -7,39 +8,31 @@ class DecoderRNN(nn.Module):
         self.output_size = output_size
         self.num_layers = num_layers
 
-        self.embedding = nn.Embedding(hidden_size, hidden_size)
-        self.dropout = nn.Dropout(dropout)
-        if num_layers == 1: dropout = 0
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
         self.fc = nn.Linear(hidden_size, output_size)
 
-    def forward(self, x, hidden):
-        # hidden_embedded = self.embedding(hidden)
+    def forward(self, x, hidden, embedded, tf_ratio:float=0.0):
+        outputs = []
+        # print("embedded", embedded.shape)
 
-        # NOTE: pass decoder outputs to rnn
-        output, hidden = self.rnn(x, hidden)
-        output = self.fc(output)
+        # Forward pass loop for each token in target
+        for i in range(embedded.shape[0]):
+            output, hidden = self.rnn(x, hidden)
+            
+            # Generate output logits
+            logits = self.fc(output)
+            outputs.append(logits)
 
-        # Two connected embedding layers ? 
+            # Teacher forcing
+            if torch.rand(1).item() < tf_ratio:
+                # print("1", embedded[i, :].unsqueeze(0).float().shape)
+                # print("2", embedded[i, :].shape)
+                x = embedded[i, :].unsqueeze(0).float()
+
+            else:
+                # print("output", output.shape) 
+                x = output
         
-        # NOTE: Don't need softmax with CrossEntropyLoss
-        # output = F.softmax(output, dim=-1)
-
-        # NOTE: do we want to include a learned start token ?
-        # x = torch.zeros(self.batch_size, 1, self.hidden_size)
-
-        # If we want to use teacher forcing, we need to iterate through the target sequence
-        # Initialize decoder hidden state as encoder's final hidden state
-        # decoder_hidden = encoder_hidden
-        # for t in range(targets.size(1)):  # for each time step
-        #     # Decoder forward pass (at each time step)
-        #     decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
-
-        #     # Compute loss (comparing decoder output with the true target at this time step)
-        #     loss += loss_fn(decoder_output.squeeze(1), targets[:, t])
-
-        #     # Optionally use teacher forcing (use the true target as the next input)
-        #     teacher_force = random.random() < TEACHER_FORCING_RATIO
-        #     decoder_input = targets[:, t].unsqueeze(1) if teacher_force else decoder_output.argmax(dim=2)
-
-        return output
+        # Return logits (pred_len, vocab_size)
+        outputs = torch.stack(outputs, dim=0)
+        return outputs

@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 from pathlib import Path
 from itertools import chain
 
@@ -7,14 +8,8 @@ from torch.utils.data import Dataset, DataLoader
 
 from utils import sample_words, phoneme_statistics, get_test_data
 
-""" 
-"phoneme tensors" are one-hot tensors of a list of phonemes for a single word
-"grapheme tensors" are 1D image tensors of a 64x64 image of a single word
-"""
-
 CUR_DIR = Path(__file__).resolve()
 CACHE_DIR = CUR_DIR.parent / "cache"
-CACHE_DIR.mkdir(exist_ok=True)
 
 class CustomDataset(Dataset):
     def __init__(self, phonemes):
@@ -29,12 +24,8 @@ class CustomDataset(Dataset):
         return self.data[idx], self.data[idx].clone()
 
 class Phonemes():
-    def __init__(self, word_count: int = 50000, savepath=None):
-        # Convert savepath to Path object if provided
-        self.savepath = Path(savepath) if savepath else None
-
-        # Get test phonemes
-        self.test_data, self.real_words = get_test_data()
+    def __init__(self) -> None:
+        self.test_data = get_test_data()
 
         # Cache for train and validation phonemes
         train_cache = CACHE_DIR / "train_phonemes.json"
@@ -42,8 +33,8 @@ class Phonemes():
         stats_cache = CACHE_DIR / "phoneme_stats.json"
         bigram_cache = CACHE_DIR / "bigram_stats.json"
 
-        # Load phonemes from cache if available
-        if train_cache.exists() and stats_cache.exists():
+        # If cache dir exists, load phonemes and stats
+        if CACHE_DIR.exists():
             with train_cache.open('r') as f: self.train_phonemes = json.load(f)
             with valid_cache.open('r') as f: self.valid_phonemes = json.load(f)
             with stats_cache.open('r') as f: self.phoneme_stats = json.load(f)
@@ -51,7 +42,8 @@ class Phonemes():
 
         # Otherwise, generate and save phonemes to cache
         else:
-            self.train_phonemes, self.valid_phonemes = sample_words(word_count, self.real_words)
+            CACHE_DIR.mkdir(exist_ok=True)
+            self.train_phonemes, self.valid_phonemes = sample_words(self.test_data)
             self.phoneme_stats, self.bigram_stats = phoneme_statistics(self.train_phonemes)
             with train_cache.open('w') as f: json.dump(self.train_phonemes, f)
             with valid_cache.open('w') as f: json.dump(self.valid_phonemes, f)
@@ -96,4 +88,5 @@ class Phonemes():
 
         # Save attributes
         self.vocab_size = vocab_size
+        self.phone_to_index = phone_to_index
         self.index_to_phone = index_to_phone

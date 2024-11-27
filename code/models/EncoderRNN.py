@@ -13,19 +13,17 @@ class EncoderRNN(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
-        # vocab size = input_size + 1 because of num_embeddings
+        # input_size + 1 = vocab size, because the # of embeddings
         self.embedding = nn.Embedding(input_size + 1, hidden_size)
         self.dropout = nn.Dropout(dropout)
         if num_layers == 1: dropout = 0
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
 
-
     def forward(self, x):
-        # three tied embedding layers
+        x = x.squeeze()
+        # print("x", x)
         embedded = self.dropout(self.embedding(x))
+        # print("embedded", embedded)
         _, hidden = self.rnn(embedded)
-
-        # NOTE: should we parameterize the hidden state ?
-        # hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
         
-        return hidden
+        return embedded, hidden

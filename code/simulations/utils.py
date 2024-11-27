@@ -82,7 +82,7 @@ class Timer:
             print(f"{name:<30} {self.times[name]:>13.3f}s")
 
 
-""" TEST SET PROCESSING """
+""" TEST DATA PROCESSING """
 # NOTE: python -m spacy download en_core_web_lg
 g2p = G2p()
 nlp = spacy.load('en_core_web_lg')
@@ -163,7 +163,7 @@ def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
     return df
 
 # Combine and reformat the real and pseudo word datasets
-def get_test_data():
+def get_test_data() -> tuple:
     # Process real words
     real_words = process_dataset(TEST_DATA_REAL, real=True)
     real_words = clean_and_enrich_data(real_words, real=True)
@@ -173,28 +173,25 @@ def get_test_data():
     pseudo_words = clean_and_enrich_data(pseudo_words)
 
     # Combine datasets
-    dataframe = pd.concat([real_words, pseudo_words], join="outer") #, ignore_index=True)
+    df = pd.concat([real_words, pseudo_words], join="outer") #, ignore_index=True)
 
     # Rearrange columns
     columns = [
-        "Word", "Size", "Length", "Frequency", "Zipf Frequency", 
-        "Morphology", "Lexicality", "Part of Speech", "Phonemes"
+        "Word", "Lexicality", "Size", "Length", "Frequency",
+        "Zipf Frequency", "Morphology", "Part of Speech", "Phonemes"
     ]
-    dataframe = dataframe.reindex(columns=columns)
-
-    # Isolate words and their phonemes
-    real_words = real_words[['Word', 'Phonemes']]
-    pseudo_words = pseudo_words[['Word', 'Phonemes']]
+    df = df.reindex(columns=columns)
     
-    return dataframe, real_words["Word"].tolist()
+    return df
 
 """ WORD SAMPLING """
 # Sample words for training and validation datasets
-def sample_words(word_count: int, test_words: list, split=0.9, freq_threshold=0.95) -> list:    
+def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:    
     word_list = []
     freq_list = []
     total_freq = 0
-
+    
+    test_words = test_data["Word"].tolist()
     for i, word in enumerate(iter_wordlist("en")):
         # Limit the number of words
         if i >= 30000: break
@@ -226,7 +223,7 @@ def sample_words(word_count: int, test_words: list, split=0.9, freq_threshold=0.
     valid_count = word_count - train_count
     
     # Determine the index that separates low frequency words
-    lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_threshold)
+    lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_th)
     
     # Sample validation words from low frequency candidate words
     candidates = [w for i, w in enumerate(sorted_words) if i < lf_index and w not in train_words]
@@ -260,5 +257,72 @@ def phoneme_statistics(phonemes: list):
 
     return phoneme_stats, bigram_stats
 
+""" CUSTOM LOSS FUNCTION """
+def alignment_loss(output, target, criterion, penalty):
+    """
+    Args:
+        outputs: (output_len, vocab_size) tensor of logits
+        targets: (target_len) tensor of target indices
+    """
+    output_len = output.size(0)
+    target_len = target.size(0)
+    
+    # Initialize score matrix
+    M = torch.zeros(output_len + 1, target_len + 1, device=output.device)
+    
+    # Initialize first row and column (penalty for skips)
+    for i in range(output_len + 1): M[i, 0] = i * penalty
+    for j in range(target_len + 1): M[0, j] = j * penalty
+    
+    # Fill matrix
+    for i in range(1, output_len + 1):
+        for j in range(1, target_len + 1):
+            
+            # Calculate match score using cross entropy
+            score = criterion(
+                output[i-1].unsqueeze(0), 
+                target[j-1].unsqueeze(0)
+            )
+            
+            # Take minimum of three possible operations:
+            M[i, j] = torch.min(
+                torch.stack([
+                    M[i-1, j-1] + score,  # match/mismatch
+                    M[i-1, j] + penalty,  # skip in output
+                    M[i, j-1] + penalty   # skip in target
+                ])
+            )
+
+    # print("M[x,y]", M[output_len, target_len])
+    # print("M", M)
+
+    return M[output_len, target_len]
+
+# Decoder forward pass using alignment loss ^^^
+def alignment_forward(self, x, hidden, stop_token, target_len):
+    outputs = []
+    
+    # Set a limit for pred length
+    max_length = target_len + 10
+    
+    # Forward pass loop 
+    for _ in range(max_length):
+        output, hidden = self.rnn(x, hidden)
+        
+        # Generate output logits
+        logits = self.fc(output)
+        outputs.append(logits)
+
+        # Check for stop token
+        if torch.argmax(output) == stop_token: print("STOP"); break
+        
+        # Pass output (not logits) to rnn 
+        x = output
+    
+    # Return logits (pred_len, vocab_size)
+    outputs = torch.stack(outputs, dim=0)
+    return outputs
+
+
 if __name__ == "__main__":
-    sample_words(50000)
+    sample_words([])
