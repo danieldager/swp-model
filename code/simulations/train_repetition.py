@@ -62,17 +62,21 @@ def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
     torch.save(decoder.state_dict(), decoder_path)
 
 """ GRID SEARCH LOGGING """
-def grid_search_log(train_losses, valid_losses, model):
+def grid_search_log(train_losses, valid_losses, model, n_epochs):
     try:
         df = pd.read_csv(DATA_DIR / "grid_search.csv")
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
+        print("\nCreating new grid search log")
         columns = ["model", "h_size", "n_layers", "dropout", "l_rate", "tf_ratio"]
-        columns += [f"T{i}" for i in range(1, 41)] + [f"V{i}" for i in range(1, 41)]
+        columns += [f"T{i}" for i in range(1, n_epochs + 1)]
+        columns += [f"V{i}" for i in range(1, n_epochs + 1)]
         df = pd.DataFrame(columns=columns)
 
     # Extract parameters from the model name
     h, l, d, r, t = [p[1:] for p in model.split("_")[1:]]
+    print("h", h, " l", l, " d", d, " r", r, " t", t)
+    print("model", model)
     df.loc[model] = [model, h, l, d, r, t] + train_losses + valid_losses
 
     # Save the DataFrame to a CSV file
@@ -206,7 +210,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
     # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model, n_epochs)
-    grid_search_log(train_losses, valid_losses, model)
+    grid_search_log(train_losses, valid_losses, model, n_epochs)
 
     # Print timing summary
     timer.summary()
