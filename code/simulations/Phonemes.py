@@ -61,15 +61,14 @@ class Phonemes():
         # Create phoneme to index map
         phone_to_index = {p: i+1 for i, p in enumerate(all_phonemes)}
 
-        # # Add padding token to beginning of index map
-        # phone_to_index["<PAD>"] = 0
+        # # Add start token to beginning of index map
+        phone_to_index["<SOS>"] = 0
 
         # Create index to phoneme map
         index_to_phone = {i: p for p, i in phone_to_index.items()}
 
         # Get vocab size
         vocab_size = len(phone_to_index)
-        vocab_size += 1  # Add 1 for padding token
 
         # Encode phonemes to indices
         train_encoded = [[phone_to_index[p] for p in w] for w in train_phonemes]

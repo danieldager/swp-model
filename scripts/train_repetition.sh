@@ -44,13 +44,23 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 python -c "import torch; print(f'cuda device: {torch.cuda.current_device()}')"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
+# Assign default values if environment variables are not set
+N_EPOCHS=${N_EPOCHS:-30}
+H_SIZE=${H_SIZE:-8}
+N_LAYERS=${N_LAYERS:-1}
+DROPOUT=${DROPOUT:-0.0}
+L_RATE=${L_RATE:-0.001}
+TF_RATIO=${TF_RATIO:-0.0}
+
 # launch your computation
 echo "computation start $(date)"
 
 python code/simulations/train_repetition.py \
+    --n_epochs "$N_EPOCHS" \
     --h_size "$H_SIZE" \
     --n_layers "$N_LAYERS" \
     --dropout "$DROPOUT" \
-    --l_rate "$L_RATE"
+    --l_rate "$L_RATE" \
+    --tf_ratio "$TF_RATIO" \
 
 echo "computation end : $(date)"

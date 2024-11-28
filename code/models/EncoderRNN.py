@@ -13,17 +13,18 @@ class EncoderRNN(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
-        # input_size + 1 = vocab size, because the # of embeddings
-        self.embedding = nn.Embedding(input_size + 1, hidden_size)
+        self.embedding = nn.Embedding(input_size, hidden_size)
         self.dropout = nn.Dropout(dropout)
-        if num_layers == 1: dropout = 0
+        if num_layers == 1: dropout = 0.0
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
 
     def forward(self, x):
-        x = x.squeeze()
-        # print("x", x)
+        # print("\ne x", x.shape)
         embedded = self.dropout(self.embedding(x))
-        # print("embedded", embedded)
-        _, hidden = self.rnn(embedded)
+        embedded = embedded.permute(1, 0, 2)
+        # print("e embedded", embedded.shape)
+        o, hidden = self.rnn(embedded)
+        # print("e o", o.shape)
+        # print("e hidden", hidden.shape)
         
-        return embedded, hidden
+        return hidden
