@@ -37,11 +37,11 @@ fi
 # print environment information
 echo "python: $(which python)"
 echo "python-version $(python -V)"
-echo "CUDA_DEVICE: $CUDA_VISIBLE_DEVICES"
+# echo "CUDA_DEVICE: $CUDA_VISIBLE_DEVICES"
 
 # check cuda compatability
-python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
-python -c "import torch; print(f'cuda device: {torch.cuda.current_device()}')"
+python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+python -c "import torch; print(f'DEVICE: {torch.cuda.current_device()}')"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
 # Assign default values if environment variables are not set

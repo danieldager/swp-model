@@ -19,7 +19,7 @@ WEIGHTS_DIR.mkdir(exist_ok=True)
 
 from Phonemes import Phonemes
 from plots import training_curves
-from utils import Timer, seed_everything, set_device, alignment_loss
+from utils import Timer, seed_everything, set_device
 
 # TODO: replace this with comment below
 import sys
@@ -208,7 +208,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
 
     # Plot loss curves and create gridsearch log
-    training_curves(train_losses, valid_losses, model, num_epochs)
+    training_curves(train_losses, valid_losses, model, n_epochs)
     grid_search_log(train_losses, valid_losses, model)
 
     # Print timing summary
