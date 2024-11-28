@@ -141,23 +141,21 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             optimizer.zero_grad()
 
             # Forward passes
-            # timer.start()
+            timer.start()
             encoder_hidden = encoder(input)
-            # timer.stop("Encoder Forward Pass")
+            timer.stop("Encoder Forward Pass")
 
-            # timer.start()
+            timer.start()
             decoder_input = torch.zeros(1, 1, dtype=torch.int64, device=device)
             decoder_output = decoder(decoder_input, encoder_hidden, target, tf_ratio)
-            # timer.stop("Decoder Forward Pass")
+            timer.stop("Decoder Forward Pass")
 
             # Loss computation
-            # timer.start()
+            timer.start()
             output = decoder_output.view(-1, vocab_size)
             target = target.view(-1)
-            # print("o", output.shape)
-            # print("t", target.shape)
             loss = criterion(output, target)       
-            # timer.stop("Loss Computation")
+            timer.stop("Loss Computation")
 
             # Backward pass
             timer.start()
@@ -171,8 +169,8 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
                 checkpoint += 1
 
         train_loss /= len(train_dataloader)
-        print(f"Train loss: {train_loss:.3f}")
         train_losses.append(train_loss)
+        print(f"Train loss: {train_loss:.3f}")
 
         """ VALIDATION LOOP """
         timer.start()
@@ -196,13 +194,12 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
 
         valid_loss /= len(valid_dataloader)
         valid_losses.append(valid_loss)
+        print(f"Valid loss: {valid_loss:.3f}")
         timer.stop("Validation")
 
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)
-        log = f"Epoch {epoch}: Train: {train_loss:.3f} "
-        log += f"Valid: {valid_loss:.3f} Time: {epoch_time:.2f}s"
-        print(log)
+        print(f"Time: {epoch_time:.2f}s")
 
         # Save model weights for every epoch
         save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)

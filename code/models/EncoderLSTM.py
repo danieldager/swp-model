@@ -20,16 +20,8 @@ class EncoderLSTM(nn.Module):
         if num_layers == 1: dropout = 0
         self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, dropout=dropout)
 
-        # NOTE: if we use an embedding layer, we don't need one-hot vectors
-        # NOTE: input size = vocab size, + 1 because of num_embeddings
-
     def forward(self, x):
         embedded = self.dropout(self.embedding(x))
         _, (hidden, _) = self.lstm(embedded)
-
-        # NOTE: should we parameterize the hidden state ?
-        # hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
-        # NOTE: if we use an embedding layer, we don't need one-hot vectors
-        # x = torch.argmax(x, dim=-1)
         
         return hidden

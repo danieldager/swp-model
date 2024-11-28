@@ -70,9 +70,11 @@ def calculate_errors(prediction: list, target: list) -> dict:
 
 """ TESTING LOOP """
 def test_repetition(P: Phonemes, model: str) -> list:
+    print(f"Testing model: {model}")
     # Unpack parameters from model name
-    e, h, l, d = [p[1:] for p in model.split("_")[:-1]]
-    num_epochs, hidden_size, num_layers, dropout = int(e), int(h), int(l), float(d)
+    e, h, l, d, _, _ = [p[1:] for p in model.split("_")[:-1]]
+    print(f"Parameters: epochs={e}, hidden={h}, dropout={d}")
+    n_epochs, h_size, n_layers, dropout = int(e), int(h), int(l), float(d)
 
     # Unpack variables from Phonemes class
     test_data = P.test_data
@@ -88,21 +90,22 @@ def test_repetition(P: Phonemes, model: str) -> list:
 
     # Add checkpoints for proper iteration
     checkpoints = [f"1_{i}" for i in range(1, 11)]
-    epochs = checkpoints + list(range(2, num_epochs + 1))
+    epochs = checkpoints + list(range(2, n_epochs + 1))
     
     # For testing only the final epoch
     epochs = ["1_1", 30]
 
     dataframes = []
     for epoch in epochs:
-        print(f"Testing epoch {epoch}...")
+        print(f"Epoch {epoch}...")
 
         """ LOAD MODEL """
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
         encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch}.pth"
         decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch}.pth"
-        encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
-        decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
+        encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
+        decoder = DecoderRNN(h_size, vocab_size, n_layers, dropout).to(device)
+        
         encoder.load_state_dict(
             torch.load(encoder_path, map_location=device, weights_only=True)
         )
@@ -131,10 +134,8 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 target = target.to(device)
 
                 encoder_hidden = encoder(inputs)
-                decoder_input = torch.zeros(
-                    1, inputs.shape[1], hidden_size, device=device
-                )
-                decoder_output = decoder(decoder_input, encoder_hidden)
+                decoder_input = torch.zeros(1, 1, dtype=int, device=device)
+                decoder_output = decoder(decoder_input, encoder_hidden, target, 0.0)
 
                 prediction = torch.argmax(decoder_output, dim=-1)
                 prediction = prediction.squeeze().cpu().tolist()
