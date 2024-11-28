@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, num_layers, dropout, tf_ratio, embedding):
+    def __init__(self, hidden_size, output_size, num_layers, dropout, embedding):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
