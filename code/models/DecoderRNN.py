@@ -1,59 +1,48 @@
 import torch
 import torch.nn as nn
+from random import random
 
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, num_layers, dropout, embedding):
+    def __init__(self, hidden_size, output_size, num_layers, dropout):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.num_layers = num_layers
 
-        self.embedding = embedding
         self.dropout = nn.Dropout(dropout)
         if num_layers == 1: dropout = 0.0
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.linear = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden, target, tf_ratio):
-        outputs = []
-        # print("\nd x", x.shape)
-        # print("d hidden", hidden.shape)
-        # print("d target", target.shape)
-        # print(target)
+        # Computes all time steps at once
+        if x.shape[0] > 1: 
+            outputs, _ = self.rnn(x, hidden)   # (L, B, H)
+            outputs = self.linear(outputs)     # (L, B, V)
 
-        # Forward pass loop for each token in target
-        for i in range(target.shape[1]):
-            
-            # Initial time step
-            if i == 0:
-                x = self.dropout(self.embedding(x))
-                # print("\nd1 x", x.shape)
+        # Loop for each timestep in target 
+        else: 
+            outputs = []
+            for i in range(target.shape[0]):
 
-            # Teacher forcing
-            elif torch.rand(1).item() < tf_ratio:
-                x = target[:, i].unsqueeze(0)
-                # print("\nd2 x", x.shape)
-                x = self.dropout(self.embedding(x))
-                # print("d2 x", x.shape)
-            
-            # No teacher forcing
-            else: 
-                x = self.dropout(output)
-                # print("\nd3 x", x.shape)
-            
-            # Generate outputs
-            output, hidden = self.rnn(x, hidden)
-            # print("\nd output", output.shape)
-            # print("d hidden", hidden.shape)
+                # For first timestep,       x = start  (1, B, H)
+                if i == 0: x = x
 
-            # Generate logits
-            logits = self.fc(output)
-            outputs.append(logits)
+                # If teacher forcing,       x = target (1, B, H)
+                elif random() < tf_ratio: 
+                    x = target[:, i:i+1, :]
         
-        # Return logits (seq_length, vocab_size)
-        # print("\nd outputs", len(outputs))
-        # print(outputs[0].shape)
-        outputs = torch.stack(outputs, dim=0)
-        # print(outputs.shape)
+                # No teacher forcing,       x = output (1, B, H)
+                else: x = self.dropout(output)
 
+                # Generate outputs          (1, B, H), (layers, B, H)
+                output, hidden = self.rnn(x, hidden)
+
+                # Generate logits           (1, B, V)
+                logits = self.linear(output)
+                outputs.append(logits)
+
+            # Create output tensor          (B, L, V)
+            outputs = torch.concat(outputs, dim=1)
+        
         return outputs

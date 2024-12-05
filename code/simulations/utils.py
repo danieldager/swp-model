@@ -5,8 +5,8 @@ import pandas as pd
 from pathlib import Path
 from collections import defaultdict
 
-import spacy
 from g2p_en import G2p
+import spacy, spacy.cli
 from morphemes import Morphemes
 from wordfreq import zipf_frequency, iter_wordlist, word_frequency
 
@@ -83,10 +83,12 @@ class Timer:
 
 
 """ TEST DATA PROCESSING """
-# NOTE: python -m spacy download en_core_web_lg
 g2p = G2p()
-nlp = spacy.load('en_core_web_lg')
 mrp = Morphemes(str(DATA_DIR / "morphemes_data"))
+
+if not spacy.util.is_package("en_core_web_lg"):
+    spacy.cli.download("en_core_web_lg")
+nlp = spacy.load('en_core_web_lg')
 
 # Process the hand-made test datasets
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:

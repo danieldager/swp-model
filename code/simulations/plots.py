@@ -17,12 +17,12 @@ sns.set_palette("colorblind")
 # Plot the training and validation loss curves
 def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs: int):
     # Extract parameters from the model name
-    h, l, d, r, t = [p[1:] for p in model.split('_')[1:]]
+    h, l, d, t, r = [p[1:] for p in model.split('_')[1:]]
 
     plt.figure(figsize=(10, 6))
     sns.lineplot(x=range(1, n_epochs + 1), y=train_losses, label='Training')
     sns.lineplot(x=range(1, n_epochs + 1), y=valid_losses, label='Validation')
-    plt.title(f'Model: H={h}, L={l}, D={d}, LR={r} TF={t}')
+    plt.title(f'Model: H={h}, L={l}, D={d}, TF={t}, LR={r}')
     plt.xlabel('Epoch')
     plt.ylabel('Cross Entropy Loss')
     plt.legend()
@@ -32,6 +32,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     filename = MODEL_FIGURES_DIR / 'training_curves.png'
     plt.savefig(filename, dpi= 300, bbox_inches='tight')
+    plt.close()
 
 # Plot the edit operations and distance for each test category
 def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
