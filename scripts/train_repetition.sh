@@ -61,6 +61,6 @@ python code/simulations/train_repetition.py \
     --num_layers "$N_LAYERS" \
     --dropout "$DROPOUT" \
     --tf_ratio "$TF_RATIO" \
-    --learing_rate "$L_RATE" \
+    --learning_rate "$L_RATE" \
 
 echo "computation end : $(date)"

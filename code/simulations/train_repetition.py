@@ -50,7 +50,7 @@ def parse_args():
 
     parser.add_argument("--tf_ratio", type=float, default=0.0, help="Teacher forcing")
     
-    parser.add_argument("--learing_rate", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
 
     args = parser.parse_args()
     return args
@@ -240,4 +240,4 @@ if __name__ == "__main__":
     args = parse_args()
     params = vars(args)
     model = train_repetition(P, params)
-    results = test_repetition(P, model)
+    # results = test_repetition(P, model)
