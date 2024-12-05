@@ -4,7 +4,7 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-h_sizes=(4 8 16 32 64)
+h_sizes=(4 8 16)
 n_layers=(1 2)
 dropouts=(0.0)
 tf_ratios=(0.0)
@@ -19,7 +19,7 @@ for h_size in "${h_sizes[@]}"; do
         for dropout in "${dropouts[@]}"; do
             for l_rate in "${l_rates[@]}"; do
                 for tf_ratio in "${tf_ratios[@]}"; do
-                    echo "Submitting h=$h_size, n=$n_layer, d=$dropout, l=$l_rate, tf=$tf_ratio"
+                    echo "Submitting h=$h_size, n=$n_layer, d=$dropout, tf=$tf_ratio, l=$l_rate"
                     
                     # Submit job with parameters passed as environment variables
                     sbatch --export=ALL,H_SIZE=$h_size,N_LAYERS=$n_layer,DROPOUT=$dropout,L_RATE=$l_rate,TF_RATIO=$tf_ratio "$TRAIN_SCRIPT"

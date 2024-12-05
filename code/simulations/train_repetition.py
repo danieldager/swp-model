@@ -121,7 +121,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
 
     criterion = nn.CrossEntropyLoss()
-    parameters = list(set(encoder.parameters()).union(set(decoder.parameters())))
+    parameters = list(encoder.parameters()) + list(decoder.parameters())    
     optimizer = optim.Adam(parameters, lr=learning_rate)
 
     """ TRAINING LOOP """

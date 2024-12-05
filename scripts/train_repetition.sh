@@ -5,8 +5,9 @@
 #SBATCH --cpus-per-task=2             # Ask for 2 CPU cores
 #SBATCH --gres=gpu:A40:1              # Ask for 1 GPUs
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
-#SBATCH --time=2:00:00                # Time limit hrs:min:sec
+#SBATCH --time=3:00:00                # Time limit hrs:min:sec
 #SBATCH --output=logs/%j.log          # Standard output and error log
+#SBATCH --nice=1000                   # Priority; higher is lower priority
 
 echo "Running job on $(hostname)"
 
@@ -14,7 +15,7 @@ echo "Running job on $(hostname)"
 mkdir -p logs
 
 # create execution environment
-module purge                        
+module purge
 module load miniconda3/24.3.0-ui7c
 eval "$(conda shell.bash hook)"
 
