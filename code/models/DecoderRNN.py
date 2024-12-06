@@ -15,34 +15,38 @@ class DecoderRNN(nn.Module):
         self.linear = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden, target, tf_ratio):
+        # Original implementation
+        if x.shape[1] > 1:
+            output, _ = self.rnn(x, hidden)    # (B, L, H) or (L, B, H)
+            logits = self.linear(output)       # (B, L, V) or (L, B, V)
+
         # Computes all time steps at once
-        if x.shape[0] > 1: 
-            outputs, _ = self.rnn(x, hidden)   # (L, B, H)
-            outputs = self.linear(outputs)     # (L, B, V)
+        elif x.shape[0] > 1: 
+            output, _ = self.rnn(x, hidden)   # (L, B, H)
+            logits = self.linear(output)      # (L, B, V)
 
         # Loop for each timestep in target 
         else: 
-            outputs = []
+            logits = []
             for i in range(target.shape[0]):
 
-                # For first timestep,       x = start  (1, B, H)
+                # For first timestep       (1, B, H) x = start
                 if i == 0: x = x
 
-                # If teacher forcing,       x = target (1, B, H)
+                # If teacher forcing       (1, B, H) x = target
                 elif random() < tf_ratio: 
                     x = target[:, i:i+1, :]
         
-                # No teacher forcing,       x = output (1, B, H)
+                # No teacher forcing       (1, B, H) x = output 
                 else: x = self.dropout(output)
 
-                # Generate outputs          (1, B, H), (layers, B, H)
+                # Generate outputs         (1, B, H), (layers, B, H)
                 output, hidden = self.rnn(x, hidden)
 
-                # Generate logits           (1, B, V)
-                logits = self.linear(output)
-                outputs.append(logits)
+                # Generate logits          (1, B, V)
+                logits.append(self.linear(output))
 
-            # Create output tensor          (B, L, V)
-            outputs = torch.concat(outputs, dim=1)
+            # Create output tensor         (B, L, V)
+            logits = torch.concat(logits, dim=1)
         
-        return outputs
+        return logits

@@ -19,10 +19,22 @@ class EncoderRNN(nn.Module):
         self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
 
     def forward(self, x):               # (B, length)
-        x = self.embedding(x)           # (B, length, H) 
-        embedded = x.permute(1, 0, 2)   # (length, B, H)
-        x = self.dropout(embedded)
-        _, hidden = self.rnn(x)         # (layers, B, H)
+        # Original implementation
+        embedded = self.dropout(self.embedding(x)) # (B, length, H)
+        _, hidden = self.rnn(embedded)             # (layers, length, H)
+
+        # Permuted implementation
+        # x = x.permute(1, 0)                        # (length, B)
+        # embedded = self.dropout(self.embedding(x)) # (length, B, H)
+        # _, hidden = self.rnn(embedded)             # (layers, B, H)
+
+        # # Embedding layer
+        # x = self.embedding(x)           # (B, length, H) 
+        # embedded = x.permute(1, 0, 2)   # (length, B, H)
+        
+        # # RNN layer
+        # x = self.dropout(embedded)      # (length, B, H)
+        # _, hidden = self.rnn(x)         # (layers, B, H)
 
         # inputs = targets -> embedded = target_embedded
         return hidden, embedded

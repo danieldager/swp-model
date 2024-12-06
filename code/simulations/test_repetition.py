@@ -9,7 +9,7 @@ from Levenshtein import editops
 FILE_DIR = Path(__file__).resolve()
 ROOT_DIR = FILE_DIR.parent.parent.parent
 
-WEIGHTS_DIR = ROOT_DIR / "weights_other"
+WEIGHTS_DIR = ROOT_DIR / "weights"
 DATA_DIR = ROOT_DIR / "data"
 
 WEIGHTS_DIR.mkdir(exist_ok=True)
@@ -72,7 +72,7 @@ def calculate_errors(prediction: list, target: list) -> dict:
 def test_repetition(P: Phonemes, model: str) -> list:
     print(f"Testing model: {model}")
     # Unpack parameters from model name
-    e, h, l, d, _, _ = [p[1:] for p in model.split("_")[:-1]]
+    e, h, l, d = [p[1:] for p in model.split("_")[:-2]]
     print(f"Parameters: epochs={e}, hidden={h}, dropout={d}")
     n_epochs, h_size, n_layers, dropout = int(e), int(h), int(l), float(d)
 
@@ -93,7 +93,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
     epochs = checkpoints + list(range(2, n_epochs + 1))
     
     # For testing only the final epoch
-    epochs = ["1_1", 30]
+    epochs = ["1_1", 10]
 
     dataframes = []
     for epoch in epochs:
@@ -133,7 +133,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 inputs = inputs.to(device)
                 target = target.to(device)
 
-                encoder_hidden = encoder(inputs)
+                encoder_hidden, _ = encoder(inputs)
                 decoder_input = torch.zeros(1, 1, dtype=int, device=device)
                 decoder_output = decoder(decoder_input, encoder_hidden, target, 0.0)
 
