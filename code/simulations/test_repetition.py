@@ -40,8 +40,8 @@ def parse_args():
 """ ERROR CALCULATION """
 def calculate_errors(prediction: list, target: list) -> dict:
     errors = {
-        "inss": 0, "dels": 0, "subs": 0, "total": 0,
-        "h_count": 0, "m_count": 0, "t_count": 0
+        "inss": 0, "dels": 0, "subs": 0, "total": 0, "length": len(target),
+        "indices": [i+1 for i, (p, t) in enumerate(zip(prediction, target)) if p != t],
     }
 
     # Tabulate errors by type
@@ -51,29 +51,15 @@ def calculate_errors(prediction: list, target: list) -> dict:
         elif op == "delete": errors['dels'] += 1
         elif op == "replace": errors['subs'] += 1
     errors['total'] = len(ops)
-    
-    # Get indices of errors
-    indices = [i+1 for i, (p, t) in enumerate(zip(prediction, target)) if p != t]
 
-    # Calculate the boundaries primacy/recency effect
-    if len(target) <= 5: head, tail = 1, len(target)
-    elif len(target) <= 7: head, tail = 2, len(target) - 1
-    else: head, tail = 3, len(target) - 2
-
-    # Count errors in each segment
-    for index in indices:
-        if index <= head: errors['h_count'] += 1
-        elif index <= tail: errors['m_count'] += 1
-        else: errors['t_count'] += 1
-    
     return errors
 
 """ TESTING LOOP """
 def test_repetition(P: Phonemes, model: str) -> list:
-    print(f"Testing model: {model}")
+    print(f"\nTesting model: {model}")
     # Unpack parameters from model name
-    e, h, l, d = [p[1:] for p in model.split("_")[:-2]]
-    print(f"Parameters: epochs={e}, hidden={h}, dropout={d}")
+    e, h, l, d, t, r = [p[1:] for p in model.split("_")]
+    print(f"Parameters: e={e} h={h} l={l} d={d} t={t} l={r}")
     n_epochs, h_size, n_layers, dropout = int(e), int(h), int(l), float(d)
 
     # Unpack variables from Phonemes class
@@ -93,11 +79,11 @@ def test_repetition(P: Phonemes, model: str) -> list:
     epochs = checkpoints + list(range(2, n_epochs + 1))
     
     # For testing only the final epoch
-    epochs = ["1_1", 10]
+    epochs = ["1_1", epochs[-1]]
 
     dataframes = []
     for epoch in epochs:
-        print(f"Epoch {epoch}...")
+        # print(f"Epoch {epoch+1}/{epochs}", end="\r")
 
         """ LOAD MODEL """
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
@@ -118,13 +104,17 @@ def test_repetition(P: Phonemes, model: str) -> list:
         test_data = test_data.copy()
 
         deletions, insertions, substitutions = [], [], []
-        start_errors, middle_errors, end_errors = [], [], []
+        error_indices, sequence_lengths = [], []
         edit_distances = []
 
         # Initialize the confusion matrix
         confusions = {}
         for t in phoneme_stats.keys():
             confusions[t] = {p: 0 for p in phoneme_stats.keys()}
+            confusions[t]['OY0'] = 0
+        confusions['OY0'] = {p: 0 for p in phoneme_stats.keys()}
+        confusions['OY0']['OY0'] = 0
+        # TODO: Fix this hardcoding
 
         encoder.eval()
         decoder.eval()
@@ -134,8 +124,8 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 target = target.to(device)
 
                 encoder_hidden, _ = encoder(inputs)
-                decoder_input = torch.zeros(1, 1, dtype=int, device=device)
-                decoder_output = decoder(decoder_input, encoder_hidden, target, 0.0)
+                decoder_inputs = torch.zeros(1, inputs.shape[1], h_size, device=device)
+                decoder_output = decoder(decoder_inputs, encoder_hidden, target, 0.0)
 
                 prediction = torch.argmax(decoder_output, dim=-1)
                 prediction = prediction.squeeze().cpu().tolist()
@@ -147,9 +137,8 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 insertions.append(errors['inss'])
                 substitutions.append(errors['subs'])
                 edit_distances.append(errors['total'])
-                start_errors.append(errors['h_count'])
-                middle_errors.append(errors['m_count'])
-                end_errors.append(errors['t_count'])
+                error_indices.append(errors['indices'])
+                sequence_lengths.append(errors['length'])
                 
                 # Convert indices to phonemes
                 prediction = [index_to_phone[i] for i in prediction]
@@ -162,14 +151,13 @@ def test_repetition(P: Phonemes, model: str) -> list:
 
                 predictions.append(prediction[:-1])
 
-        test_data["Prediction"] = predictions
-        test_data["Deletions"] = deletions
-        test_data["Insertions"] = insertions
-        test_data["Substitutions"] = substitutions
-        test_data["Edit Distance"] = edit_distances
-        test_data["Start Errors"] = start_errors
-        test_data["Middle Errors"] = middle_errors
-        test_data["End Errors"] = end_errors
+        test_data["Prediction"]      = predictions
+        test_data["Deletions"]       = deletions
+        test_data["Insertions"]      = insertions
+        test_data["Substitutions"]   = substitutions
+        test_data["Edit Distance"]   = edit_distances
+        test_data["Error Indices"]   = error_indices
+        test_data["Sequence Length"] = sequence_lengths
 
         error_plots(test_data, model, epoch)
         primacy_recency(test_data, model, epoch)
@@ -178,7 +166,6 @@ def test_repetition(P: Phonemes, model: str) -> list:
         dataframes.append(test_data)
 
     return dataframes
-
 
 if __name__ == "__main__":
     seed_everything()

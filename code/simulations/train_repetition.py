@@ -28,6 +28,8 @@ MODELS_DIR = ROOT_DIR / "code" / "models"
 sys.path.append(str(MODELS_DIR))
 from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
+from EncoderLSTM import EncoderLSTM
+from DecoderLSTM import DecoderLSTM
 # from ..models.DecoderRNN import DecoderRNN
 # from ..models.EncoderRNN import EncoderRNN
 
@@ -115,8 +117,10 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
 
-    encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
-    decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
+    # encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
+    # decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
+    encoder = EncoderLSTM(vocab_size, hidden_size, num_layers).to(device)
+    decoder = DecoderLSTM(hidden_size, vocab_size, num_layers).to(device)
 
     criterion = nn.CrossEntropyLoss()
     parameters = list(encoder.parameters()) + list(decoder.parameters())    
@@ -140,31 +144,26 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         for i, (input, target) in enumerate(train_dataloader, 1):
             print(f"{i}/{len(train_dataloader)}", end="\r")
 
+            length = input.shape[1]
             input = input.to(device)
             target = target.to(device)
-            # target = target.permute(1, 0) # (length, B)
             optimizer.zero_grad()
 
-            # Forward passes
-            timer.start()
-            encoder_hidden, target_embedded = encoder(input) # (layers, B, H), (length, B, H)
-            # print("e hidden", encoder_hidden.shape)
-            timer.stop("Encoder Forward Pass")
+            # timer.start()
+            encoder_hidden = encoder(input)
+            # print("e out", encoder_hidden.shape)
+            # timer.stop("Encoder Forward Pass")
 
-            # Original
-            start_token = torch.zeros(batch_size, input.shape[1], hidden_size, device=device) # (B, L, H)
+            decoder_input = torch.zeros(batch_size, length, hidden_size, device=device) # (B, L, H)
+            # print("d input", decoder_input.shape)
 
-            # Permuted
-            # start_token = torch.zeros(input.shape[1], batch_size, hidden_size, device=device) # (L, B, H)
-
-            # print("s token", start_token.shape)
             # start_token = torch.zeros(1, batch_size, dtype=torch.int64, device=device)
             # start_token = encoder.embedding(start_token) # (1, B, H)
 
-            timer.start()
-            output = decoder(start_token, encoder_hidden, target_embedded, tf_ratio) # (B, L, V) or (L, B, V)
-            # print("output", output.shape)
-            timer.stop("Decoder Forward Pass")
+            # timer.start()
+            output = decoder(decoder_input, encoder_hidden) # (B, L, V)
+            # print("d out", output.shape)
+            # timer.stop("Decoder Forward Pass")
 
             # Loss computation
             # length = output.shape[1]
@@ -178,7 +177,8 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             #     print(t)  
             
             output = output.view(-1, vocab_size)        # (B * L, V)
-            loss = criterion(output, target.view(-1))   # (B * L)
+            target = target.view(-1)                    # (B * L)
+            loss = criterion(output, target)           
             # print("loss fn", output.shape, target.view(-1).shape)
             train_loss += loss.item()
             
@@ -207,31 +207,25 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         with torch.no_grad():
             for i, (input, target) in enumerate(valid_dataloader, 1):
                 print(f"{i+1}/{len(valid_dataloader)}", end="\r")
+                
+                length = input.shape[1]
                 input = input.to(device)
                 target = target.to(device)
 
                 # Forward passes
-                encoder_hidden, _ = encoder(input)    # (layers, B, H) or (layers, length, H)
-
-                # Original
-                start_token = torch.zeros(batch_size, input.shape[1], hidden_size, device=device)
-
-                # Permuted
-                # start_token = torch.zeros(input.shape[1], batch_size, hidden_size, device=device)
-
-                # start_token = torch.zeros(1, batch_size, dtype=torch.int64, device=device)
-                # start_token = encoder.embedding(start_token)          # (1, B, H)
-                output = decoder(start_token, encoder_hidden, _, 0)   # (B, L, V)
+                encoder_hidden = encoder(input)
+                start_token = torch.zeros(batch_size, length, hidden_size, device=device)                
+                output = decoder(start_token, encoder_hidden)
 
                 # Loss computation
-                output = output.view(-1, vocab_size)                  # (B * L, V)
-                loss = criterion(output, target.view(-1))             # (B * L)
+                output = output.view(-1, vocab_size)
+                target = target.view(-1)
+                loss = criterion(output, target)
                 valid_loss += loss.item()
 
         valid_loss /= len(valid_dataloader)
         valid_losses.append(valid_loss)
         print(f"Valid loss: {valid_loss:.3f}")
-        timer.stop("Validation")
 
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)

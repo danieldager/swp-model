@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=swpm-seq2seq       # Job name
+#SBATCH --job-name=swpm-train         # Job name
 #SBATCH --partition=gpu               # Take a node from the 'gpu' partition
 #SBATCH --export=ALL                  # Export your environment to the compute node
 #SBATCH --cpus-per-task=2             # Ask for 2 CPU cores
@@ -7,7 +7,7 @@
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=3:00:00                # Time limit hrs:min:sec
 #SBATCH --output=logs/%j.log          # Standard output and error log
-#SBATCH --nice=1000                   # Priority; higher is lower priority
+#SBATCH --nice=0                      # Priority; higher is lower priority
 
 echo "Running job on $(hostname)"
 

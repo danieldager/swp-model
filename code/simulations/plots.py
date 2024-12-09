@@ -31,7 +31,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     MODEL_FIGURES_DIR = FIGURES_DIR / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     filename = MODEL_FIGURES_DIR / 'training_curves.png'
-    plt.savefig(filename, dpi= 300, bbox_inches='tight')
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.close()
 
 # Plot the edit operations and distance for each test category
@@ -194,7 +194,7 @@ def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> No
     MODEL_FIGURES_DIR = FIGURES_DIR / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     filename = f'errors{epoch}.png' if epoch else 'errors.png'
-    plt.savefig(MODEL_FIGURES_DIR / filename, dpi= 300, bbox_inches='tight')
+    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches='tight')
     # plt.close()
 
 
@@ -246,32 +246,81 @@ def confusion_matrix(confusions: dict, model: str, epoch: str) -> None:
     MODEL_FIGURES_DIR = FIGURES_DIR / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     filename = f'confusion{epoch}.png'
-    plt.savefig(MODEL_FIGURES_DIR / filename, dpi= 300, bbox_inches='tight')
+    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches='tight')
     # plt.close()
 
 def primacy_recency(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
-    data = df.copy()
+    df = df.copy()
     # # Combining plots
     # fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 
     # sns.barplot(x='Category', y='Value', data=df, ax=axes[0])
     # sns.boxplot(x='Category', y='Value', data=df, ax=axes[1])
 
-    # Select the specific columns for which you want to compute the averages
-    columns = ['Start Errors', 'Middle Errors', 'End Errors']
+    counts = {}
+    data = []
 
-    # Calculate the average values for the selected columns
-    average_error_counts = data[columns].mean()
+    for _, row in df.iterrows():
+        length = row['Sequence Length']
+        if length not in counts:
+            counts[length] = {}
+        
+        for index in row['Error Indices']:
+            if index not in counts[length]:
+                counts[length][index] = 0
+            counts[length][index] += 1
+    
+    for length, indices in counts.items():
+        indices = {i: indices.get(i, 0) for i in range(1, length + 1)}
+        
+        for idx, count in indices.items():
+            data.append({"Length": length, "Index": idx, "Count": count})
 
-    # Prepare the data for plotting
-    plot_data = pd.DataFrame({
-        'Error Type': columns,
-        'Average Error Count': average_error_counts
-    })
+    plot_df = pd.DataFrame(data)
 
-    plt.figure(figsize=(8, 6))
-    sns.barplot(x='Error Type', y='Average Error Count', data=plot_data)
-    plt.title('Primacy and Recency Effects')
-    plt.xlabel('Error Type')
-    plt.ylabel('Average Error Count')
+    # # Calculate the max counts for each length
+    # max_counts = plot_df.groupby("Length")["Count"].transform("max")
+
+    # # Normalize the counts between 0 and 1
+    # plot_df["Count"] = plot_df["Count"] / max_counts
+
+    # # Y offset for each sequence length
+    # plot_df["Offset"] = plot_df.apply(
+    #     lambda row: row["Count"] + (row["Length"] - min(plot_df["Length"])) * 1.2, axis=1)
+
+    palette = [
+        "#4E79A7",  # Soft blue
+        "#F28E2B",  # Warm orange
+        "#76B7B2",  # Muted teal
+        "#E15759",  # Light red
+        "#59A14F",  # Fresh green
+        "#EDC948",  # Soft yellow
+        "#FF9DA7",  # Light coral pink
+        "#9C755F",  # Soft brown
+        "#BAB0AC"   # Muted gray
+    ]
+
+    # Plotting
+    plt.figure(figsize=(8, 8))
+    sns.lineplot(
+        data=plot_df, 
+        x="Index", 
+        y="Count", 
+        hue="Length", 
+        marker="o",
+        linewidth=1.5,  # Thinner lines
+        # alpha=0.6,    # Reduced opacity
+        palette=palette
+    )
+    plt.title("Serial Position Curve")
+    plt.xlabel("Error Index")
+    plt.ylabel("Normalized Error Count")
+    plt.legend(title="Sequence Length")
+    plt.grid(True)
     plt.tight_layout()
+
+    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
+    filename = f'position{epoch}.png'
+    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches='tight')
+    # plt.close()
