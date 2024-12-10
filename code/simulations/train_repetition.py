@@ -17,12 +17,11 @@ DATA_DIR = ROOT_DIR / "data"
 
 WEIGHTS_DIR.mkdir(exist_ok=True)
 
-from Phonemes import Phonemes
-from plots import training_curves
-from utils import Timer, seed_everything, set_device
-
 from ..models.DecoderRNN import DecoderRNN
 from ..models.EncoderRNN import EncoderRNN
+from .Phonemes import Phonemes
+from .plots import training_curves
+from .utils import Timer, seed_everything, set_device
 
 device = set_device()
 
@@ -87,7 +86,7 @@ def grid_search_log(train_losses, valid_losses, model):
 """ TRAINING LOOP """
 
 
-def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
+def train_repetition(P: Phonemes, params: dict) -> str:
     """LOAD VARIABLES"""
     vocab_size = P.vocab_size
     train_dataloader = P.train_dataloader

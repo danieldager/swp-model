@@ -1,11 +1,11 @@
 import json
-from pathlib import Path
 from itertools import chain
+from pathlib import Path
 
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
-from utils import sample_words, get_test_data
+from .utils import get_test_data, sample_words
 
 """ 
 "phoneme tensors" are one-hot tensors of a list of phonemes for a single word
@@ -15,6 +15,7 @@ from utils import sample_words, get_test_data
 CUR_DIR = Path(__file__).resolve()
 CACHE_DIR = CUR_DIR.parent / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
+
 
 class CustomDataset(Dataset):
     def __init__(self, phonemes):
@@ -28,7 +29,8 @@ class CustomDataset(Dataset):
         # Return inputs and targets
         return self.data[idx], self.data[idx].clone()
 
-class Phonemes():
+
+class Phonemes:
     def __init__(self, word_count: int = 50000, savepath=None):
         # Convert savepath to Path object if provided
         self.savepath = Path(savepath) if savepath else None
@@ -42,27 +44,35 @@ class Phonemes():
 
         # Load phonemes from cache if available
         if train_cache.exists() and valid_cache.exists():
-            with train_cache.open('r') as f: self.train_phonemes = json.load(f)
-            with valid_cache.open('r') as f: self.valid_phonemes = json.load(f)
+            with train_cache.open("r") as f:
+                self.train_phonemes = json.load(f)
+            with valid_cache.open("r") as f:
+                self.valid_phonemes = json.load(f)
 
         # Otherwise, generate and save phonemes to cache
         else:
-            self.train_phonemes, self.valid_phonemes = sample_words(word_count, self.real_words)
-            with train_cache.open('w') as f: json.dump(self.train_phonemes, f)
-            with valid_cache.open('w') as f: json.dump(self.valid_phonemes, f)
+            self.train_phonemes, self.valid_phonemes = sample_words(
+                word_count, self.real_words
+            )
+            with train_cache.open("w") as f:
+                json.dump(self.train_phonemes, f)
+            with valid_cache.open("w") as f:
+                json.dump(self.valid_phonemes, f)
 
         # Add stop token to phoneme sequences
         train_phonemes = [seq + ["<STOP>"] for seq in self.train_phonemes]
         valid_phonemes = [seq + ["<STOP>"] for seq in self.valid_phonemes]
-        test_phonemes = [seq + ["<STOP>"] for seq in self.test_data['Phonemes']]
+        test_phonemes = [seq + ["<STOP>"] for seq in self.test_data["Phonemes"]]
 
         # NOTE: Deduplicate the train phonemes !!
 
         # Flatten and deduplicate lists of phonemes
-        all_phonemes = list(set(chain(*train_phonemes, *valid_phonemes, *test_phonemes)))
+        all_phonemes = list(
+            set(chain(*train_phonemes, *valid_phonemes, *test_phonemes))
+        )
 
         # Create phoneme to index map
-        phone_to_index = {p: i+1 for i, p in enumerate(all_phonemes)}
+        phone_to_index = {p: i + 1 for i, p in enumerate(all_phonemes)}
 
         # Add padding token to beginning of index map
         phone_to_index["<PAD>"] = 0
@@ -86,7 +96,7 @@ class Phonemes():
         # Create dataloaders
         self.train_dataloader = DataLoader(train_dataset, shuffle=True)
         self.valid_dataloader = DataLoader(valid_dataset, shuffle=False)
-        self.test_dataloader = DataLoader(test_dataset) 
+        self.test_dataloader = DataLoader(test_dataset)
 
         # Save attributes
         self.vocab_size = vocab_size
