@@ -158,7 +158,9 @@ cython_debug/
 # Miscillaneous
 .DS_Store
 .vscode
+cache
 weights
 figures
-weights_other
-figures_other
+weights_old
+figures_old
+grid_search.csv

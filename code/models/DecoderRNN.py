@@ -1,45 +1,59 @@
+import torch
 import torch.nn as nn
+from random import random
 
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, num_layers, dropout):
+    def __init__(self, hidden_size, vocab_size, num_layers, dropout):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size
-        self.output_size = output_size
+        self.output_size = vocab_size
         self.num_layers = num_layers
 
-        self.embedding = nn.Embedding(hidden_size, hidden_size)
         self.dropout = nn.Dropout(dropout)
-        if num_layers == 1: dropout = 0
-        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout)
-        self.fc = nn.Linear(hidden_size, output_size)
+        if num_layers == 1: dropout = 0.0
+        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
+        self.linear = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, x, hidden):
-        # hidden_embedded = self.embedding(hidden)
+        # Original implementation
+        # if x.shape[0] > 1:
+        print("x", x.shape)
+        output, _ = self.rnn(x, hidden)    # (B, L, H)
+        print("output", output.shape)
+        logits = self.linear(output)       # (B, L, V)
+        print("logits", logits.shape)
 
-        # NOTE: pass decoder outputs to rnn
-        output, hidden = self.rnn(x, hidden)
-        output = self.fc(output)
+        # # Computes all time steps at once
+        # elif x.shape[0] > 1: 
+        #     output, _ = self.rnn(x, hidden)   # (L, B, H)
+        #     logits = self.linear(output)      # (L, B, V)
 
-        # Two connected embedding layers ? 
+        # Loop for each timestep in target 
+        # else: 
+        #     logits = []
+        #     for i in range(target.shape[0]):
+
+        #         # For first timestep       (1, B, H) x = start  // (B, 1, H)
+        #         if i == 0: x = x
+
+        #         # If teacher forcing       (1, B, H) x = target // (B, 1, H)
+        #         elif random() < tf_ratio: 
+        #             x = target[:, i:i+1, :]
         
-        # NOTE: Don't need softmax with CrossEntropyLoss
-        # output = F.softmax(output, dim=-1)
+        #         # No teacher forcing       (1, B, H) x = output // (B, 1, H)
+        #         else: x = self.dropout(output)
 
-        # NOTE: do we want to include a learned start token ?
-        # x = torch.zeros(self.batch_size, 1, self.hidden_size)
+        #         print("x", x.shape)
+        #         # Generate outputs         (1, B, H), (layers, B, H)
+        #         output, hidden = self.rnn(x, hidden) 
+        #         print("output", output.shape)
+        #         print("hidden", hidden.shape)
 
-        # If we want to use teacher forcing, we need to iterate through the target sequence
-        # Initialize decoder hidden state as encoder's final hidden state
-        # decoder_hidden = encoder_hidden
-        # for t in range(targets.size(1)):  # for each time step
-        #     # Decoder forward pass (at each time step)
-        #     decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        #         # Generate logits          (1, B, V)
+        #         logits.append(self.linear(output))
 
-        #     # Compute loss (comparing decoder output with the true target at this time step)
-        #     loss += loss_fn(decoder_output.squeeze(1), targets[:, t])
-
-        #     # Optionally use teacher forcing (use the true target as the next input)
-        #     teacher_force = random.random() < TEACHER_FORCING_RATIO
-        #     decoder_input = targets[:, t].unsqueeze(1) if teacher_force else decoder_output.argmax(dim=2)
-
-        return output
+        #     # Create output tensor         (B, L, V)
+        #     logits = torch.concat(logits, dim=1)
+        #     print("logits", logits.shape)
+        
+        return logits
