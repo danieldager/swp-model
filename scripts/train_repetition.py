@@ -11,7 +11,7 @@ import torch
 
 from swp.datasets.Phonemes import Phonemes
 from swp.train.repetition import train_repetition
-from swp.utils.utils import seed_everything, set_device
+from swp.utils.legacy_utils import seed_everything, set_device
 
 """ ARGUMENT PARSER """
 

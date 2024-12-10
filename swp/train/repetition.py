@@ -21,7 +21,7 @@ from ..models.DecoderRNN import DecoderRNN
 from ..models.EncoderLSTM import EncoderLSTM
 from ..models.EncoderRNN import EncoderRNN
 from ..plots import training_curves
-from ..utils.utils import Timer
+from ..utils.legacy_utils import Timer
 
 """ CHECKPOINTING """
 
