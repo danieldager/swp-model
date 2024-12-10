@@ -17,44 +17,48 @@ DATA_DIR = ROOT_DIR / "data"
 
 WEIGHTS_DIR.mkdir(exist_ok=True)
 
-from ..models.DecoderRNN import DecoderRNN
-from ..models.EncoderRNN import EncoderRNN
-from .Phonemes import Phonemes
-from .plots import training_curves
-from .utils import Timer, seed_everything, set_device
+from Phonemes import Phonemes
+from plots import training_curves
+from test_repetition import test_repetition
+from utils import Timer, seed_everything, set_device
+
+# TODO: replace this with comment below
+import sys
+MODELS_DIR = ROOT_DIR / "code" / "models"
+sys.path.append(str(MODELS_DIR))
+from EncoderRNN import EncoderRNN
+from DecoderRNN import DecoderRNN
+from EncoderLSTM import EncoderLSTM
+from DecoderLSTM import DecoderLSTM
+# from ..models.DecoderRNN import DecoderRNN
+# from ..models.EncoderRNN import EncoderRNN
 
 device = set_device()
+penalty = torch.tensor(0.0, device=device)
 
 """ ARGUMENT PARSER """
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--n_epochs", type=int, default=30, help="Number of training epochs"
-    )
+    parser.add_argument("--num_epochs", type=int, default=40)
 
-    parser.add_argument("--h_size", type=int, default=4, help="Hidden layer size")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
 
-    parser.add_argument(
-        "--n_layers", type=int, default=1, help="Number of hidden layers"
-    )
+    parser.add_argument("--hidden_size", type=int, default=4, help="Hidden size")
 
-    parser.add_argument(
-        "--dropout", type=float, default=0.1, help="Dropout rate (0.0 to 1.0)"
-    )
+    parser.add_argument("--num_layers", type=int, default=1, help="Hidden layers")
 
-    parser.add_argument("--l_rate", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--dropout", type=float, default=0.0, help="Dropout rate")
+
+    parser.add_argument("--tf_ratio", type=float, default=0.0, help="Teacher forcing")
+    
+    parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
 
     args = parser.parse_args()
     return args
 
-
 """ CHECKPOINTING """
-
-
-def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
+def save_weights(filepath, encoder, decoder, epoch, checkpoint=None):
     if checkpoint:
         epoch = f"{epoch}_{checkpoint}"
     encoder_path = filepath / f"encoder{epoch}.pth"
@@ -62,184 +66,187 @@ def save_checkpoint(filepath, encoder, decoder, epoch, checkpoint=None):
     torch.save(encoder.state_dict(), encoder_path)
     torch.save(decoder.state_dict(), decoder_path)
 
-
 """ GRID SEARCH LOGGING """
-
-
-def grid_search_log(train_losses, valid_losses, model):
+def grid_search_log(train_losses, valid_losses, model, num_epochs):
     try:
         df = pd.read_csv(DATA_DIR / "grid_search.csv")
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
-        columns = ["model", "hidden_size", "num_layers", "dropout", "learning_rate"]
-        columns += [f"T{i}" for i in range(1, 31)] + [f"V{i}" for i in range(1, 31)]
+        print("\nCreating new grid search log")
+        columns = ["model", "h_size", "n_layers", "dropout", "tf_ratio", "l_rate",]
+        columns += [f"T{i}" for i in range(1, num_epochs + 1)]
+        columns += [f"V{i}" for i in range(1, num_epochs + 1)]
         df = pd.DataFrame(columns=columns)
 
     # Extract parameters from the model name
-    h, l, d, r = [p[1:] for p in model.split("_")[1:]]
-    df.loc[model] = [model, h, l, d, r] + train_losses + valid_losses
+    h, l, d, t, r = [p[1:] for p in model.split("_")[1:]]
+    df.loc[model] = [model, h, l, d, t, r] + train_losses + valid_losses
+    print("model", model)
 
     # Save the DataFrame to a CSV file
     df.to_csv(DATA_DIR / "grid_search.csv", index=False)
 
-
 """ TRAINING LOOP """
-
-
-def train_repetition(P: Phonemes, params: dict) -> str:
-    """LOAD VARIABLES"""
+def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
+    # Unpack variables
     vocab_size = P.vocab_size
+    index_to_phone = P.index_to_phone
     train_dataloader = P.train_dataloader
     valid_dataloader = P.valid_dataloader
 
-    """ UNPACK PARAMETERS """
-    num_epochs = params["n_epochs"]
-    hidden_size = params["h_size"]
-    num_layers = params["n_layers"]
-    dropout = params["dropout"]
-    learning_rate = params["l_rate"]
+    # Unpack hyperparameters
+    num_epochs    = params["num_epochs"]
+    batch_size    = params["batch_size"]
+    hidden_size   = params["hidden_size"]
+    num_layers    = params["num_layers"]
+    dropout       = params["dropout"]
+    tf_ratio      = params["tf_ratio"]
+    learning_rate = params["learning_rate"]
 
-    # Print hyperparameters
-    print(f"Training model with hyperparameters:")
+    print(f"\nTraining model with hyperparameters:")
     print(f"Epochs:    {num_epochs}")
     print(f"Hidden:    {hidden_size}")
     print(f"Layers:    {num_layers}")
     print(f"Dropout:   {dropout}")
+    print(f"Teacher:   {tf_ratio}")
     print(f"Learning:  {learning_rate}")
 
-    """ INITIALIZE MODEL """
-    model = f"e{num_epochs}_h{hidden_size}_l{num_layers}_d{dropout}_r{learning_rate}"
+    # Initialize model
+    model = f"e{num_epochs}_h{hidden_size}_l{num_layers}"
+    model += f"_d{dropout}_t{tf_ratio}_r{learning_rate}"
     MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
 
-    encoder = EncoderRNN(
-        input_size=vocab_size,
-        hidden_size=hidden_size,
-        num_layers=num_layers,
-        dropout=dropout,
-    ).to(device)
-
-    decoder = DecoderRNN(
-        hidden_size=hidden_size,
-        output_size=vocab_size,
-        num_layers=num_layers,
-        dropout=dropout,
-    ).to(device)
-
-    # # if CUDA, use DataParallel
-    # if torch.cuda.device_count() > 1:
-    #     encoder = nn.DataParallel(encoder).to(device)
-    #     decoder = nn.DataParallel(decoder).to(device)
+    # encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
+    # decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
+    encoder = EncoderLSTM(vocab_size, hidden_size, num_layers).to(device)
+    decoder = DecoderLSTM(hidden_size, vocab_size, num_layers).to(device)
 
     criterion = nn.CrossEntropyLoss()
-    parameters = list(encoder.parameters()) + list(decoder.parameters())
+    parameters = list(encoder.parameters()) + list(decoder.parameters())    
     optimizer = optim.Adam(parameters, lr=learning_rate)
 
-    """ TRAINING LOOP """
+    timer = Timer()
     train_losses = []
     valid_losses = []
     epoch_times = []
-    timer = Timer()
 
     for epoch in range(1, num_epochs + 1):
-        print(f"Epoch {epoch}")
+        epoch_start = time.time()
+        print(f"\nEpoch {epoch}")
 
-        train_loss = 0
+        """ TRAINING LOOP """
         encoder.train()
         decoder.train()
-        epoch_start = time.time()
-        if epoch == 1:
-            checkpoint = 1
+        train_loss = 0
+        checkpoint = 1
 
-        timer.start()
-        for i, (inputs, targets) in enumerate(train_dataloader):
-            i += 1
-            print(f"{i+1}/{len(train_dataloader)}", end="\r")
+        for i, (input, target) in enumerate(train_dataloader, 1):
+            print(f"{i}/{len(train_dataloader)}", end="\r")
 
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+            length = input.shape[1]
+            input = input.to(device)
+            target = target.to(device)
             optimizer.zero_grad()
 
-            # Forward passes
-            timer.start()
-            encoder_hidden = encoder(inputs)
-            timer.stop("Encoder Forward Pass")
+            # timer.start()
+            encoder_hidden = encoder(input)
+            # print("e out", encoder_hidden.shape)
+            # timer.stop("Encoder Forward Pass")
 
-            timer.start()
-            decoder_input = torch.zeros(1, inputs.shape[1], hidden_size, device=device)
-            decoder_output = decoder(decoder_input, encoder_hidden)
-            timer.stop("Decoder Forward Pass")
+            decoder_input = torch.zeros(batch_size, length, hidden_size, device=device) # (B, L, H)
+            # print("d input", decoder_input.shape)
+
+            # start_token = torch.zeros(1, batch_size, dtype=torch.int64, device=device)
+            # start_token = encoder.embedding(start_token) # (1, B, H)
+
+            # timer.start()
+            output = decoder(decoder_input, encoder_hidden) # (B, L, V)
+            # print("d out", output.shape)
+            # timer.stop("Decoder Forward Pass")
 
             # Loss computation
-            timer.start()
-            outputs = decoder_output.view(-1, vocab_size)
-            targets = targets.view(-1)
-            loss = criterion(outputs, targets)
-            timer.stop("Loss Computation")
+            # length = output.shape[1]
+            # if length > 7:
+            #     p = torch.argmax(output, dim=2)
+            #     p = p.squeeze().tolist()
+            #     p = [index_to_phone[i] for i in p]
+            #     t = target.squeeze().tolist()
+            #     t = [index_to_phone[i] for i in t]
+            #     print(p)
+            #     print(t)  
+            
+            output = output.view(-1, vocab_size)        # (B * L, V)
+            target = target.view(-1)                    # (B * L)
+            loss = criterion(output, target)           
+            # print("loss fn", output.shape, target.view(-1).shape)
+            train_loss += loss.item()
+            
+            # if length > 7: print(loss.item(), '\n')
 
             # Backward pass
             timer.start()
             loss.backward()
             optimizer.step()
             timer.stop("Backward Pass")
-            train_loss += loss.item()
 
-            if epoch == 1 and i % (len(train_dataloader) // 10) == 0:
-                save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
+            if epoch == 1 and i % ((len(train_dataloader) // 10)) == 0:
+                save_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
+                print(f"Checkpoint {checkpoint} loss: {(train_loss / i):.3f}")
                 checkpoint += 1
 
         train_loss /= len(train_dataloader)
         train_losses.append(train_loss)
+        print(f"Train loss: {train_loss:.3f}")
 
         """ VALIDATION LOOP """
-        timer.start()
         encoder.eval()
         decoder.eval()
         valid_loss = 0
 
         with torch.no_grad():
-            for inputs, targets in valid_dataloader:
-                inputs = inputs.to(device)
-                targets = targets.to(device)
+            for i, (input, target) in enumerate(valid_dataloader, 1):
+                print(f"{i+1}/{len(valid_dataloader)}", end="\r")
+                
+                length = input.shape[1]
+                input = input.to(device)
+                target = target.to(device)
 
-                encoder_hidden = encoder(inputs)
-                decoder_input = torch.zeros(
-                    1, inputs.shape[1], hidden_size, device=device
-                )
-                decoder_output = decoder(decoder_input, encoder_hidden)
+                # Forward passes
+                encoder_hidden = encoder(input)
+                start_token = torch.zeros(batch_size, length, hidden_size, device=device)                
+                output = decoder(start_token, encoder_hidden)
 
-                outputs = decoder_output.view(-1, vocab_size)
-                targets = targets.view(-1)
-                loss = criterion(outputs, targets)
+                # Loss computation
+                output = output.view(-1, vocab_size)
+                target = target.view(-1)
+                loss = criterion(output, target)
                 valid_loss += loss.item()
 
         valid_loss /= len(valid_dataloader)
         valid_losses.append(valid_loss)
-        timer.stop("Validation")
+        print(f"Valid loss: {valid_loss:.3f}")
 
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)
-        log = f"Epoch {epoch}: Train: {train_loss:.3f} "
-        log += f"Valid: {valid_loss:.3f} Time: {epoch_time:.2f}s"
-        print(log)
+        print(f"Epoch time: {epoch_time // 3600:.0f}h {epoch_time % 3600 // 60:.0f}m")
 
-        """ CHECKPOINTS """
         # Save model weights for every epoch
-        save_checkpoint(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
+        save_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
 
-    """ PLOT LOSS """
+    # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model, num_epochs)
-    grid_search_log(train_losses, valid_losses, model)
+    grid_search_log(train_losses, valid_losses, model, num_epochs)
 
     # Print timing summary
     timer.summary()
 
     return model
 
-
 if __name__ == "__main__":
     seed_everything()
     P = Phonemes()
     args = parse_args()
-    parameters = vars(args)
-    train_repetition(P, parameters)
+    params = vars(args)
+    model = train_repetition(P, params)
+    # results = test_repetition(P, model)

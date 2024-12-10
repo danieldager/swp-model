@@ -1,21 +1,15 @@
 import json
-from itertools import chain
+import pandas as pd
 from pathlib import Path
+from itertools import chain
 
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from .utils import get_test_data, sample_words
-
-""" 
-"phoneme tensors" are one-hot tensors of a list of phonemes for a single word
-"grapheme tensors" are 1D image tensors of a 64x64 image of a single word
-"""
+from utils import sample_words, phoneme_statistics, get_test_data
 
 CUR_DIR = Path(__file__).resolve()
 CACHE_DIR = CUR_DIR.parent / "cache"
-CACHE_DIR.mkdir(exist_ok=True)
-
 
 class CustomDataset(Dataset):
     def __init__(self, phonemes):
@@ -30,41 +24,37 @@ class CustomDataset(Dataset):
         return self.data[idx], self.data[idx].clone()
 
 
-class Phonemes:
-    def __init__(self, word_count: int = 50000, savepath=None):
-        # Convert savepath to Path object if provided
-        self.savepath = Path(savepath) if savepath else None
-
-        # Get test phonemes
-        self.test_data, self.real_words = get_test_data()
+class Phonemes():
+    def __init__(self) -> None:
+        self.test_data = get_test_data()
 
         # Cache for train and validation phonemes
         train_cache = CACHE_DIR / "train_phonemes.json"
         valid_cache = CACHE_DIR / "valid_phonemes.json"
+        stats_cache = CACHE_DIR / "phoneme_stats.json"
+        bigram_cache = CACHE_DIR / "bigram_stats.json"
 
-        # Load phonemes from cache if available
-        if train_cache.exists() and valid_cache.exists():
-            with train_cache.open("r") as f:
-                self.train_phonemes = json.load(f)
-            with valid_cache.open("r") as f:
-                self.valid_phonemes = json.load(f)
+        # If cache dir exists, load phonemes and stats
+        if CACHE_DIR.exists():
+            with train_cache.open('r') as f: self.train_phonemes = json.load(f)
+            with valid_cache.open('r') as f: self.valid_phonemes = json.load(f)
+            with stats_cache.open('r') as f: self.phoneme_stats = json.load(f)
+            with bigram_cache.open('r') as f: self.bigram_stats = json.load(f)
 
         # Otherwise, generate and save phonemes to cache
         else:
-            self.train_phonemes, self.valid_phonemes = sample_words(
-                word_count, self.real_words
-            )
-            with train_cache.open("w") as f:
-                json.dump(self.train_phonemes, f)
-            with valid_cache.open("w") as f:
-                json.dump(self.valid_phonemes, f)
+            CACHE_DIR.mkdir(exist_ok=True)
+            self.train_phonemes, self.valid_phonemes = sample_words(self.test_data)
+            self.phoneme_stats, self.bigram_stats = phoneme_statistics(self.train_phonemes)
+            with train_cache.open('w') as f: json.dump(self.train_phonemes, f)
+            with valid_cache.open('w') as f: json.dump(self.valid_phonemes, f)
+            with stats_cache.open('w') as f: json.dump(self.phoneme_stats, f)
+            with bigram_cache.open('w') as f: json.dump(self.bigram_stats, f)
 
         # Add stop token to phoneme sequences
         train_phonemes = [seq + ["<STOP>"] for seq in self.train_phonemes]
         valid_phonemes = [seq + ["<STOP>"] for seq in self.valid_phonemes]
         test_phonemes = [seq + ["<STOP>"] for seq in self.test_data["Phonemes"]]
-
-        # NOTE: Deduplicate the train phonemes !!
 
         # Flatten and deduplicate lists of phonemes
         all_phonemes = list(
@@ -74,8 +64,8 @@ class Phonemes:
         # Create phoneme to index map
         phone_to_index = {p: i + 1 for i, p in enumerate(all_phonemes)}
 
-        # Add padding token to beginning of index map
-        phone_to_index["<PAD>"] = 0
+        # # Add start token to beginning of index map
+        phone_to_index["<SOS>"] = 0
 
         # Create index to phoneme map
         index_to_phone = {i: p for p, i in phone_to_index.items()}
@@ -100,4 +90,5 @@ class Phonemes:
 
         # Save attributes
         self.vocab_size = vocab_size
+        self.phone_to_index = phone_to_index
         self.index_to_phone = index_to_phone
