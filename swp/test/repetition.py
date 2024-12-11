@@ -1,5 +1,4 @@
 import torch
-from Levenshtein import editops
 
 from ..datasets.phonemes import Phonemes
 from ..models.decoders import DecoderRNN
@@ -7,35 +6,7 @@ from ..models.encoders import EncoderRNN
 from ..plots import confusion_matrix, error_plots, primacy_recency
 from ..utils.models import load_weigths
 from ..utils.paths import get_checkpoint_dir
-
-""" ERROR CALCULATION """
-
-
-def calculate_errors(prediction: list, target: list) -> dict:
-    errors = {
-        "inss": 0,
-        "dels": 0,
-        "subs": 0,
-        "total": 0,
-        "length": len(target),
-        "indices": [
-            i + 1 for i, (p, t) in enumerate(zip(prediction, target)) if p != t
-        ],
-    }
-
-    # Tabulate errors by type
-    ops = editops(prediction, target)
-    for op, _, _ in ops:
-        if op == "insert":
-            errors["inss"] += 1
-        elif op == "delete":
-            errors["dels"] += 1
-        elif op == "replace":
-            errors["subs"] += 1
-    errors["total"] = len(ops)
-
-    return errors
-
+from .core import calculate_errors
 
 """ TESTING LOOP """
 
