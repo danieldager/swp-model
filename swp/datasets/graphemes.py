@@ -1,4 +1,3 @@
-import functools
 from pathlib import Path
 from typing import Any, Callable, Iterator, Optional, Union
 
