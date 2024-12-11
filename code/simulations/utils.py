@@ -291,7 +291,7 @@ def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:
 
 def phoneme_statistics(phonemes: list):
     # Get the counts for each phoneme
-    phoneme_stats = defaultdict(0)
+    phoneme_stats = defaultdict(int)
     for word in phonemes:
         for phoneme in word:
             phoneme_stats[phoneme] += 1
@@ -301,13 +301,13 @@ def phoneme_statistics(phonemes: list):
     phoneme_stats["<STOP>"] = 0 # Add stop token
 
     # Get the bigram counts for each phoneme pair
-    bigram_stats = defaultdict(0)
+    bigram_stats = defaultdict(int)
     for word in phonemes:
         for i in range(len(word) - 1):
             bigram = " ".join(word[i:i+2])
             bigram_stats[bigram] += 1
 
-    # trigram_stats = defaultdict(0)
+    # trigram_stats = defaultdict(int)
     # for sequence in phonemes:
     #     for i in range(len(sequence) - 2):
     #         trigram = " ".join(sequence[i:i+3])

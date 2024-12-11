@@ -12,8 +12,6 @@ class EncoderLSTM(nn.Module):
 
     def forward(self, x):
         embedded = self.embedding(x)            # (B, L, H)
-        # print("\ne embedded", embedded.shape)
         _, (hidden, _) = self.lstm(embedded)    # (N, B, H)
-        # print("e hidden", hidden.shape)
         
         return hidden

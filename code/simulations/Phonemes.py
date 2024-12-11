@@ -26,7 +26,7 @@ class CustomDataset(Dataset):
 
 class Phonemes():
     def __init__(self) -> None:
-        self.test_data = get_test_data()
+        self.test_data, _ = get_test_data()
 
         # Cache for train and validation phonemes
         train_cache = CACHE_DIR / "train_phonemes.json"

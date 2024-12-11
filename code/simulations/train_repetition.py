@@ -149,19 +149,23 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             target = target.to(device)
             optimizer.zero_grad()
 
+            # print("input", input.shape)
+
             # timer.start()
             encoder_hidden = encoder(input)
             # print("e out", encoder_hidden.shape)
             # timer.stop("Encoder Forward Pass")
 
-            decoder_input = torch.zeros(batch_size, length, hidden_size, device=device) # (B, L, H)
+            # decoder_input = torch.zeros(batch_size, length, hidden_size, device=device) # (B, L, H)
+            decoder_input = torch.zeros(batch_size, 1, hidden_size, device=device) # (B, 1, H)
+            # print("d input", decoder_input.shape)
             # print("d input", decoder_input.shape)
 
             # start_token = torch.zeros(1, batch_size, dtype=torch.int64, device=device)
             # start_token = encoder.embedding(start_token) # (1, B, H)
 
             # timer.start()
-            output = decoder(decoder_input, encoder_hidden) # (B, L, V)
+            output = decoder(decoder_input, encoder_hidden, length) # (B, L, V)
             # print("d out", output.shape)
             # timer.stop("Decoder Forward Pass")
 
