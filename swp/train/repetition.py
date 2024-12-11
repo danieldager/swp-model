@@ -1,62 +1,17 @@
 import time
 
-import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from ..datasets.phonemes import Phonemes
-from ..models.DecoderLSTM import DecoderLSTM
-from ..models.DecoderRNN import DecoderRNN
-from ..models.EncoderLSTM import EncoderLSTM
-from ..models.EncoderRNN import EncoderRNN
+from ..models.decoders import DecoderLSTM, DecoderRNN
+from ..models.encoders import EncoderLSTM, EncoderRNN
 from ..plots import training_curves
-from ..utils.paths import get_checkpoint_dir, get_result_dir
+from ..utils.grid_search import grid_search_log
+from ..utils.models import save_weights
+from ..utils.paths import get_checkpoint_dir
 from ..utils.perf import Timer
-
-""" CHECKPOINTING """
-
-
-def save_weights(filepath, encoder, decoder, epoch, checkpoint=None):
-    if checkpoint:
-        epoch = f"{epoch}_{checkpoint}"
-    encoder_path = filepath / f"encoder{epoch}.pth"
-    decoder_path = filepath / f"decoder{epoch}.pth"
-    torch.save(encoder.state_dict(), encoder_path)
-    torch.save(decoder.state_dict(), decoder_path)
-
-
-""" GRID SEARCH LOGGING """
-
-
-def grid_search_log(train_losses, valid_losses, model, num_epochs):
-    try:
-        df = pd.read_csv(get_result_dir() / "grid_search.csv")
-    except FileNotFoundError:
-        # Create a new DataFrame if the file doesn't exist
-        print("\nCreating new grid search log")
-        columns = [
-            "model",
-            "h_size",
-            "n_layers",
-            "dropout",
-            "tf_ratio",
-            "l_rate",
-        ]
-        columns += [f"T{i}" for i in range(1, num_epochs + 1)]
-        columns += [f"V{i}" for i in range(1, num_epochs + 1)]
-        df = pd.DataFrame(columns=columns)
-
-    # Extract parameters from the model name
-    h, l, d, t, r = [p[1:] for p in model.split("_")[1:]]
-    df.loc[model] = [model, h, l, d, t, r] + train_losses + valid_losses
-    print("model", model)
-
-    # Save the DataFrame to a CSV file
-    df.to_csv(get_result_dir() / "grid_search.csv", index=False)
-
-
-""" TRAINING LOOP """
 
 
 def train_repetition(P: Phonemes, params: dict, device):

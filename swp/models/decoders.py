@@ -1,6 +1,28 @@
+from random import random
+
 import torch
 import torch.nn as nn
-from random import random
+
+
+class DecoderLSTM(nn.Module):
+    def __init__(self, hidden_size, vocab_size, num_layers):
+        super(DecoderLSTM, self).__init__()
+        self.hidden_size = hidden_size
+        self.output_size = vocab_size
+        self.num_layers = num_layers
+
+        self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True)
+        self.linear = nn.Linear(hidden_size, vocab_size)
+
+    def forward(self, x, hidden):
+        cell = torch.zeros_like(hidden)
+        output, _ = self.lstm(x, (hidden, cell))  # (B, L, H)
+        # print("d output", output.shape)
+        logits = self.linear(output)  # (B, L, V)
+        # print("d logits", logits.shape)
+
+        return logits
+
 
 class DecoderRNN(nn.Module):
     def __init__(self, hidden_size, vocab_size, num_layers, dropout):
@@ -10,26 +32,29 @@ class DecoderRNN(nn.Module):
         self.num_layers = num_layers
 
         self.dropout = nn.Dropout(dropout)
-        if num_layers == 1: dropout = 0.0
-        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
+        if num_layers == 1:
+            dropout = 0.0
+        self.rnn = nn.RNN(
+            hidden_size, hidden_size, num_layers, dropout=dropout, batch_first=True
+        )
         self.linear = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, x, hidden):
         # Original implementation
         # if x.shape[0] > 1:
         print("x", x.shape)
-        output, _ = self.rnn(x, hidden)    # (B, L, H)
+        output, _ = self.rnn(x, hidden)  # (B, L, H)
         print("output", output.shape)
-        logits = self.linear(output)       # (B, L, V)
+        logits = self.linear(output)  # (B, L, V)
         print("logits", logits.shape)
 
         # # Computes all time steps at once
-        # elif x.shape[0] > 1: 
+        # elif x.shape[0] > 1:
         #     output, _ = self.rnn(x, hidden)   # (L, B, H)
         #     logits = self.linear(output)      # (L, B, V)
 
-        # Loop for each timestep in target 
-        # else: 
+        # Loop for each timestep in target
+        # else:
         #     logits = []
         #     for i in range(target.shape[0]):
 
@@ -37,15 +62,15 @@ class DecoderRNN(nn.Module):
         #         if i == 0: x = x
 
         #         # If teacher forcing       (1, B, H) x = target // (B, 1, H)
-        #         elif random() < tf_ratio: 
+        #         elif random() < tf_ratio:
         #             x = target[:, i:i+1, :]
-        
+
         #         # No teacher forcing       (1, B, H) x = output // (B, 1, H)
         #         else: x = self.dropout(output)
 
         #         print("x", x.shape)
         #         # Generate outputs         (1, B, H), (layers, B, H)
-        #         output, hidden = self.rnn(x, hidden) 
+        #         output, hidden = self.rnn(x, hidden)
         #         print("output", output.shape)
         #         print("hidden", hidden.shape)
 
@@ -55,5 +80,5 @@ class DecoderRNN(nn.Module):
         #     # Create output tensor         (B, L, V)
         #     logits = torch.concat(logits, dim=1)
         #     print("logits", logits.shape)
-        
+
         return logits
