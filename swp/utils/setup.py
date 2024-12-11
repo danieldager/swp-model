@@ -6,8 +6,6 @@ import torch
 import torch.backends.cudnn
 import torch.version
 
-""" SEEDING """
-
 
 def seed_everything(seed=42) -> None:
     random.seed(seed)

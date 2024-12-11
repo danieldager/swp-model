@@ -39,3 +39,9 @@ def get_checkpoint_dir() -> pathlib.Path:
 def get_result_dir() -> pathlib.Path:
     result_dir.mkdir(parents=True, exist_ok=True)
     return result_dir
+
+
+def get_figures_dir() -> pathlib.Path:
+    figures_dir = result_dir / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    return figures_dir

@@ -1,15 +1,11 @@
 import json
 from itertools import chain
-from pathlib import Path
 
-import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from ..utils.legacy_utils import get_test_data, phoneme_statistics, sample_words
-
-CUR_DIR = Path(__file__).resolve()
-CACHE_DIR = CUR_DIR.parent / "cache"
+from ..utils.datasets import get_test_data, phoneme_statistics, sample_words
+from ..utils.paths import get_dataset_dir
 
 
 class CustomDataset(Dataset):
@@ -29,14 +25,15 @@ class Phonemes:
     def __init__(self) -> None:
         self.test_data = get_test_data()
 
+        cache_dir = get_dataset_dir() / "phonemes" / "cache"
         # Cache for train and validation phonemes
-        train_cache = CACHE_DIR / "train_phonemes.json"
-        valid_cache = CACHE_DIR / "valid_phonemes.json"
-        stats_cache = CACHE_DIR / "phoneme_stats.json"
-        bigram_cache = CACHE_DIR / "bigram_stats.json"
+        train_cache = cache_dir / "train_phonemes.json"
+        valid_cache = cache_dir / "valid_phonemes.json"
+        stats_cache = cache_dir / "phoneme_stats.json"
+        bigram_cache = cache_dir / "bigram_stats.json"
 
         # If cache dir exists, load phonemes and stats
-        if CACHE_DIR.exists():
+        if cache_dir.exists():
             with train_cache.open("r") as f:
                 self.train_phonemes = json.load(f)
             with valid_cache.open("r") as f:
@@ -48,7 +45,7 @@ class Phonemes:
 
         # Otherwise, generate and save phonemes to cache
         else:
-            CACHE_DIR.mkdir(exist_ok=True)
+            cache_dir.mkdir(exist_ok=True)
             self.train_phonemes, self.valid_phonemes = sample_words(self.test_data)
             self.phoneme_stats, self.bigram_stats = phoneme_statistics(
                 self.train_phonemes

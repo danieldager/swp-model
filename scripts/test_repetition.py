@@ -7,9 +7,9 @@ sys.path.append(parent)
 
 import argparse
 
-from swp.datasets.Phonemes import Phonemes
+from swp.datasets.phonemes import Phonemes
 from swp.test.repetition import test_repetition
-from swp.utils.legacy_utils import seed_everything, set_device
+from swp.utils.setup import seed_everything, set_device
 
 
 def parse_args():

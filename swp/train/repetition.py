@@ -1,27 +1,18 @@
 import time
-from pathlib import Path
 
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-""" PATHS """
-FILE_DIR = Path(__file__).resolve()
-ROOT_DIR = FILE_DIR.parent.parent.parent
-
-WEIGHTS_DIR = ROOT_DIR / "weights"
-DATA_DIR = ROOT_DIR / "data"
-
-WEIGHTS_DIR.mkdir(exist_ok=True)
-
-from ..datasets.Phonemes import Phonemes
+from ..datasets.phonemes import Phonemes
 from ..models.DecoderLSTM import DecoderLSTM
 from ..models.DecoderRNN import DecoderRNN
 from ..models.EncoderLSTM import EncoderLSTM
 from ..models.EncoderRNN import EncoderRNN
 from ..plots import training_curves
-from ..utils.legacy_utils import Timer
+from ..utils.paths import get_checkpoint_dir, get_result_dir
+from ..utils.perf import Timer
 
 """ CHECKPOINTING """
 
@@ -40,7 +31,7 @@ def save_weights(filepath, encoder, decoder, epoch, checkpoint=None):
 
 def grid_search_log(train_losses, valid_losses, model, num_epochs):
     try:
-        df = pd.read_csv(DATA_DIR / "grid_search.csv")
+        df = pd.read_csv(get_result_dir() / "grid_search.csv")
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
         print("\nCreating new grid search log")
@@ -62,7 +53,7 @@ def grid_search_log(train_losses, valid_losses, model, num_epochs):
     print("model", model)
 
     # Save the DataFrame to a CSV file
-    df.to_csv(DATA_DIR / "grid_search.csv", index=False)
+    df.to_csv(get_result_dir() / "grid_search.csv", index=False)
 
 
 """ TRAINING LOOP """
@@ -95,7 +86,7 @@ def train_repetition(P: Phonemes, params: dict, device):
     # Initialize model
     model = f"e{num_epochs}_h{hidden_size}_l{num_layers}"
     model += f"_d{dropout}_t{tf_ratio}_r{learning_rate}"
-    MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
+    MODEL_WEIGHTS_DIR = get_checkpoint_dir() / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
 
     # encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)

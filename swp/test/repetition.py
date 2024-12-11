@@ -1,21 +1,11 @@
-from pathlib import Path
-
 import torch
 from Levenshtein import editops
 
-""" PATHS """
-FILE_DIR = Path(__file__).resolve()
-ROOT_DIR = FILE_DIR.parent.parent.parent
-
-WEIGHTS_DIR = ROOT_DIR / "weights"
-DATA_DIR = ROOT_DIR / "data"
-
-WEIGHTS_DIR.mkdir(exist_ok=True)
-
-from ..datasets.Phonemes import Phonemes
+from ..datasets.phonemes import Phonemes
 from ..models.DecoderRNN import DecoderRNN
 from ..models.EncoderRNN import EncoderRNN
 from ..plots import confusion_matrix, error_plots, primacy_recency
+from ..utils.paths import get_checkpoint_dir
 
 """ ERROR CALCULATION """
 
@@ -80,7 +70,7 @@ def test_repetition(P: Phonemes, model: str, device) -> list:
         # print(f"Epoch {epoch+1}/{epochs}", end="\r")
 
         """LOAD MODEL"""
-        MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
+        MODEL_WEIGHTS_DIR = get_checkpoint_dir() / model
         encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch}.pth"
         decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch}.pth"
         encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
