@@ -105,6 +105,7 @@ class Timer:
         print("-" * 60)
         for name in self.times:
             print(f"{name:<30} {self.times[name]:>13.3f}s")
+        print("\n\n")
 
 
 """ TEST DATA PROCESSING """

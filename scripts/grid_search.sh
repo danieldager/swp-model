@@ -4,7 +4,7 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-h_sizes=(32 48 64)
+h_sizes=(32 48)
 n_layers=(1)
 dropouts=(0.0)
 tf_ratios=(0.0)
@@ -39,3 +39,4 @@ echo "All jobs submitted! Total combinations: $total"
 
 # scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/weights ~/Desktop/single-word-processing-model/weights
 # scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/figures ~/Desktop/single-word-processing-model/figures
+# scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/data/grid_search.csv ~/Desktop/single-word-processing-model/data

@@ -2,12 +2,12 @@
 #SBATCH --job-name=swpm-train         # Job name
 #SBATCH --partition=gpu               # Take a node from the 'gpu' partition
 #SBATCH --export=ALL                  # Export your environment to the compute node
-#SBATCH --cpus-per-task=2             # Ask for 2 CPU cores
-#SBATCH --gres=gpu:A40:1              # Ask for 1 GPUs
+#SBATCH --cpus-per-task=2             # Number of CPU cores requested
+#SBATCH --gres=gpu:A40:1              # Number and type of GPUs requested
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
-#SBATCH --time=3:00:00                # Time limit hrs:min:sec
+#SBATCH --time=5:00:00                # Time limit hrs:min:sec
 #SBATCH --output=logs/%j.log          # Standard output and error log
-#SBATCH --nice=0                      # Priority; higher is lower priority
+#SBATCH --nice=100                    # Priority; higher is lower priority
 
 echo "Running job on $(hostname)"
 

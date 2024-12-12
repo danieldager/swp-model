@@ -24,6 +24,8 @@ MODELS_DIR = ROOT_DIR / "code" / "models"
 sys.path.append(str(MODELS_DIR))
 from EncoderRNN import EncoderRNN
 from DecoderRNN import DecoderRNN
+from EncoderLSTM import EncoderLSTM
+from DecoderLSTM import DecoderLSTM
 # from ..models.DecoderRNN import DecoderRNN
 # from ..models.EncoderRNN import EncoderRNN
 
@@ -89,8 +91,10 @@ def test_repetition(P: Phonemes, model: str) -> list:
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
         encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch}.pth"
         decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch}.pth"
-        encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
-        decoder = DecoderRNN(h_size, vocab_size, n_layers, dropout).to(device)
+        # encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
+        # decoder = DecoderRNN(h_size, vocab_size, n_layers, dropout).to(device)
+        encoder = EncoderLSTM(vocab_size, h_size, n_layers).to(device)
+        decoder = DecoderLSTM(h_size, vocab_size, n_layers).to(device)
         
         encoder.load_state_dict(
             torch.load(encoder_path, map_location=device, weights_only=True)
@@ -124,8 +128,8 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 target = target.to(device)
 
                 encoder_hidden, _ = encoder(inputs)
-                decoder_inputs = torch.zeros(1, inputs.shape[1], h_size, device=device)
-                decoder_output = decoder(decoder_inputs, encoder_hidden, target, 0.0)
+                start_token = torch.zeros(1, 1, vocab_size, device=device)
+                decoder_output = decoder(start_token, encoder_hidden, target, 0.0)
 
                 prediction = torch.argmax(decoder_output, dim=-1)
                 prediction = prediction.squeeze().cpu().tolist()
