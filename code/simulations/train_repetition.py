@@ -62,11 +62,13 @@ def parse_args():
 """ CHECKPOINTING """
 
 
-def save_weights(filepath, encoder, decoder, epoch, checkpoint=None):
+def save_weights(filepath, embedding, encoder, decoder, epoch, checkpoint=None):
     if checkpoint:
         epoch = f"{epoch}_{checkpoint}"
+    embedding_path = filepath / f"embedding{epoch}.pth"
     encoder_path = filepath / f"encoder{epoch}.pth"
     decoder_path = filepath / f"decoder{epoch}.pth"
+    torch.save(embedding.state_dict(), embedding_path)
     torch.save(encoder.state_dict(), encoder_path)
     torch.save(decoder.state_dict(), decoder_path)
 
@@ -206,7 +208,14 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             timer.stop("Train step")
 
             if epoch == 1 and i % ((len(train_dataloader) // 10)) == 0:
-                save_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
+                save_weights(
+                    MODEL_WEIGHTS_DIR,
+                    shared_embedding,
+                    encoder,
+                    decoder,
+                    epoch,
+                    checkpoint,
+                )
                 print(f"Checkpoint {checkpoint} loss: {(train_loss / i):.3f}")
                 checkpoint += 1
 
@@ -246,7 +255,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         print(f"Epoch time: {epoch_time // 3600:.0f}h {epoch_time % 3600 // 60:.0f}m")
 
         # Save model weights for every epoch
-        save_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
+        save_weights(MODEL_WEIGHTS_DIR, shared_embedding, encoder, decoder, epoch)
 
     # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model, num_epochs)

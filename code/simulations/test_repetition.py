@@ -1,8 +1,10 @@
+import sys
 import argparse
 from pathlib import Path
 
 import pandas as pd
 import torch
+import torch.nn as nn
 from Levenshtein import editops
 
 """ PATHS """
@@ -18,20 +20,16 @@ from Phonemes import Phonemes
 from utils import seed_everything, set_device
 from plots import confusion_matrix, error_plots, primacy_recency
 
-# TODO: replace this with comment below
-import sys
 MODELS_DIR = ROOT_DIR / "code" / "models"
 sys.path.append(str(MODELS_DIR))
-from EncoderRNN import EncoderRNN
-from DecoderRNN import DecoderRNN
 from EncoderLSTM import EncoderLSTM
 from DecoderLSTM import DecoderLSTM
-# from ..models.DecoderRNN import DecoderRNN
-# from ..models.EncoderRNN import EncoderRNN
 
 device = set_device()
 
 """ ARGUMENT PARSING """
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str)
@@ -39,24 +37,39 @@ def parse_args():
     print(f"Testing model: {args.name}")
     return args
 
+
 """ ERROR CALCULATION """
+
+
 def calculate_errors(prediction: list, target: list) -> dict:
     errors = {
-        "inss": 0, "dels": 0, "subs": 0, "total": 0, "length": len(target),
-        "indices": [i+1 for i, (p, t) in enumerate(zip(prediction, target)) if p != t],
+        "inss": 0,
+        "dels": 0,
+        "subs": 0,
+        "total": 0,
+        "length": len(target),
+        "indices": [
+            i + 1 for i, (p, t) in enumerate(zip(prediction, target)) if p != t
+        ],
     }
 
     # Tabulate errors by type
     ops = editops(prediction, target)
     for op, _, _ in ops:
-        if op == "insert": errors['inss'] += 1
-        elif op == "delete": errors['dels'] += 1
-        elif op == "replace": errors['subs'] += 1
-    errors['total'] = len(ops)
+        if op == "insert":
+            errors["inss"] += 1
+        elif op == "delete":
+            errors["dels"] += 1
+        elif op == "replace":
+            errors["subs"] += 1
+    errors["total"] = len(ops)
 
     return errors
 
+
 """ TESTING LOOP """
+
+
 def test_repetition(P: Phonemes, model: str) -> list:
     print(f"\nTesting model: {model}")
     # Unpack parameters from model name
@@ -79,7 +92,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
     # Add checkpoints for proper iteration
     checkpoints = [f"1_{i}" for i in range(1, 11)]
     epochs = checkpoints + list(range(2, n_epochs + 1))
-    
+
     # For testing only the final epoch
     epochs = ["1_1", epochs[-1]]
 
@@ -87,20 +100,28 @@ def test_repetition(P: Phonemes, model: str) -> list:
     for epoch in epochs:
         # print(f"Epoch {epoch+1}/{epochs}", end="\r")
 
-        """ LOAD MODEL """
+        """LOAD MODEL"""
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
+        embedding_path = MODEL_WEIGHTS_DIR / f"embedding{epoch}.pth"
         encoder_path = MODEL_WEIGHTS_DIR / f"encoder{epoch}.pth"
         decoder_path = MODEL_WEIGHTS_DIR / f"decoder{epoch}.pth"
-        # encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
-        # decoder = DecoderRNN(h_size, vocab_size, n_layers, dropout).to(device)
-        encoder = EncoderLSTM(vocab_size, h_size, n_layers).to(device)
-        decoder = DecoderLSTM(h_size, vocab_size, n_layers).to(device)
-        
+
+        shared_embedding = nn.Embedding(vocab_size, h_size)
+        encoder = EncoderLSTM(
+            vocab_size, h_size, n_layers, dropout, shared_embedding
+        ).to(device)
+        decoder = DecoderLSTM(
+            h_size, vocab_size, n_layers, dropout, shared_embedding
+        ).to(device)
+
         encoder.load_state_dict(
             torch.load(encoder_path, map_location=device, weights_only=True)
         )
         decoder.load_state_dict(
             torch.load(decoder_path, map_location=device, weights_only=True)
+        )
+        shared_embedding.load_state_dict(
+            torch.load(embedding_path, map_location=device, weights_only=True)
         )
 
         """ TESTING LOOP """
@@ -115,9 +136,9 @@ def test_repetition(P: Phonemes, model: str) -> list:
         confusions = {}
         for t in phoneme_stats.keys():
             confusions[t] = {p: 0 for p in phoneme_stats.keys()}
-            confusions[t]['OY0'] = 0
-        confusions['OY0'] = {p: 0 for p in phoneme_stats.keys()}
-        confusions['OY0']['OY0'] = 0
+            confusions[t]["OY0"] = 0
+        confusions["OY0"] = {p: 0 for p in phoneme_stats.keys()}
+        confusions["OY0"]["OY0"] = 0
         # TODO: Fix this hardcoding
 
         encoder.eval()
@@ -127,23 +148,23 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 inputs = inputs.to(device)
                 target = target.to(device)
 
-                encoder_hidden, _ = encoder(inputs)
-                start_token = torch.zeros(1, 1, vocab_size, device=device)
-                decoder_output = decoder(start_token, encoder_hidden, target, 0.0)
+                hidden, cell = encoder(inputs)
+                start = torch.zeros(1, vocab_size, dtype=int, device=device)
+                output = decoder(start, hidden, cell, target, 0)
 
-                prediction = torch.argmax(decoder_output, dim=-1)
-                prediction = prediction.squeeze().cpu().tolist()
+                output = torch.argmax(output, dim=2)
+                output = output.squeeze().cpu().tolist()
                 target = target.squeeze().cpu().tolist()
 
-                # Calculate errors
-                errors = calculate_errors(prediction, target)
-                deletions.append(errors['dels'])
-                insertions.append(errors['inss'])
-                substitutions.append(errors['subs'])
-                edit_distances.append(errors['total'])
-                error_indices.append(errors['indices'])
-                sequence_lengths.append(errors['length'])
-                
+                # Calculate errors TODO: Refactor this
+                errors = calculate_errors(output, target)
+                deletions.append(errors["dels"])
+                insertions.append(errors["inss"])
+                substitutions.append(errors["subs"])
+                edit_distances.append(errors["total"])
+                error_indices.append(errors["indices"])
+                sequence_lengths.append(errors["length"])
+
                 # Convert indices to phonemes
                 prediction = [index_to_phone[i] for i in prediction]
                 target = [index_to_phone[i] for i in target]
@@ -155,12 +176,12 @@ def test_repetition(P: Phonemes, model: str) -> list:
 
                 predictions.append(prediction[:-1])
 
-        test_data["Prediction"]      = predictions
-        test_data["Deletions"]       = deletions
-        test_data["Insertions"]      = insertions
-        test_data["Substitutions"]   = substitutions
-        test_data["Edit Distance"]   = edit_distances
-        test_data["Error Indices"]   = error_indices
+        test_data["Prediction"] = predictions
+        test_data["Deletions"] = deletions
+        test_data["Insertions"] = insertions
+        test_data["Substitutions"] = substitutions
+        test_data["Edit Distance"] = edit_distances
+        test_data["Error Indices"] = error_indices
         test_data["Sequence Length"] = sequence_lengths
 
         error_plots(test_data, model, epoch)
@@ -170,6 +191,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
         dataframes.append(test_data)
 
     return dataframes
+
 
 if __name__ == "__main__":
     seed_everything()
