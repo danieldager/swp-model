@@ -88,7 +88,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
 
     # Add checkpoints for proper iteration
     checkpoints = [f"1_{i}" for i in range(1, 11)]
-    epochs = checkpoints + list(range(2, n_epochs + 1))
+    epochs = checkpoints + list(range(1, n_epochs + 1))
 
     # For testing only the final epoch
     epochs = ["30"]

@@ -6,9 +6,9 @@ TRAIN_SCRIPT="./scripts/train_repetition.sh"
 # Define arrays for each hyperparameter
 h_sizes=(64)
 n_layers=(1)
-dropouts=(0.0)
+dropouts=(0.1 0.2 0.3 0.4 0.5)
 tf_ratios=(0.0)
-l_rates=(0.001 0.0005 0.0001)
+l_rates=(0.0005)
 
 # Initialize counter for total combinations
 total=0
@@ -20,13 +20,13 @@ for h_size in "${h_sizes[@]}"; do
             for l_rate in "${l_rates[@]}"; do
                 for tf_ratio in "${tf_ratios[@]}"; do
                     echo "Submitting h=$h_size, n=$n_layer, d=$dropout, tf=$tf_ratio, l=$l_rate"
-                    
+
                     # Submit job with parameters passed as environment variables
                     sbatch --export=ALL,H_SIZE=$h_size,N_LAYERS=$n_layer,DROPOUT=$dropout,L_RATE=$l_rate,TF_RATIO=$tf_ratio "$TRAIN_SCRIPT"
-                    
+
                     # Increment counter
                     ((total++))
-                    
+
                     echo "Submitted job $total"
                     echo "----------------------------------------"
                 done

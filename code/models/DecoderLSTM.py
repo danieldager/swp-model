@@ -13,6 +13,7 @@ class DecoderLSTM(nn.Module):
         self.droupout = dropout
 
         self.embedding = shared_embedding
+        self.dropout = nn.Dropout(dropout)
         self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True)
 
     def forward(self, x, hidden, cell, target, tf_ratio):
@@ -31,15 +32,21 @@ class DecoderLSTM(nn.Module):
 
             # No teacher forcing
             else:
+                # if self.training:
+                #     probs = F.softmax(output, dim=2)
+                #     x = probs @ self.embedding.weight
+                # else:
+                #     x = self.embedding(output.argmax(dim=2))
                 x = self.embedding(output.argmax(dim=2))
 
             # Forward pass
+            x = self.dropout(x)
             output, (hidden, cell) = self.lstm(x, (hidden, cell))
 
             # Compute logits
             output = output @ self.embedding.weight.T
             logits.append(output)
 
-        logits = torch.cat(logits, dim=1)
+        outputs = torch.cat(logits, dim=1)
 
-        return logits
+        return outputs

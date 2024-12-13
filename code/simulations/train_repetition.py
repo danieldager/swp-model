@@ -159,6 +159,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
         list(shared_embedding.parameters())
         + list(encoder.lstm.parameters())
         + list(decoder.lstm.parameters())
+        # + list(decoder.linear.parameters())
     )
     optimizer = optim.Adam(parameters, lr=learning_rate)
 
@@ -218,7 +219,11 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             optimizer.step()
             timer.stop("Train step")
 
-            if epoch == 1 and i % ((len(train_dataloader) // 10)) == 0:
+            if (
+                epoch == 1
+                and checkpoint != 10
+                and i % ((len(train_dataloader) // 10)) == 0
+            ):
                 save_weights(
                     MODEL_WEIGHTS_DIR,
                     shared_embedding,

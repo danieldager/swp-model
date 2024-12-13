@@ -10,10 +10,11 @@ class EncoderLSTM(nn.Module):
         self.dropout = dropout
 
         self.embedding = shared_embedding
+        self.dropout = nn.Dropout(dropout)
         self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True)
 
     def forward(self, x):
-        embedded = self.embedding(x)  # (B, L, H)
+        embedded = self.dropout(self.embedding(x))  # (B, L, H)
         _, (hidden, cell) = self.lstm(embedded)  # (N, B, H)
 
         return hidden, cell
