@@ -193,7 +193,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             train_loss += loss.item()
 
             if epoch == num_epochs:
-                p = torch.argmax(output, dim=2)
+                p = torch.argmax(output, dim=1)
                 p = p.squeeze().tolist()
                 t = target.squeeze().tolist()
                 if p != t:
