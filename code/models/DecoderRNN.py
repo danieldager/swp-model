@@ -2,58 +2,43 @@ import torch
 import torch.nn as nn
 from random import random
 
+
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, vocab_size, num_layers, dropout):
+    def __init__(self, hidden_size, vocab_size, num_layers, dropout, shared_embedding):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = vocab_size
         self.num_layers = num_layers
+        self.droupout = dropout
 
-        self.dropout = nn.Dropout(dropout)
-        if num_layers == 1: dropout = 0.0
-        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
-        self.linear = nn.Linear(hidden_size, vocab_size)
+        self.embedding = shared_embedding
+        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, batch_first=True)
 
-    def forward(self, x, hidden):
-        # Original implementation
-        # if x.shape[0] > 1:
-        print("x", x.shape)
-        output, _ = self.rnn(x, hidden)    # (B, L, H)
-        print("output", output.shape)
-        logits = self.linear(output)       # (B, L, V)
-        print("logits", logits.shape)
+    def forward(self, x, hidden, target, tf_ratio):
+        length = target.size(1)
+        logits = []
 
-        # # Computes all time steps at once
-        # elif x.shape[0] > 1: 
-        #     output, _ = self.rnn(x, hidden)   # (L, B, H)
-        #     logits = self.linear(output)      # (L, B, V)
+        for i in range(length):
 
-        # Loop for each timestep in target 
-        # else: 
-        #     logits = []
-        #     for i in range(target.shape[0]):
+            # Start token
+            if i == 0:
+                x = self.embedding(x)
 
-        #         # For first timestep       (1, B, H) x = start  // (B, 1, H)
-        #         if i == 0: x = x
+            # Teacher forcing
+            elif tf_ratio > random():
+                x = self.embedding(target[:, i].unsqueeze(1))
 
-        #         # If teacher forcing       (1, B, H) x = target // (B, 1, H)
-        #         elif random() < tf_ratio: 
-        #             x = target[:, i:i+1, :]
-        
-        #         # No teacher forcing       (1, B, H) x = output // (B, 1, H)
-        #         else: x = self.dropout(output)
+            # No teacher forcing
+            else:
+                x = self.embedding(output.argmax(dim=2))
 
-        #         print("x", x.shape)
-        #         # Generate outputs         (1, B, H), (layers, B, H)
-        #         output, hidden = self.rnn(x, hidden) 
-        #         print("output", output.shape)
-        #         print("hidden", hidden.shape)
+            # Forward pass
+            output, hidden = self.rnn(x, hidden)
 
-        #         # Generate logits          (1, B, V)
-        #         logits.append(self.linear(output))
+            # Compute logits
+            output = output @ self.embedding.weight.T
+            logits.append(output)
 
-        #     # Create output tensor         (B, L, V)
-        #     logits = torch.concat(logits, dim=1)
-        #     print("logits", logits.shape)
-        
+        logits = torch.cat(logits, dim=1)
+
         return logits

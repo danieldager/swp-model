@@ -21,7 +21,7 @@ class DecoderLSTM(nn.Module):
 
         for i in range(length):
 
-            # First iteration
+            # Start token
             if i == 0:
                 x = self.embedding(x)
 
@@ -33,12 +33,13 @@ class DecoderLSTM(nn.Module):
             else:
                 x = self.embedding(output.argmax(dim=2))
 
+            # Forward pass
             output, (hidden, cell) = self.lstm(x, (hidden, cell))
 
-            # Use embedding weights to get logits
+            # Compute logits
             output = output @ self.embedding.weight.T
             logits.append(output)
 
-        logits = torch.cat(logits, dim=1)  # (B, L, V)
+        logits = torch.cat(logits, dim=1)
 
         return logits

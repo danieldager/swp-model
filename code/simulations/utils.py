@@ -28,6 +28,8 @@ TEST_DATA_REAL = DATA_DIR / "test_dataset_real"
 TEST_DATA_PSEUDO = DATA_DIR / "test_dataset_pseudo"
 
 """ SEEDING """
+
+
 def seed_everything(seed=42) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -55,6 +57,8 @@ def seed_everything(seed=42) -> None:
 
 
 """ DEVICE """
+
+
 def set_device() -> torch.device:
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -70,6 +74,8 @@ def set_device() -> torch.device:
 
 
 """ PERFORMANCE """
+
+
 def timeit(func):
     @wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -114,7 +120,8 @@ mrp = Morphemes(str(DATA_DIR / "morphemes_data"))
 
 if not spacy.util.is_package("en_core_web_lg"):
     spacy.cli.download("en_core_web_lg")
-nlp = spacy.load('en_core_web_lg')
+nlp = spacy.load("en_core_web_lg")
+
 
 # Process the hand-made test datasets
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -233,11 +240,12 @@ def get_test_data() -> tuple:
 
 """ WORD SAMPLING """
 
-def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:    
+
+def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:
     word_list = []
     freq_list = []
     total_freq = 0
-    
+
     test_words = test_data["Word"].tolist()
     for i, word in enumerate(iter_wordlist("en")):
         # Limit the number of words
@@ -275,7 +283,7 @@ def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:
 
     # Determine the index that separates low frequency words
     lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_th)
-    
+
     # Sample validation words from low frequency candidate words
     candidates = [
         w for i, w in enumerate(sorted_words) if i < lf_index and w not in train_words
@@ -286,9 +294,18 @@ def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:
     train_phonemes = [g2p(word) for word in train_words]
     valid_phonemes = [g2p(word) for word in valid_words]
 
+    # Make a dataframe for the train and validation words
+    train_data = pd.DataFrame(train_words, columns=["Word"]).drop_duplicates()
+    valid_data = pd.DataFrame(valid_words, columns=["Word"]).drop_duplicates()
+
+    # Add phonemes to the train and validation dataframes
+    train_data["Phonemes"] = train_data["Word"].apply(g2p)
+    valid_data["Phonemes"] = valid_data["Word"].apply(g2p)
+
     # start = time.perf_counter()
     # print(f"{time.perf_counter() - start:.2f} seconds")
     return train_phonemes, valid_phonemes
+
 
 def phoneme_statistics(phonemes: list):
     # Get the counts for each phoneme
@@ -298,14 +315,16 @@ def phoneme_statistics(phonemes: list):
             phoneme_stats[phoneme] += 1
 
     # Sort descending by count
-    phoneme_stats = dict(sorted(phoneme_stats.items(), key=lambda x: x[1], reverse=True))
-    phoneme_stats["<STOP>"] = 0 # Add stop token
+    phoneme_stats = dict(
+        sorted(phoneme_stats.items(), key=lambda x: x[1], reverse=True)
+    )
+    phoneme_stats["<STOP>"] = 0  # Add stop token
 
     # Get the bigram counts for each phoneme pair
     bigram_stats = defaultdict(int)
     for word in phonemes:
         for i in range(len(word) - 1):
-            bigram = " ".join(word[i:i+2])
+            bigram = " ".join(word[i : i + 2])
             bigram_stats[bigram] += 1
 
     # trigram_stats = defaultdict(int)
@@ -316,7 +335,10 @@ def phoneme_statistics(phonemes: list):
 
     return phoneme_stats, bigram_stats
 
+
 """ CUSTOM LOSS FUNCTION """
+
+
 def alignment_loss(output, target, criterion, penalty):
     """
     Args:
@@ -325,31 +347,32 @@ def alignment_loss(output, target, criterion, penalty):
     """
     output_len = output.size(0)
     target_len = target.size(0)
-    
+
     # Initialize score matrix
     M = torch.zeros(output_len + 1, target_len + 1, device=output.device)
-    
+
     # Initialize first row and column (penalty for skips)
-    for i in range(output_len + 1): M[i, 0] = i * penalty
-    for j in range(target_len + 1): M[0, j] = j * penalty
-    
+    for i in range(output_len + 1):
+        M[i, 0] = i * penalty
+    for j in range(target_len + 1):
+        M[0, j] = j * penalty
+
     # Fill matrix
     for i in range(1, output_len + 1):
         for j in range(1, target_len + 1):
-            
+
             # Calculate match score using cross entropy
-            score = criterion(
-                output[i-1].unsqueeze(0), 
-                target[j-1].unsqueeze(0)
-            )
-            
+            score = criterion(output[i - 1].unsqueeze(0), target[j - 1].unsqueeze(0))
+
             # Take minimum of three possible operations:
             M[i, j] = torch.min(
-                torch.stack([
-                    M[i-1, j-1] + score,  # match/mismatch
-                    M[i-1, j] + penalty,  # skip in output
-                    M[i, j-1] + penalty   # skip in target
-                ])
+                torch.stack(
+                    [
+                        M[i - 1, j - 1] + score,  # match/mismatch
+                        M[i - 1, j] + penalty,  # skip in output
+                        M[i, j - 1] + penalty,  # skip in target
+                    ]
+                )
             )
 
     # print("M[x,y]", M[output_len, target_len])
@@ -357,27 +380,30 @@ def alignment_loss(output, target, criterion, penalty):
 
     return M[output_len, target_len]
 
+
 # Decoder forward pass using alignment loss ^^^
 def alignment_forward(self, x, hidden, stop_token, target_len):
     outputs = []
-    
+
     # Set a limit for pred length
     max_length = target_len + 10
-    
-    # Forward pass loop 
+
+    # Forward pass loop
     for _ in range(max_length):
         output, hidden = self.rnn(x, hidden)
-        
+
         # Generate output logits
         logits = self.fc(output)
         outputs.append(logits)
 
         # Check for stop token
-        if torch.argmax(output) == stop_token: print("STOP"); break
-        
-        # Pass output (not logits) to rnn 
+        if torch.argmax(output) == stop_token:
+            print("STOP")
+            break
+
+        # Pass output (not logits) to rnn
         x = output
-    
+
     # Return logits (pred_len, vocab_size)
     outputs = torch.stack(outputs, dim=0)
     return outputs

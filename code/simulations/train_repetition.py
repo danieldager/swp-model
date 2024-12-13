@@ -136,10 +136,15 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
 
-    # encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
-    # decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
-
     shared_embedding = nn.Embedding(vocab_size, hidden_size)
+
+    # encoder = EncoderRNN(
+    #     vocab_size, hidden_size, num_layers, dropout, shared_embedding
+    # ).to(device)
+
+    # decoder = DecoderRNN(
+    #     hidden_size, vocab_size, num_layers, dropout, shared_embedding
+    # ).to(device)
 
     encoder = EncoderLSTM(
         vocab_size, hidden_size, num_layers, dropout, shared_embedding
@@ -152,8 +157,8 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     criterion = nn.CrossEntropyLoss()
     parameters = (
         list(shared_embedding.parameters())
-        + list(encoder.lstm.parameters())  # Encoder LSTM parameters
-        + list(decoder.lstm.parameters())  # Decoder LSTM parameters
+        + list(encoder.lstm.parameters())
+        + list(decoder.lstm.parameters())
     )
     optimizer = optim.Adam(parameters, lr=learning_rate)
 
@@ -161,7 +166,9 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     train_losses = []
     valid_losses = []
     epoch_times = []
+
     errors = []
+    error_count = 0
 
     for epoch in range(1, num_epochs + 1):
         epoch_start = time.time()
@@ -182,8 +189,11 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
             optimizer.zero_grad()
 
             # Forward pass
-            hidden, cell = encoder(input)
             start = torch.zeros(batch_size, 1, dtype=int, device=device)
+            # hidden = encoder(input)
+            # output = decoder(start, hidden, target, tf_ratio)
+
+            hidden, cell = encoder(input)
             output = decoder(start, hidden, cell, target, tf_ratio)
 
             # Loss computation
@@ -197,9 +207,10 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
                 p = p.squeeze().tolist()
                 t = target.squeeze().tolist()
                 if p != t:
-                    p = [index_to_phone[i] for i in p]
-                    t = [index_to_phone[i] for i in t]
-                    errors.append((p, t))
+                    error_count += 1
+                    # p = [index_to_phone[i] for i in p]
+                    # t = [index_to_phone[i] for i in t]
+                    # errors.append((p, t))
 
             # Backward pass
             timer.start()
@@ -216,7 +227,7 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
                     epoch,
                     checkpoint,
                 )
-                print(f"Checkpoint {checkpoint} loss: {(train_loss / i):.3f}")
+                print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}")
                 checkpoint += 1
 
         train_loss /= len(train_dataloader)
@@ -236,8 +247,9 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
                 target = target.to(device)
 
                 # Forward passes
-                hidden, cell = encoder(input)
                 start = torch.zeros(batch_size, 1, dtype=int, device=device)
+
+                hidden, cell = encoder(input)
                 output = decoder(start, hidden, cell, target, 0)
 
                 # Loss computation
@@ -264,8 +276,11 @@ def train_repetition(P: Phonemes, params: dict) -> pd.DataFrame:
     # Print timing summary
     timer.summary()
 
-    for p, t in errors:
-        print(p, "\n", t, "\n\n")
+    # Print error summary
+    print(f"\nError rate: {error_count / len(train_dataloader):.2f}")
+    # for p, t in errors:
+    #     print(p)
+    #     print(t, "\n")
 
     return model
 

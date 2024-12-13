@@ -7,8 +7,13 @@
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=5:00:00                # Time limit hrs:min:sec
 #SBATCH --output=logs/%j.log          # Standard output and error log
-#SBATCH --nice=100                    # Priority; higher is lower priority
+#SBATCH --nice=1000                    # Priority; higher is lower priority
 
+echo ""
+echo ""
+
+# print job information
+echo "Job ID: $SLURM_JOB_ID"
 echo "Running job on $(hostname)"
 
 # Create logs directory if it doesn't exist

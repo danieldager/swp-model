@@ -11,6 +11,7 @@ from utils import sample_words, phoneme_statistics, get_test_data
 CUR_DIR = Path(__file__).resolve()
 CACHE_DIR = CUR_DIR.parent / "cache"
 
+
 class CustomDataset(Dataset):
     def __init__(self, phonemes):
         # Convert phoneme sequences to tensors
@@ -24,7 +25,7 @@ class CustomDataset(Dataset):
         return self.data[idx], self.data[idx].clone()
 
 
-class Phonemes():
+class Phonemes:
     def __init__(self) -> None:
         self.test_data, _ = get_test_data()
 
@@ -36,20 +37,30 @@ class Phonemes():
 
         # If cache dir exists, load phonemes and stats
         if CACHE_DIR.exists():
-            with train_cache.open('r') as f: self.train_phonemes = json.load(f)
-            with valid_cache.open('r') as f: self.valid_phonemes = json.load(f)
-            with stats_cache.open('r') as f: self.phoneme_stats = json.load(f)
-            with bigram_cache.open('r') as f: self.bigram_stats = json.load(f)
+            with train_cache.open("r") as f:
+                self.train_phonemes = json.load(f)
+            with valid_cache.open("r") as f:
+                self.valid_phonemes = json.load(f)
+            with stats_cache.open("r") as f:
+                self.phoneme_stats = json.load(f)
+            with bigram_cache.open("r") as f:
+                self.bigram_stats = json.load(f)
 
         # Otherwise, generate and save phonemes to cache
         else:
             CACHE_DIR.mkdir(exist_ok=True)
             self.train_phonemes, self.valid_phonemes = sample_words(self.test_data)
-            self.phoneme_stats, self.bigram_stats = phoneme_statistics(self.train_phonemes)
-            with train_cache.open('w') as f: json.dump(self.train_phonemes, f)
-            with valid_cache.open('w') as f: json.dump(self.valid_phonemes, f)
-            with stats_cache.open('w') as f: json.dump(self.phoneme_stats, f)
-            with bigram_cache.open('w') as f: json.dump(self.bigram_stats, f)
+            self.phoneme_stats, self.bigram_stats = phoneme_statistics(
+                self.train_phonemes
+            )
+            with train_cache.open("w") as f:
+                json.dump(self.train_phonemes, f)
+            with valid_cache.open("w") as f:
+                json.dump(self.valid_phonemes, f)
+            with stats_cache.open("w") as f:
+                json.dump(self.phoneme_stats, f)
+            with bigram_cache.open("w") as f:
+                json.dump(self.bigram_stats, f)
 
         # Add stop token to phoneme sequences
         train_phonemes = [seq + ["<STOP>"] for seq in self.train_phonemes]

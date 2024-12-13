@@ -4,11 +4,11 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-h_sizes=(20 24 32)
+h_sizes=(64)
 n_layers=(1)
 dropouts=(0.0)
-tf_ratios=(0.0 0.25)
-l_rates=(0.005 0.001 0.0005 0.0001)
+tf_ratios=(0.0)
+l_rates=(0.001 0.0005 0.0001)
 
 # Initialize counter for total combinations
 total=0

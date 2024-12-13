@@ -18,7 +18,7 @@ WEIGHTS_DIR.mkdir(exist_ok=True)
 
 from Phonemes import Phonemes
 from utils import seed_everything, set_device
-from plots import confusion_matrix, error_plots, primacy_recency
+from plots import confusion_matrix, error_plots
 
 MODELS_DIR = ROOT_DIR / "code" / "models"
 sys.path.append(str(MODELS_DIR))
@@ -41,20 +41,18 @@ def parse_args():
 """ ERROR CALCULATION """
 
 
-def calculate_errors(prediction: list, target: list) -> dict:
+def calculate_errors(output: list, target: list) -> dict:
     errors = {
         "inss": 0,
         "dels": 0,
         "subs": 0,
         "total": 0,
         "length": len(target),
-        "indices": [
-            i + 1 for i, (p, t) in enumerate(zip(prediction, target)) if p != t
-        ],
+        "indices": [i + 1 for i, (p, t) in enumerate(zip(output, target)) if p != t],
     }
 
     # Tabulate errors by type
-    ops = editops(prediction, target)
+    ops = editops(output, target)
     for op, _, _ in ops:
         if op == "insert":
             errors["inss"] += 1
@@ -80,7 +78,6 @@ def test_repetition(P: Phonemes, model: str) -> list:
     # Unpack variables from Phonemes class
     test_data = P.test_data
     vocab_size = P.vocab_size
-    phoneme_stats = P.phoneme_stats
     index_to_phone = P.index_to_phone
     test_dataloader = P.test_dataloader
 
@@ -94,11 +91,10 @@ def test_repetition(P: Phonemes, model: str) -> list:
     epochs = checkpoints + list(range(2, n_epochs + 1))
 
     # For testing only the final epoch
-    epochs = ["1_1", epochs[-1]]
+    epochs = ["30"]
 
     dataframes = []
     for epoch in epochs:
-        # print(f"Epoch {epoch+1}/{epochs}", end="\r")
 
         """LOAD MODEL"""
         MODEL_WEIGHTS_DIR = WEIGHTS_DIR / model
@@ -125,7 +121,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
         )
 
         """ TESTING LOOP """
-        predictions = []
+        outputs = []
         test_data = test_data.copy()
 
         deletions, insertions, substitutions = [], [], []
@@ -134,12 +130,8 @@ def test_repetition(P: Phonemes, model: str) -> list:
 
         # Initialize the confusion matrix
         confusions = {}
-        for t in phoneme_stats.keys():
-            confusions[t] = {p: 0 for p in phoneme_stats.keys()}
-            confusions[t]["OY0"] = 0
-        confusions["OY0"] = {p: 0 for p in phoneme_stats.keys()}
-        confusions["OY0"]["OY0"] = 0
-        # TODO: Fix this hardcoding
+        for t in index_to_phone.values():
+            confusions[t] = {p: 0 for p in index_to_phone.values()}
 
         encoder.eval()
         decoder.eval()
@@ -149,7 +141,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 target = target.to(device)
 
                 hidden, cell = encoder(inputs)
-                start = torch.zeros(1, vocab_size, dtype=int, device=device)
+                start = torch.zeros(1, 1, dtype=int, device=device)
                 output = decoder(start, hidden, cell, target, 0)
 
                 output = torch.argmax(output, dim=2)
@@ -166,17 +158,17 @@ def test_repetition(P: Phonemes, model: str) -> list:
                 sequence_lengths.append(errors["length"])
 
                 # Convert indices to phonemes
-                prediction = [index_to_phone[i] for i in prediction]
+                output = [index_to_phone[i] for i in output]
                 target = [index_to_phone[i] for i in target]
 
-                # Tabulate confusion between prediction and target
-                if len(target) == len(prediction):
-                    for t, p in zip(target, prediction):
+                # Tabulate confusion between output and target
+                if len(target) == len(output):
+                    for t, p in zip(target, output):
                         confusions[t][p] += 1
 
-                predictions.append(prediction[:-1])
+                outputs.append(output[:-1])
 
-        test_data["Prediction"] = predictions
+        test_data["Prediction"] = outputs
         test_data["Deletions"] = deletions
         test_data["Insertions"] = insertions
         test_data["Substitutions"] = substitutions
@@ -185,7 +177,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
         test_data["Sequence Length"] = sequence_lengths
 
         error_plots(test_data, model, epoch)
-        primacy_recency(test_data, model, epoch)
+        # primacy_recency(test_data, model, epoch)
         confusion_matrix(confusions, model, epoch)
 
         dataframes.append(test_data)
