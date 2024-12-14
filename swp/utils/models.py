@@ -1,7 +1,5 @@
 import torch
 
-from .paths import get_checkpoint_dir
-
 
 def save_weights(filepath, encoder, decoder, epoch, checkpoint=None):
     if checkpoint:

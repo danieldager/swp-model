@@ -1,14 +1,12 @@
 import torch
 
 from ..datasets.phonemes import Phonemes
-from ..models.decoders import DecoderRNN
-from ..models.encoders import EncoderRNN
+from ..models.decoders import DecoderLSTM, DecoderRNN
+from ..models.encoders import EncoderLSTM, EncoderRNN
 from ..plots import confusion_matrix, error_plots, primacy_recency
 from ..utils.models import load_weigths
 from ..utils.paths import get_checkpoint_dir
 from .core import calculate_errors
-
-""" TESTING LOOP """
 
 
 def test_repetition(P: Phonemes, model: str, device) -> list:
@@ -45,6 +43,9 @@ def test_repetition(P: Phonemes, model: str, device) -> list:
         MODEL_WEIGHTS_DIR = get_checkpoint_dir() / model
         encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
         decoder = DecoderRNN(h_size, vocab_size, n_layers, dropout).to(device)
+
+        encoder = EncoderLSTM(vocab_size, h_size, n_layers).to(device)
+        decoder = DecoderLSTM(h_size, vocab_size, n_layers).to(device)
         load_weigths(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, device)
 
         """ TESTING LOOP """
@@ -71,9 +72,9 @@ def test_repetition(P: Phonemes, model: str, device) -> list:
                 inputs = inputs.to(device)
                 target = target.to(device)
 
-                encoder_hidden, _ = encoder(inputs)
+                encoder_hidden = encoder(inputs)
                 decoder_inputs = torch.zeros(1, inputs.shape[1], h_size, device=device)
-                decoder_output = decoder(decoder_inputs, encoder_hidden, target, 0.0)
+                decoder_output = decoder(decoder_inputs, encoder_hidden)
 
                 prediction = torch.argmax(decoder_output, dim=-1)
                 prediction = prediction.squeeze().cpu().tolist()

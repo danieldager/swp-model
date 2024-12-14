@@ -23,7 +23,7 @@ class CustomDataset(Dataset):
 
 class Phonemes:
     def __init__(self) -> None:
-        self.test_data = get_test_data()
+        self.test_data = get_test_data()[0]
 
         cache_dir = get_dataset_dir() / "phonemes" / "cache"
         # Cache for train and validation phonemes
@@ -45,7 +45,7 @@ class Phonemes:
 
         # Otherwise, generate and save phonemes to cache
         else:
-            cache_dir.mkdir(exist_ok=True)
+            cache_dir.mkdir(parents=True, exist_ok=True)
             self.train_phonemes, self.valid_phonemes = sample_words(self.test_data)
             self.phoneme_stats, self.bigram_stats = phoneme_statistics(
                 self.train_phonemes

@@ -13,8 +13,8 @@ from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 from .paths import get_dataset_dir
 
 
-# Process the hand-made test datasets
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
+    r"""Process the hand-made test datasets"""
     data = []
     for file in directory.glob("*.csv"):
         name_parts = file.stem.split("_")
@@ -32,8 +32,8 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
     return data
 
 
-# Get morphological data for a word
 def get_morphological_data(word: str):
+    r"""Get morphological data for a word"""
     mrp = Morphemes(
         str(get_dataset_dir() / "morphemes_data")
     )  # TODO check that the path is ok
@@ -63,8 +63,8 @@ def get_morphological_data(word: str):
     return prefixes, roots, root_freqs, suffixes, count, structure
 
 
-# Add frequency, part of speech, phonemes, and morphology to the dataset
 def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
+    r"""Add frequency, part of speech, phonemes, and morphology to the dataset"""
     g2p = G2p()
     if not spacy.util.is_package("en_core_web_lg"):
         spacy.cli.download("en_core_web_lg")
@@ -98,11 +98,11 @@ def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
     return df
 
 
-# Combine and reformat the real and pseudo word datasets
-def get_test_data() -> tuple:
+def get_test_data() -> tuple[pd.DataFrame, list[str]]:
+    r"""Combine and reformat the real and pseudo word datasets"""
     # Process real words
-    TEST_DATA_REAL = get_dataset_dir() / "test_dataset_real"
-    TEST_DATA_PSEUDO = get_dataset_dir() / "test_dataset_pseudo"
+    TEST_DATA_REAL = get_dataset_dir() / "handmade" / "test_dataset_real"
+    TEST_DATA_PSEUDO = get_dataset_dir() / "handmade" / "test_dataset_pseudo"
     real_words = process_dataset(TEST_DATA_REAL, real=True)
     real_words = clean_and_enrich_data(real_words, real=True)
 
@@ -136,10 +136,7 @@ def get_test_data() -> tuple:
     return dataframe, real_words["Word"].tolist()
 
 
-""" WORD SAMPLING """
-
-
-def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95):
+def sample_words(test_data: pd.DataFrame, word_count=50000, split=0.9, freq_th=0.95):
     g2p = G2p()
     word_list = []
     freq_list = []

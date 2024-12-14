@@ -1,10 +1,18 @@
 from typing import Callable, Type, Union
 
-import cornet
 import torch
 import torch.nn as nn
 from torch.utils.model_zoo import load_url
 from torchvision.models.feature_extraction import create_feature_extractor
+
+from .cornet_r import HASH as HASH_R
+from .cornet_r import CORnet_R
+from .cornet_rt import HASH as HASH_RT
+from .cornet_rt import CORnet_RT
+from .cornet_s import HASH as HASH_S
+from .cornet_s import CORnet_S
+from .cornet_z import HASH as HASH_Z
+from .cornet_z import CORnet_Z
 
 
 class EncoderLSTM(nn.Module):
@@ -80,16 +88,27 @@ def cornet_loader(
     pretrained: bool = True,
     map_location=None,
 ) -> nn.Module:
-    if model_letter.upper() not in {"R", "RT", "S", "Z"}:
+    model_code = model_letter.upper()
+    model_class: Union[Type[nn.Module], Callable[[], nn.Module]]
+    if model_code == "R":
+        model_class = CORnet_R
+        model_hash = HASH_R
+    elif model_code == "RT":
+        model_class = CORnet_RT
+        model_hash = HASH_RT
+    elif model_code == "S":
+        model_class = CORnet_S
+        model_hash = HASH_S
+    elif model_code == "Z":
+        model_class = CORnet_Z
+        model_hash = HASH_Z
+    else:
         raise ValueError(
             f"CORnet model letter(s) {model_letter} not recognized. Use R, RT, S or Z."
         )
-    model_class: Union[Type[nn.Module], Callable[[], nn.Module]] = getattr(
-        cornet, f"CORnet_{model_letter.upper()}"
-    )
     model = model_class()
     if pretrained:
-        url = f"https://s3.amazonaws.com/cornet-models/cornet_{model_letter.lower()}-{getattr(cornet, f'HASH_{model_letter.upper()}')}.pth"
+        url = f"https://s3.amazonaws.com/cornet-models/cornet_{model_letter.lower()}-{model_hash}.pth"
         ckpt_data = load_url(url, map_location=map_location)
         state_dict = ckpt_data["state_dict"]
         new_state_dict = {k.removeprefix("module."): v for (k, v) in state_dict.items()}
