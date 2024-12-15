@@ -23,17 +23,18 @@ class CustomDataset(Dataset):
 
 class Phonemes:
     def __init__(self) -> None:
-        self.test_data = get_test_data()[0]
+        self.test_data = get_test_data()
 
-        cache_dir = get_dataset_dir() / "phonemes" / "cache"
+        phonemes_dir = get_dataset_dir() / "phonemes"
         # Cache for train and validation phonemes
-        train_cache = cache_dir / "train_phonemes.json"
-        valid_cache = cache_dir / "valid_phonemes.json"
-        stats_cache = cache_dir / "phoneme_stats.json"
-        bigram_cache = cache_dir / "bigram_stats.json"
+        # TODO add checks, better nouns, better format
+        train_cache = phonemes_dir / "train_phonemes.json"
+        valid_cache = phonemes_dir / "valid_phonemes.json"
+        stats_cache = phonemes_dir / "phoneme_stats.json"
+        bigram_cache = phonemes_dir / "bigram_stats.json"
 
         # If cache dir exists, load phonemes and stats
-        if cache_dir.exists():
+        if phonemes_dir.exists():
             with train_cache.open("r") as f:
                 self.train_phonemes = json.load(f)
             with valid_cache.open("r") as f:
@@ -45,8 +46,8 @@ class Phonemes:
 
         # Otherwise, generate and save phonemes to cache
         else:
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            self.train_phonemes, self.valid_phonemes = sample_words(self.test_data)
+            phonemes_dir.mkdir(parents=True, exist_ok=True)
+            self.train_phonemes, self.valid_phonemes = sample_words()
             self.phoneme_stats, self.bigram_stats = phoneme_statistics(
                 self.train_phonemes
             )

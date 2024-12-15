@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Iterator, Optional, Union
+from typing import Any, Callable, Iterator, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -27,7 +27,7 @@ def text_to_grapheme(
     line_angle: int = 0,
     xshift: int = 0,
     yshift: int = 0,
-):
+) -> np.ndarray:
     if len(spacing) != len(word):
         spacing = spacing[: (len(word) - 1)]
         spacing += [0 for _ in range(len(word) - len(spacing))]
@@ -116,7 +116,7 @@ def text_to_grapheme_bool(
     line_angle: int = 0,
     xshift: int = 0,
     yshift: int = 0,
-):
+) -> bool:
     if len(spacing) != len(word):
         spacing = spacing[: (len(word) - 1)]
         spacing += [0 for _ in range(len(word) - len(spacing))]
@@ -202,7 +202,7 @@ def free_cache():
     _font_spacing_cache = {}
 
 
-def get_max_font_size(word, font):
+def get_max_font_size(word: str, font: str) -> tuple[int, int]:
     top_font_size = 1
     low_font_size = 1
     top_is_ok = True
@@ -229,7 +229,7 @@ def get_max_font_size(word, font):
     return low_font_size, max_space
 
 
-def get_dataset_max_font_size(word_dataset):
+def get_dataset_max_font_size(word_dataset: Sequence[str]) -> tuple[int, int]:
     max_len = -1
     longests = set()
     for word in word_dataset:
@@ -311,7 +311,7 @@ def random_cartesian_product(
     return [id_to_dict(draw) for draw in draws]
 
 
-def create_dataset(path, words, images_per_word):
+def create_dataset(path: Path, words: Sequence[str], images_per_word: int):
     rotations = [-15, -10, -5, 0, 5, 10, 15]
     max_size, max_space = get_dataset_max_font_size(words)
     all_fonts = SERIF_FONTS + SANS_FONTS + SCRIPT_FONTS
@@ -356,7 +356,7 @@ class RepetitionDataset(ImageFolder):
     def __init__(
         self,
         root: Union[str, Path],
-        token_to_id,
+        phoneme_to_id: dict[str, int],
         transform: Optional[Callable] = None,
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Optional[Callable[[str], bool]] = None,
@@ -365,11 +365,11 @@ class RepetitionDataset(ImageFolder):
         g2p = G2p()
         length_to_pad = 10  # max_len + 5
 
-        def to_phoneme(word):
-            phonemes = g2p(word)
+        def to_phoneme(word: str) -> torch.Tensor:
+            phonemes: list[str] = g2p(word)
             phonemes.append("<STOP>")
             phonemes.extend(["<PAD>" for _ in range(length_to_pad - len(phonemes))])
-            return torch.Tensor([token_to_id(phoneme) for phoneme in phonemes])
+            return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
 
         super().__init__(
             root,
@@ -379,7 +379,7 @@ class RepetitionDataset(ImageFolder):
             is_valid_file,
             allow_empty,
         )
-        self.class_to_sample_id = {}
+        self.class_to_sample_id: dict[str, list[int]] = {}
         for sample_id, class_id in enumerate(self.targets):
             self.class_to_sample_id.setdefault(self.classes[class_id], []).append(
                 sample_id
