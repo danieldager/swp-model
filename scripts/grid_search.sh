@@ -6,7 +6,7 @@ TRAIN_SCRIPT="./scripts/train_repetition.sh"
 # Define arrays for each hyperparameter
 h_sizes=(64)
 n_layers=(1)
-dropouts=(0.1 0.2 0.3 0.4 0.5)
+dropouts=(0.1 0.3)
 tf_ratios=(0.0)
 l_rates=(0.0005)
 

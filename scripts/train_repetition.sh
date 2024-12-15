@@ -51,7 +51,7 @@ python -c "import torch; print(f'DEVICE: {torch.cuda.current_device()}')"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
 # Assign default values if environment variables are not set
-N_EPOCHS=${N_EPOCHS:-40}
+N_EPOCHS=${N_EPOCHS:-30}
 H_SIZE=${H_SIZE:-8}
 N_LAYERS=${N_LAYERS:-1}
 DROPOUT=${DROPOUT:-0.0}

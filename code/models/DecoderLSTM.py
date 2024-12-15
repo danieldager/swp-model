@@ -10,7 +10,7 @@ class DecoderLSTM(nn.Module):
         self.hidden_size = hidden_size
         self.output_size = vocab_size
         self.num_layers = num_layers
-        self.droupout = dropout
+        self.dropout = dropout
 
         self.embedding = shared_embedding
         self.dropout = nn.Dropout(dropout)

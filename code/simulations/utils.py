@@ -241,7 +241,7 @@ def get_test_data() -> tuple:
 """ WORD SAMPLING """
 
 
-def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:
+def sample_words(test_data, word_count=100000, split=0.9, freq_th=0.9) -> list:
     word_list = []
     freq_list = []
     total_freq = 0
@@ -249,7 +249,7 @@ def sample_words(test_data, word_count=50000, split=0.9, freq_th=0.95) -> list:
     test_words = test_data["Word"].tolist()
     for i, word in enumerate(iter_wordlist("en")):
         # Limit the number of words
-        if i >= 30000:
+        if i >= 50000:
             break
         # Skip any non-alphabetic words
         if not word.isalpha():

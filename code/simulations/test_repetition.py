@@ -91,7 +91,7 @@ def test_repetition(P: Phonemes, model: str) -> list:
     epochs = checkpoints + list(range(1, n_epochs + 1))
 
     # For testing only the final epoch
-    epochs = ["30"]
+    epochs = [30]
 
     dataframes = []
     for epoch in epochs:

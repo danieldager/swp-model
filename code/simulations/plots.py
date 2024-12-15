@@ -198,15 +198,20 @@ def plot_errors_by_position(ax, df):
 
 
 # Function to combine all plots into one figure
-def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None):
-    _, axes = plt.subplots(4, 1, figsize=(12, 22))
+def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
+    # Parse model parameters for title
+    e, h, l, d, t, r = [p[1:] for p in model.split("_")]
+    title = f"Model: E={epoch} H={h}, L={l}, D={d}, TF={t}, LR={r}"
+
+    fig, axes = plt.subplots(4, 1, figsize=(12, 22))
 
     plot_errors_by_length(axes[0], df)
     plot_errors_by_frequency(axes[1], df)
     plot_errors_by_category(axes[2], df)
     plot_errors_by_position(axes[3], df)
 
-    plt.tight_layout()
+    fig.suptitle(title, fontsize=16, y=0.95)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     MODEL_FIGURES_DIR = FIGURES_DIR / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
