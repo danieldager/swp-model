@@ -1,0 +1,1 @@
+../../CORnet/cornet/cornet_s.py

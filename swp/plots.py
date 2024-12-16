@@ -1,16 +1,10 @@
-from pathlib import Path
 from typing import Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 
-""" PATHS """
-FILE_DIR = Path(__file__).resolve()
-ROOT_DIR = FILE_DIR.parent.parent.parent
-FIGURES_DIR = ROOT_DIR / "figures"
-FIGURES_DIR.mkdir(exist_ok=True)
+from .utils.paths import get_figures_dir
 
 sns.set_palette("colorblind")
 
@@ -29,7 +23,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     plt.legend()
     plt.tight_layout()
 
-    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR = get_figures_dir() / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     filename = MODEL_FIGURES_DIR / "training.png"
     plt.savefig(filename, dpi=300, bbox_inches="tight")
@@ -51,8 +45,8 @@ def plot_errors_by_length(ax, df):
         data=grouped_df,
         x="Length",
         y="Edit Distance",
-        hue="Lexicality",  # Line color by Lexicality
-        style="Morphology",  # Line type by Morphology
+        hue="Lexicality",
+        style="Morphology",
         marker="o",
         markersize=8,
         ax=ax,
@@ -83,8 +77,8 @@ def plot_errors_by_frequency(ax, df):
         data=grouped_df,
         x="Zipf Bin",
         y="Edit Distance",
-        hue="Size",  # Line color by Size
-        style="Morphology",  # Line type by Morphology
+        hue="Size",
+        style="Morphology",
         marker="o",
         markersize=8,
         ax=ax,
@@ -109,21 +103,16 @@ def plot_errors_by_category(ax, df):
         ),
         axis=1,
     )
-
     grouped = (
         data.groupby("Category")[["Deletions", "Insertions", "Substitutions"]]
         .mean()
         .reset_index()
     )
-
     melted = pd.melt(
         grouped,
         id_vars=["Category"],
         value_vars=["Deletions", "Insertions", "Substitutions"],
     )
-
-    # Sort the categories in a meaningful order
-    order = []
 
     # Sort the categories in a meaningful order
     real_categories = [
@@ -132,13 +121,11 @@ def plot_errors_by_category(ax, df):
         for freq in ["high", "low"]
         for morph in ["simple", "complex"]
     ]
-
     pseudo_categories = [
         f"pseudo {size} {morph}"
         for size in ["short", "long"]
         for morph in ["simple", "complex"]
     ]
-
     order = real_categories + pseudo_categories
 
     # Simplify category labels
@@ -216,7 +203,7 @@ def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
     fig.suptitle(title, fontsize=16, y=0.95)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR = get_figures_dir() / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
 
     filename = f"errors{epoch}.png" if epoch else "errors.png"
@@ -337,7 +324,7 @@ def confusion_matrix(confusions: dict, model: str, epoch: str) -> None:
     plt.yticks(fontsize=5, rotation=0)
     plt.tight_layout()
 
-    MODEL_FIGURES_DIR = FIGURES_DIR / model
+    MODEL_FIGURES_DIR = get_figures_dir() / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
 
     filename = f"confusion{epoch}.png"
