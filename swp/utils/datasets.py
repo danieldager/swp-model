@@ -182,7 +182,6 @@ def create_train_data(test_data: pd.DataFrame) -> pd.DataFrame:
     dataframe.to_csv(csv_train_path)
 
     return dataframe
-    return word_list, freq_list, total_freq
 
 
 def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
@@ -193,6 +192,45 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
     else:
         test_df = get_test_data(force_recreate)
         dataframe = create_train_data(test_df)
+    return dataframe
+
+
+def create_split(
+    train_data: pd.DataFrame, seed: int = 42
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+
+    generator = np.random.default_rng(seed=seed)
+
+    train_split = train_data.sample(frac=0.9, random_state=generator)
+    valid_split = train_data.drop(train_split.index)
+
+    csv_train_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
+    train_split.to_csv(csv_train_split_path)
+    csv_valid_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
+    valid_split.to_csv(csv_valid_split_path)
+
+    return train_split, valid_split
+
+
+def get_training_split(force_recreate: bool = False) -> pd.DataFrame:
+    csv_train_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
+    if csv_train_split_path.exists() and not force_recreate:
+        dataframe = pd.read_csv(csv_train_split_path)
+        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+    else:
+        train_df = get_train_data(force_recreate)
+        dataframe, _ = create_split(train_df)
+    return dataframe
+
+
+def get_val_split(force_recreate: bool = False) -> pd.DataFrame:
+    csv_valid_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
+    if csv_valid_split_path.exists() and not force_recreate:
+        dataframe = pd.read_csv(csv_valid_split_path)
+        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+    else:
+        train_df = get_train_data(force_recreate)
+        _, dataframe = create_split(train_df)
     return dataframe
 
 
