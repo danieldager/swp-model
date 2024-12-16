@@ -25,127 +25,76 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
 
     MODEL_FIGURES_DIR = get_figures_dir() / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
-    filename = MODEL_FIGURES_DIR / "training_curves.png"
+    filename = MODEL_FIGURES_DIR / "training.png"
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-# Plot the edit operations and distance for each test category
-def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
-    fig, (length_ax, freq_ax, errors_ax) = plt.subplots(3, 1, figsize=(12, 16))
-    # fig.suptitle(f"{model} (Epoch {epoch})" if epoch else model, fontsize=16, y=0.9)
-
-    """ Figure 1: Edit Distance by Length """
+# Function to plot Edit Distance by Length
+def plot_errors_by_length(ax, df):
     data = df.copy()
-
-    # Calculate mean edit distance and variance
-    data["Lex_Morphology"] = data["Lexicality"] + "-" + data["Morphology"]
-
     grouped_df = (
-        data.groupby(["Length", "Lex_Morphology"], observed=True)["Edit Distance"]
+        data.groupby(["Length", "Lexicality", "Morphology"], observed=True)[
+            "Edit Distance"
+        ]
         .mean()
         .reset_index()
-    )
-
-    grouped_df["Edit Distance Std"] = (
-        data.groupby(["Length", "Lex_Morphology"], observed=True)["Edit Distance"]
-        .std()
-        .reset_index()["Edit Distance"]
     )
 
     sns.lineplot(
         data=grouped_df,
         x="Length",
         y="Edit Distance",
-        hue="Lex_Morphology",
-        markers=True,
+        hue="Lexicality",
+        style="Morphology",
         marker="o",
         markersize=8,
-        ax=length_ax,
+        ax=ax,
     )
 
-    # length_ax.errorbar(
-    #     x=grouped_df['Length'],
-    #     y=grouped_df['Edit Distance'],
-    #     yerr=grouped_df['Edit Distance Std'],
-    #     # fmt='none',  # No line markers
-    #     ecolor='black',  # Color of error bars
-    #     capsize=3,  # Cap width
-    #     alpha=0.5,  # Transparency
-    #     zorder=0  # Ensure error bars are behind the line plot
-    # )
-    length_ax.set_title("Edit Distance by Length")
-    length_ax.set_xlabel("Word Length")
-    length_ax.set_ylabel("Average Edit Distance")
-    length_ax.legend(title="Lexicality & Morphology")
-    length_ax.grid(True)
+    ax.set_title("Edit Distance by Length")
+    ax.set_xlabel("Word Length")
+    ax.set_ylabel("Average Edit Distance")
+    ax.legend(title="Lexicality & Morphology")
+    ax.grid(True)
 
-    """ Figure 2: Frequency vs Edit Distance """
-    data = df[df["Lexicality"] == "real"].copy()
 
-    # Calculate average edit distance and variance
-    data["Size_Morphology"] = data["Size"] + "-" + data["Morphology"]
+# Function to plot Frequency vs Edit Distance
+def plot_errors_by_frequency(ax, df):
+    data = df[df["Lexicality"].isin(["real", "pseudo"])].copy()
     data["Zipf Bin"] = pd.cut(
         data["Zipf Frequency"], bins=[1, 2, 3, 4, 5, 6, 7], right=False
     )
 
     grouped_df = (
-        data.groupby(["Zipf Bin", "Size_Morphology"], observed=True)["Edit Distance"]
+        data.groupby(["Zipf Bin", "Size", "Morphology"], observed=True)["Edit Distance"]
         .mean()
         .reset_index()
     )
     grouped_df["Zipf Bin"] = grouped_df["Zipf Bin"].astype(str)
 
-    grouped_df["Edit Distance Std"] = (
-        data.groupby(["Zipf Bin", "Size_Morphology"], observed=True)["Edit Distance"]
-        .std()
-        .reset_index()["Edit Distance"]
-    )
-
     sns.lineplot(
         data=grouped_df,
         x="Zipf Bin",
         y="Edit Distance",
-        hue="Size_Morphology",
+        hue="Size",
+        style="Morphology",
         marker="o",
         markersize=8,
-        ax=freq_ax,
+        ax=ax,
     )
-    # freq_ax.errorbar(
-    #     x=grouped_df['Zipf Bin'],
-    #     y=grouped_df['Edit Distance'],
-    #     yerr=grouped_df['Edit Distance Std'],
-    #     fmt='none',
-    #     ecolor='black',
-    #     capsize=3,
-    #     alpha=0.5,
-    #     zorder=0
-    # )
-    freq_ax.set_title("Edit Distance by Frequency")
-    freq_ax.set_xlabel("Zipf Frequency")
-    freq_ax.set_ylabel("Average Edit Distance")
-    freq_ax.legend(title="Size & Morphology")
-    freq_ax.grid(True)
 
-    """ Figure 3: Errors by Test Category """
+    ax.set_title("Edit Distance by Frequency")
+    ax.set_xlabel("Zipf Frequency")
+    ax.set_ylabel("Average Edit Distance")
+    ax.legend(title="Size & Morphology")
+    ax.grid(True)
+
+
+# Function to plot Errors by Test Category
+def plot_errors_by_category(ax, df):
     data = df.copy()
 
-    # Function to calculate averages and variance
-    def calc_mean_and_std(group):
-        return pd.Series(
-            {
-                "Deletions": group["Deletions"].mean(),
-                "Deletions Std": group["Deletions"].std(),
-                "Insertions": group["Insertions"].mean(),
-                "Insertions Std": group["Insertions"].std(),
-                "Substitutions": group["Substitutions"].mean(),
-                "Substitutions Std": group["Substitutions"].std(),
-                # 'Edit Distance': group['Edit Distance'].mean(),
-                # 'Edit Distance Std': group['Edit Distance'].std()
-            }
-        )
-
-    # Calculate averages and variance for each category
     data["Category"] = data.apply(
         lambda row: (
             f"pseudo {row['Size']} {row['Morphology']}"
@@ -154,64 +103,111 @@ def error_plots(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> No
         ),
         axis=1,
     )
-    grouped = data.groupby("Category").apply(calc_mean_and_std).reset_index()
-
-    # Sort the categories in a meaningful order
-    order = []
-    # Add all real categories first
-    for size in ["short", "long"]:
-        for freq in ["high", "low"]:
-            for morph in ["simple", "complex"]:
-                order.append(f"real {size} {freq} {morph}")
-
-    # Add all pseudo categories
-    for size in ["short", "long"]:
-        for morph in ["simple", "complex"]:
-            order.append(f"pseudo {size} {morph}")
-
-    # Melt the DataFrame for easier plotting
+    grouped = (
+        data.groupby("Category")[["Deletions", "Insertions", "Substitutions"]]
+        .mean()
+        .reset_index()
+    )
     melted = pd.melt(
         grouped,
         id_vars=["Category"],
         value_vars=["Deletions", "Insertions", "Substitutions"],
-    )  # , 'Edit Distance'])
-    sns.barplot(
-        x="Category", y="value", hue="variable", data=melted, order=order, ax=errors_ax
     )
-    # # Add error bars
-    # for i, cat in enumerate(order):
-    #     for j, err_type in enumerate(['Deletions', 'Insertions', 'Substitutions', 'Edit Distance']):
-    #         y = grouped.loc[grouped['Category'] == cat, err_type].values[0]
-    #         yerr = grouped.loc[grouped['Category'] == cat, f'{err_type} Std'].values[0]
-    #         errors_ax.errorbar(
-    #             x=i + j * 0.2 - 0.3,
-    #             y=y,
-    #             yerr=yerr,
-    #             fmt='none',
-    #             ecolor='black',
-    #             capsize=3,
-    #             alpha=0.5,
-    #             # zorder=0
-    #         )
 
-    # Convert categories to a single letter for better readability
-    order = ["".join([cat[:1].capitalize() for cat in cats.split()]) for cats in order]
-    errors_ax.set_title("Errors by Category")
-    errors_ax.set_xlabel("Category (Lexicality Size Frequency Morphology)")
-    errors_ax.set_ylabel("Average Error Count")
-    errors_ax.set_xticks(range(len(order)))
-    errors_ax.set_xticklabels(order)
-    errors_ax.legend(title="Error Type")
-    errors_ax.grid(True)
+    # Sort the categories in a meaningful order
+    real_categories = [
+        f"real {size} {freq} {morph}"
+        for size in ["short", "long"]
+        for freq in ["high", "low"]
+        for morph in ["simple", "complex"]
+    ]
+    pseudo_categories = [
+        f"pseudo {size} {morph}"
+        for size in ["short", "long"]
+        for morph in ["simple", "complex"]
+    ]
+    order = real_categories + pseudo_categories
 
-    plt.subplots_adjust(hspace=0.3)  # Adjust the vertical spacing between subplots
+    # Simplify category labels
+    short_order = ["".join(word[0].upper() for word in cat.split()) for cat in order]
+
+    sns.barplot(
+        x="Category",
+        y="value",
+        hue="variable",
+        order=order,
+        data=melted,
+        ax=ax,
+    )
+    ax.set_title("Errors by Category")
+    ax.set_xlabel("Category")
+    ax.set_ylabel("Average Error Count")
+    ax.set_xticks(range(len(order)))
+    ax.set_xticklabels(short_order)
+    ax.grid(True)
+
+
+# Function to plot Error Rate by Position
+def plot_errors_by_position(ax, df):
+    totals = {}
+    errors = {}
+
+    for _, row in df.iterrows():
+        length = row["Sequence Length"]
+
+        for index in range(1, length + 1):
+            normalized = (index - 1) / (length - 1)
+            totals[normalized] = totals.get(normalized, 0) + 1
+
+        for index in row["Error Indices"]:
+            normalized = (index - 1) / (length - 1)
+            errors[normalized] = errors.get(normalized, 0) + 1
+
+    data = [
+        {"Position": index, "Error Rate": errors.get(index, 0) / total}
+        for index, total in totals.items()
+    ]
+    plot_df = pd.DataFrame(data)
+
+    sns.lineplot(
+        x="Position",
+        y="Error Rate",
+        data=plot_df,
+        marker="o",
+        markersize=8,
+        ax=ax,
+    )
+
+    ax.set_title("Error Rate by Relative Position")
+    ax.set_xlabel("Relative Position")
+    ax.set_ylabel("Error Rate")
+    ax.grid(True)
+
+
+# Function to combine all plots into one figure
+def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
+    # Parse model parameters for title
+    e, h, l, d, t, r = [p[1:] for p in model.split("_")]
+    title = f"Model: E={epoch} H={h}, L={l}, D={d}, TF={t}, LR={r}"
+
+    fig, axes = plt.subplots(2, 2, figsize=(20, 12))
+
+    # Flatten axes for easy indexing
+    axes = axes.flatten()
+
+    plot_errors_by_length(axes[0], df)
+    plot_errors_by_frequency(axes[1], df)
+    plot_errors_by_category(axes[2], df)
+    plot_errors_by_position(axes[3], df)
+
+    fig.suptitle(title, fontsize=16, y=0.95)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     MODEL_FIGURES_DIR = get_figures_dir() / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
 
     filename = f"errors{epoch}.png" if epoch else "errors.png"
     plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches="tight")
-    # plt.close()
 
 
 # Plot the confusion matrix for the test data
@@ -333,81 +329,4 @@ def confusion_matrix(confusions: dict, model: str, epoch: str) -> None:
 
     filename = f"confusion{epoch}.png"
     plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches="tight")
-    # plt.close()
-
-
-def primacy_recency(df: pd.DataFrame, model: str, epoch: Optional[int] = None) -> None:
-    df = df.copy()
-    # # Combining plots
-    # fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-
-    # sns.barplot(x='Category', y='Value', data=df, ax=axes[0])
-    # sns.boxplot(x='Category', y='Value', data=df, ax=axes[1])
-
-    counts = {}
-    data = []
-
-    for _, row in df.iterrows():
-        length = row["Sequence Length"]
-        if length not in counts:
-            counts[length] = {}
-
-        for index in row["Error Indices"]:
-            if index not in counts[length]:
-                counts[length][index] = 0
-            counts[length][index] += 1
-
-    for length, indices in counts.items():
-        indices = {i: indices.get(i, 0) for i in range(1, length + 1)}
-
-        for idx, count in indices.items():
-            data.append({"Length": length, "Index": idx, "Count": count})
-
-    plot_df = pd.DataFrame(data)
-
-    # # Calculate the max counts for each length
-    # max_counts = plot_df.groupby("Length")["Count"].transform("max")
-
-    # # Normalize the counts between 0 and 1
-    # plot_df["Count"] = plot_df["Count"] / max_counts
-
-    # # Y offset for each sequence length
-    # plot_df["Offset"] = plot_df.apply(
-    #     lambda row: row["Count"] + (row["Length"] - min(plot_df["Length"])) * 1.2, axis=1)
-
-    palette = [
-        "#4E79A7",  # Soft blue
-        "#F28E2B",  # Warm orange
-        "#76B7B2",  # Muted teal
-        "#E15759",  # Light red
-        "#59A14F",  # Fresh green
-        "#EDC948",  # Soft yellow
-        "#FF9DA7",  # Light coral pink
-        "#9C755F",  # Soft brown
-        "#BAB0AC",  # Muted gray
-    ]
-
-    # Plotting
-    plt.figure(figsize=(8, 8))
-    sns.lineplot(
-        data=plot_df,
-        x="Index",
-        y="Count",
-        hue="Length",
-        marker="o",
-        linewidth=1.5,  # Thinner lines
-        # alpha=0.6,    # Reduced opacity
-        palette=palette,
-    )
-    plt.title("Serial Position Curve")
-    plt.xlabel("Error Index")
-    plt.ylabel("Normalized Error Count")
-    plt.legend(title="Sequence Length")
-    plt.grid(True)
-    plt.tight_layout()
-
-    MODEL_FIGURES_DIR = get_figures_dir() / model
-    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
-    filename = f"position{epoch}.png"
-    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches="tight")
-    # plt.close()
+    plt.close()

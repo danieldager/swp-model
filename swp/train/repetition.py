@@ -44,19 +44,40 @@ def train_repetition(P: Phonemes, params: dict, device):
     MODEL_WEIGHTS_DIR = get_checkpoint_dir() / model
     MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
 
-    # encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
-    # decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout).to(device)
-    encoder = EncoderLSTM(vocab_size, hidden_size, num_layers).to(device)
-    decoder = DecoderLSTM(hidden_size, vocab_size, num_layers).to(device)
+    shared_embedding = nn.Embedding(vocab_size, hidden_size)
+
+    # encoder = EncoderRNN(
+    #     vocab_size, hidden_size, num_layers, dropout, shared_embedding
+    # ).to(device)
+
+    # decoder = DecoderRNN(
+    #     hidden_size, vocab_size, num_layers, dropout, shared_embedding
+    # ).to(device)
+
+    encoder = EncoderLSTM(
+        vocab_size, hidden_size, num_layers, dropout, shared_embedding
+    ).to(device)
+
+    decoder = DecoderLSTM(
+        hidden_size, vocab_size, num_layers, dropout, shared_embedding
+    ).to(device)
 
     criterion = nn.CrossEntropyLoss()
-    parameters = list(encoder.parameters()) + list(decoder.parameters())
+    parameters = (
+        list(shared_embedding.parameters())
+        + list(encoder.lstm.parameters())
+        + list(decoder.lstm.parameters())
+        # + list(decoder.linear.parameters())
+    )
     optimizer = optim.Adam(parameters, lr=learning_rate)
 
     timer = Timer()
     train_losses = []
     valid_losses = []
     epoch_times = []
+
+    errors = []
+    error_count = 0
 
     for epoch in range(1, num_epochs + 1):
         epoch_start = time.time()
@@ -70,58 +91,56 @@ def train_repetition(P: Phonemes, params: dict, device):
 
         for i, (input, target) in enumerate(train_dataloader, 1):
             print(f"{i}/{len(train_dataloader)}", end="\r")
+            timer.start()
 
-            length = input.shape[1]
             input = input.to(device)
             target = target.to(device)
             optimizer.zero_grad()
 
-            # timer.start()
-            encoder_hidden = encoder(input)
-            # print("e out", encoder_hidden.shape)
-            # timer.stop("Encoder Forward Pass")
+            # Forward pass
+            start = torch.zeros(batch_size, 1, dtype=int, device=device)
+            # hidden = encoder(input)
+            # output = decoder(start, hidden, target, tf_ratio)
 
-            decoder_input = torch.zeros(
-                batch_size, length, hidden_size, device=device
-            )  # (B, L, H)
-            # print("d input", decoder_input.shape)
-
-            # start_token = torch.zeros(1, batch_size, dtype=torch.int64, device=device)
-            # start_token = encoder.embedding(start_token) # (1, B, H)
-
-            # timer.start()
-            output = decoder(decoder_input, encoder_hidden)  # (B, L, V)
-            # print("d out", output.shape)
-            # timer.stop("Decoder Forward Pass")
+            hidden, cell = encoder(input)
+            output = decoder(start, hidden, cell, target, tf_ratio)
 
             # Loss computation
-            # length = output.shape[1]
-            # if length > 7:
-            #     p = torch.argmax(output, dim=2)
-            #     p = p.squeeze().tolist()
-            #     p = [index_to_phone[i] for i in p]
-            #     t = target.squeeze().tolist()
-            #     t = [index_to_phone[i] for i in t]
-            #     print(p)
-            #     print(t)
-
-            output = output.view(-1, vocab_size)  # (B * L, V)
-            target = target.view(-1)  # (B * L)
+            output = output.view(-1, vocab_size)
+            target = target.view(-1)
             loss = criterion(output, target)
-            # print("loss fn", output.shape, target.view(-1).shape)
             train_loss += loss.item()
 
-            # if length > 7: print(loss.item(), '\n')
+            if epoch == num_epochs:
+                p = torch.argmax(output, dim=1)
+                p = p.squeeze().tolist()
+                t = target.squeeze().tolist()
+                if p != t:
+                    error_count += 1
+                    # p = [index_to_phone[i] for i in p]
+                    # t = [index_to_phone[i] for i in t]
+                    # errors.append((p, t))
 
             # Backward pass
             timer.start()
             loss.backward()
             optimizer.step()
-            timer.stop("Backward Pass")
+            timer.stop("Train step")
 
-            if epoch == 1 and i % ((len(train_dataloader) // 10)) == 0:
-                save_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, checkpoint)
-                print(f"Checkpoint {checkpoint} loss: {(train_loss / i):.3f}")
+            if (
+                epoch == 1
+                and checkpoint != 10
+                and i % ((len(train_dataloader) // 10)) == 0
+            ):
+                save_weights(
+                    MODEL_WEIGHTS_DIR,
+                    shared_embedding,
+                    encoder,
+                    decoder,
+                    epoch,
+                    checkpoint,
+                )
+                print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}")
                 checkpoint += 1
 
         train_loss /= len(train_dataloader)
@@ -137,16 +156,14 @@ def train_repetition(P: Phonemes, params: dict, device):
             for i, (input, target) in enumerate(valid_dataloader, 1):
                 print(f"{i+1}/{len(valid_dataloader)}", end="\r")
 
-                length = input.shape[1]
                 input = input.to(device)
                 target = target.to(device)
 
                 # Forward passes
-                encoder_hidden = encoder(input)
-                start_token = torch.zeros(
-                    batch_size, length, hidden_size, device=device
-                )
-                output = decoder(start_token, encoder_hidden)
+                start = torch.zeros(batch_size, 1, dtype=int, device=device)
+
+                hidden, cell = encoder(input)
+                output = decoder(start, hidden, cell, target, 0)
 
                 # Loss computation
                 output = output.view(-1, vocab_size)
@@ -163,7 +180,7 @@ def train_repetition(P: Phonemes, params: dict, device):
         print(f"Epoch time: {epoch_time // 3600:.0f}h {epoch_time % 3600 // 60:.0f}m")
 
         # Save model weights for every epoch
-        save_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch)
+        save_weights(MODEL_WEIGHTS_DIR, shared_embedding, encoder, decoder, epoch)
 
     # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model, num_epochs)
@@ -171,5 +188,11 @@ def train_repetition(P: Phonemes, params: dict, device):
 
     # Print timing summary
     timer.summary()
+
+    # Print error summary
+    print(f"\nError rate: {error_count / len(train_dataloader):.2f}")
+    # for p, t in errors:
+    #     print(p)
+    #     print(t, "\n")
 
     return model
