@@ -258,7 +258,7 @@ def sample_words(test_data, word_count=100000, split=0.9, freq_th=0.9) -> list:
         if word in test_words:
             continue
         # Skip any words that don't have vowels
-        if not any(char in "aeiou" for char in word):
+        if not any(char in "aeiouy" for char in word):
             continue
 
         freq = word_frequency(word, "en")

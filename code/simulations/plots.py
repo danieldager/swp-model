@@ -203,7 +203,10 @@ def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
     e, h, l, d, t, r = [p[1:] for p in model.split("_")]
     title = f"Model: E={epoch} H={h}, L={l}, D={d}, TF={t}, LR={r}"
 
-    fig, axes = plt.subplots(4, 1, figsize=(12, 22))
+    fig, axes = plt.subplots(2, 2, figsize=(20, 12))
+
+    # Flatten axes for easy indexing
+    axes = axes.flatten()
 
     plot_errors_by_length(axes[0], df)
     plot_errors_by_frequency(axes[1], df)
