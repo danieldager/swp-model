@@ -31,6 +31,18 @@ def get_dataset_dir() -> pathlib.Path:
     return dataset_dir
 
 
+def get_dataframe_dir() -> pathlib.Path:
+    dataframe_dir = dataset_dir / "dataframe"
+    dataframe_dir.mkdir(parents=True, exist_ok=True)
+    return dataframe_dir
+
+
+def get_folds_dir() -> pathlib.Path:
+    folds_dir = dataset_dir / "folds"
+    folds_dir.mkdir(parents=True, exist_ok=True)
+    return folds_dir
+
+
 def get_weights_dir() -> pathlib.Path:
     weights_dir.mkdir(parents=True, exist_ok=True)
     return weights_dir
