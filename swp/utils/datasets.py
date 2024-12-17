@@ -237,7 +237,7 @@ def get_val_split(force_recreate: bool = False) -> pd.DataFrame:
 
 def sample_words() -> tuple[list[list[str]], list[list[str]]]:
     g2p = G2p()
-    word_count = 10000
+    total_count = 100000
     train_valid_split = 0.9
     frequency_threshold = 0.9
 
@@ -256,11 +256,11 @@ def sample_words() -> tuple[list[list[str]], list[list[str]]]:
     sorted_words = [word_list[i] for i in sorted_indices]
 
     # Sample training words
-    train_count = int(word_count * train_valid_split)
+    train_count = int(total_count * train_valid_split)
     train_words = np.random.choice(sorted_words, train_count, p=sorted_freqs)
 
     # Sample validation words from low frequency words
-    valid_count = word_count - train_count
+    valid_count = total_count - train_count
 
     # Determine the index that separates low frequency words
     lf_index = np.searchsorted(np.cumsum(sorted_freqs), frequency_threshold)
