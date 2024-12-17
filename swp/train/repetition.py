@@ -10,7 +10,7 @@ from ..models.encoders import EncoderLSTM, EncoderRNN
 from ..plots import training_curves
 from ..utils.grid_search import grid_search_log
 from ..utils.models import save_weights
-from ..utils.paths import get_checkpoint_dir
+from ..utils.paths import get_weights_dir
 from ..utils.perf import Timer
 
 
@@ -18,8 +18,11 @@ def train_repetition(P: Phonemes, params: dict, device):
     # Unpack variables
     vocab_size = P.vocab_size
     index_to_phone = P.index_to_phone
+    phone_to_index = P.phone_to_index
     train_dataloader = P.train_dataloader
     valid_dataloader = P.valid_dataloader
+
+    start_token = phone_to_index["<SOS>"]
 
     # Unpack hyperparameters
     num_epochs = params["num_epochs"]
@@ -41,33 +44,32 @@ def train_repetition(P: Phonemes, params: dict, device):
     # Initialize model
     model = f"e{num_epochs}_h{hidden_size}_l{num_layers}"
     model += f"_d{dropout}_t{tf_ratio}_r{learning_rate}"
-    MODEL_WEIGHTS_DIR = get_checkpoint_dir() / model
-    MODEL_WEIGHTS_DIR.mkdir(exist_ok=True)
+    model_weights_dir = get_weights_dir() / model
+    model_weights_dir.mkdir(exist_ok=True)
 
-    shared_embedding = nn.Embedding(vocab_size, hidden_size)
+    embedding = nn.Embedding(vocab_size, hidden_size)
 
-    # encoder = EncoderRNN(
-    #     vocab_size, hidden_size, num_layers, dropout, shared_embedding
-    # ).to(device)
+    # encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout, embedding).to(
+    #     device
+    # )
 
-    # decoder = DecoderRNN(
-    #     hidden_size, vocab_size, num_layers, dropout, shared_embedding
-    # ).to(device)
+    # decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout, embedding).to(
+    #     device
+    # )
 
-    encoder = EncoderLSTM(
-        vocab_size, hidden_size, num_layers, dropout, shared_embedding
-    ).to(device)
+    encoder = EncoderLSTM(vocab_size, hidden_size, num_layers, dropout, embedding).to(
+        device
+    )
 
-    decoder = DecoderLSTM(
-        hidden_size, vocab_size, num_layers, dropout, shared_embedding
-    ).to(device)
+    decoder = DecoderLSTM(hidden_size, vocab_size, num_layers, dropout, embedding).to(
+        device
+    )
 
     criterion = nn.CrossEntropyLoss()
     parameters = (
-        list(shared_embedding.parameters())
+        list(embedding.parameters())
         + list(encoder.lstm.parameters())
         + list(decoder.lstm.parameters())
-        # + list(decoder.linear.parameters())
     )
     optimizer = optim.Adam(parameters, lr=learning_rate)
 
@@ -75,8 +77,6 @@ def train_repetition(P: Phonemes, params: dict, device):
     train_losses = []
     valid_losses = []
     epoch_times = []
-
-    errors = []
     error_count = 0
 
     for epoch in range(1, num_epochs + 1):
@@ -99,9 +99,10 @@ def train_repetition(P: Phonemes, params: dict, device):
 
             # Forward pass
             start = torch.zeros(batch_size, 1, dtype=int, device=device)
+            # start = torch.ones(batch_size, 1, dtype=int, device=device) * start_token
+
             # hidden = encoder(input)
             # output = decoder(start, hidden, target, tf_ratio)
-
             hidden, cell = encoder(input)
             output = decoder(start, hidden, cell, target, tf_ratio)
 
@@ -133,8 +134,8 @@ def train_repetition(P: Phonemes, params: dict, device):
                 and i % ((len(train_dataloader) // 10)) == 0
             ):
                 save_weights(
-                    MODEL_WEIGHTS_DIR,
-                    shared_embedding,
+                    model_weights_dir,
+                    embedding,
                     encoder,
                     decoder,
                     epoch,
@@ -180,7 +181,7 @@ def train_repetition(P: Phonemes, params: dict, device):
         print(f"Epoch time: {epoch_time // 3600:.0f}h {epoch_time % 3600 // 60:.0f}m")
 
         # Save model weights for every epoch
-        save_weights(MODEL_WEIGHTS_DIR, shared_embedding, encoder, decoder, epoch)
+        save_weights(model_weights_dir, shared_embedding, encoder, decoder, epoch)
 
     # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model, num_epochs)

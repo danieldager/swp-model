@@ -14,8 +14,8 @@ from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 from .paths import get_dataset_dir
 
 
+# Process the hand-made test datasets
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
-    r"""Process the hand-made test datasets"""
     data = []
     for file in directory.glob("*.csv"):
         name_parts = file.stem.split("_")
@@ -33,8 +33,8 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
     return data
 
 
+# Get morphological data for a word
 def get_morphological_data(word: str):
-    r"""Get morphological data for a word"""
     mrp = Morphemes(
         str(get_dataset_dir() / "morphemes_data")
     )  # TODO check that the path is ok
@@ -64,12 +64,12 @@ def get_morphological_data(word: str):
     return prefixes, roots, root_freqs, suffixes, count, structure
 
 
+# Add frequency, part of speech, phonemes, and morphology
 def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
-    r"""Add frequency, part of speech, phonemes, and morphology to the dataset"""
-    g2p = G2p()
     if not spacy.util.is_package("en_core_web_lg"):
         spacy.cli.download("en_core_web_lg")
     nlp = spacy.load("en_core_web_lg")
+    g2p = G2p()
 
     # Rename columns
     df = df.rename(
@@ -102,8 +102,9 @@ def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
     return df
 
 
+# Combine and reformat the real and pseudo word datasets
 def create_test_data() -> pd.DataFrame:
-    r"""Combine and reformat the real and pseudo word datasets"""
+
     # Process real words
     handmade_real_path = get_dataset_dir() / "handmade" / "test_dataset_real"
     csv_real_path = get_dataset_dir() / "dataframe" / "real_test.csv"
@@ -234,10 +235,11 @@ def get_val_split(force_recreate: bool = False) -> pd.DataFrame:
     return dataframe
 
 
-def sample_words(
-    word_count=50000, split=0.9, freq_th=0.95
-) -> tuple[list[list[str]], list[list[str]]]:
+def sample_words() -> tuple[list[list[str]], list[list[str]]]:
     g2p = G2p()
+    word_count = 10000
+    train_valid_split = 0.9
+    frequency_threshold = 0.9
 
     train_df = get_train_data()
 
@@ -254,14 +256,14 @@ def sample_words(
     sorted_words = [word_list[i] for i in sorted_indices]
 
     # Sample training words
-    train_count = int(word_count * split)
+    train_count = int(word_count * train_valid_split)
     train_words = np.random.choice(sorted_words, train_count, p=sorted_freqs)
 
     # Sample validation words from low frequency words
     valid_count = word_count - train_count
 
     # Determine the index that separates low frequency words
-    lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_th)
+    lf_index = np.searchsorted(np.cumsum(sorted_freqs), frequency_threshold)
 
     # Sample validation words from low frequency candidate words
     candidates = [
@@ -276,6 +278,48 @@ def sample_words(
     # start = time.perf_counter()
     # print(f"{time.perf_counter() - start:.2f} seconds")
     return train_phonemes, valid_phonemes
+
+
+def create_train_data(test_data: pd.DataFrame) -> pd.DataFrame:
+    word_list = []
+    freq_list = []
+    test_words = set(test_data["Word"])
+    for i, word in enumerate(iter_wordlist("en")):
+        # Limit the number of words
+        if i >= 50000:
+            break
+        # Skip any non-alphabetic words
+        if not word.isalpha():
+            continue
+        # Skip any words in the test set
+        if word in test_words:
+            continue
+        # Skip any words that don't have vowels
+        if not any(char in "aeiouy" for char in word):
+            continue
+
+        word_list.append(word)
+        freq_list.append(word_frequency(word, "en"))
+
+    dataframe = pd.DataFrame({"Word": word_list, "Frequency": freq_list})
+    dataframe = clean_and_enrich_data(dataframe, real=True)
+
+    csv_train_path = get_dataset_dir() / "dataframe" / "complete_train.csv"
+    dataframe.to_csv(csv_train_path)
+
+    return dataframe
+    # return word_list, freq_list, total_freq
+
+
+def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
+    csv_train_path = get_dataset_dir() / "dataframe" / "complete_train.csv"
+    if csv_train_path.exists() and not force_recreate:
+        dataframe = pd.read_csv(csv_train_path)
+        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+    else:
+        test_df = get_test_data(force_recreate)
+        dataframe = create_train_data(test_df)
+    return dataframe
 
 
 def phoneme_statistics(phonemes: list):

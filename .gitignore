@@ -161,7 +161,4 @@ cython_debug/
 cache
 weights
 figures
-weights_old
-figures_old
 grid_search.csv
-simulations.ipynb

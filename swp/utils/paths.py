@@ -18,7 +18,7 @@ elif _ON_OBERON:
 else:  # personnal computer
     script_dir = repo_root / "scripts"
     dataset_dir = repo_root / "stimuli"
-    checkpoint_dir = repo_root / "weights"
+    weights_dir = repo_root / "weights"
     result_dir = repo_root / "results"
 
 
@@ -31,9 +31,9 @@ def get_dataset_dir() -> pathlib.Path:
     return dataset_dir
 
 
-def get_checkpoint_dir() -> pathlib.Path:
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    return checkpoint_dir
+def get_weights_dir() -> pathlib.Path:
+    weights_dir.mkdir(parents=True, exist_ok=True)
+    return weights_dir
 
 
 def get_result_dir() -> pathlib.Path:

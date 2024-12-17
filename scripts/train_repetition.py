@@ -73,10 +73,8 @@ def parse_args():
 
 if __name__ == "__main__":
     device = set_device()
-    penalty = torch.tensor(0.0, device=device)
     seed_everything()
     P = Phonemes()
     args = parse_args()
     params = vars(args)
     model = train_repetition(P, params, device)
-    # results = test_repetition(P, model)
