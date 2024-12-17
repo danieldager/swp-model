@@ -11,7 +11,7 @@ from g2p_en import G2p
 from morphemes import Morphemes
 from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 
-from .paths import get_dataset_dir
+from .paths import get_dataframe_dir, get_dataset_dir, get_folds_dir
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -106,15 +106,14 @@ def create_test_data() -> pd.DataFrame:
     r"""Combine and reformat the real and pseudo word datasets"""
     # Process real words
     handmade_real_path = get_dataset_dir() / "handmade" / "test_dataset_real"
-    csv_real_path = get_dataset_dir() / "dataframe" / "real_test.csv"
-    csv_real_path.parent.mkdir(parents=True, exist_ok=True)
+    csv_real_path = get_dataframe_dir() / "real_test.csv"
     real_words = process_dataset(handmade_real_path, real=True)
     real_words = clean_and_enrich_data(real_words, real=True)
     real_words.to_csv(csv_real_path)
 
     # Process pseudo words
     handmade_pseudo_path = get_dataset_dir() / "handmade" / "test_dataset_pseudo"
-    csv_pseudo_path = get_dataset_dir() / "dataframe" / "pseudo_test.csv"
+    csv_pseudo_path = get_dataframe_dir() / "pseudo_test.csv"
     pseudo_words = process_dataset(handmade_pseudo_path)
     pseudo_words = clean_and_enrich_data(pseudo_words)
     pseudo_words.to_csv(csv_pseudo_path)
@@ -138,14 +137,14 @@ def create_test_data() -> pd.DataFrame:
     ]
     dataframe = dataframe.reindex(columns=columns)
 
-    csv_complete_path = get_dataset_dir() / "dataframe" / "complete_test.csv"
+    csv_complete_path = get_dataframe_dir() / "complete_test.csv"
     dataframe.to_csv(csv_complete_path)
 
     return dataframe
 
 
 def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
-    csv_test_path = get_dataset_dir() / "dataframe" / "complete_test.csv"
+    csv_test_path = get_dataframe_dir() / "complete_test.csv"
     if csv_test_path.exists() and not force_recreate:
         dataframe = pd.read_csv(csv_test_path)
         dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
@@ -154,19 +153,15 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     return dataframe
 
 
-def create_train_data(test_data: pd.DataFrame) -> pd.DataFrame:
+def create_train_data() -> pd.DataFrame:
     word_list = []
     freq_list = []
-    test_words = set(test_data["Word"])
     for i, word in enumerate(iter_wordlist("en")):
         # Limit the number of words
         if i >= 30000:
             break
         # Skip any non-alphabetic words
         if not word.isalpha():
-            continue
-        # Skip any words in the test set
-        if word in test_words:
             continue
         # Skip any words that don't have vowels
         if not any(char in "aeiouy" for char in word):
@@ -178,60 +173,87 @@ def create_train_data(test_data: pd.DataFrame) -> pd.DataFrame:
     dataframe = pd.DataFrame({"Word": word_list, "Frequency": freq_list})
     dataframe = clean_and_enrich_data(dataframe, real=True)
 
-    csv_train_path = get_dataset_dir() / "dataframe" / "complete_train.csv"
+    csv_train_path = get_dataframe_dir() / "complete_train.csv"
     dataframe.to_csv(csv_train_path)
 
     return dataframe
 
 
 def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
-    csv_train_path = get_dataset_dir() / "dataframe" / "complete_train.csv"
+    csv_train_path = get_dataframe_dir() / "complete_train.csv"
     if csv_train_path.exists() and not force_recreate:
         dataframe = pd.read_csv(csv_train_path)
         dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     else:
-        test_df = get_test_data(force_recreate)
-        dataframe = create_train_data(test_df)
+        dataframe = create_train_data()
     return dataframe
 
 
-def create_split(
-    train_data: pd.DataFrame, seed: int = 42
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-
+def create_folds(train_data: pd.DataFrame, seed: int = 42, num_folds: int = 5) -> None:
+    folds_dir = get_folds_dir()
+    dataset_len = len(train_data.index)
     generator = np.random.default_rng(seed=seed)
 
-    train_split = train_data.sample(frac=0.9, random_state=generator)
-    valid_split = train_data.drop(train_split.index)
+    fold_ids = np.array([i % num_folds for i in range(dataset_len)])
+    generator.shuffle(fold_ids)
 
-    csv_train_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
-    train_split.to_csv(csv_train_split_path)
-    csv_valid_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
-    valid_split.to_csv(csv_valid_split_path)
+    for i in range(num_folds):
+        mask: np.ndarray = fold_ids == i
 
-    return train_split, valid_split
+        ith_train_fold = train_data[np.logical_not(mask)].reset_index()
+        ith_val_fold = train_data[mask].reset_index()
+
+        csv_ith_train_fold_path = folds_dir / f"train_fold_{i}.csv"
+        csv_ith_valid_fold_path = folds_dir / f"valid_fold_{i}.csv"
+
+        ith_train_fold.to_csv(csv_ith_train_fold_path)
+        ith_val_fold.to_csv(csv_ith_valid_fold_path)
 
 
-def get_training_split(force_recreate: bool = False) -> pd.DataFrame:
-    csv_train_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
-    if csv_train_split_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(csv_train_split_path)
-        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
-    else:
+def get_training_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+    csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}.csv"
+    if force_recreate or not csv_train_fold_path.exists():
         train_df = get_train_data(force_recreate)
-        dataframe, _ = create_split(train_df)
+        create_folds(train_df)
+    dataframe = pd.read_csv(csv_train_fold_path)
+    dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     return dataframe
 
 
-def get_val_split(force_recreate: bool = False) -> pd.DataFrame:
-    csv_valid_split_path = get_dataset_dir() / "dataframe" / "train_split.csv"
-    if csv_valid_split_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(csv_valid_split_path)
-        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
-    else:
+def get_val_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+    csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}.csv"
+    if force_recreate or not csv_valid_fold_path.exists():
         train_df = get_train_data(force_recreate)
-        _, dataframe = create_split(train_df)
+        create_folds(train_df)
+    dataframe = pd.read_csv(csv_valid_fold_path)
+    dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     return dataframe
+
+
+def create_epoch(
+    train_split: pd.DataFrame, fold_id: int, epoch_size: int = 100000000, seed: int = 42
+) -> np.ndarray:
+    array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
+    generator = np.random.default_rng(seed)
+    indices = train_split.index.to_numpy()
+    weights = train_split["Frequency"].to_numpy()
+    normalized_weights = weights / np.sum(weights)
+    samples = indices.copy()
+    num_to_generate = epoch_size - len(samples)
+    weighted_samples = generator.choice(indices, num_to_generate, p=normalized_weights)
+    samples = np.concatenate([samples, weighted_samples])
+    np.save(array_epoch_path, samples)
+    return samples
+
+
+def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+    array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
+    train_fold = get_training_fold(fold_id, force_recreate)
+    if array_epoch_path.exists() and not force_recreate:
+        indices = np.load(array_epoch_path)
+    else:
+        indices = create_epoch(train_fold, fold_id)
+    return train_fold.iloc[indices]
 
 
 def sample_words(
