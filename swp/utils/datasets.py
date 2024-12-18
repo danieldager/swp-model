@@ -146,20 +146,18 @@ def create_test_data() -> pd.DataFrame:
 def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     csv_test_path = get_dataframe_dir() / "complete_test.csv"
     if csv_test_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(csv_test_path)
+        dataframe = pd.read_csv(csv_test_path, index_col=0, converters={"Word": str})
         dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     else:
         dataframe = create_test_data()
     return dataframe
 
 
-def create_train_data() -> pd.DataFrame:
+def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     word_list = []
     freq_list = []
-    for i, word in enumerate(iter_wordlist("en")):
-        # Limit the number of words
-        if i >= 30000:
-            break
+    count = 0
+    for word in iter_wordlist("en"):
         # Skip any non-alphabetic words
         if not word.isalpha():
             continue
@@ -169,6 +167,14 @@ def create_train_data() -> pd.DataFrame:
 
         word_list.append(word)
         freq_list.append(word_frequency(word, "en"))
+        count += 1
+        if count == num_unique_words:
+            break
+
+    if count != num_unique_words:
+        raise RuntimeError(
+            f"Could not extract {num_unique_words}, only {count} have been extracted while exhausting the vocabulary"
+        )
 
     dataframe = pd.DataFrame({"Word": word_list, "Frequency": freq_list})
     dataframe = clean_and_enrich_data(dataframe, real=True)
@@ -182,7 +188,7 @@ def create_train_data() -> pd.DataFrame:
 def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     if csv_train_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(csv_train_path)
+        dataframe = pd.read_csv(csv_train_path, index_col=0, converters={"Word": str})
         dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     else:
         dataframe = create_train_data()
@@ -200,8 +206,8 @@ def create_folds(train_data: pd.DataFrame, seed: int = 42, num_folds: int = 5) -
     for i in range(num_folds):
         mask: np.ndarray = fold_ids == i
 
-        ith_train_fold = train_data[np.logical_not(mask)].reset_index()
-        ith_val_fold = train_data[mask].reset_index()
+        ith_train_fold = train_data[np.logical_not(mask)].reset_index(drop=True)
+        ith_val_fold = train_data[mask].reset_index(drop=True)
 
         csv_ith_train_fold_path = folds_dir / f"train_fold_{i}.csv"
         csv_ith_valid_fold_path = folds_dir / f"valid_fold_{i}.csv"
@@ -215,7 +221,7 @@ def get_training_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFram
     if force_recreate or not csv_train_fold_path.exists():
         train_df = get_train_data(force_recreate)
         create_folds(train_df)
-    dataframe = pd.read_csv(csv_train_fold_path)
+    dataframe = pd.read_csv(csv_train_fold_path, index_col=0, converters={"Word": str})
     dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     return dataframe
 
@@ -225,7 +231,7 @@ def get_val_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     if force_recreate or not csv_valid_fold_path.exists():
         train_df = get_train_data(force_recreate)
         create_folds(train_df)
-    dataframe = pd.read_csv(csv_valid_fold_path)
+    dataframe = pd.read_csv(csv_valid_fold_path, index_col=0, converters={"Word": str})
     dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
     return dataframe
 
