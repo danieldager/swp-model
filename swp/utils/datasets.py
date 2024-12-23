@@ -244,10 +244,17 @@ def create_epoch(
     indices = train_split.index.to_numpy()
     weights = train_split["Frequency"].to_numpy()
     normalized_weights = weights / np.sum(weights)
-    samples = indices.copy()
-    num_to_generate = epoch_size - len(samples)
-    weighted_samples = generator.choice(indices, num_to_generate, p=normalized_weights)
-    samples = np.concatenate([samples, weighted_samples])
+    weighted_samples = generator.choice(
+        indices, epoch_size, p=normalized_weights
+    )  # Generate epoch_size samples
+    filtered_samples = weighted_samples[
+        pd.Series(weighted_samples).duplicated()
+    ]  # For each class, remove first occurence as it will be enforced later
+    truncated_samples = filtered_samples[
+        : epoch_size - len(indices)
+    ]  # If still too long, truncate further
+    samples = np.concatenate([indices, truncated_samples])  # Enforce first occurence
+    generator.shuffle(samples)
     np.save(array_epoch_path, samples)
     return samples
 
