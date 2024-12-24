@@ -1,3 +1,4 @@
+import json
 import random
 from ast import literal_eval
 from collections import defaultdict
@@ -259,6 +260,16 @@ def create_epoch(
     return samples
 
 
+def get_epoch_numpy(fold_id: int, force_recreate: bool = False) -> np.ndarray:
+    array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
+    train_fold = get_training_fold(fold_id, force_recreate)
+    if array_epoch_path.exists() and not force_recreate:
+        indices = np.load(array_epoch_path)
+    else:
+        indices = create_epoch(train_fold, fold_id)
+    return indices
+
+
 def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
     train_fold = get_training_fold(fold_id, force_recreate)
@@ -344,8 +355,36 @@ def phoneme_statistics(phonemes: list):
 
 def get_word_to_freq(word_data: pd.DataFrame) -> dict[str, float]:
     words = word_data["Word"]
-    freqs = word_data["Zipf Frequency"]
+    freqs = word_data["Frequency"]
     word_to_freq = {}
     for word, freq in zip(words, freqs):
         word_to_freq[word] = freq
     return word_to_freq
+
+
+def create_phoneme_to_id(train_data: pd.DataFrame) -> dict[str, int]:
+    phoneme_dict_path = get_dataset_dir() / "phonemes_to_id.json"
+    phonemes = train_data["Phonemes"]
+    phonemes_unique = set().union(*phonemes)
+    sorted_phonemes = sorted(list(phonemes_unique))
+    extra_tokens = [
+        "<SOS>",
+        "<EOS>",
+        "<PAD>",
+    ]  # TODO check those are the only extra tokens needed
+    all_tokens = sorted_phonemes + extra_tokens
+    phoneme_to_id = {token: i for i, token in enumerate(all_tokens)}
+    with phoneme_dict_path.open("w") as f:
+        json.dump(phoneme_to_id, f)
+    return phoneme_to_id
+
+
+def get_phoneme_to_id(force_recreate: bool = False) -> dict[str, int]:
+    phoneme_dict_path = get_dataset_dir() / "phonemes_to_id.json"
+    if phoneme_dict_path.exists() and not force_recreate:
+        with phoneme_dict_path.open("r") as f:
+            phoneme_dict = json.load(f)
+    else:
+        train_data = get_train_data(force_recreate)
+        phoneme_dict = create_phoneme_to_id(train_data)
+    return phoneme_dict
