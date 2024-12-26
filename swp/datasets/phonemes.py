@@ -8,7 +8,6 @@ from ..utils.datasets import get_test_data, phoneme_statistics, sample_words
 from ..utils.paths import get_dataset_dir
 
 
-
 class CustomDataset(Dataset):
     def __init__(self, phonemes):
         # Convert phoneme sequences to tensors
@@ -24,7 +23,7 @@ class CustomDataset(Dataset):
 
 class Phonemes:
     def __init__(self) -> None:
-        self.test_data, _ = get_test_data()
+        self.test_data = get_test_data()
 
         phonemes_dir = get_dataset_dir() / "phonemes"
         # Cache for train and validation phonemes

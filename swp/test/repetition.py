@@ -3,7 +3,7 @@ import torch
 from ..datasets.phonemes import Phonemes
 from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import EncoderLSTM, EncoderRNN
-from ..plots import confusion_matrix, error_plots, primacy_recency
+from ..plots import confusion_matrix, error_plots
 from ..utils.models import load_weigths
 from ..utils.paths import get_checkpoint_dir
 from .core import calculate_errors
@@ -109,7 +109,6 @@ def test_repetition(P: Phonemes, model: str, device) -> list:
         test_data["Sequence Length"] = sequence_lengths
 
         error_plots(test_data, model, epoch)
-        primacy_recency(test_data, model, epoch)
         confusion_matrix(confusions, model, epoch)
 
         dataframes.append(test_data)
