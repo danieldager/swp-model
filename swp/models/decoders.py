@@ -4,7 +4,17 @@ import torch
 import torch.nn as nn
 
 
-class DecoderLSTM(nn.Module):
+class PhonemeDecoder(nn.Module):
+    r"""Parent class for phoneme decoders. Implement basic attributes required for layer binding"""
+
+    # TODO implement common things, important for bind method of autoencoders
+    # TODO update docstring later
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+
+class DecoderLSTM(PhonemeDecoder):
+    # TODO docstring
     def __init__(self, hidden_size, vocab_size, num_layers):
         super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
@@ -24,8 +34,8 @@ class DecoderLSTM(nn.Module):
         return logits
 
 
-
-class DecoderRNN(nn.Module):
+class DecoderRNN(PhonemeDecoder):
+    # TODO docstring
     def __init__(self, hidden_size, vocab_size, num_layers, dropout, shared_embedding):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size

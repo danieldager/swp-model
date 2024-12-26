@@ -40,6 +40,19 @@ def text_to_grapheme(
     xshift: int = 0,
     yshift: int = 0,
 ) -> Image.Image:
+    r"""Generate an image of size `WxH` where `word` is written in black over a white background.
+
+    Writing font is controlled by `fontname` and `size`, provided `{fontname}.ttf` is an available True Type Font file.
+
+    The word is centered over `(xshift, yshift)` and is written over a line inclined with an angle `line_angle` (in degrees).
+
+    Per char case is controlled through `case` argument. Missing values will default to lower.
+
+    Letter rotations (in degrees) can be controlled with ̀ angles`. Missing values will default to 0.
+
+    Spacing between letters (in pixel) can be controlled through `spacing`. Missing values will default to 0.
+    """
+
     if len(spacing) != len(word):
         spacing = spacing[: (len(word) - 1)]
         spacing += [0 for _ in range(len(word) - len(spacing))]
@@ -117,6 +130,9 @@ def text_to_grapheme(
 
 
 def get_spacing(font: str, size: int) -> int:
+    r"""Get the number of pixels corresponding to half a space in font `font` and size `size`, rounded down.
+
+    Uses caching for faster results over several calls."""
     global _font_spacing_cache
     key = (font, size)
     if key in _font_spacing_cache:
@@ -130,6 +146,11 @@ def get_spacing(font: str, size: int) -> int:
 
 
 def get_max_char_diameter(font: str, size: int) -> int:
+    r"""Get the number of pixels corresponding to the biggest diameter of all
+    letters in font `font` and size `size`, rounded up. Iterates over both lower
+    and upper letters.
+
+    Uses caching for faster results over several calls."""
     global _font_diameter_cache
     key = (font, size)
     if key in _font_diameter_cache:
@@ -149,6 +170,7 @@ def get_max_char_diameter(font: str, size: int) -> int:
 
 
 def free_cache():
+    r"""Reset caches used by `get_spacing` and `get_max_char_diameter`"""
     global _font_spacing_cache
     global _font_diameter_cache
     _font_spacing_cache = {}
@@ -158,6 +180,16 @@ def free_cache():
 def get_max_font_size(
     word_len: int, font: str, image_width: int = 224
 ) -> tuple[int, int]:
+    r"""Estimate the maximum font size usable to write a word of size `word_len`
+    in font `font` in an image of width `image_width`, with any letter rotation
+    and spaces of half a space between each letter.
+
+    Returns the determined font size and its corresponding spacing.
+
+    The value is made by finding the biggest letter of the font (in terms of diameter),
+    and computing the max font size for a word constituted only of this character, with
+    the width-maximizing rotation.
+    """
     top_font_size = 1
     low_font_size = 1
     top_is_ok = True
@@ -183,6 +215,9 @@ def get_max_font_size(
 
 
 def get_dataset_max_font_size(word_dataset: Sequence[str]) -> tuple[int, int]:
+    r"""Get the maximum font size and spaces usable over `word_dataset` so images can be
+    generated with any rotations and spacing of returned spacing.
+    """
     max_len = len(max(word_dataset, key=len))
     max_size = None
     max_space = None
@@ -212,6 +247,17 @@ def random_cartesian_product(
     sizes: list[int],
     spacing: list[int],
 ) -> list[dict]:
+    r"""Sample `num_samples` different (arg samples used for grapheme generation with the word `word`.
+    Args are sampled without replacement from the cartesian product defined by :
+    - all fonts in `fonts`
+    - all global rotations (letter + line inclination) in `global_rot`
+    - all line inclinations in `line_rot` (relative to drawn global rot)
+    - all letter rotation (independent for every letter) from `letter rot` (relative to drawn global rot)
+    - all font sizes in `sizes`
+    - all letter spacing (independently for every bigram) from `spacing`
+    - cases from all upper, all lower or Title (first letter in upper only)
+    Returns a list of dict containing args to generate each sample image.
+    """
     # by letter random case is not implemented
     amount = (
         len(fonts)
@@ -257,6 +303,10 @@ def random_cartesian_product(
 
 
 def create_dataset(path: Path, words: Sequence[str], images_per_word: int):
+    r"""Create a grapheme dataset at `Path` location.
+
+    Creates `images_per_word` images per word in `words`, each saved in a directory named after the corresponding word.
+    """
     rotations = [-15, -10, -5, 0, 5, 10, 15]
     max_size, max_space = get_dataset_max_font_size(words)
     all_fonts = SERIF_FONTS + SANS_FONTS + SCRIPT_FONTS
@@ -301,6 +351,8 @@ def create_dataset(path: Path, words: Sequence[str], images_per_word: int):
 
 
 def check_dataset(root: Path) -> int:
+    r"""Check that the number of images per word in the dataset located at `root`
+    is constant and non-zero, then return that number."""
     counts = set()
     for dir in root.glob("*/"):
         num_files = len(
@@ -320,6 +372,22 @@ def check_dataset(root: Path) -> int:
 
 
 class RepetitionDataset(ImageFolder):
+    r"""Dataset class to handle graphemes to phonemes dataset.
+    Load the images located at `root`, and use `phoneme_to_id` for phoneme tokenization.
+
+    Also implement a preprocessing for tokenizing and padding the phonemes.
+
+    Other arguments are passed to parent class.
+
+    Args:
+        `root` : root folder in which to look for class folders, containing sample images
+        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        other args are passed to the `ImageFolder` parent class
+
+    Attributes:
+        `class_to_sample_id` : dict mapping a class name to the set of sample ids of this class
+    """
+
     # is map-style dataset
     def __init__(
         self,
@@ -332,12 +400,15 @@ class RepetitionDataset(ImageFolder):
     ):
         check_dataset(root)
         g2p = G2p()
+
+        # TODO rework to get max length beforehand
         length_to_pad = 10  # max_len + 5
 
         def to_phoneme(word: str) -> torch.Tensor:
-            phonemes: list[str] = g2p(word)
-            phonemes.append("<STOP>")
+            phonemes: list[str] = g2p(word)  # TODO rework to avoid calling g2p
+            phonemes.append("<EOS>")
             phonemes.extend(["<PAD>" for _ in range(length_to_pad - len(phonemes))])
+            # store in dict ?
             return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
 
         super().__init__(
@@ -356,6 +427,27 @@ class RepetitionDataset(ImageFolder):
 
 
 class FoldRepetitionDataset(RepetitionDataset):
+    r"""Subclass of `RepetitionDataset` meant to handle folds.
+    Will track sample ids corresponding to the sample in the corresponding fold.
+
+    Training fold is used if ̀`train` is set to ̀`True`, validation otherwise.
+
+    Is meant to be used along `WordImageSampler` sampler.
+
+    Args :
+        `root` : root folder in which to look for class folders, containing sample images
+        `fold_id` : fold number to load classes from
+        `train` : return training split if set to `True`, validation split otherwise
+        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        other args are passed to the `ImageFolder` parent class
+
+    Attributes :
+        `class_to_sample_id` : dict mapping a class name to the set of sample ids of this class
+        `fold_id` : index of loaded fold
+        `train` : bool indicating if it is training split
+        `id_tensor` : Tensor of size `[num_fold_classes, num_samples_per_class]` containing overall dataset index. First dim is indexed along the fold dataframe.
+    """
+
     def __init__(
         self,
         root: Path,
@@ -385,6 +477,17 @@ class FoldRepetitionDataset(RepetitionDataset):
 
 
 class WordImageSampler(Sampler):
+    r"""Custom sampler sampling the fold data with their corresponding epoch ids.
+
+    Reshuffling is done at every epoch.
+
+    While the classes are only reshuffled, their corresponding images are uniformly and independantly drawn every new epoch.
+
+    Args :
+        `fold` : dataset containing the samples
+        `generator` : used to control randomness. If left as `None`, is initialized in a deterministic way.
+    """
+
     def __init__(
         self,
         fold: FoldRepetitionDataset,
@@ -416,6 +519,11 @@ class WordImageSampler(Sampler):
 
 
 def get_grapheme_loader(fold_id: int, train: bool, batch_size: int) -> DataLoader:
+    r"""Return a dataloader containing the grapheme data corresponding to the `fold_id` fold, batched in size `batch_size`.
+
+    Return the corresponding training data if `train` is set to `True`.
+    Return the validation data otherwise.
+    """
     grapheme_set = FoldRepetitionDataset(
         root=get_graphemes_dir() / "training",
         fold_id=fold_id,

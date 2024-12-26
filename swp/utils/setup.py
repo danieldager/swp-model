@@ -8,6 +8,8 @@ import torch.version
 
 
 def seed_everything(seed=42) -> None:
+    r"""Seeds Python random module, numpy and torch.
+    Also enables CUDA determinism."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -37,6 +39,7 @@ def seed_everything(seed=42) -> None:
 
 
 def set_device() -> torch.device:
+    r"""Select available device, with priority order CUDA, then MPS and finally CPU"""
     if torch.cuda.is_available():
         device = torch.device("cuda")
         device_name = torch.cuda.get_device_name(0)

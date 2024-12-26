@@ -2,11 +2,12 @@ import torch
 
 
 def alignment_loss(output, target, criterion, penalty):
-    """
+    r"""
     Args:
         outputs: (output_len, vocab_size) tensor of logits
         targets: (target_len) tensor of target indices
     """
+    # TODO more precise docstring
     output_len = output.size(0)
     target_len = target.size(0)
 
@@ -45,6 +46,8 @@ def alignment_loss(output, target, criterion, penalty):
 
 # Decoder forward pass using alignment loss ^^^
 def alignment_forward(self, x, hidden, stop_token, target_len):
+    # TODO docstring
+
     outputs = []
 
     # Set a limit for pred length

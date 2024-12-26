@@ -16,7 +16,8 @@ from .paths import get_dataframe_dir, get_dataset_dir, get_folds_dir
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
-    r"""Process the hand-made test datasets"""
+    r"""Process the hand-made test datasets located in `directory`.
+    Set `real` to ̀`True` to process real words instead of pseudo words."""
     data = []
     for file in directory.glob("*.csv"):
         name_parts = file.stem.split("_")
@@ -35,7 +36,7 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
 
 
 def get_morphological_data(word: str):
-    r"""Get morphological data for a word"""
+    r"""Get morphological data for a `word`"""
     mrp = Morphemes(
         str(get_dataset_dir() / "morphemes_data")
     )  # TODO check that the path is ok
@@ -65,8 +66,13 @@ def get_morphological_data(word: str):
     return prefixes, roots, root_freqs, suffixes, count, structure
 
 
-def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
-    r"""Add frequency, part of speech, phonemes, and morphology to the dataset"""
+def clean_and_enrich_data(
+    df: pd.DataFrame, real: bool = False, morph: bool = False
+) -> pd.DataFrame:
+    r"""Clean column names and add phonemes to the dataset contained in `df`.
+    Set `real` to `True` for extended data (Zipf freq, part of speech).
+    Set `morph` to `True` to add morphological data (might be consequently slower).
+    """
     g2p = G2p()
     if not spacy.util.is_package("en_core_web_lg"):
         spacy.cli.download("en_core_web_lg")
@@ -97,8 +103,18 @@ def clean_and_enrich_data(df: pd.DataFrame, real=False) -> pd.DataFrame:
 
     # NOTE: Very slow
     # Add Morphological data
-    # columns = ["Prefixes", "Roots", "Frequencies", "Suffixes", "Morpheme Count", "Structure"]
-    # df[columns] = df['Word'].apply(lambda word: pd.Series(get_morphological_data(word)))
+    if morph:
+        columns = [
+            "Prefixes",
+            "Roots",
+            "Frequencies",
+            "Suffixes",
+            "Morpheme Count",
+            "Structure",
+        ]
+        df[columns] = df["Word"].apply(
+            lambda word: pd.Series(get_morphological_data(word))
+        )
 
     return df
 
@@ -145,6 +161,8 @@ def create_test_data() -> pd.DataFrame:
 
 
 def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
+    r"""Return dataframe of aggregated test data.
+    Set `force_recreate` to `True` to enforce recomputation of the data."""
     csv_test_path = get_dataframe_dir() / "complete_test.csv"
     if csv_test_path.exists() and not force_recreate:
         dataframe = pd.read_csv(csv_test_path, index_col=0, converters={"Word": str})
@@ -155,6 +173,10 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
 
 
 def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
+    r"""Create a training dataset with `num_unique_words` words selected from the most frequent english words.
+
+    Data is enrichened with word Frequency, Zipf Frequency, Part of Speech and Phonemes
+    """
     word_list = []
     freq_list = []
     count = 0
@@ -187,6 +209,9 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
 
 
 def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
+    r"""Get saved training dataset if it exists, create it otherwise.
+
+    Use `force_recreate` to recreate the training set from scratch"""
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     if csv_train_path.exists() and not force_recreate:
         dataframe = pd.read_csv(csv_train_path, index_col=0, converters={"Word": str})
@@ -196,10 +221,22 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
     return dataframe
 
 
-def create_folds(train_data: pd.DataFrame, seed: int = 42, num_folds: int = 5) -> None:
+def create_folds(
+    train_data: pd.DataFrame,
+    num_folds: int = 5,
+    generator: np.random.Generator | None = None,
+) -> None:
+    r"""Create `num_folds` equilibrated folds from `train_data`.
+
+    Training folds differ of at most 1 sample in size, same for validation folds.
+
+    Randomness of splits can be controlled through the `generator` argument.
+    If left as `None`, a generator is deterministically seeded and used.
+    """
+    if generator is None:
+        generator = np.random.default_rng(seed=42)
     folds_dir = get_folds_dir()
     dataset_len = len(train_data.index)
-    generator = np.random.default_rng(seed=seed)
 
     fold_ids = np.array([i % num_folds for i in range(dataset_len)])
     generator.shuffle(fold_ids)
@@ -218,6 +255,9 @@ def create_folds(train_data: pd.DataFrame, seed: int = 42, num_folds: int = 5) -
 
 
 def get_training_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+    r"""Get saved training fold number `fold_id` if it exists, recreate all folds otherwise.
+
+    Use `force_recreate` to recreate training set and folds from scratch"""
     csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}.csv"
     if force_recreate or not csv_train_fold_path.exists():
         train_df = get_train_data(force_recreate)
@@ -228,6 +268,9 @@ def get_training_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFram
 
 
 def get_val_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+    r"""Get saved validation fold number `fold_id` if it exists, recreate all folds otherwise.
+
+    Use `force_recreate` to recreate training set and folds from scratch"""
     csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}.csv"
     if force_recreate or not csv_valid_fold_path.exists():
         train_df = get_train_data(force_recreate)
@@ -238,10 +281,22 @@ def get_val_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
 
 
 def create_epoch(
-    train_split: pd.DataFrame, fold_id: int, epoch_size: int = 100000000, seed: int = 42
+    train_split: pd.DataFrame,
+    fold_id: int,
+    epoch_size: int = 100000000,
+    generator: np.random.Generator | None = None,
 ) -> np.ndarray:
+    r"""Samples `epoch_size` samples from the training split `train_split`.
+    Saves the generated ids in a `.npy` file depeding on ̀`fold_id`.
+
+    Generated epoch contains at least each sample once, and is sampled according to word frequency.
+
+    Randomness of sampling can be controlled through `generator`.
+    If left `None`, is instantiated in a deterministic way.
+    """
+    if generator is None:
+        generator = np.random.default_rng(seed=42)
     array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
-    generator = np.random.default_rng(seed)
     indices = train_split.index.to_numpy()
     weights = train_split["Frequency"].to_numpy()
     normalized_weights = weights / np.sum(weights)
@@ -261,16 +316,22 @@ def create_epoch(
 
 
 def get_epoch_numpy(fold_id: int, force_recreate: bool = False) -> np.ndarray:
+    r"""Get saved training fold `fold_id` epoch ids as numpy array if they exist, create them otherwise.
+
+    Use `force_recreate` to recreate training set and folds from scratch"""
     array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
-    train_fold = get_training_fold(fold_id, force_recreate)
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)
     else:
+        train_fold = get_training_fold(fold_id, force_recreate)
         indices = create_epoch(train_fold, fold_id)
     return indices
 
 
 def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+    r"""Get saved training fold `fold_id` epoch dataframe if epoch ids exist, create them otherwise.
+
+    Use `force_recreate` to recreate training set and folds from scratch"""
     array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
     train_fold = get_training_fold(fold_id, force_recreate)
     if array_epoch_path.exists() and not force_recreate:
@@ -283,6 +344,7 @@ def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
 def sample_words(
     word_count=50000, split=0.9, freq_th=0.95
 ) -> tuple[list[list[str]], list[list[str]]]:
+    # TODO docstring if kept
     g2p = G2p()
 
     train_df = get_train_data()
@@ -325,6 +387,7 @@ def sample_words(
 
 
 def phoneme_statistics(phonemes: list):
+    # TODO docstring
     # Get the counts for each phoneme
     phoneme_stats = defaultdict(int)
     for word in phonemes:
@@ -354,6 +417,7 @@ def phoneme_statistics(phonemes: list):
 
 
 def get_word_to_freq(word_data: pd.DataFrame) -> dict[str, float]:
+    r"""Return a dictionary mapping words to their frequency from the data inside `word_data`."""
     words = word_data["Word"]
     freqs = word_data["Frequency"]
     word_to_freq = {}
@@ -363,15 +427,13 @@ def get_word_to_freq(word_data: pd.DataFrame) -> dict[str, float]:
 
 
 def create_phoneme_to_id(train_data: pd.DataFrame) -> dict[str, int]:
+    r"""Creates a dictionary mapping every phonemes present in `train_data` to ids for tokenization.
+    Extra tokens are `<SOS>`, `<EOS>` and `<PAD>`."""
     phoneme_dict_path = get_dataset_dir() / "phonemes_to_id.json"
     phonemes = train_data["Phonemes"]
     phonemes_unique = set().union(*phonemes)
     sorted_phonemes = sorted(list(phonemes_unique))
-    extra_tokens = [
-        "<SOS>",
-        "<EOS>",
-        "<PAD>",
-    ]  # TODO check those are the only extra tokens needed
+    extra_tokens = ["<SOS>", "<EOS>", "<PAD>"]
     all_tokens = sorted_phonemes + extra_tokens
     phoneme_to_id = {token: i for i, token in enumerate(all_tokens)}
     with phoneme_dict_path.open("w") as f:
@@ -380,6 +442,9 @@ def create_phoneme_to_id(train_data: pd.DataFrame) -> dict[str, int]:
 
 
 def get_phoneme_to_id(force_recreate: bool = False) -> dict[str, int]:
+    r"""Get saved validation phoneme to id dictionary if it exists, recreate it otherwise.
+
+    Use `force_recreate` to recreate training set from scratch"""
     phoneme_dict_path = get_dataset_dir() / "phonemes_to_id.json"
     if phoneme_dict_path.exists() and not force_recreate:
         with phoneme_dict_path.open("r") as f:

@@ -11,6 +11,7 @@ sns.set_palette("colorblind")
 
 # Plot the training and validation loss curves
 def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs: int):
+    # TODO docstring
     # Extract parameters from the model name
     h, l, d, t, r = [p[1:] for p in model.split("_")[1:]]
 
@@ -32,6 +33,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
 
 # Function to plot Edit Distance by Length
 def plot_errors_by_length(ax, df):
+    # TODO docstring
     data = df.copy()
     grouped_df = (
         data.groupby(["Length", "Lexicality", "Morphology"], observed=True)[
@@ -61,6 +63,7 @@ def plot_errors_by_length(ax, df):
 
 # Function to plot Frequency vs Edit Distance
 def plot_errors_by_frequency(ax, df):
+    # TODO docstring
     data = df[df["Lexicality"].isin(["real", "pseudo"])].copy()
     data["Zipf Bin"] = pd.cut(
         data["Zipf Frequency"], bins=[1, 2, 3, 4, 5, 6, 7], right=False
@@ -93,6 +96,7 @@ def plot_errors_by_frequency(ax, df):
 
 # Function to plot Errors by Test Category
 def plot_errors_by_category(ax, df):
+    # TODO docstring
     data = df.copy()
 
     data["Category"] = data.apply(
@@ -149,6 +153,7 @@ def plot_errors_by_category(ax, df):
 
 # Function to plot Error Rate by Position
 def plot_errors_by_position(ax, df):
+    # TODO docstring
     totals = {}
     errors = {}
 
@@ -186,6 +191,7 @@ def plot_errors_by_position(ax, df):
 
 # Function to combine all plots into one figure
 def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
+    # TODO docstring
     # Parse model parameters for title
     e, h, l, d, t, r = [p[1:] for p in model.split("_")]
     title = f"Model: E={epoch} H={h}, L={l}, D={d}, TF={t}, LR={r}"
@@ -212,6 +218,7 @@ def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
 
 # Plot the confusion matrix for the test data
 def confusion_matrix(confusions: dict, model: str, epoch: str) -> None:
+    # TODO docstring
     df = pd.DataFrame.from_dict(confusions, orient="index")
 
     # Separate the ALPAbet vowels and consonants
