@@ -8,6 +8,9 @@ from .encoders import PhonemeEncoder, VisualEncoder
 class Unimodel(nn.Module):
     r"""A Module interfacing either an auditory or a visual encoder with a vocal decoder.
 
+    Over forward pass, returns both the `phoneme_prediction` of the decoder, and
+    the added `object_pred` from the visual encoder, defaulting to `None` for auditory encoders.
+
     Args :
         `encoder` : instantiated encoder
         `decoder` : instantiated decoder
@@ -15,8 +18,11 @@ class Unimodel(nn.Module):
     Methods :
         `bind` : allows binding the embedding layers of the auditory encoder and vocal decoder
 
-    Over forward pass, returns both the `phoneme_prediction` of the decoder, and
-    the added `object_pred` from the visual encoder, defaulting to `None` for auditory encoders.
+    Attributes:
+        `encoder` : encoder part of the model
+        `decoder` : decoder part of the model
+        `is_auditory` : `True` if encoder part is a `PhonemeEncoder`
+        `is_visual` : `True` if encoder part is a `VisualEncoder`
     """
 
     def __init__(
@@ -27,6 +33,8 @@ class Unimodel(nn.Module):
         super(Unimodel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.is_auditory = isinstance(self.encoder, PhonemeEncoder)
+        self.is_visual = isinstance(self.encoder, VisualEncoder)
         self.bind()
 
     def forward(self, inp: torch.Tensor) -> tuple[torch.Tensor, None | torch.Tensor]:

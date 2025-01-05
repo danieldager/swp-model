@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 
 
 def alignment_loss(output, target, criterion, penalty):
@@ -72,3 +73,15 @@ def alignment_forward(self, x, hidden, stop_token, target_len):
     # Return logits (pred_len, vocab_size)
     outputs = torch.stack(outputs, dim=0)
     return outputs
+
+
+class TaskLosses(nn.Module):
+    # TODO docstring
+    # TODO complete code
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.task_losses: list[nn.Module]
+
+    def forward(self, preds, targets, task_ids):
+        for i in range(10):  # TODO how to automatically determinate number of tasks ?
+            ith_task_loss = self.task_losses[i](preds(task_ids == i), targets[i])

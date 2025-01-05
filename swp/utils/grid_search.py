@@ -4,8 +4,10 @@ from .paths import get_result_dir
 
 
 def grid_search_log(train_losses, valid_losses, model, num_epochs):
+    # TODO rework so that it doesn't break with simultaneous access
+    logfile_path = get_result_dir() / "grid_search.csv"
     try:
-        df = pd.read_csv(get_result_dir() / "grid_search.csv")
+        df = pd.read_csv(logfile_path)
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
         print("\nCreating new grid search log")
@@ -27,4 +29,4 @@ def grid_search_log(train_losses, valid_losses, model, num_epochs):
     print("model", model)
 
     # Save the DataFrame to a CSV file
-    df.to_csv(get_result_dir() / "grid_search.csv", index=False)
+    df.to_csv(logfile_path, index=False)

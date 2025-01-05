@@ -9,7 +9,7 @@ from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import EncoderLSTM, EncoderRNN
 from ..plots import training_curves
 from ..utils.grid_search import grid_search_log
-from ..utils.models import save_weights
+from ..utils.models import save_encdec_weights
 from ..utils.paths import get_checkpoint_dir
 from ..utils.perf import Timer
 
@@ -132,7 +132,7 @@ def train_repetition(P: Phonemes, params: dict, device):
                 and checkpoint != 10
                 and i % ((len(train_dataloader) // 10)) == 0
             ):
-                save_weights(
+                save_encdec_weights(
                     MODEL_WEIGHTS_DIR,
                     shared_embedding,
                     encoder,
