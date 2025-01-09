@@ -5,11 +5,12 @@ from typing import Any, Callable, Optional, Sequence
 
 import numpy as np
 import torch
+import torchvision.transforms
 from g2p_en import G2p
-from torch.utils.data import ConcatDataset, DataLoader, Dataset, Sampler
+from torch.utils.data import ConcatDataset, DataLoader, Dataset, default_collate
 from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import default_loader
-from torchvision.transforms import ToTensor
+from torchvision.datasets.imagenet import ImageNet
 
 from ...utils.datasets import (
     get_epoch_numpy,
@@ -17,8 +18,11 @@ from ...utils.datasets import (
     get_training_fold,
     get_val_fold,
 )
-from ...utils.paths import get_graphemes_dir
+from ...utils.paths import get_graphemes_dir, get_imagenet_dir
+from .testdata_gen import check_test_dataset
 from .traindata_gen import check_train_dataset
+
+# TODO fix generators
 
 
 class RepetitionDataset(ImageFolder):
@@ -48,7 +52,6 @@ class RepetitionDataset(ImageFolder):
         is_valid_file: Optional[Callable[[str], bool]] = None,
         allow_empty: bool = False,
     ):
-        check_train_dataset(root)
         g2p = G2p()
 
         # TODO rework to get max length beforehand
@@ -147,29 +150,38 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         return len(self.epoch_ids)
 
 
-def get_grapheme_loader(fold_id: int, train: bool, batch_size: int) -> DataLoader:
-    r"""Return a dataloader containing the grapheme data corresponding to the `fold_id` fold, batched in size `batch_size`.
+def get_grapheme_trainloader(fold_id: int, train: bool, batch_size: int) -> DataLoader:
+    r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
     """
+    check_train_dataset(get_graphemes_dir())
     grapheme_set = RandomizedFoldRepetitionDataset(
-        root=get_graphemes_dir() / "training",
+        root=get_graphemes_dir() / "train",
         fold_id=fold_id,
         train=train,
         phoneme_to_id=get_phoneme_to_id(),
-        transform=ToTensor(),
+        transform=torchvision.transforms.ToTensor(),
     )
     grapheme_loader = DataLoader(grapheme_set, batch_size)
     return grapheme_loader
 
 
-# TODO create function that mix both repetition and recognition datasets -> collate_fn ?
-# then returns like [batched images, [task_1_target, ..., task_n_target], [subtask_id]]
+def get_grapheme_testloader(batch_size: int) -> DataLoader:
+    r"""Return a dataloader containing the grapheme test data batched in size `batch_size`."""
+    check_test_dataset(get_graphemes_dir())
+    grapheme_set = RepetitionDataset(
+        root=get_graphemes_dir() / "test",
+        phoneme_to_id=get_phoneme_to_id(),
+        transform=torchvision.transforms.ToTensor(),
+    )
+    grapheme_loader = DataLoader(grapheme_set, batch_size)
+    return grapheme_loader
 
 
 class IndicedConcatDataset(ConcatDataset):
-    # TODO docstring
+    r"""Concatenate datasets. Resulting dataset yields tuple `(data, target, dataset_id)`."""
 
     def __init__(self, datasets: list[Dataset]) -> None:
         super().__init__(datasets)
@@ -186,9 +198,77 @@ class IndicedConcatDataset(ConcatDataset):
             sample_idx = idx
         else:
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
-        return self.datasets[dataset_idx][sample_idx], dataset_idx
+        data, target = self.datasets[dataset_idx][sample_idx]
+        return data, target, dataset_idx
 
 
-class MixedVisualDataset(Dataset):
-    # TODO premixed dataset with imagenet
-    pass
+def task_collate_fn(
+    batch: list[tuple[Any, Any, int]], num_tasks: int
+) -> tuple[Any, tuple[list[Any], torch.Tensor]]:
+    # TODO docstring
+    batch_data = []
+    batch_targets = [[] for i in range(num_tasks)]
+    task_ids = []
+    for sample in batch:
+        data, target, id = sample
+        batch_data.append(data)
+        batch_targets[id].append(target)
+        task_ids.append(id)
+    batched_data = default_collate(batch_data)
+    batched_targets = [default_collate(task_target) for task_target in batch_targets]
+    batched_ids = default_collate(task_ids)
+    return (batched_data, (batched_targets, batched_ids))
+
+
+def get_mixed_trainloader(fold_id: int, train: bool, batch_size: int) -> DataLoader:
+    r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
+
+    Return the corresponding training data if `train` is set to `True`.
+    Return the validation data otherwise.
+    """
+    # TODO update docstring
+    check_train_dataset(get_graphemes_dir())
+    grapheme_set = RandomizedFoldRepetitionDataset(
+        root=get_graphemes_dir() / "train",
+        fold_id=fold_id,
+        train=train,
+        phoneme_to_id=get_phoneme_to_id(),
+        transform=torchvision.transforms.ToTensor(),
+    )
+    if train:
+        imagenet_split = "train"
+        imagenet_transform = torchvision.transforms.Compose(
+            [
+                torchvision.transforms.RandomResizedCrop(224),
+                torchvision.transforms.RandomHorizontalFlip(),
+                torchvision.transforms.ToTensor(),
+                torchvision.transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
+    else:
+        imagenet_split = "val"
+        imagenet_transform = torchvision.transforms.Compose(
+            [
+                torchvision.transforms.Resize(256),
+                torchvision.transforms.CenterCrop(224),
+                torchvision.transforms.ToTensor(),
+                torchvision.transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
+    imagenet_root = get_imagenet_dir()
+    imagenet_set = ImageNet(
+        imagenet_root,
+        split=imagenet_split,
+        transform=imagenet_transform,
+    )
+    concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
+    train_loader = DataLoader(
+        concat_dataset,
+        batch_size=batch_size,
+        collate_fn=lambda data: task_collate_fn(data, 2),
+    )
+    return train_loader

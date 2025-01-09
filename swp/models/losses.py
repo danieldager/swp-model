@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import torch
 import torch.nn as nn
 
@@ -76,12 +78,40 @@ def alignment_forward(self, x, hidden, stop_token, target_len):
 
 
 class TaskLosses(nn.Module):
-    # TODO docstring
-    # TODO complete code
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.task_losses: list[nn.Module]
+    r"""Apply different losses depending on the task in a same batch.
+    `forward` expect the predictions to be a list of tensors, where `preds[i]`
+    is the tensor of predictions for ith task.
+    Also, the `targets` is a tuple containing the per-task `task_targets` (as a
+    list of tensors) and a tensor containing the `task_ids` per sample.
+    Does the weighted sum of `ith_loss(preds[i][task_ids == i], task_targets[i])`.
 
-    def forward(self, preds, targets, task_ids):
-        for i in range(10):  # TODO how to automatically determinate number of tasks ?
-            ith_task_loss = self.task_losses[i](preds(task_ids == i), targets[i])
+    Args :
+        `losses` : iterable containing all losses, in order
+        `weights` : Tensor containing weights to apply when summing the losses
+    """
+
+    def __init__(
+        self, losses: Iterable[nn.Module], weights: torch.Tensor | None = None
+    ) -> None:
+        super().__init__()
+        self.task_losses = nn.ModuleList(losses)
+        self.weights = weights
+        if self.weights is not None and len(self.task_losses) != len(self.weights):
+            raise ValueError("Number of losses and weights do not match")
+
+    def forward(
+        self,
+        preds: list[torch.Tensor],
+        targets: tuple[list[torch.Tensor], torch.Tensor],
+    ):
+        task_targets, task_ids = targets
+        loss = 0
+        for i in range(len(task_targets)):
+            ith_task_loss = self.task_losses[i](
+                preds[i][task_ids == i], task_targets[i]
+            )
+            if self.weights is not None:
+                loss += self.weights[i] * ith_task_loss
+            else:
+                loss += ith_task_loss
+        return loss

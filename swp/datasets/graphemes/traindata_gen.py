@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Sequence
 
@@ -16,14 +17,14 @@ def random_cartesian_product(
     sizes: list[int],
     spacing: list[int],
 ) -> list[dict]:
-    r"""Sample `num_samples` different (arg samples used for grapheme generation with the word `word`.
+    r"""Sample `num_samples` different arg samples used for grapheme generation with the word `word`.
     Args are sampled without replacement from the cartesian product defined by :
     - all fonts in `fonts`
     - all global rotations (letter + line inclination) in `global_rot`
     - all line inclinations in `line_rot` (relative to drawn global rot)
     - all letter rotation (independent for every letter) from `letter rot` (relative to drawn global rot)
     - all font sizes in `sizes`
-    - all letter spacing (independently for every bigram) from `spacing`
+    - all letter spacings (independently for every bigram) from `spacing`
     - cases from all upper, all lower or Title (first letter in upper only)
     Returns a list of dict containing args to generate each sample image.
     """
@@ -71,16 +72,14 @@ def random_cartesian_product(
     return [id_to_dict(draw) for draw in draws]
 
 
-def create_train_dataset(
-    path: Path, words: Sequence[str], images_per_word: int
-) -> None:
-    r"""Create a grapheme dataset at `Path` location.
-
-    Creates `images_per_word` images per word in `words`, each saved in a directory named after the corresponding word.
-    """
+def create_gen_arg_dict(path: Path, words: Sequence[str]):
+    # TODO docstring
+    train_path = path / "train"
+    train_path.mkdir(exist_ok=True, parents=True)
     rotations = [-15, -10, -5, 0, 5, 10, 15]
     max_size, max_space = get_dataset_max_font_size(words)
     all_fonts = get_all_fonts()
+    line_rot = [0]
     spaces = [
         0,
         int(max_space / 4),
@@ -89,18 +88,41 @@ def create_train_dataset(
         max_space,
     ]
     sizes = [int(2 * max_size / 3), int(5 * max_size / 6), max_size]
+    dataset_gen_dict = {
+        "fonts": list(set(all_fonts)),
+        "global_rotations": list(set(rotations)),
+        "line_rot": list(set(line_rot)),
+        "letter_rotations": list(set(rotations)),
+        "spaces": list(set(spaces)),
+        "sizes": list(set(sizes)),
+    }
+    gen_args_path = train_path / "gen_args.json"
+    with gen_args_path.open("w") as f:
+        json.dump(dataset_gen_dict, f)
+    return dataset_gen_dict
+
+
+def create_train_dataset(
+    path: Path, words: Sequence[str], images_per_word: int
+) -> None:
+    r"""Create a grapheme dataset at `path / "train"` location.
+
+    Creates `images_per_word` images per word in `words`, each saved in a directory named after the corresponding word.
+    """
+    dataset_gen_dict = create_gen_arg_dict(path, words)
+    train_path = path / "train"
     for word in words:
         images_args = random_cartesian_product(
             num_samples=images_per_word,
             word=word,
-            fonts=all_fonts,
-            global_rot=rotations,
-            line_rot=[0],
-            letter_rot=rotations,
-            sizes=sizes,
-            spacing=spaces,
+            fonts=dataset_gen_dict["fonts"],
+            global_rot=dataset_gen_dict["global_rotations"],
+            line_rot=dataset_gen_dict["line_rot"],
+            letter_rot=dataset_gen_dict["letter_rotations"],
+            sizes=dataset_gen_dict["sizes"],
+            spacing=dataset_gen_dict["spaces"],
         )
-        word_dir = path / word
+        word_dir = train_path / word
         word_dir.mkdir(parents=True, exist_ok=True)
         for arg in images_args:
             im = text_to_grapheme(**arg)
@@ -121,11 +143,12 @@ def create_train_dataset(
             im.save(word_dir / im_name)
 
 
-def check_train_dataset(root: Path) -> int:
-    r"""Check that the number of images per word in the dataset located at `root`
+def check_train_dataset(path: Path) -> int:
+    r"""Check that the number of images per word in the dataset located at `path / "train"`
     is constant and non-zero, then return that number."""
+    path = path / "train"
     counts = set()
-    for dir in root.glob("*/"):
+    for dir in path.glob("*/"):
         num_files = len(
             list(dir.glob("**/*.jpg"))
         )  # TODO ensure it does not get trapped in an infinite cycle
@@ -140,3 +163,11 @@ def check_train_dataset(root: Path) -> int:
         raise RuntimeError(
             f"Number of images per class is not constant, different counts : {counts}"
         )
+
+
+def get_gen_arg_dict(path) -> dict:
+    r"""Return the arguments used to generate the dataset stored in `path / "train"` directory"""
+    train_gen_args_path = path / "train" / "gen_args.json"
+    with train_gen_args_path.open("r") as f:
+        gen_arg_dict = json.load(f)
+    return gen_arg_dict

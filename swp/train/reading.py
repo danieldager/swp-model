@@ -21,14 +21,25 @@ def train(
     device: str | torch.device,
     model_name: str,
     num_epochs: int,
-    verbose: bool,
+    verbose: bool = False,
 ):
-    # TODO add docstring
+    r"""Trains the `model` over `num_epoch` epochs with the data contained in the `train_loader`,
+    the `criterion` loss and the `optimizer` weight update method.
+
+    `model` is assumed to be over `device`.
+    Set `verbose` to `True` to print intermediate logs.
+
+    Training performances and validation performances (evaluated over `valid_loader`)
+    are saved in the end.
+    Checkpointing happens 10 times at the first epoch, then once after each epoch.
+    """
 
     if isinstance(model, Unimodel) and not model.is_visual:
         raise ValueError(
             "The model to train is not made to be trained with visual data"
         )
+    if isinstance(model, Bimodel):
+        model.to_visual()
     model_weights_path = get_checkpoint_dir() / model_name
     model_weights_path.mkdir(exist_ok=True)
 

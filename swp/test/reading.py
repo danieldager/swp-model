@@ -15,3 +15,6 @@ def test(
     # TODO docstring
     if isinstance(model, Unimodel) and not model.is_visual:
         raise ValueError("The model to train is not made to be tested with visual data")
+    if isinstance(model, Bimodel):
+        model.to_visual()
+    # TODO code

@@ -12,7 +12,9 @@ repo_root = pathlib.Path(os.path.realpath(__file__)).parent.parent.parent
 if _ON_JEAN_ZAY:
     # script_dir = pathlib.Path(os.environ["HOME"]) / "single-word-processing-model" # TODO actualize this
     work_dir = pathlib.Path(os.environ["WORK"])
-    dataset_dir = pathlib.Path(os.environ["DSDIR"])
+    dataset_dir = pathlib.Path(os.environ["WORK"]) / "stimuli"
+    public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
+    # TODO add more paths for JZ
 elif _ON_OBERON:
     pass  # TODO set paths for Oberon
 else:  # personnal computer
@@ -20,6 +22,7 @@ else:  # personnal computer
     dataset_dir = repo_root / "stimuli"
     checkpoint_dir = repo_root / "weights"
     result_dir = repo_root / "results"
+    public_dataset_dir = repo_root / "public_datasets"
 
 
 def get_root() -> pathlib.Path:
@@ -63,3 +66,10 @@ def get_graphemes_dir() -> pathlib.Path:
     graphemes_dir = get_dataset_dir() / "graphemes"
     graphemes_dir.mkdir(parents=True, exist_ok=True)
     return graphemes_dir
+
+
+def get_imagenet_dir() -> pathlib.Path:
+    public_dataset_dir.mkdir(
+        parents=True, exist_ok=True
+    )  # TODO check it doesn't break JZ
+    return public_dataset_dir
