@@ -22,8 +22,6 @@ from ...utils.paths import get_graphemes_dir, get_imagenet_dir
 from .testdata_gen import check_test_dataset
 from .traindata_gen import check_train_dataset
 
-# TODO fix generators
-
 
 class RepetitionDataset(ImageFolder):
     r"""Dataset class to handle graphemes to phonemes dataset.
@@ -94,7 +92,7 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         `fold_id` : fold number to load classes from
         `train` : return training split if set to `True`, validation split otherwise
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
-        `generator` : generator used to control random sampling
+        `generator` : generator used to control random sampling. If `None`, then a generator is initialized deterministically.
         other args are passed to the `ImageFolder` parent class
 
     Attributes :
@@ -111,7 +109,7 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         fold_id: int,
         train: bool,
         phoneme_to_id: dict[str, int],
-        generator=None,
+        generator: torch.Generator | None = None,
         transform: Callable[..., Any] | None = None,
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Callable[[str], bool] | None = None,
@@ -134,7 +132,10 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
                 for class_name in data_df["Word"]
             ]
         )
-        self.generator = generator
+        if generator is not None:
+            self.generator = generator
+        else:
+            self.generator = torch.Generator().manual_seed(42)
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         print(index)

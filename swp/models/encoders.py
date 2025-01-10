@@ -17,51 +17,79 @@ from .cornet_z import CORnet_Z
 
 
 class PhonemeEncoder(nn.Module):
-    r"""Parent class for phoneme encoders. Implement basic attributes required for layer binding"""
+    r"""Parent class for phoneme encoders.
 
-    # TODO implement common things, important for bind method of autoencoders
-    # TODO update docstring later
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    Passes the data through an embedding layer, then a dropout layer and finally
+    a recurrent subnetwork.
 
+    Args :
+        `vocab_size` : number of phonemes
+        `hidden_size` : phoneme embedding dimensions
+        `num_layers` : number of layers in the recurrent subnetwork
+        `dropout` : dropout rate
 
-class EncoderRNN(PhonemeEncoder):
-    # TODO add docstring
-    def __init__(self, vocab_size, hidden_size, num_layers, dropout, shared_embedding):
-        super(EncoderRNN, self).__init__()
-        self.input_size = vocab_size
+    Attributes:
+        `vocab_size` : number of phonemes
+        `hidden_size` : phoneme embedding dimensions
+        `num_layers` : number of layers in the recurrent subnetwork
+        `droprate` : dropout rate
+        `embedding` : embedding layer
+        `dropout` : dropout layer
+        `recurrent` : recurrent subnetwork
+    """
+
+    def __init__(
+        self, vocab_size: int, hidden_size: int, num_layers: int, dropout: float
+    ) -> None:
+        super().__init__()
+        self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.dropout = dropout
+        self.droprate = dropout
 
-        self.embedding = shared_embedding
-        self.rnn = nn.RNN(hidden_size, hidden_size, num_layers, batch_first=True)
+        self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
+        self.recurrent: nn.RNNBase
+        self.dropout = nn.Dropout(self.droprate)
 
-    def forward(self, x):
-        embedded = self.embedding(x)
-        _, hidden = self.rnn(embedded)
-
+    def forward(self, inp: torch.Tensor):
+        embeds = self.embedding(inp)
+        dropped = self.dropout(embeds)
+        _, hidden = self.recurrent(dropped)
         return hidden
 
 
+class EncoderRNN(PhonemeEncoder):
+    r"""An auditory encoder based on RNN recurrent networks, see `torch.nn.RNN`.
+    RNN has `batch_first = True`.
+    """
+
+    def __init__(
+        self, vocab_size: int, hidden_size: int, num_layers: int, dropout: float
+    ):
+        super(EncoderRNN, self).__init__(vocab_size, hidden_size, num_layers, dropout)
+        self.recurrent = nn.RNN(
+            self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
+        )
+
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+        return super().forward(inp)
+
+
 class EncoderLSTM(PhonemeEncoder):
-    # TODO add docstring
-    def __init__(self, vocab_size, hidden_size, num_layers, dropout, shared_embedding):
-        super(EncoderLSTM, self).__init__()
-        self.input_size = vocab_size
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.dropout = dropout
+    r"""An auditory encoder based on LSTM recurrent networks, see `torch.nn.LSTM`.
+    LSTM has `batch_first = True`.
+    """
 
-        self.embedding = shared_embedding
-        self.dropout = nn.Dropout(dropout)
-        self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True)
+    def __init__(
+        self, vocab_size: int, hidden_size: int, num_layers: int, dropout: float
+    ):
+        super(EncoderLSTM, self).__init__(vocab_size, hidden_size, num_layers, dropout)
+        self.recurrent = nn.LSTM(
+            self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
+        )
 
-    def forward(self, x):
-        embedded = self.dropout(self.embedding(x))
-        _, (hidden, cell) = self.lstm(embedded)
-
-        return hidden, cell
+    def forward(self, inp: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return super().forward(inp)
 
 
 def cornet_loader(
@@ -115,12 +143,17 @@ class VisualEncoder(nn.Module):
     Args :
         `cnn` : the CNN that generates object classification and neural code
         `to_hidden` : the network that convert neural code to proper encoding
+    Attributes :
+        `cnn` : CNN part of the model
+        `to_hidden` : subnetwork converting neural code to proper encoding
+        `hidden_shape` : `torch.Size` object representing the output shape of `to_hidden`. Dimension containing `-1` is expected to be batch dimension.
     """
 
     def __init__(self, cnn: torch.fx.GraphModule, to_hidden: nn.Module) -> None:
         super().__init__()
         self.cnn = cnn
         self.to_hidden = to_hidden
+        self.hidden_shape: torch.Size
 
     def forward(self, inp: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         cnn_outs = self.cnn(inp)
@@ -135,6 +168,10 @@ class CorNetEncoder(VisualEncoder):
     Args :
         `hidden_size` : the size of the encoding to generate
         `cornet_model` : the CORNet model code of the model to use for the encoder
+    Attributes :
+        `cnn` : CNN part of the model
+        `to_hidden` : subnetwork converting neural code to proper encoding
+        `hidden_shape` : `torch.Size` object representing the output shape of `to_hidden`. The dimension containing `-1` is expected to be batch dimension.
     """
 
     def __init__(self, hidden_size, cornet_model):
@@ -146,5 +183,6 @@ class CorNetEncoder(VisualEncoder):
         }
 
         cnn = create_feature_extractor(cornet, return_nodes=return_nodes)
-        linear = nn.Linear(self.cnn.decoder.linear.in_features, hidden_size)
+        linear = nn.Linear(cnn.decoder.linear.in_features, hidden_size)
+        self.hidden_shape = torch.Size((-1, hidden_size))
         super(CorNetEncoder, self).__init__(cnn=cnn, to_hidden=linear)
