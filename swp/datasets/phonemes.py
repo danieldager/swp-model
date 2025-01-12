@@ -1,10 +1,19 @@
 import json
 from itertools import chain
+from typing import Any
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from ..utils.datasets import get_test_data, phoneme_statistics, sample_words
+from ..utils.datasets import (
+    get_epoch_numpy,
+    get_test_data,
+    get_training_fold,
+    get_val_fold,
+    phoneme_statistics,
+    sample_words,
+)
 from ..utils.paths import get_dataset_dir
 
 
@@ -19,6 +28,39 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         # Return inputs and targets
         return self.data[idx], self.data[idx].clone()
+
+
+class PhonemeDataset(Dataset):
+    # TODO docstring
+
+    # is map-style dataset
+    def __init__(
+        self,
+        fold_id: int,
+        train: bool,
+        phoneme_to_id: dict[str, int],
+        pad_to_length: int,
+    ):
+        self.fold_id = fold_id
+        self.train = train
+        if self.train:
+            self.data_df = get_training_fold(self.fold_id)
+            self.epoch_ids = get_epoch_numpy(self.fold_id)
+        else:
+            self.data_df = get_val_fold(self.fold_id)
+            self.epoch_ids = np.arange(len(self.data_df))
+        self.phoneme_to_id = phoneme_to_id
+        self.pad_length = pad_to_length
+
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
+        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]]
+        phonemes.append("<EOS>")
+        phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
+        tokenized = torch.Tensor([self.phoneme_to_id[phoneme] for phoneme in phonemes])
+        return tokenized, tokenized.clone()
+
+    def __len__(self) -> int:
+        return len(self.epoch_ids)
 
 
 class Phonemes:
