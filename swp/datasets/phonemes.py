@@ -31,7 +31,24 @@ class CustomDataset(Dataset):
 
 
 class PhonemeDataset(Dataset):
-    # TODO docstring
+    r"""Dataset class to handle phonemes dataset with folds.
+
+    Training fold is used if ̀`train` is set to ̀`True`, validation otherwise.
+
+    Args :
+        `fold_id` : fold number to load classes from
+        `train` : return training split if set to `True`, validation split otherwise
+        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        `pad_to_length` : length up to which the dataset should pad
+
+    Attributes :
+        `fold_id` : index of loaded fold
+        `train` : bool indicating if it is training split
+        `data_df` : DataFrame containing all the fold data
+        `epoch_ids` : ids to use through one epoch to access the data in `data_df`
+        `pad_to_length` : length up to which the dataset is padding
+        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+    """
 
     # is map-style dataset
     def __init__(
@@ -53,7 +70,7 @@ class PhonemeDataset(Dataset):
         self.pad_length = pad_to_length
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
-        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]]
+        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]]["Phonemes"]
         phonemes.append("<EOS>")
         phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
         tokenized = torch.Tensor([self.phoneme_to_id[phoneme] for phoneme in phonemes])
