@@ -5,7 +5,7 @@ from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import EncoderLSTM, EncoderRNN
 from ..plots import confusion_matrix, error_plots
 from ..utils.models import load_weigths
-from ..utils.paths import get_checkpoint_dir
+from ..utils.paths import get_weights_dir
 from .core import calculate_errors
 
 
@@ -40,7 +40,7 @@ def test_repetition(P: Phonemes, model: str, device) -> list:
         # print(f"Epoch {epoch+1}/{epochs}", end="\r")
 
         """LOAD MODEL"""
-        MODEL_WEIGHTS_DIR = get_checkpoint_dir() / model
+        MODEL_WEIGHTS_DIR = get_weights_dir() / model
         encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
         decoder = DecoderRNN(h_size, vocab_size, n_layers, dropout).to(device)
 

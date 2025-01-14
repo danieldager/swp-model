@@ -30,7 +30,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
 
 
 # Function to plot Edit Distance by Length
-def plot_errors_by_length(ax, df):
+def plot_errors_by_length(df, ax=None):
     # TODO docstring
     data = df.copy()
     grouped_df = (
@@ -52,15 +52,23 @@ def plot_errors_by_length(ax, df):
         ax=ax,
     )
 
-    ax.set_title("Edit Distance by Length")
-    ax.set_xlabel("Word Length")
-    ax.set_ylabel("Average Edit Distance")
-    ax.legend(title="Lexicality & Morphology")
-    ax.grid(True)
+    if ax:
+        ax.set_title("Edit Distance by Length")
+        ax.set_xlabel("Word Length")
+        ax.set_ylabel("Average Edit Distance")
+        ax.legend(title="Lexicality & Morphology")
+        ax.grid(True)
 
+    else:
+        plt.title("Edit Distance by Length")
+        plt.xlabel("Word Length")
+        plt.ylabel("Average Edit Distance")
+        plt.legend(title="Lexicality & Morphology")
+        plt.grid(True)
+        plt.tight_layout()
 
 # Function to plot Frequency vs Edit Distance
-def plot_errors_by_frequency(ax, df):
+def plot_errors_by_frequency(df, ax=None):
     # TODO docstring
     data = df[df["Lexicality"].isin(["real", "pseudo"])].copy()
     data["Zipf Bin"] = pd.cut(
@@ -85,15 +93,23 @@ def plot_errors_by_frequency(ax, df):
         ax=ax,
     )
 
-    ax.set_title("Edit Distance by Frequency")
-    ax.set_xlabel("Zipf Frequency")
-    ax.set_ylabel("Average Edit Distance")
-    ax.legend(title="Size & Morphology")
-    ax.grid(True)
+    if ax:
+        ax.set_title("Edit Distance by Frequency")
+        ax.set_xlabel("Zipf Frequency")
+        ax.set_ylabel("Average Edit Distance")
+        ax.legend(title="Size & Morphology")
+        ax.grid(True)
 
+    else:
+        plt.title("Edit Distance by Frequency")
+        plt.xlabel("Zipf Frequency")
+        plt.ylabel("Average Edit Distance")
+        plt.legend(title="Size & Morphology")
+        plt.grid(True)
+        plt.tight_layout()
 
 # Function to plot Errors by Test Category
-def plot_errors_by_category(ax, df):
+def plot_errors_by_category(df, ax=None):
     # TODO docstring
     data = df.copy()
 
@@ -141,16 +157,25 @@ def plot_errors_by_category(ax, df):
         data=melted,
         ax=ax,
     )
-    ax.set_title("Errors by Category")
-    ax.set_xlabel("Category")
-    ax.set_ylabel("Average Error Count")
-    ax.set_xticks(range(len(order)))
-    ax.set_xticklabels(short_order)
-    ax.grid(True)
+    
+    if ax:
+        ax.set_title("Errors by Category")
+        ax.set_xlabel("Category")
+        ax.set_ylabel("Average Error Count")
+        ax.set_xticks(range(len(order)))
+        ax.set_xticklabels(short_order)
+        ax.grid(True)
 
+    else:
+        plt.title("Errors by Category")
+        plt.xlabel("Category")
+        plt.ylabel("Average Error Count")
+        plt.xticks(range(len(order)), short_order)
+        plt.grid(True)
+        plt.tight_layout()
 
 # Function to plot Error Rate by Position
-def plot_errors_by_position(ax, df):
+def plot_errors_by_position(df, ax=None):
     # TODO docstring
     totals = {}
     errors = {}
@@ -178,13 +203,21 @@ def plot_errors_by_position(ax, df):
         data=plot_df,
         marker="o",
         markersize=8,
-        ax=ax,
+        ax=ax
     )
 
-    ax.set_title("Error Rate by Relative Position")
-    ax.set_xlabel("Relative Position")
-    ax.set_ylabel("Error Rate")
-    ax.grid(True)
+    if ax: 
+        ax.set_title("Error Rate by Relative Position")
+        ax.set_xlabel("Relative Position")
+        ax.set_ylabel("Error Rate")
+        ax.grid(True)
+    
+    else:
+        plt.title("Error Rate by Relative Position")
+        plt.xlabel("Relative Position")
+        plt.ylabel("Error Rate")
+        plt.grid(True)
+        plt.tight_layout()
 
 
 # Function to combine all plots into one figure
@@ -199,10 +232,11 @@ def error_plots(df: pd.DataFrame, model: str, epoch: str) -> None:
     # Flatten axes for easy indexing
     axes = axes.flatten()
 
-    plot_errors_by_length(axes[0], df)
-    plot_errors_by_frequency(axes[1], df)
-    plot_errors_by_category(axes[2], df)
-    plot_errors_by_position(axes[3], df)
+    plot_errors_by_length(df, axes[0])
+    plot_errors_by_frequency(df, axes[1])
+    plot_errors_by_category(df, axes[2])
+    plot_errors_by_position(df, axes[3])
+    # plot_errors_by_sonority(df, axes[4])
 
     fig.suptitle(title, fontsize=16, y=0.95)
     plt.tight_layout(rect=[0, 0, 1, 0.95])

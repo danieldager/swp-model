@@ -196,7 +196,7 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
 
     if count != num_unique_words:
         raise RuntimeError(
-            f"Could not extract {num_unique_words}, only {count} have been extracted while exhausting the vocabulary"
+            f"Extracted {count}/{num_unique_words} words before exhausting vocabulary."
         )
 
     dataframe = pd.DataFrame({"Word": word_list, "Frequency": freq_list})
@@ -245,16 +245,16 @@ def create_folds(
         mask: np.ndarray = fold_ids == i
 
         ith_train_fold = train_data[np.logical_not(mask)].reset_index(drop=True)
-        ith_val_fold = train_data[mask].reset_index(drop=True)
+        ith_valid_fold = train_data[mask].reset_index(drop=True)
 
         csv_ith_train_fold_path = folds_dir / f"train_fold_{i}.csv"
         csv_ith_valid_fold_path = folds_dir / f"valid_fold_{i}.csv"
 
         ith_train_fold.to_csv(csv_ith_train_fold_path)
-        ith_val_fold.to_csv(csv_ith_valid_fold_path)
+        ith_valid_fold.to_csv(csv_ith_valid_fold_path)
 
 
-def get_training_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+def get_train_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved training fold number `fold_id` if it exists, recreate all folds otherwise.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
@@ -267,7 +267,7 @@ def get_training_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFram
     return dataframe
 
 
-def get_val_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+def get_valid_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved validation fold number `fold_id` if it exists, recreate all folds otherwise.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
@@ -281,8 +281,8 @@ def get_val_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
 
 
 def create_epoch(
-    train_split: pd.DataFrame,
     fold_id: int,
+    train_split: pd.DataFrame,
     epoch_size: int = 100000000,
     generator: np.random.Generator | None = None,
 ) -> np.ndarray:
@@ -300,22 +300,22 @@ def create_epoch(
     indices = train_split.index.to_numpy()
     weights = train_split["Frequency"].to_numpy()
     normalized_weights = weights / np.sum(weights)
-    weighted_samples = generator.choice(
-        indices, epoch_size, p=normalized_weights
-    )  # Generate epoch_size samples
-    filtered_samples = weighted_samples[
-        pd.Series(weighted_samples).duplicated()
-    ]  # For each class, remove first occurence as it will be enforced later
-    truncated_samples = filtered_samples[
-        : epoch_size - len(indices)
-    ]  # If still too long, truncate further
-    samples = np.concatenate([indices, truncated_samples])  # Enforce first occurence
+    # Generate epoch_size samples
+    weighted_samples = generator.choice(indices, epoch_size, p=normalized_weights)
+    # For each class, remove first occurence as it will be enforced later
+    filtered_samples = weighted_samples[pd.Series(weighted_samples).duplicated()]
+    # If still too long, truncate further
+    truncated_samples = filtered_samples[: epoch_size - len(indices)]
+    # Enforce first occurence
+    samples = np.concatenate([indices, truncated_samples])
     generator.shuffle(samples)
     np.save(array_epoch_path, samples)
     return samples
 
 
-def get_epoch_numpy(fold_id: int, force_recreate: bool = False) -> np.ndarray:
+def get_epoch_numpy(
+    fold_id: int, force_recreate: bool = False, epoch_size: int = 1e8
+) -> np.ndarray:
     r"""Get saved training fold `fold_id` epoch ids as numpy array if they exist, create them otherwise.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
@@ -323,8 +323,8 @@ def get_epoch_numpy(fold_id: int, force_recreate: bool = False) -> np.ndarray:
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)
     else:
-        train_fold = get_training_fold(fold_id, force_recreate)
-        indices = create_epoch(train_fold, fold_id)
+        train_fold = get_train_fold(fold_id, force_recreate)
+        indices = create_epoch(fold_id, train_fold, epoch_size)
     return indices
 
 
@@ -333,11 +333,11 @@ def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
 
     Use `force_recreate` to recreate training set and folds from scratch"""
     array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
-    train_fold = get_training_fold(fold_id, force_recreate)
+    train_fold = get_train_fold(fold_id, force_recreate)
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)
     else:
-        indices = create_epoch(train_fold, fold_id)
+        indices = create_epoch(fold_id, train_fold)
     return train_fold.iloc[indices]
 
 
@@ -433,8 +433,7 @@ def create_phoneme_to_id(train_data: pd.DataFrame) -> dict[str, int]:
     phonemes = train_data["Phonemes"]
     phonemes_unique = set().union(*phonemes)
     sorted_phonemes = sorted(list(phonemes_unique))
-    extra_tokens = ["<SOS>", "<EOS>", "<PAD>"]
-    all_tokens = sorted_phonemes + extra_tokens
+    all_tokens = ["<PAD>", "<SOS>", "<EOS>"] + sorted_phonemes
     phoneme_to_id = {token: i for i, token in enumerate(all_tokens)}
     with phoneme_dict_path.open("w") as f:
         json.dump(phoneme_to_id, f)

@@ -2,7 +2,7 @@ from typing import overload
 
 import torch
 
-from ..models.autoencoder import Bimodel, Unimodel
+## from ..models.autoencoder import Bimodel, Unimodel
 
 
 def save_encdec_weights(filepath, encoder, decoder, epoch, checkpoint=None):
@@ -27,14 +27,16 @@ def load_encdec_weigths(filepath, encoder, decoder, epoch, device):
     )
 
 
-def save_weights(filepath, model: Unimodel | Bimodel, epoch, checkpoint=None):
+# def save_weights(filepath, model: Unimodel | Bimodel, epoch, checkpoint=None):
+def save_weights(filepath, model, epoch, checkpoint=None):
     if checkpoint is not None:
         epoch = f"{epoch}_{checkpoint}"
     model_path = filepath / f"model_{epoch}.pth"
     torch.save(model.state_dict(), model_path)
 
 
-def load_weigths(filepath, model: Unimodel | Bimodel, epoch, device):
+# def load_weigths(filepath, model: Unimodel | Bimodel, epoch, device):
+def load_weigths(filepath, model, epoch, device):
     model_path = filepath / f"model_{epoch}.pth"
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)

@@ -15,8 +15,8 @@ from torchvision.datasets.imagenet import ImageNet
 from ...utils.datasets import (
     get_epoch_numpy,
     get_phoneme_to_id,
-    get_training_fold,
-    get_val_fold,
+    get_train_fold,
+    get_valid_fold,
 )
 from ...utils.paths import get_graphemes_dir, get_imagenet_dir
 from .testdata_gen import check_test_dataset
@@ -60,6 +60,7 @@ class RepetitionDataset(ImageFolder):
             phonemes.append("<EOS>")
             phonemes.extend(["<PAD>" for _ in range(length_to_pad - len(phonemes))])
             # store in dict ?
+            # NOTE you might want to make sure these are integers
             return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
 
         # TODO use word_to_phoneme dict and build like word to phon tensors
@@ -121,10 +122,10 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         self.fold_id = fold_id
         self.train = train
         if self.train:
-            data_df = get_training_fold(self.fold_id)
+            data_df = get_train_fold(self.fold_id)
             self.epoch_ids = get_epoch_numpy(self.fold_id)
         else:
-            data_df = get_val_fold(self.fold_id)
+            data_df = get_valid_fold(self.fold_id)
             self.epoch_ids = np.arange(len(data_df))
         self.id_tensor = torch.stack(
             [

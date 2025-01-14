@@ -42,6 +42,7 @@ class PhonemeDecoder(nn.Module):
         num_layers: int,
         dropout: float,
         tf_ratio: float,
+        embedding: nn.Embedding | None = None,
         generator: torch.Generator | None = None,
     ):
         super().__init__()
@@ -51,7 +52,10 @@ class PhonemeDecoder(nn.Module):
         self.droprate = dropout
         self.tf_ratio = tf_ratio
 
-        self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
+        if embedding is not None:
+            self.embedding = embedding
+        else:
+            self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
         self.dropout = nn.Dropout(self.droprate)
         self.recurrent: nn.RNNBase
         self.expected_hidden_shape: torch.Size | tuple[torch.Size, ...]
@@ -76,15 +80,16 @@ class PhonemeDecoder(nn.Module):
                 curr = self.embedding(inp)
 
             # Teacher forcing
-            elif self.tf_ratio > torch.rand(1, generator=self.generator):
+            elif self.training and (
+                self.tf_ratio > torch.rand([], generator=self.generator)
+            ):
                 curr = self.embedding(target[:, i].unsqueeze(1))
                 curr = self.dropout(curr)
 
             # No teacher forcing
             else:
-                # if self.training:
-                #     probs = F.softmax(phoneme_pred, dim=2)
-                #     curr = probs @ self.embedding.weight
+                # probs = F.softmax(phoneme_pred, dim=2)
+                # curr = probs @ self.embedding.weight
                 curr = self.embedding(phoneme_pred.argmax(dim=2))
                 curr = self.dropout(curr)
 
@@ -95,8 +100,7 @@ class PhonemeDecoder(nn.Module):
             phoneme_pred = embed_pred @ self.embedding.weight.T
             logits.append(phoneme_pred)
 
-        output = torch.cat(phoneme_pred, dim=1)
-
+        output = torch.cat(logits, dim=1)
         return output
 
 
@@ -112,9 +116,10 @@ class DecoderLSTM(PhonemeDecoder):
         num_layers: int,
         dropout: float,
         tf_ratio: float,
+        embedding: nn.Embedding | None = None,
     ):
         super(DecoderLSTM, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout, tf_ratio
+            vocab_size, hidden_size, num_layers, dropout, tf_ratio, embedding
         )
         self.recurrent = nn.LSTM(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
@@ -161,9 +166,15 @@ class DecoderRNN(PhonemeDecoder):
         num_layers: int,
         dropout: float,
         tf_ratio: float,
+        embedding: nn.Embedding | None = None,
     ):
         super(DecoderRNN, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout, tf_ratio
+            vocab_size,
+            hidden_size,
+            num_layers,
+            dropout,
+            tf_ratio,
+            embedding,
         )
         self.recurrent = nn.RNN(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
