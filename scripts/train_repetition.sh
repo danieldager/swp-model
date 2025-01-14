@@ -63,7 +63,7 @@ TF_RATIO    =${TF_RATIO     :-0.0}
 # launch your computation
 echo "computation start $(date)"
 
-python code/simulations/train_repetition.py \
+python scripts/train_repetition.py \
     --fold_id      "$FOLD_ID"      \
     --model_type   "$MODEL_TYPE"   \
     --num_epochs   "$NUM_EPOCHS"   \
