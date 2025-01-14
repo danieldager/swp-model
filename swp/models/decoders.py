@@ -178,7 +178,7 @@ class DecoderRNN(PhonemeDecoder):
         )
         hidden_shape = torch.Size(
             (
-                self.recurrent.num_layers * (2 if self.bidirectional else 1),
+                self.recurrent.num_layers * (2 if self.recurrent.bidirectional else 1),
                 -1,
                 self.recurrent.hidden_size,
             )

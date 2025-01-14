@@ -1,0 +1,2 @@
+name,type,fold,h_size,l_rate,n_layers,dropout,tf_ratio,T1,V1
+h8_r0.001_d0.3_t0.5_l1_mrnn_f4,lstm,4,8,0.001,1,0.3,0.5,0.0030862709559202196,0.4184512796163559

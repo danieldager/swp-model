@@ -11,12 +11,13 @@ sns.set_palette("colorblind")
 def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs: int):
     # TODO docstring
     # Extract parameters from the model name
-    h, l, d, t, r = [p[1:] for p in model.split("_")[1:]]
+    h, r, d, t, l, m, f = [p[1:] for p in model.split("_")]
+    m = "RNN" if m == "n" else "LSTM"
 
     plt.figure(figsize=(10, 6))
     sns.lineplot(x=range(1, n_epochs + 1), y=train_losses, label="Training")
     sns.lineplot(x=range(1, n_epochs + 1), y=valid_losses, label="Validation")
-    plt.title(f"Model: H={h}, L={l}, D={d}, TF={t}, LR={r}")
+    plt.title(f"{m} (fold {f}): H={h}, LR={r}, L={l}, D={d}, TF={t}, LR={r}")
     plt.xlabel("Epoch")
     plt.ylabel("Cross Entropy Loss")
     plt.legend()
@@ -67,6 +68,7 @@ def plot_errors_by_length(df, ax=None):
         plt.grid(True)
         plt.tight_layout()
 
+
 # Function to plot Frequency vs Edit Distance
 def plot_errors_by_frequency(df, ax=None):
     # TODO docstring
@@ -107,6 +109,7 @@ def plot_errors_by_frequency(df, ax=None):
         plt.legend(title="Size & Morphology")
         plt.grid(True)
         plt.tight_layout()
+
 
 # Function to plot Errors by Test Category
 def plot_errors_by_category(df, ax=None):
@@ -157,7 +160,7 @@ def plot_errors_by_category(df, ax=None):
         data=melted,
         ax=ax,
     )
-    
+
     if ax:
         ax.set_title("Errors by Category")
         ax.set_xlabel("Category")
@@ -173,6 +176,7 @@ def plot_errors_by_category(df, ax=None):
         plt.xticks(range(len(order)), short_order)
         plt.grid(True)
         plt.tight_layout()
+
 
 # Function to plot Error Rate by Position
 def plot_errors_by_position(df, ax=None):
@@ -198,20 +202,15 @@ def plot_errors_by_position(df, ax=None):
     plot_df = pd.DataFrame(data)
 
     sns.lineplot(
-        x="Position",
-        y="Error Rate",
-        data=plot_df,
-        marker="o",
-        markersize=8,
-        ax=ax
+        x="Position", y="Error Rate", data=plot_df, marker="o", markersize=8, ax=ax
     )
 
-    if ax: 
+    if ax:
         ax.set_title("Error Rate by Relative Position")
         ax.set_xlabel("Relative Position")
         ax.set_ylabel("Error Rate")
         ax.grid(True)
-    
+
     else:
         plt.title("Error Rate by Relative Position")
         plt.xlabel("Relative Position")

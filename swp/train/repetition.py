@@ -45,21 +45,25 @@ def train_repetition(
 
     # Initialize model
     model_name = f"h{hidden_size}_r{learn_rate}_d{dropout}_t{tf_ratio}"
-    model_name += f"_l{num_layers}_m{model_type}_f{fold_id}"
+    model_name += f"_l{num_layers}_{model_type}_f{fold_id}"
     model_weights_path = get_weights_dir() / model_name
     model_weights_path.mkdir(exist_ok=True)
 
     if model_type == "rnn":
         encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
-        decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout, tf_ratio).to(device)
+        decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout, tf_ratio).to(
+            device
+        )
 
     elif model_type == "lstm":
         encoder = EncoderLSTM(vocab_size, hidden_size, num_layers, dropout).to(device)
-        decoder = DecoderLSTM(hidden_size, vocab_size, num_layers, dropout, tf_ratio).to(device)
+        decoder = DecoderLSTM(
+            hidden_size, vocab_size, num_layers, dropout, tf_ratio
+        ).to(device)
 
     else:
         raise ValueError(f"Invalid model type: {model_type}")
-    
+
     start = torch.zeros(batch_size, 1, dtype=int, device=device)
     model = Unimodel(encoder, decoder, start)
     criterion = nn.CrossEntropyLoss()
@@ -131,12 +135,7 @@ def train_repetition(
                 and checkpoint != 10
                 and i % ((len(train_dataloader) // 10)) == 0
             ):
-                save_weights(
-                    model_weights_path,
-                    model,
-                    epoch,
-                    checkpoint,
-                )
+                save_weights(model_weights_path, model, epoch, checkpoint)
                 print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}")
                 checkpoint += 1
 
@@ -176,12 +175,7 @@ def train_repetition(
         print(f"Epoch time: {epoch_time // 3600:.0f}h {epoch_time % 3600 // 60:.0f}m")
 
         # Save model weights for every epoch
-        save_weights(
-            model_weights_path,
-            model,
-            epoch,
-            checkpoint,
-        )
+        save_weights(model_weights_path, model, epoch)
 
     # Plot loss curves and create gridsearch log
     training_curves(train_losses, valid_losses, model_name, num_epochs)

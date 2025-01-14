@@ -62,6 +62,12 @@ def get_figures_dir() -> pathlib.Path:
     return figures_dir
 
 
+def get_gridsearch_dir() -> pathlib.Path:
+    gridsearch_dir = result_dir / "gridsearch"
+    gridsearch_dir.mkdir(parents=True, exist_ok=True)
+    return gridsearch_dir
+
+
 def get_graphemes_dir() -> pathlib.Path:
     graphemes_dir = get_dataset_dir() / "graphemes"
     graphemes_dir.mkdir(parents=True, exist_ok=True)

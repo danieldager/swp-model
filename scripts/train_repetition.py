@@ -19,22 +19,22 @@ def parse_args():
     parser.add_argument(
         "--fold_id",
         type=int,
-        default=0,
-        help="Evaluation fold id",
+        default=4,
+        help="Evaluation fold id (out of 5)",
     )
 
     parser.add_argument(
         "--model_type",
         type=str,
         default="rnn",
-        help="Model type (rnn, lstm)",
+        help="Model type (e.g. rnn, lstm)",
     )
 
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=40,
-        help="Number of epochs",
+        default=1,
+        help="Number of training epochs",
     )
 
     parser.add_argument(
@@ -47,15 +47,15 @@ def parse_args():
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=4,
-        help="Hidden size of RNN",
+        default=8,
+        help="Hidden size of recurrent layers",
     )
 
     parser.add_argument(
         "--num_layers",
         type=int,
         default=1,
-        help="Number of hidden layers",
+        help="Number of hidden recurrent layers",
     )
 
     parser.add_argument(
@@ -68,14 +68,14 @@ def parse_args():
     parser.add_argument(
         "--dropout",
         type=float,
-        default=0.0,
+        default=0.3,
         help="Dropout rate",
     )
 
     parser.add_argument(
         "--tf_ratio",
         type=float,
-        default=0.0,
+        default=0.5,
         help="Teacher forcing ratio",
     )
 
@@ -88,5 +88,5 @@ if __name__ == "__main__":
     device = set_device()
     args = parse_args()
     params = vars(args)
-    model = train_repetition(*params, device)
-    # results = test_repetition(P, model)
+    print(params)
+    model = train_repetition(*params.values(), device)
