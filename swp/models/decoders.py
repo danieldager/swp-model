@@ -42,7 +42,6 @@ class PhonemeDecoder(nn.Module):
         num_layers: int,
         dropout: float,
         tf_ratio: float,
-        embedding: nn.Embedding | None = None,
         generator: torch.Generator | None = None,
     ):
         super().__init__()
@@ -52,13 +51,11 @@ class PhonemeDecoder(nn.Module):
         self.droprate = dropout
         self.tf_ratio = tf_ratio
 
-        if embedding is not None:
-            self.embedding = embedding
-        else:
-            self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
+        self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
         self.dropout = nn.Dropout(self.droprate)
         self.recurrent: nn.RNNBase
         self.expected_hidden_shape: torch.Size | tuple[torch.Size, ...]
+
         if generator is not None:
             self.generator = generator
         else:

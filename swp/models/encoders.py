@@ -44,7 +44,6 @@ class PhonemeEncoder(nn.Module):
         hidden_size: int,
         num_layers: int,
         dropout: float,
-        embedding: nn.Embedding = None,
     ) -> None:
         super().__init__()
         self.vocab_size = vocab_size
@@ -52,10 +51,7 @@ class PhonemeEncoder(nn.Module):
         self.num_layers = num_layers
         self.droprate = dropout
 
-        if embedding is not None:
-            self.embedding = embedding
-        else:
-            self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
+        self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
         self.recurrent: nn.RNNBase
         self.dropout = nn.Dropout(self.droprate)
 
@@ -77,10 +73,9 @@ class EncoderRNN(PhonemeEncoder):
         hidden_size: int,
         num_layers: int,
         dropout: float,
-        embedding: nn.Embedding = None,
     ):
         super(EncoderRNN, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout, embedding
+            vocab_size, hidden_size, num_layers, dropout
         )
         self.recurrent = nn.RNN(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
@@ -101,10 +96,9 @@ class EncoderLSTM(PhonemeEncoder):
         hidden_size: int,
         num_layers: int,
         dropout: float,
-        embedding: nn.Embedding = None,
     ):
         super(EncoderLSTM, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout, embedding
+            vocab_size, hidden_size, num_layers, dropout
         )
         self.recurrent = nn.LSTM(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True

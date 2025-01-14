@@ -62,7 +62,7 @@ class Unimodel(nn.Module):
                 self.encoder.hidden_shape,
                 self.decoder.expected_hidden_shape,
             )
-        start = self.start_tensor.repeat((inp.size(0), 1, 1)).to(
+        start = self.start_tensor.repeat((inp.size(0), 1)).to(
             inp.device, dtype=torch.int
         )
         phoneme_prediction = self.decoder(start, hidden, target)
