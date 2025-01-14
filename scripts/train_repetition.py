@@ -7,9 +7,6 @@ sys.path.append(parent)
 
 import argparse
 
-import torch
-
-from swp.datasets.phonemes import Phonemes
 from swp.train.repetition import train_repetition
 from swp.utils.setup import seed_everything, set_device
 
@@ -20,30 +17,52 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
+        "--fold_id",
+        type=int,
+        default=0,
+        help="Evaluation fold id",
+    )
+
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        default="rnn",
+        help="Model type (rnn, lstm)",
+    )
+
+    parser.add_argument(
         "--num_epochs",
         type=int,
         default=40,
+        help="Number of epochs",
     )
 
     parser.add_argument(
         "--batch_size",
         type=int,
         default=1,
-        help="Batch size",
+        help="Batch size (fixed to 1 for repetition)",
     )
 
     parser.add_argument(
         "--hidden_size",
         type=int,
         default=4,
-        help="Hidden size",
+        help="Hidden size of RNN",
     )
 
     parser.add_argument(
         "--num_layers",
         type=int,
         default=1,
-        help="Hidden layers",
+        help="Number of hidden layers",
+    )
+
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=0.001,
+        help="Learning rate",
     )
 
     parser.add_argument(
@@ -57,14 +76,7 @@ def parse_args():
         "--tf_ratio",
         type=float,
         default=0.0,
-        help="Teacher forcing",
-    )
-
-    parser.add_argument(
-        "--learning_rate",
-        type=float,
-        default=0.001,
-        help="Learning rate",
+        help="Teacher forcing ratio",
     )
 
     args = parser.parse_args()
@@ -72,11 +84,9 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    device = set_device()
-    penalty = torch.tensor(0.0, device=device)
     seed_everything()
-    P = Phonemes()
+    device = set_device()
     args = parse_args()
     params = vars(args)
-    model = train_repetition(P, params, device)
+    model = train_repetition(*params, device)
     # results = test_repetition(P, model)

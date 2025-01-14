@@ -15,7 +15,7 @@ from swp.utils.datasets import (
     create_test_data,
     create_train_data,
     get_phoneme_to_id,
-    get_training_fold,
+    get_train_fold,
 )
 from swp.utils.setup import seed_everything
 
@@ -33,6 +33,6 @@ if __name__ == "__main__":
     generator = np.random.default_rng(seed=3407)
     create_folds(train_df, num_folds=args.num_folds, generator=generator)
     for fold_id in range(args.num_folds):
-        fold_train_df = get_training_fold(fold_id)
-        create_epoch(fold_train_df, fold_id, args.epoch_size, generator)
+        fold_train_df = get_train_fold(fold_id)
+        create_epoch(fold_id, fold_train_df, args.epoch_size, generator)
     get_phoneme_to_id()

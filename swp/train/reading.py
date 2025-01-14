@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.grid_search import grid_search_log
 from ..utils.models import save_weights
-from ..utils.paths import get_checkpoint_dir
+from ..utils.paths import get_weights_dir
 from ..utils.perf import Timer
 
 
@@ -40,7 +40,7 @@ def train(
         )
     if isinstance(model, Bimodel):
         model.to_visual()
-    model_weights_path = get_checkpoint_dir() / model_name
+    model_weights_path = get_weights_dir() / model_name
     model_weights_path.mkdir(exist_ok=True)
 
     timer = Timer()

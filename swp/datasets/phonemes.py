@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader, Dataset
 from ..utils.datasets import (
     get_epoch_numpy,
     get_test_data,
-    get_training_fold,
-    get_val_fold,
+    get_train_fold,
+    get_valid_fold,
     phoneme_statistics,
     sample_words,
 )
@@ -56,15 +56,15 @@ class PhonemeDataset(Dataset):
         fold_id: int,
         train: bool,
         phoneme_to_id: dict[str, int],
-        pad_to_length: int,
+        pad_to_length: int = 0,
     ):
         self.fold_id = fold_id
         self.train = train
         if self.train:
-            self.data_df = get_training_fold(self.fold_id)
-            self.epoch_ids = get_epoch_numpy(self.fold_id)
+            self.data_df = get_train_fold(self.fold_id)
+            self.epoch_ids = get_epoch_numpy(fold_id=self.fold_id, epoch_size=int(1e6))
         else:
-            self.data_df = get_val_fold(self.fold_id)
+            self.data_df = get_valid_fold(self.fold_id)
             self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
         self.pad_length = pad_to_length
@@ -72,8 +72,11 @@ class PhonemeDataset(Dataset):
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]]["Phonemes"]
         phonemes.append("<EOS>")
-        phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
-        tokenized = torch.Tensor([self.phoneme_to_id[phoneme] for phoneme in phonemes])
+        if self.pad_length > 0:
+            phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
+        tokenized = torch.tensor(
+            [self.phoneme_to_id[phoneme] for phoneme in phonemes], dtype=torch.long
+        )
         return tokenized, tokenized.clone()
 
     def __len__(self) -> int:
@@ -85,7 +88,7 @@ class Phonemes:
         self.test_data = get_test_data()
 
         phonemes_dir = get_dataset_dir() / "phonemes"
-        # Cache for train and validation phonemes
+        # Cache for training and validation phonemes
         # TODO add checks, better nouns, better format
         train_cache = phonemes_dir / "train_phonemes.json"
         valid_cache = phonemes_dir / "valid_phonemes.json"
