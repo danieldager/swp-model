@@ -4,7 +4,6 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-
 fold_ids=(0)
 m_types=("lstm")
 h_sizes=(64)
@@ -17,27 +16,17 @@ tf_ratios=(0.0)
 total=0
 
 # Nested loops to iterate through all combinations
-for fold_id in "${fold_ids[@]}"; do
-    for m_type in "${m_types[@]}"; do
-        for h_size in "${h_sizes[@]}"; do
-            for n_layer in "${n_layers[@]}"; do
-                for dropout in "${dropouts[@]}"; do
-                    for l_rate in "${l_rates[@]}"; do
-                        for tf_ratio in "${tf_ratios[@]}"; do
-                            echo "Submitting \
-                                f=$fold_id, m=$m_type, h=$h_size, n=$n_layer, \
-                                l=$l_rate, d=$dropout, tf=$tf_ratio"
+for f in "${fold_ids[@]}"; do
+    for m in "${m_types[@]}"; do
+        for h in "${h_sizes[@]}"; do
+            for l in "${n_layers[@]}"; do
+                for d in "${dropouts[@]}"; do
+                    for r in "${l_rates[@]}"; do
+                        for t in "${tf_ratios[@]}"; do
+                            echo "Submitting f=$f, m=$m, h=$h, n=$l, l=$r, d=$d, tf=$t"
 
                             # Submit job with parameters passed as environment variables
-                            sbatch --export=ALL,         \
-                                FOLD_ID      =$fold_id,  \
-                                MODEL_TYPE   =$m_type,   \
-                                HIDDEN_SIZE  =$h_size,   \
-                                NUM_LAYERS   =$n_layer,  \
-                                LEARN_RATE   =$l_rate,   \
-                                DROPOUT      =$dropout,  \
-                                TF_RATIO     =$tf_ratio  \
-                                "$TRAIN_SCRIPT"
+                            sbatch --export=ALL,FOLD_ID=$f,MODEL_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t "$TRAIN_SCRIPT"
 
                             # Increment counter
                             ((total++))

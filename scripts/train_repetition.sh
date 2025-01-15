@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=2             # Number of CPU cores requested
 #SBATCH --gres=gpu:A40:1              # Number and type of GPUs requested
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
-#SBATCH --time=5:00:00                # Time limit hrs:min:sec
+#SBATCH --time=10:00:00               # Time limit hrs:min:sec
 #SBATCH --output=logs/%j.log          # Standard output and error log
 #SBATCH --nice=1000                   # Priority; higher is lower priority
 
@@ -51,26 +51,26 @@ python -c "import torch; print(f'DEVICE: {torch.cuda.current_device()}')"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
 # Assign default values if environment variables are not set
-FOLD_ID     =${FOLD_ID      :-0}
-MODEL_TYPE  =${MODEL_TYPE   :-"lstm"}
-NUM_EPOCHS  =${NUM_EPOCHS   :-30}
-HIDDEN_SIZE =${HIDDEN_SIZE  :-64}
-NUM_LAYERS  =${NUM_LAYERS   :-1}
-LEARN_RATE  =${LEARN_RATE   :-0.001}
-DROPOUT     =${DROPOUT      :-0.0}
-TF_RATIO    =${TF_RATIO     :-0.0}
+FOLD_ID=${FOLD_ID:-0}
+MODEL_TYPE=${MODEL_TYPE:-"lstm"}
+NUM_EPOCHS=${NUM_EPOCHS:-30}
+HIDDEN_SIZE=${HIDDEN_SIZE:-64}
+NUM_LAYERS=${NUM_LAYERS:-1}
+LEARN_RATE=${LEARN_RATE:-0.001}
+DROPOUT=${DROPOUT:-0.0}
+TF_RATIO=${TF_RATIO:-0.0}
 
 # launch your computation
 echo "computation start $(date)"
 
 python scripts/train_repetition.py \
-    --fold_id      "$FOLD_ID"      \
-    --model_type   "$MODEL_TYPE"   \
-    --num_epochs   "$NUM_EPOCHS"   \
-    --hidden_size  "$HIDDEN_SIZE"  \
-    --num_layers   "$NUM_LAYERS"   \
-    --learn_rate   "$LEARN_RATE"   \
-    --dropout      "$DROPOUT"      \
-    --tf_ratio     "$TF_RATIO"     \
+    --fold_id "$FOLD_ID" \
+    --model_type "$MODEL_TYPE" \
+    --num_epochs "$NUM_EPOCHS" \
+    --hidden_size "$HIDDEN_SIZE" \
+    --num_layers "$NUM_LAYERS" \
+    --learn_rate "$LEARN_RATE" \
+    --dropout "$DROPOUT" \
+    --tf_ratio "$TF_RATIO" \
 
 echo "computation end : $(date)"
