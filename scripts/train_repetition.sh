@@ -53,7 +53,7 @@ export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 # Assign default values if environment variables are not set
 FOLD_ID=${FOLD_ID:-0}
 MODEL_TYPE=${MODEL_TYPE:-"lstm"}
-NUM_EPOCHS=${NUM_EPOCHS:-30}
+NUM_EPOCHS=${NUM_EPOCHS:-10}
 HIDDEN_SIZE=${HIDDEN_SIZE:-64}
 NUM_LAYERS=${NUM_LAYERS:-1}
 LEARN_RATE=${LEARN_RATE:-0.001}

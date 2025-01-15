@@ -98,9 +98,6 @@ def train_repetition(
             print(f"{i}/{len(train_dataloader)}", end="\r")
             timer.start()
 
-            if i > 1000:
-                break
-
             # Forward pass
             input = input.to(device)
             target = target.to(device)
@@ -151,9 +148,6 @@ def train_repetition(
         with torch.no_grad():
             for i, (input, target) in enumerate(valid_dataloader, 1):
                 print(f"{i+1}/{len(valid_dataloader)}", end="\r")
-
-                if i > 1000:
-                    break
 
                 # Forward pass
                 input = input.to(device)

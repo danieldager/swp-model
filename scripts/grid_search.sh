@@ -43,6 +43,7 @@ done
 
 echo "All jobs submitted! Total combinations: $total"
 
-# scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/weights ~/Desktop/single-word-processing-model/weights
-# scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/figures ~/Desktop/single-word-processing-model/figures
-# scp -r ddager@oberon2:/scratch2/ddager/single-word-processing-model/data/grid_search.csv ~/Desktop/single-word-processing-model/data
+# git submodule update --init --recursive
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/weights ~/Desktop/swp-model/weights
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/figures ~/Desktop/swp-model/results/figures
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/gridsearch ~/Desktop/swp-model/results/gridsearch
