@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=1,
+        default=10,
         help="Number of training epochs",
     )
 
@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=8,
+        default=64,
         help="Hidden size of recurrent layers",
     )
 
@@ -68,14 +68,14 @@ def parse_args():
     parser.add_argument(
         "--dropout",
         type=float,
-        default=0.3,
+        default=0.2,
         help="Dropout rate",
     )
 
     parser.add_argument(
         "--tf_ratio",
         type=float,
-        default=0.5,
+        default=0.2,
         help="Teacher forcing ratio",
     )
 
