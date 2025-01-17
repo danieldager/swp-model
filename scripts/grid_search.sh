@@ -30,7 +30,7 @@ for e in "${n_epochs[@]}"; do
                                     echo "Submitting f=$f m=$m h=$h n=$l l=$r d=$d tf=$t e=$e"
 
                                     # Submit job with parameters passed as environment variables
-                                    sbatch --export=ALL,FOLD_ID=$f,RECURRENT_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e,BATCH_SIZE=$b,VERBOSE "$TRAIN_SCRIPT"
+                                    sbatch --export=ALL,FOLD_ID=$f,RECURRENT_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e,BATCH_SIZE=$b "$TRAIN_SCRIPT"
 
                                     # Increment counter
                                     ((total++))

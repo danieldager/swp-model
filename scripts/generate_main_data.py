@@ -30,12 +30,20 @@ if __name__ == "__main__":
     # log the arguments
     print(args)
 
+    print("\nGenerating test data...")
     seed_everything()
     create_test_data()
+
+    print("\nGenerating train data...")
     train_df = create_train_data(args.vocab_size)
     generator = np.random.default_rng(seed=3407)
+
+    print("\nGenerating folds...")
     create_folds(train_df, num_folds=args.num_folds, generator=generator)
+
+    print("\nGenerating epochs...")
     for fold_id in range(args.num_folds):
         fold_train_df = get_train_fold(fold_id)
         create_epoch(fold_id, fold_train_df, args.epoch_size, generator)
+
     get_phoneme_to_id()
