@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 from torch.nested import nested_tensor
 from torch.utils.data import DataLoader, Dataset
@@ -70,7 +71,7 @@ class PhonemeTrainDataset(Dataset):
 
 
 def phoneme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value: int):
-    # TODO docstring
+    # TODO Robin docstring
     data, target = tuple(zip(*batch))
     nt_data = nested_tensor(list(data), dtype=torch.long)
     nt_target = nested_tensor(list(target), dtype=torch.long)
@@ -123,6 +124,7 @@ class PhonemeTestDataset(Dataset):
     Args :
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         `include_stress` : if set to `True`, the phonemes will include stress
+        `override_data_df` : an optionnal `pandas.DataFrame` that can be passed to override the original test data
 
     Attributes :
         `fold_id` : index of loaded fold
@@ -137,8 +139,12 @@ class PhonemeTestDataset(Dataset):
         self,
         phoneme_to_id: dict[str, int],
         include_stress: bool = False,
+        override_data_df: pd.DataFrame | None = None,
     ):
-        self.data_df = get_test_data()
+        if override_data_df is None:
+            self.data_df = get_test_data()
+        else:
+            self.data_df = override_data_df
         self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
         if include_stress:
@@ -158,14 +164,20 @@ class PhonemeTestDataset(Dataset):
         return len(self.epoch_ids)
 
 
-def get_phoneme_testloader(batch_size: int, include_stress: bool = False) -> DataLoader:
+def get_phoneme_testloader(
+    batch_size: int,
+    include_stress: bool = False,
+    override_data_df: pd.DataFrame | None = None,
+) -> DataLoader:
     r"""Return a dataloader containing the phoneme test data batched in size `batch_size`.
     If `include_stress` is set to `True`, phonemes will include stress.
+    Pass a dataframe as `override_data_df` to override the test data used.
     """
     phoneme_to_id = get_phoneme_to_id()
     phoneme_set = PhonemeTestDataset(
         phoneme_to_id=phoneme_to_id,
         include_stress=include_stress,
+        override_data_df=override_data_df,
     )
     phoneme_loader = DataLoader(
         phoneme_set,

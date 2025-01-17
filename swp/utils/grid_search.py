@@ -43,7 +43,8 @@ def grid_search_log(
     (described through `training_name`).
     """
     # Initialize log
-    logfile_path = get_log_dir() / f"{model_name}~{training_name}.csv"
+    logfile_path = get_log_dir() / "train" / f"{model_name}~{training_name}.csv"
+    logfile_path.parent.mkdir(exist_ok=True, parents=True)
     log = None
     # Extract parameters from the model name
     model_type, recurrent_type, model_args = get_args_from_model_name(model_name)

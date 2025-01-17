@@ -354,7 +354,7 @@ def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
 
 
 def phoneme_statistics(phonemes: list):
-    # TODO docstring
+    # TODO Daniel docstring
     # Get the counts for each phoneme
     phoneme_stats = defaultdict(int)
     for word in phonemes:
