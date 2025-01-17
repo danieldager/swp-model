@@ -6,16 +6,16 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Unimodel
+from ..datasets.phonemes import PhonemeDataset
 from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import EncoderLSTM, EncoderRNN
-from ..datasets.phonemes import PhonemeDataset
 
+from ..utils.perf import Timer
 from ..plots import training_curves
-from ..utils.datasets import get_phoneme_to_id
-from ..utils.grid_search import grid_search_log
 from ..utils.models import save_weights
 from ..utils.paths import get_weights_dir
-from ..utils.perf import Timer
+from ..utils.datasets import get_phoneme_to_id
+from ..utils.grid_search import grid_search_log
 
 
 def train_repetition(
@@ -50,15 +50,33 @@ def train_repetition(
     model_weights_path.mkdir(exist_ok=True)
 
     if model_type == "rnn":
-        encoder = EncoderRNN(vocab_size, hidden_size, num_layers, dropout).to(device)
-        decoder = DecoderRNN(hidden_size, vocab_size, num_layers, dropout, tf_ratio).to(
-            device
-        )
+        encoder = EncoderRNN(
+            vocab_size,
+            hidden_size,
+            num_layers,
+            dropout,
+        ).to(device)
+        decoder = DecoderRNN(
+            hidden_size,
+            vocab_size,
+            num_layers,
+            dropout,
+            tf_ratio,
+        ).to(device)
 
     elif model_type == "lstm":
-        encoder = EncoderLSTM(vocab_size, hidden_size, num_layers, dropout).to(device)
+        encoder = EncoderLSTM(
+            vocab_size,
+            hidden_size,
+            num_layers,
+            dropout,
+        ).to(device)
         decoder = DecoderLSTM(
-            hidden_size, vocab_size, num_layers, dropout, tf_ratio
+            hidden_size,
+            vocab_size,
+            num_layers,
+            dropout,
+            tf_ratio,
         ).to(device)
 
     else:
@@ -82,21 +100,32 @@ def train_repetition(
     valid_dataset = PhonemeDataset(fold_id, train=False, phoneme_to_id=phoneme_to_id)
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size)
+    valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
 
     for epoch in range(1, num_epochs + 1):
         epoch_start = time.time()
         print(f"\nEpoch {epoch}")
 
         """ TRAINING LOOP """
-        encoder.train()
-        decoder.train()
+        model.train()
         train_loss = 0
         checkpoint = 1
 
         for i, (input, target) in enumerate(train_dataloader, 1):
-            print(f"{i}/{len(train_dataloader)}", end="\r")
+            # print(f"{i}/{len(train_dataloader)}", end="\r")
             timer.start()
+
+            if i == 100:
+                print("100th iteration")
+
+            if i == 1000:
+                print("1000th iteration")
+
+            if i == 10000:
+                print("10000th iteration")
+
+            if i == 100000:
+                print("100000th iteration")
 
             # Forward pass
             input = input.to(device)
@@ -130,24 +159,23 @@ def train_repetition(
             if (
                 epoch == 1
                 and checkpoint != 10
-                and i % ((len(train_dataloader) // 10)) == 0
+                and i % ((len(train_dataloader) // 10000)) == 0
             ):
                 save_weights(model_weights_path, model, epoch, checkpoint)
-                print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}")
+                print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}", flush=True)
                 checkpoint += 1
 
         train_loss /= len(train_dataloader)
         train_losses.append(train_loss)
-        print(f"Train loss: {train_loss:.3f}")
+        print(f"Train loss: {train_loss:.3f}", flush=True)
 
         """ VALIDATION LOOP """
-        encoder.eval()
-        decoder.eval()
+        model.eval()
         valid_loss = 0
 
         with torch.no_grad():
             for i, (input, target) in enumerate(valid_dataloader, 1):
-                print(f"{i+1}/{len(valid_dataloader)}", end="\r")
+                # print(f"{i+1}/{len(valid_dataloader)}", end="\r")
 
                 # Forward pass
                 input = input.to(device)

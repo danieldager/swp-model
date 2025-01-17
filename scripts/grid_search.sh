@@ -25,7 +25,7 @@ for e in "${n_epochs[@]}"; do
                     for d in "${dropouts[@]}"; do
                         for r in "${l_rates[@]}"; do
                             for t in "${tf_ratios[@]}"; do
-                                echo "Submitting f=$f, m=$m, h=$h, n=$l, l=$r, d=$d, tf=$t"
+                                echo "Submitting f=$f m=$m h=$h n=$l l=$r d=$d tf=$t e=$e"
 
                                 # Submit job with parameters passed as environment variables
                                 sbatch --export=ALL,FOLD_ID=$f,MODEL_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e "$TRAIN_SCRIPT"

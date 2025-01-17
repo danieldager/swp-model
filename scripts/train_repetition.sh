@@ -50,6 +50,9 @@ python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
 python -c "import torch; print(f'DEVICE: {torch.cuda.current_device()}')"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
+# set python to be unbuffered (why is this necessary?)
+export PYTHONUNBUFFERED=1
+
 # Assign default values if environment variables are not set
 FOLD_ID=${FOLD_ID:-0}
 MODEL_TYPE=${MODEL_TYPE:-"lstm"}
@@ -61,7 +64,7 @@ DROPOUT=${DROPOUT:-0.0}
 TF_RATIO=${TF_RATIO:-0.0}
 
 # launch your computation
-echo "computation start $(date)"
+echo "computation start : $(date)"
 
 python scripts/train_repetition.py \
     --fold_id "$FOLD_ID" \

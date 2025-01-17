@@ -85,8 +85,7 @@ def parse_args():
 
 if __name__ == "__main__":
     seed_everything()
-    device = set_device()
     args = parse_args()
     params = vars(args)
-    print(params)
+    device = set_device()
     model = train_repetition(*params.values(), device)
