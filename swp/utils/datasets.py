@@ -101,6 +101,12 @@ def clean_and_enrich_data(
     # Add Phonemes column
     df["Phonemes"] = df["Word"].apply(g2p)
 
+    # Add Phonemes column with no stress
+    def remove_stress(phonemes):
+        return [p[:-1] if p[-1].isdigit() else p for p in phonemes]
+
+    df["No Stress"] = df["Phonemes"].apply(remove_stress)
+
     # NOTE: Very slow
     # Add Morphological data
     if morph:
@@ -151,6 +157,7 @@ def create_test_data() -> pd.DataFrame:
         "Lexicality",
         "Part of Speech",
         "Phonemes",
+        "No Stress",
     ]
     dataframe = dataframe.reindex(columns=columns)
 
@@ -167,6 +174,7 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     if csv_test_path.exists() and not force_recreate:
         dataframe = pd.read_csv(csv_test_path, index_col=0, converters={"Word": str})
         dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+        dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
     else:
         dataframe = create_test_data()
     return dataframe
@@ -216,6 +224,7 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
     if csv_train_path.exists() and not force_recreate:
         dataframe = pd.read_csv(csv_train_path, index_col=0, converters={"Word": str})
         dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+        dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
     else:
         dataframe = create_train_data()
     return dataframe
@@ -264,6 +273,7 @@ def get_train_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
         create_folds(train_df)
     dataframe = pd.read_csv(csv_train_fold_path, index_col=0, converters={"Word": str})
     dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+    dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
     return dataframe
 
 
@@ -277,6 +287,7 @@ def get_valid_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
         create_folds(train_df)
     dataframe = pd.read_csv(csv_valid_fold_path, index_col=0, converters={"Word": str})
     dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
+    dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
     return dataframe
 
 

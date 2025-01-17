@@ -159,7 +159,7 @@ def train_repetition(
             if (
                 epoch == 1
                 and checkpoint != 10
-                and i % ((len(train_dataloader) // 10000)) == 0
+                and i % ((len(train_dataloader) // 10)) == 0
             ):
                 save_weights(model_weights_path, model, epoch, checkpoint)
                 print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}", flush=True)
