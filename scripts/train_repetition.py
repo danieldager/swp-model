@@ -7,7 +7,6 @@ sys.path.append(parent)
 
 import argparse
 
-import torch.nn as nn
 import torch.optim as optim
 
 from swp.datasets.phonemes import get_phoneme_trainloader
@@ -32,6 +31,12 @@ if __name__ == "__main__":
         type=int,
         required=True,
         help="Evaluation fold id",
+    )
+    parser.add_argument(
+        "--include_stress",
+        type=bool,
+        action="store_true",
+        help="Include stress in phonemes",
     )
     parser.add_argument(
         "--num_epochs",
@@ -92,14 +97,19 @@ if __name__ == "__main__":
     seed_everything()
     device = set_device()
 
+    # TODO group args
     # TODO mutually exclusive args
     if True:
-        training_name = get_training_name(
-            args.batch_size, args.learn_rate, args.fold_id
-        )
         batch_size = args.batch_size
         learn_rate = args.learn_rate
         fold_id = args.fold_id
+        include_stress = args.include_stress
+        training_name = get_training_name(
+            batch_size,
+            learn_rate,
+            fold_id,
+            include_stress,
+        )
     else:
         training_name = args.training_name
         training_args = get_training_args(training_name)
@@ -166,13 +176,13 @@ if __name__ == "__main__":
         fold_id=fold_id,
         train=True,
         batch_size=batch_size,
-        pad_to_length=0,
+        include_stress=include_stress,
     )
     valid_loader = get_phoneme_trainloader(
         fold_id=fold_id,
         train=False,
         batch_size=batch_size,
-        pad_to_length=0,
+        include_stress=include_stress,
     )
     criterion = AuditoryXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)

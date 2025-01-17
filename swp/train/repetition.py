@@ -5,10 +5,9 @@ import torch.nn as nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from swp.utils.models import save_weights
-
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.grid_search import grid_search_log
+from ..utils.models import save_weights
 from ..utils.perf import Timer
 
 

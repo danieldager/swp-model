@@ -22,6 +22,7 @@ def get_empty_training_log() -> pd.DataFrame:
         "Batch size",
         "Learning rate",
         "Fold",
+        "Include stress",
         "Epoch",
         "Train loss",
         "Validation loss",
@@ -43,7 +44,7 @@ def grid_search_log(
     """
     # Initialize log
     logfile_path = get_log_dir() / f"{model_name}~{training_name}.csv"
-    log = get_empty_training_log()
+    log = None
     # Extract parameters from the model name
     model_type, recurrent_type, model_args = get_args_from_model_name(model_name)
     cnn_args = None
@@ -66,13 +67,19 @@ def grid_search_log(
             "Batch size": [training_args["b"]],
             "Learning rate": [training_args["l"]],
             "Fold": [training_args["f"]],
+            "Include stress": [training_args["s"]],
             "Epoch": [epoch],
             "Train loss": [train_losses[epoch]],
             "Validation loss": [valid_losses[epoch]],
         }
         row_df = pd.DataFrame.from_dict(row_dict)
-        log = pd.concat([log, row_df], ignore_index=True)
+        if log is None:
+            log = row_df
+        else:
+            log = pd.concat([log, row_df], ignore_index=True)
 
+    if log is None:
+        log = get_empty_training_log()
     # Save the DataFrame to a CSV file
     log.to_csv(logfile_path, index=False)
 
@@ -82,5 +89,10 @@ def grid_search_log(
 
 def grid_search_aggregate():
     # TODO docstring
-    aggregated = get_empty_training_log()
-    ...  # TODO code
+    aggregatedfile_path = get_gridsearch_dir() / "aggregated.csv"
+    aggregated = None
+    # TODO code
+    if aggregated is None:
+        aggregated = get_empty_training_log()
+    # Save the DataFrame to a CSV file
+    aggregated.to_csv(aggregatedfile_path, index=False)

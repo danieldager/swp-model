@@ -193,9 +193,15 @@ def get_model_name_from_args(
     return model_name
 
 
-def get_training_name(batch_size: int, learning_rate: float, fold_id: int) -> str:
+def get_training_name(
+    batch_size: int, learning_rate: float, fold_id: int, include_stress: bool
+) -> str:
     r"""Generate the `training_name` from the training arguments."""
     training_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
+    if include_stress:
+        training_name = f"{training_name}_sw"
+    else:
+        training_name = f"{training_name}_sn"
     # TODO add support for visual dataset, mixed or not
     return training_name
 
@@ -208,4 +214,10 @@ def get_training_args(training_name: str) -> dict[str, Any]:
     typed_args["b"] = int(str_args["b"])
     typed_args["l"] = float(str_args["l"])
     typed_args["f"] = int(str_args["f"])
+    if str_args["s"] == "w":
+        typed_args["s"] = True
+    elif str_args["s"] == "n":
+        typed_args["s"] = False
+    else:
+        raise ValueError(f"Stress value not recognized : {str_args["s"]}")
     return typed_args

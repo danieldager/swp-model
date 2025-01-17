@@ -171,3 +171,4 @@ stimuli/folds
 stimuli/dataframe
 stimuli/phonemes
 results
+stimuli/phonemes_to_id.json

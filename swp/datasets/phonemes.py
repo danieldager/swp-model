@@ -23,14 +23,13 @@ class PhonemeTrainDataset(Dataset):
         `fold_id` : fold number to load classes from
         `train` : return training split if set to `True`, validation split otherwise
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
-        `pad_to_length` : length up to which the dataset should pad
+        `include_stress` : if set to `True`, the phonemes will include stress
 
     Attributes :
         `fold_id` : index of loaded fold
         `train` : bool indicating if it is training split
         `data_df` : DataFrame containing all the fold data
         `epoch_ids` : ids to use through one epoch to access the data in `data_df`
-        `pad_to_length` : length up to which the dataset is padding
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
     """
 
@@ -40,7 +39,7 @@ class PhonemeTrainDataset(Dataset):
         fold_id: int,
         train: bool,
         phoneme_to_id: dict[str, int],
-        pad_to_length: int = 0,
+        include_stress: bool = False,
     ):
         self.fold_id = fold_id
         self.train = train
@@ -51,15 +50,16 @@ class PhonemeTrainDataset(Dataset):
             self.data_df = get_valid_fold(self.fold_id)
             self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
-        self.pad_length = pad_to_length
+        if include_stress:
+            self.phoneme_key = "Phonemes"
+        else:
+            self.phoneme_key = "No Stress"
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
-            "Phonemes"
+            self.phoneme_key
         ].copy()
         phonemes.append("<EOS>")
-        if self.pad_length > 0:
-            phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
         tokenized = torch.tensor(
             [self.phoneme_to_id[phoneme] for phoneme in phonemes], dtype=torch.long
         )
@@ -83,11 +83,13 @@ def get_phoneme_trainloader(
     fold_id: int,
     train: bool,
     batch_size: int,
-    pad_to_length: int,
     generator: torch.Generator | None = None,
+    include_stress: bool = False,
 ) -> DataLoader:
     r"""Return a dataloader containing the phoneme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
     Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
+
+    If `include_stress` is set to `True`, phonemes will include stress.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
@@ -97,7 +99,7 @@ def get_phoneme_trainloader(
         fold_id=fold_id,
         train=train,
         phoneme_to_id=phoneme_to_id,
-        pad_to_length=pad_to_length,
+        include_stress=include_stress,
     )
     if generator is None:
         generator = torch.Generator().manual_seed(42)
@@ -120,14 +122,13 @@ class PhonemeTestDataset(Dataset):
 
     Args :
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
-        `pad_to_length` : length up to which the dataset should pad
+        `include_stress` : if set to `True`, the phonemes will include stress
 
     Attributes :
         `fold_id` : index of loaded fold
         `train` : bool indicating if it is training split
         `data_df` : DataFrame containing all the fold data
         `epoch_ids` : ids to use through one epoch to access the data in `data_df`
-        `pad_to_length` : length up to which the dataset is padding
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
     """
 
@@ -135,17 +136,21 @@ class PhonemeTestDataset(Dataset):
     def __init__(
         self,
         phoneme_to_id: dict[str, int],
-        pad_to_length: int,
+        include_stress: bool = False,
     ):
         self.data_df = get_test_data()
         self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
-        self.pad_length = pad_to_length
+        if include_stress:
+            self.phoneme_key = "Phonemes"
+        else:
+            self.phoneme_key = "No Stress"
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
-        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]]["Phonemes"]
+        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
+            self.phoneme_key
+        ].copy()
         phonemes.append("<EOS>")
-        phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
         tokenized = torch.Tensor([self.phoneme_to_id[phoneme] for phoneme in phonemes])
         return tokenized, tokenized.clone()
 
@@ -153,12 +158,14 @@ class PhonemeTestDataset(Dataset):
         return len(self.epoch_ids)
 
 
-def get_phoneme_testloader(batch_size: int, pad_to_length: int) -> DataLoader:
-    r"""Return a dataloader containing the phoneme test data batched in size `batch_size`."""
+def get_phoneme_testloader(batch_size: int, include_stress: bool = False) -> DataLoader:
+    r"""Return a dataloader containing the phoneme test data batched in size `batch_size`.
+    If `include_stress` is set to `True`, phonemes will include stress.
+    """
     phoneme_to_id = get_phoneme_to_id()
     phoneme_set = PhonemeTestDataset(
         phoneme_to_id=phoneme_to_id,
-        pad_to_length=pad_to_length,
+        include_stress=include_stress,
     )
     phoneme_loader = DataLoader(
         phoneme_set,
