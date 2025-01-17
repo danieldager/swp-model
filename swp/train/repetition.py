@@ -31,6 +31,7 @@ def train(
 
     Training performances and validation performances (evaluated over `valid_loader`)
     are saved in the end.
+    
     Checkpointing happens 10 times during the first epoch, then once after each epoch.
     """
 
@@ -55,7 +56,7 @@ def train(
         if verbose:
             print(f"\nEpoch {epoch}")
 
-        # training loop
+        ### TRAINING LOOP ###
         model.train()
         train_loss = 0
         checkpoint = 1
@@ -94,19 +95,20 @@ def train(
             timer.stop("Train step")
 
             if epoch == 1 and checkpoint != 10 and i % ((len(train_loader) // 10)) == 0:
-                save_weights(
-                    model_name, training_name, model, epoch, checkpoint=checkpoint
-                )
+                save_weights(model_name, training_name, model, epoch, checkpoint)
                 if verbose:
                     print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}")
+
                 checkpoint += 1
 
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
+        
         if verbose:
             print(f"Train loss: {train_loss:.3f}")
 
-        # VALIDATION LOOP
+
+        ### VALIDATION LOOP ###
         model.eval()
         valid_loss = 0
 

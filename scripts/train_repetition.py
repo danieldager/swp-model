@@ -101,6 +101,7 @@ if __name__ == "__main__":
         fold_id = training_args["f"]
 
     # TODO mutually exclusive args
+    # TODO printing arguments for debugging purposes
     if True:
         rec_type = args.recurrent_type.upper()
         phoneme_to_id = get_phoneme_to_id()
