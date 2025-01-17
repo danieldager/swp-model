@@ -4,12 +4,13 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-n_epochs=(2)
+n_epochs=(20)
 fold_ids=(0)
-m_types=("lstm")
-h_sizes=(64)
+b_sizes=(1024)
+r_types=("lstm")
+h_sizes=(128 256 512)
 n_layers=(1)
-l_rates=(0.0005 0.0001)
+l_rates=(0.001)
 dropouts=(0.2)
 tf_ratios=(0.2)
 
@@ -18,23 +19,25 @@ total=0
 
 # Nested loops to iterate through all combinations
 for e in "${n_epochs[@]}"; do
-    for f in "${fold_ids[@]}"; do
-        for m in "${m_types[@]}"; do
-            for h in "${h_sizes[@]}"; do
-                for l in "${n_layers[@]}"; do
-                    for d in "${dropouts[@]}"; do
-                        for r in "${l_rates[@]}"; do
-                            for t in "${tf_ratios[@]}"; do
-                                echo "Submitting f=$f m=$m h=$h n=$l l=$r d=$d tf=$t e=$e"
+    for b in "${b_sizes[@]}"; do
+        for f in "${fold_ids[@]}"; do
+            for m in "${r_types[@]}"; do
+                for h in "${h_sizes[@]}"; do
+                    for l in "${n_layers[@]}"; do
+                        for d in "${dropouts[@]}"; do
+                            for r in "${l_rates[@]}"; do
+                                for t in "${tf_ratios[@]}"; do
+                                    echo "Submitting f=$f m=$m h=$h n=$l l=$r d=$d tf=$t e=$e"
 
-                                # Submit job with parameters passed as environment variables
-                                sbatch --export=ALL,FOLD_ID=$f,MODEL_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e "$TRAIN_SCRIPT"
+                                    # Submit job with parameters passed as environment variables
+                                    sbatch --export=ALL,FOLD_ID=$f,RECURRENT_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e,BATCH_SIZE=$b,VERBOSE "$TRAIN_SCRIPT"
 
-                                # Increment counter
-                                ((total++))
+                                    # Increment counter
+                                    ((total++))
 
-                                echo "Submitted job $total"
-                                echo "----------------------------------------"
+                                    echo "Submitted job $total"
+                                    echo "----------------------------------------"
+                                done
                             done
                         done
                     done

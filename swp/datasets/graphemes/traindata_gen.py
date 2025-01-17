@@ -126,12 +126,12 @@ def create_train_dataset(
         word_dir.mkdir(parents=True, exist_ok=True)
         for arg in images_args:
             im = text_to_grapheme(**arg)
-            im_name = f"{word}_{arg["fontname"]}_{arg["size"]}"
-            im_name = f"{im_name}_l{arg["line_angle"]}"
+            im_name = f'{word}_{arg["fontname"]}_{arg["size"]}'
+            im_name = f'{im_name}_l{arg["line_angle"]}'
             im_name = (
-                f"{im_name}_charrot{"-".join(str(angle) for angle in arg["angles"])}"
+                f'{im_name}_charrot{"-".join(str(angle) for angle in arg["angles"])}'
             )
-            im_name = f"{im_name}_sp{"-".join(str(space) for space in arg["spacing"])}"
+            im_name = f'{im_name}_sp{"-".join(str(space) for space in arg["spacing"])}'
             if not arg["case"][0]:
                 case_name = "lowers"
             elif arg["case"][-1]:

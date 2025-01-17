@@ -31,7 +31,7 @@ def train(
 
     Training performances and validation performances (evaluated over `valid_loader`)
     are saved in the end.
-    
+
     Checkpointing happens 10 times during the first epoch, then once after each epoch.
     """
 
@@ -103,10 +103,9 @@ def train(
 
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
-        
+
         if verbose:
             print(f"Train loss: {train_loss:.3f}")
-
 
         ### VALIDATION LOOP ###
         model.eval()

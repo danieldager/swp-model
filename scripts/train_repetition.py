@@ -14,6 +14,7 @@ from swp.datasets.phonemes import get_phoneme_trainloader
 from swp.models.autoencoder import Unimodel
 from swp.models.decoders import DecoderLSTM, DecoderRNN
 from swp.models.encoders import EncoderLSTM, EncoderRNN
+from swp.models.losses import AuditoryXENT
 from swp.train.repetition import train
 from swp.utils.datasets import get_phoneme_to_id
 from swp.utils.models import (
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=-4,
+        default=4,
         help="Hidden size of recurrent subnetworks.",
     )
     parser.add_argument(
@@ -79,6 +80,12 @@ if __name__ == "__main__":
         type=float,
         default=0.2,
         help="Dropout rate for encoders and decoders",
+    )
+
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print logs during training",
     )
 
     args = parser.parse_args()
@@ -99,6 +106,15 @@ if __name__ == "__main__":
         batch_size = training_args["b"]
         learn_rate = training_args["l"]
         fold_id = training_args["f"]
+
+    print(f"\nTraining name: {training_name}")
+    print(f"Batch size: {batch_size}")
+    print(f"Hidden size: {args.hidden_size}")
+    print(f"Learning rate: {learn_rate}")
+    print(f"Number of epochs: {args.num_epochs}")
+    print(f"Number of layers: {args.num_layers}")
+    print(f"Teacher forcing ratio: {args.tf_ratio}")
+    print(f"Dropout rate: {args.dropout}")
 
     # TODO mutually exclusive args
     # TODO printing arguments for debugging purposes
@@ -158,8 +174,13 @@ if __name__ == "__main__":
         batch_size=batch_size,
         pad_to_length=0,
     )
-    criterion = nn.CrossEntropyLoss()
+    criterion = AuditoryXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
+
+    # print all the parameters for debugging purposes
+    print(f"Train_loader size: {len(train_loader)}")
+    print(f"Valid_loader size: {len(valid_loader)}\n")
+
     train(
         train_loader=train_loader,
         valid_loader=valid_loader,
@@ -170,4 +191,5 @@ if __name__ == "__main__":
         model_name=model_name,
         training_name=training_name,
         num_epochs=args.num_epochs,
+        verbose=args.verbose,
     )

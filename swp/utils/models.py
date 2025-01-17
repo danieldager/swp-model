@@ -188,7 +188,7 @@ def get_model_name_from_args(
     model_name = f"{model_name}_t{tf_ratio}"
     model_name = f"{model_name}_s{start_token_id}"
     if cnn_args is not None:
-        cnn_str = f"h{cnn_args["hidden_size"]}_m{cnn_args["cnn_model"]}"
+        cnn_str = f'h{cnn_args["hidden_size"]}_m{cnn_args["cnn_model"]}'
         model_name = f"{model_name}__c{cnn_str}"
     return model_name
 

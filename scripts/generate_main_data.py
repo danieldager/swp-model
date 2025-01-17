@@ -22,10 +22,13 @@ from swp.utils.setup import seed_everything
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--vocab_size", type=int, default=50000)
-    parser.add_argument("--epoch_size", type=int, default=100000000)
+    parser.add_argument("--epoch_size", type=int, default=1000000)
     parser.add_argument("--num_folds", type=int, default=5)
 
     args = parser.parse_args()
+
+    # log the arguments
+    print(args)
 
     seed_everything()
     create_test_data()
