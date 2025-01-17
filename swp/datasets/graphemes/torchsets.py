@@ -101,6 +101,7 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         `fold_id` : index of loaded fold
         `train` : bool indicating if it is training split
         `id_tensor` : Tensor of size `[num_fold_classes, num_samples_per_class]` containing overall dataset index. First dim is indexed along the fold dataframe.
+        `epoch_ids` : Array containing the class indices to go through over one epoch
         `generator` : generator used to control random sampling
     """
 
@@ -152,8 +153,11 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         return len(self.epoch_ids)
 
 
-def get_grapheme_trainloader(fold_id: int, train: bool, batch_size: int) -> DataLoader:
+def get_grapheme_trainloader(
+    fold_id: int, train: bool, batch_size: int, generator: torch.Generator | None = None
+) -> DataLoader:
     r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
+    Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
@@ -166,7 +170,11 @@ def get_grapheme_trainloader(fold_id: int, train: bool, batch_size: int) -> Data
         phoneme_to_id=get_phoneme_to_id(),
         transform=torchvision.transforms.ToTensor(),
     )
-    grapheme_loader = DataLoader(grapheme_set, batch_size)
+    if generator is None:
+        generator = torch.Generator().manual_seed(42)
+    grapheme_loader = DataLoader(
+        grapheme_set, batch_size, shuffle=True, generator=generator
+    )
     return grapheme_loader
 
 
@@ -207,7 +215,14 @@ class IndicedConcatDataset(ConcatDataset):
 def task_collate_fn(
     batch: list[tuple[Any, Any, int]], num_tasks: int
 ) -> tuple[Any, tuple[list[Any], torch.Tensor]]:
-    # TODO docstring
+    r"""This collate function is made to collate target tensors along the dataset they come from.
+    It is meant to be used along the `IndicedConcacDataset` class.
+
+    Returns a tuple containing :
+      - a tensor of all the collated inputs
+      - a list of tensors containing the collated target per corresponding dataset
+      - a tensor containing the matching dataset id for the inputs
+    """
     batch_data = []
     batch_targets = [[] for i in range(num_tasks)]
     task_ids = []
@@ -222,13 +237,16 @@ def task_collate_fn(
     return (batched_data, (batched_targets, batched_ids))
 
 
-def get_mixed_trainloader(fold_id: int, train: bool, batch_size: int) -> DataLoader:
-    r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
+def get_mixed_trainloader(
+    fold_id: int, train: bool, batch_size: int, generator: torch.Generator | None = None
+) -> DataLoader:
+    r"""Return a dataloader containing both the grapheme training data corresponding to the `fold_id` fold
+    and the ImageNet dataset, batched in size `batch_size`.
+    Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
     """
-    # TODO update docstring
     check_train_dataset(get_graphemes_dir())
     grapheme_set = RandomizedFoldRepetitionDataset(
         root=get_graphemes_dir() / "train",
@@ -268,9 +286,13 @@ def get_mixed_trainloader(fold_id: int, train: bool, batch_size: int) -> DataLoa
         transform=imagenet_transform,
     )
     concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
+    if generator is None:
+        generator = torch.Generator().manual_seed(42)
     train_loader = DataLoader(
         concat_dataset,
         batch_size=batch_size,
         collate_fn=lambda data: task_collate_fn(data, 2),
+        shuffle=True,
+        generator=generator,
     )
     return train_loader

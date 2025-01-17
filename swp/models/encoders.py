@@ -74,9 +74,7 @@ class EncoderRNN(PhonemeEncoder):
         num_layers: int,
         dropout: float,
     ):
-        super(EncoderRNN, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout
-        )
+        super(EncoderRNN, self).__init__(vocab_size, hidden_size, num_layers, dropout)
         self.recurrent = nn.RNN(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
         )
@@ -97,9 +95,7 @@ class EncoderLSTM(PhonemeEncoder):
         num_layers: int,
         dropout: float,
     ):
-        super(EncoderLSTM, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout
-        )
+        super(EncoderLSTM, self).__init__(vocab_size, hidden_size, num_layers, dropout)
         self.recurrent = nn.LSTM(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
         )
@@ -190,7 +186,9 @@ class CorNetEncoder(VisualEncoder):
         `hidden_shape` : `torch.Size` object representing the output shape of `to_hidden`. The dimension containing `-1` is expected to be batch dimension.
     """
 
-    def __init__(self, hidden_size, cornet_model):
+    def __init__(self, hidden_size: int, cornet_model: str):
+        self.cnn_model = cornet_model
+        self.hidden_size = hidden_size
         cornet = cornet_loader(cornet_model)
 
         return_nodes = {

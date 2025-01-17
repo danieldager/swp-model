@@ -73,7 +73,7 @@ def random_cartesian_product(
 
 
 def create_gen_arg_dict(path: Path, words: Sequence[str]):
-    # TODO docstring
+    r"""Generate a dictionnary of the arguments used to generate the grapheme dataset and save it."""
     train_path = path / "train"
     train_path.mkdir(exist_ok=True, parents=True)
     rotations = [-15, -10, -5, 0, 5, 10, 15]

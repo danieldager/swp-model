@@ -108,15 +108,14 @@ class DecoderLSTM(PhonemeDecoder):
 
     def __init__(
         self,
-        hidden_size: int,
         vocab_size: int,
+        hidden_size: int,
         num_layers: int,
         dropout: float,
         tf_ratio: float,
-        embedding: nn.Embedding | None = None,
     ):
         super(DecoderLSTM, self).__init__(
-            vocab_size, hidden_size, num_layers, dropout, tf_ratio, embedding
+            vocab_size, hidden_size, num_layers, dropout, tf_ratio
         )
         self.recurrent = nn.LSTM(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True
@@ -158,12 +157,11 @@ class DecoderRNN(PhonemeDecoder):
 
     def __init__(
         self,
-        hidden_size: int,
         vocab_size: int,
+        hidden_size: int,
         num_layers: int,
         dropout: float,
         tf_ratio: float,
-        embedding: nn.Embedding | None = None,
     ):
         super(DecoderRNN, self).__init__(
             vocab_size,
@@ -171,7 +169,6 @@ class DecoderRNN(PhonemeDecoder):
             num_layers,
             dropout,
             tf_ratio,
-            embedding,
         )
         self.recurrent = nn.RNN(
             self.hidden_size, self.hidden_size, self.num_layers, batch_first=True

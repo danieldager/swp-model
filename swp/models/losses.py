@@ -3,6 +3,8 @@ from typing import Iterable
 import torch
 import torch.nn as nn
 
+from swp.utils.datasets import get_phoneme_to_id
+
 
 def alignment_loss(output, target, criterion, penalty):
     r"""
@@ -115,3 +117,30 @@ class TaskLosses(nn.Module):
             else:
                 loss += ith_task_loss
         return loss
+
+
+class AuditoryXENT(nn.CrossEntropyLoss):
+    r"""Cross Entropy Loss made to automatically process the outputs of model classes
+    like `Unimodel` or `Bimodel`.
+    """
+
+    def __init__(
+        self,
+        weight: torch.Tensor | None = None,
+        size_average=None,
+        ignore_index: int = -100,
+        reduce=None,
+        reduction: str = "mean",
+        label_smoothing: float = 0,
+    ) -> None:
+        super().__init__(
+            weight, size_average, ignore_index, reduce, reduction, label_smoothing
+        )
+
+    def forward(self, preds: list[torch.Tensor], targets: torch.Tensor):
+        audit_preds = preds[0]
+        audit_preds = audit_preds.flatten(end_dim=-2)
+        targets = targets.flatten()
+        targets = targets.clone()
+        targets[targets == get_phoneme_to_id()["<PAD>"]] = -100
+        return super().forward(audit_preds, targets)  # TODO ignore pad tokens

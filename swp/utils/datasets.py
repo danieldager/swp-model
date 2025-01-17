@@ -242,6 +242,7 @@ def create_folds(
     Randomness of splits can be controlled through the `generator` argument.
     If left as `None`, a generator is deterministically seeded and used.
     """
+    # TODO check that folds are balanced
     if generator is None:
         generator = np.random.default_rng(seed=42)
     folds_dir = get_folds_dir()
@@ -325,7 +326,7 @@ def create_epoch(
 
 
 def get_epoch_numpy(
-    fold_id: int, force_recreate: bool = False, epoch_size: int = 1e8
+    fold_id: int, force_recreate: bool = False, epoch_size: int = 10**8
 ) -> np.ndarray:
     r"""Get saved training fold `fold_id` epoch ids as numpy array if they exist, create them otherwise.
 
@@ -350,51 +351,6 @@ def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     else:
         indices = create_epoch(fold_id, train_fold)
     return train_fold.iloc[indices]
-
-
-def sample_words(
-    word_count=50000, split=0.9, freq_th=0.95
-) -> tuple[list[list[str]], list[list[str]]]:
-    # TODO docstring if kept
-    g2p = G2p()
-
-    train_df = get_train_data()
-
-    freq_list = train_df["Frequency"].tolist()
-    word_list = train_df["Word"].tolist()
-    total_freq = train_df["Frequency"].sum()
-
-    # Normalize frequencies
-    freq_array = np.array(freq_list) / total_freq
-
-    # Sort words by frequency (low to high)
-    sorted_indices = np.argsort(freq_array)
-    sorted_freqs = freq_array[sorted_indices]
-    sorted_words = [word_list[i] for i in sorted_indices]
-
-    # Sample training words
-    train_count = int(word_count * split)
-    train_words = np.random.choice(sorted_words, train_count, p=sorted_freqs)
-
-    # Sample validation words from low frequency words
-    valid_count = word_count - train_count
-
-    # Determine the index that separates low frequency words
-    lf_index = np.searchsorted(np.cumsum(sorted_freqs), freq_th)
-
-    # Sample validation words from low frequency candidate words
-    candidates = [
-        w for i, w in enumerate(sorted_words) if i < lf_index and w not in train_words
-    ]
-    valid_words = random.sample(candidates, min(valid_count, len(candidates)))
-
-    # Get phonemes for each word
-    train_phonemes = [g2p(word) for word in train_words]
-    valid_phonemes = [g2p(word) for word in valid_words]
-
-    # start = time.perf_counter()
-    # print(f"{time.perf_counter() - start:.2f} seconds")
-    return train_phonemes, valid_phonemes
 
 
 def phoneme_statistics(phonemes: list):
