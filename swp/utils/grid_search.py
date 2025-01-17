@@ -1,35 +1,86 @@
 import pandas as pd
 
-from .paths import get_gridsearch_dir
+from swp.utils.models import get_args_from_model_name, get_training_args
+
+from .paths import get_gridsearch_dir, get_log_dir
 
 
-def grid_search_log(train_losses, valid_losses, model, num_epochs):
-    # TODO rework so that it doesn't break with simultaneous access
-    logfile_path = get_gridsearch_dir() / f"{model}.csv"
-    try:
-        df = pd.read_csv(logfile_path)
-    except FileNotFoundError:
-        # Create a new DataFrame if the file doesn't exist
-        print("\nCreating new grid search log")
-        columns = [
-            "name",
-            "type",
-            "fold",
-            "h_size",
-            "l_rate",
-            "n_layers",
-            "dropout",
-            "tf_ratio",
-        ]
-        columns += [f"T{i}" for i in range(1, num_epochs + 1)]
-        columns += [f"V{i}" for i in range(1, num_epochs + 1)]
-        df = pd.DataFrame(columns=columns)
+def get_empty_training_log() -> pd.DataFrame:
+    r"""Returns an empty DataFrame with column names set up for training logs"""
+    columns = [
+        "Model name",
+        "Training name",
+        "Model type",
+        "Start token id",
+        "Recurrent type",
+        "Hidden size",
+        "Num layers",
+        "Dropout",
+        "Tf ratio",
+        "CNN hidden size",
+        "CorNet model",
+        "Batch size",
+        "Learning rate",
+        "Fold",
+        "Epoch",
+        "Train loss",
+        "Validation loss",
+    ]
+    df = pd.DataFrame(columns=columns)
+    return df
 
+
+def grid_search_log(
+    train_losses: list,
+    valid_losses: list,
+    model_name: str,
+    training_name: str,
+    num_epochs: int,
+):
+    r"""Create one csv logging the training and validation losses of each epoch
+    for a given model (descibed through `model_name`) along a given training process
+    (described through `training_name`).
+    """
+    # Initialize log
+    logfile_path = get_log_dir() / f"{model_name}~{training_name}.csv"
+    log = get_empty_training_log()
     # Extract parameters from the model name
-    h, r, d, t, l, m, f = [p[1:] for p in model.split("_")]
-    m = "rnn" if m == "n" else "lstm"
-    df.loc[model] = [model, m, f, h, r, l, d, t] + train_losses + valid_losses
-    print("model", model)
+    model_type, recurrent_type, model_args = get_args_from_model_name(model_name)
+    cnn_args = None
+    if "c" in model_args:
+        cnn_args = model_args["c"]
+    training_args = get_training_args(training_name)
+    for epoch in range(num_epochs):
+        row_dict = {
+            "Model name": [model_name],
+            "Training name": [training_name],
+            "Model type": [model_type],
+            "Start token id": [model_args["s"]],
+            "Recurrent type": [recurrent_type],
+            "Hidden size": [model_args["h"]],
+            "Num layers": [model_args["l"]],
+            "Dropout": [model_args["d"]],
+            "Tf ratio": [model_args["t"]],
+            "CNN hidden size": [cnn_args] if cnn_args is None else [cnn_args["h"]],
+            "CorNet model": [cnn_args] if cnn_args is None else [cnn_args["m"]],
+            "Batch size": [training_args["b"]],
+            "Learning rate": [training_args["l"]],
+            "Fold": [training_args["f"]],
+            "Epoch": [epoch],
+            "Train loss": [train_losses[epoch]],
+            "Validation loss": [valid_losses[epoch]],
+        }
+        row_df = pd.DataFrame.from_dict(row_dict)
+        log = pd.concat([log, row_df], ignore_index=True)
 
     # Save the DataFrame to a CSV file
-    df.to_csv(logfile_path, index=False)
+    log.to_csv(logfile_path, index=False)
+
+
+# TODO add log for tests
+
+
+def grid_search_aggregate():
+    # TODO docstring
+    aggregated = get_empty_training_log()
+    ...  # TODO code

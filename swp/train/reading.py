@@ -20,18 +20,18 @@ def train(
     optimizer: Optimizer,
     device: str | torch.device,
     model_name: str,
+    training_name: str,
     num_epochs: int,
     verbose: bool = False,
 ):
     r"""Trains the `model` over `num_epoch` epochs with the data contained in the `train_loader`,
     the `criterion` loss and the `optimizer` weight update method.
 
-    `model` is assumed to be over `device`.
     Set `verbose` to `True` to print intermediate logs.
 
     Training performances and validation performances (evaluated over `valid_loader`)
     are saved in the end.
-    Checkpointing happens 10 times at the first epoch, then once after each epoch.
+    Checkpointing happens 10 times during the first epoch, then once after each epoch.
     """
 
     if isinstance(model, Unimodel) and not model.is_visual:
@@ -40,6 +40,8 @@ def train(
         )
     if isinstance(model, Bimodel):
         model.to_visual()
+    model.to(device)
+
     model_weights_path = get_weights_dir() / model_name
     model_weights_path.mkdir(exist_ok=True)
 
@@ -97,7 +99,8 @@ def train(
 
             if epoch == 0 and checkpoint != 10 and i % ((len(train_loader) // 10)) == 0:
                 save_weights(
-                    model_weights_path,
+                    model_name,
+                    training_name,
                     model,
                     epoch,
                     checkpoint,
@@ -143,10 +146,10 @@ def train(
             )
 
         # Save model weights for every epoch
-        save_weights(model_weights_path, model, epoch)
+        save_weights(model_name, training_name, model, epoch)
 
     # Create gridsearch log
-    grid_search_log(train_losses, valid_losses, model, num_epochs)
+    grid_search_log(train_losses, valid_losses, model_name, training_name, num_epochs)
 
     # Print timing summary
     timer.summary()

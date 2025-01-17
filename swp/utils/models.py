@@ -1,198 +1,211 @@
-from typing import overload
+from typing import Any
 
 import torch
 
-## from ..models.autoencoder import Bimodel, Unimodel
+from swp.utils.paths import get_weights_dir
+
+from ..models.autoencoder import Bimodel, Unimodel
+from ..models.decoders import DecoderLSTM, DecoderRNN
+from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
 
 
-def save_encdec_weights(filepath, encoder, decoder, epoch, checkpoint=None):
-    # TODO delete, are kept for legacy compatibility
+def save_weights(
+    model_name: str,
+    training_name: str,
+    model: Unimodel | Bimodel,
+    epoch: int,
+    checkpoint: int | None = None,
+) -> None:
+    r"""Save weights of a model for a given training procedure."""
+    save_dir = get_weights_dir() / model_name / training_name
+    save_dir.mkdir(exist_ok=True, parents=True)
+    epoch_str = f"{epoch}"
     if checkpoint is not None:
-        epoch = f"{epoch}_{checkpoint}"
-    encoder_path = filepath / f"encoder{epoch}.pth"
-    decoder_path = filepath / f"decoder{epoch}.pth"
-    torch.save(encoder.state_dict(), encoder_path)
-    torch.save(decoder.state_dict(), decoder_path)
-
-
-def load_encdec_weigths(filepath, encoder, decoder, epoch, device):
-    # TODO delete, are kept for legacy compatibility
-    encoder_path = filepath / f"encoder{epoch}.pth"
-    decoder_path = filepath / f"decoder{epoch}.pth"
-    encoder.load_state_dict(
-        torch.load(encoder_path, map_location=device, weights_only=True)
-    )
-    decoder.load_state_dict(
-        torch.load(decoder_path, map_location=device, weights_only=True)
-    )
-
-
-# def save_weights(filepath, model: Unimodel | Bimodel, epoch, checkpoint=None):
-def save_weights(filepath, model, epoch, checkpoint=None):
-    if checkpoint is not None:
-        epoch = f"{epoch}_{checkpoint}"
-    model_path = filepath / f"model_{epoch}.pth"
+        epoch_str = f"{epoch_str}_{checkpoint}"
+    model_path = save_dir / f"model_{epoch_str}.pth"
     torch.save(model.state_dict(), model_path)
 
 
-# def load_weigths(filepath, model: Unimodel | Bimodel, epoch, device):
-def load_weigths(filepath, model, epoch, device):
-    model_path = filepath / f"model_{epoch}.pth"
+def load_weigths(
+    model_name: str,
+    training_name: str,
+    model: Unimodel | Bimodel,
+    epoch: str,
+    device: torch.device,
+    checkpoint: int | None = None,
+) -> None:
+    r"""Load the weights of a model for a given training procedure at a specific
+    epoch and potential checkpoint.
+    """
+    save_dir = get_weights_dir() / model_name / training_name
+    epoch_str = f"{epoch}"
+    if checkpoint is not None:
+        epoch_str = f"{epoch_str}_{checkpoint}"
+    model_path = save_dir / f"model_{epoch_str}.pth"
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)
     )
     model.bind()
 
 
-def find_and_delete_batchdim(shape: torch.Size) -> tuple[int | None, torch.Size]:
-    r"""Look for the dimension containing `-1`, and returns it as well as the shape
-    without this dimension.
-    """
-    batch_dim = None
-    purged_dims = []
-    for i, dim_size in enumerate(shape):
-        if dim_size == -1:
-            if batch_dim is not None:
-                raise ValueError(
-                    f"Multiple dimensions corresponding to batch in shape {shape}"
-                )
-            batch_dim = i
+def get_args_from_model_name(model_name: str) -> tuple[str, str, dict[str, Any]]:
+    r"""Create a dictionnary containing the necessary arguments to build a model
+    from a `model_name`."""
+    # TODO improve docstring
+    # TODO make modular with other cnn encoders
+    big_split = model_name.split("__")
+    main_name = big_split[0]
+    name_split = main_name.split("_")
+    model_class = name_split[0]
+    rec_type = name_split[1]
+    str_args = {arg[0]: arg[1:] for arg in name_split[2:]}
+    typed_args = {}
+    typed_args["h"] = int(str_args["h"])
+    typed_args["l"] = int(str_args["l"])
+    typed_args["v"] = int(str_args["v"])
+    typed_args["d"] = float(str_args["d"])
+    typed_args["t"] = float(str_args["t"])
+    typed_args["s"] = int(str_args["s"])
+    if len(big_split) > 1:
+        cnn_str = big_split[1][1:]
+        str_cnn_args = {arg[0]: arg[1:] for arg in cnn_str.split("_")}
+        typed_cnn_args = {}
+        typed_cnn_args["h"] = int(str_cnn_args["h"])
+        typed_cnn_args["m"] = str_cnn_args["m"]
+        typed_args["c"] = typed_cnn_args
+    return model_class, rec_type, typed_args
+
+
+def get_model(model_name: str) -> Unimodel | Bimodel:
+    r"""Create a model corresponding to the `model_name`"""
+    # TODO make modular with other CNN encoders
+    model_class, rec_type, typed_args = get_args_from_model_name(model_name)
+    if rec_type.upper() == "LSTM":
+        audit_encoder_class = EncoderLSTM
+        decoder_class = DecoderLSTM
+    elif rec_type.upper() == "RNN":
+        audit_encoder_class = EncoderRNN
+        decoder_class = DecoderRNN
+    else:
+        raise NotImplementedError(
+            f"Recurrent type {rec_type} is not currently supported"
+        )
+    decoder = decoder_class(
+        vocab_size=typed_args["v"],
+        hidden_size=typed_args["h"],
+        num_layers=typed_args["l"],
+        dropout=typed_args["d"],
+        tf_ratio=typed_args["t"],
+    )
+    if model_class.startswith("U"):
+        if model_class[1] == "a":
+            encoder = audit_encoder_class(
+                vocab_size=typed_args["v"],
+                hidden_size=typed_args["h"],
+                num_layers=typed_args["l"],
+                dropout=typed_args["d"],
+            )
+        elif model_class[1] == "v":
+            encoder = CorNetEncoder(
+                hidden_size=typed_args["c"]["h"], cornet_model=typed_args["c"]["m"]
+            )
         else:
-            purged_dims.append(dim_size)
-    return batch_dim, torch.Size(purged_dims)
-
-
-def can_reshape_magic(
-    initial_shape: torch.Size, expected_shapes: torch.Size | tuple[torch.Size, ...]
-) -> bool:
-    r"""Checks that a tensor of shape `initial_shape` can be resized or resized and split
-    into tensor(s) of shape(s) `expected_shapes`.
-
-    Dimensions containing `-1` are assumed to be batch dimensions.
-    """
-    init_batch_dim, purged_init_shape = find_and_delete_batchdim(initial_shape)
-    num_init_units = 1
-    for dim_size in purged_init_shape:
-        num_init_units *= dim_size
-    if isinstance(expected_shapes, torch.Size):
-        num_hidden_units = 1
-        hidden_batch_dim, purged_hidden_shape = find_and_delete_batchdim(
-            expected_shapes
-        )
-        if not isinstance(hidden_batch_dim, type(init_batch_dim)):
             raise ValueError(
-                f"Batch dimension mismatch between initial shape {initial_shape} and expected shape {expected_shapes}"
+                f"Trying to name a Unimodel that is neither auditory nor visual, type : {model_class[1:]}"
             )
-        for dim_size in purged_hidden_shape:
-            num_hidden_units *= dim_size
-    else:
-        num_hidden_units = 0
-        for hidden_tensor_shape in expected_shapes:
-            num_curr_hidden_units = 1
-            curr_hidden_batch_dim, curr_purged_hidden_shape = find_and_delete_batchdim(
-                hidden_tensor_shape
-            )
-            if not isinstance(curr_hidden_batch_dim, type(init_batch_dim)):
-                raise ValueError(
-                    f"Batch dimension mismatch between initial shape {initial_shape} and expected sub-shape {hidden_tensor_shape}"
-                )
-            for dim_size in curr_purged_hidden_shape:
-                num_curr_hidden_units *= dim_size
-            num_hidden_units += num_curr_hidden_units
-
-    return num_init_units == num_hidden_units
-
-
-def reshape_one(
-    to_reshape: torch.Tensor,
-    purged_expected_shape: torch.Size,
-    expected_batch_dim: int | None,
-) -> torch.Tensor:
-    r"""Reshape `to_reshape` tensor (at least 2D if batched, with batch first) in
-    shape `purged_batch_dim` then insert the batch dimension at the `expected_batch_dim` dimension.
-
-    `purged_batch_dim` should NOT contain batch dimension.
-    """
-    if expected_batch_dim is not None:
-        if to_reshape.dim() < 2:
-            raise ValueError(
-                f"Cannot infer batch dimension and data dimensions with only {to_reshape.dim()} dims"
-            )
-        reshaped = to_reshape.reshape(
-            (to_reshape.size(0), *purged_expected_shape)
-        )  # reshape all except batch dim
-        end_permute = (
-            [*range(1, expected_batch_dim + 1)]  # all the dimensions before batch dim
-            + [0]  # then batch dim
-            + [*range(expected_batch_dim + 1, len(purged_expected_shape) + 1)]
+        model = Unimodel(
+            encoder=encoder, decoder=decoder, start_token_id=typed_args["s"]
         )
-        depermuted = reshaped.permute(end_permute)  # put batch dim where it should be
-        to_ret = depermuted
-    else:
-        to_ret = to_reshape.reshape(purged_expected_shape)
-    return to_ret
-
-
-@overload
-def reshape_magic(
-    to_reshape: torch.Tensor,
-    initial_shape: torch.Size,
-    expected_shapes: torch.Size,
-) -> torch.Tensor: ...
-
-
-@overload
-def reshape_magic(
-    to_reshape: torch.Tensor,
-    initial_shape: torch.Size,
-    expected_shapes: tuple[torch.Size, ...],
-) -> tuple[torch.Tensor, ...]: ...
-
-
-def reshape_magic(
-    to_reshape: torch.Tensor,
-    initial_shape: torch.Size,
-    expected_shapes: torch.Size | tuple[torch.Size, ...],
-) -> torch.Tensor | tuple[torch.Tensor, ...]:
-    r"""Convert `to_reshape` tensor into tensor(s) of shape `expected_shapes`
-    while conserving potential batch dimension. Splitting is done if
-    `expected_shapes` is a tuple to generate the proper number of tensors.
-
-    `initial_shape` should describe the shape of `to_reshape`, with a `-1` at
-    the potential batch dimension.
-    """
-    init_batch_dim, _ = find_and_delete_batchdim(initial_shape)
-    data_dim = 0
-    if init_batch_dim is not None:
-        init_permute = (
-            [init_batch_dim]  # batch dim first
-            + [*range(init_batch_dim)]  # then all the dimensions before batch dim
-            + [*range(init_batch_dim + 1, to_reshape.dim())]  # then the rest
+    elif model_class == "B":
+        audit_encoder = audit_encoder_class(
+            vocab_size=typed_args["v"],
+            hidden_size=typed_args["h"],
+            num_layers=typed_args["l"],
+            dropout=typed_args["d"],
         )
-        permuted = to_reshape.permute(init_permute)  # apply permutation
-        to_reshape = permuted.flatten(start_dim=1)
-        data_dim = 1
-
-    if isinstance(expected_shapes, torch.Size):
-        expected_batch_dim, purged_expected_shape = find_and_delete_batchdim(
-            expected_shapes
+        visual_encoder = CorNetEncoder(
+            hidden_size=typed_args["c"]["h"], cornet_model=typed_args["c"]["m"]
         )
-        to_ret = reshape_one(to_reshape, purged_expected_shape, expected_batch_dim)
+        model = Bimodel(
+            audit_encoder=audit_encoder,
+            visual_encoder=visual_encoder,
+            decoder=decoder,
+            start_token_id=typed_args["s"],
+        )
     else:
-        to_ret = []
-        cumsum = 0
-        for curr_expected_shape in expected_shapes:
-            expected_batch_dim, purged_expected_shape = find_and_delete_batchdim(
-                curr_expected_shape
-            )
-            length = 1
-            for dim_size in purged_expected_shape:
-                length *= dim_size
-            curr_to_reshape = to_reshape.narrow(data_dim, cumsum, length)
-            curr_hidden = reshape_one(
-                curr_to_reshape, purged_expected_shape, expected_batch_dim
-            )
-            to_ret.append(curr_hidden)
-            cumsum += length
-        to_ret = tuple(to_ret)
-    return to_ret
+        raise ValueError(f"Model class not recognized : {model_class}")
+    return model
+
+
+def get_model_name(model: Unimodel | Bimodel) -> str:
+    r"""Returns the codified `model_name` corresponding to the `model`"""
+    # TODO make modular with other CNN encoders
+    cnn_str = None
+    if isinstance(model, Unimodel):
+        if model.is_auditory:
+            model_name = "Ua"
+        else:
+            model_name = "Uv"
+            cnn_str = f"h{model.encoder.hidden_size}_m{model.encoder.cnn_model}"
+    else:
+        model_name = "B"
+        cnn_str = (
+            f"h{model.visual_encoder.hidden_size}_m{model.visual_encoder.cnn_model}"
+        )
+    if isinstance(model.decoder, DecoderLSTM):
+        model_name = f"{model_name}_LSTM"
+    elif isinstance(model.decoder, DecoderRNN):
+        model_name = f"{model_name}_RNN"
+    model_name = f"{model_name}_h{model.decoder.hidden_size}"
+    model_name = f"{model_name}_l{model.decoder.num_layers}"
+    model_name = f"{model_name}_v{model.decoder.vocab_size}"
+    model_name = f"{model_name}_d{model.decoder.droprate}"
+    model_name = f"{model_name}_t{model.decoder.tf_ratio}"
+    model_name = f"{model_name}_s{model.start_token_id}"
+    if cnn_str is not None:
+        model_name = f"{model_name}__c{cnn_str}"
+    return model_name
+
+
+def get_model_name_from_args(
+    model_class: str,
+    rec_type: str,
+    hidden_size: int,
+    num_layers: int,
+    vocab_size: int,
+    droprate: float,
+    tf_ratio: float,
+    start_token_id: int,
+    cnn_args: dict[str, Any] | None = None,
+) -> str:
+    r"""Generate the `model_name` from the arguments that would allow to generate the model"""
+    # TODO make modular with other CNN encoders
+    model_name = f"{model_class}_{rec_type.upper()}"
+    model_name = f"{model_name}_h{hidden_size}"
+    model_name = f"{model_name}_l{num_layers}"
+    model_name = f"{model_name}_v{vocab_size}"
+    model_name = f"{model_name}_d{droprate}"
+    model_name = f"{model_name}_t{tf_ratio}"
+    model_name = f"{model_name}_s{start_token_id}"
+    if cnn_args is not None:
+        cnn_str = f"h{cnn_args["hidden_size"]}_m{cnn_args["cnn_model"]}"
+        model_name = f"{model_name}__c{cnn_str}"
+    return model_name
+
+
+def get_training_name(batch_size: int, learning_rate: float, fold_id: int) -> str:
+    r"""Generate the `training_name` from the training arguments."""
+    training_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
+    # TODO add support for visual dataset, mixed or not
+    return training_name
+
+
+def get_training_args(training_name: str) -> dict[str, Any]:
+    r"""Returns a dictionnary containing the arguments corresponding to the `training_name`."""
+    # TODO add support for visual dataset, mixed or not
+    str_args = {arg[0]: arg[1:] for arg in training_name.split("_")}
+    typed_args = {}
+    typed_args["b"] = int(str_args["b"])
+    typed_args["l"] = float(str_args["l"])
+    typed_args["f"] = int(str_args["f"])
+    return typed_args

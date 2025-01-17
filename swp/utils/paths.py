@@ -12,7 +12,10 @@ repo_root = pathlib.Path(os.path.realpath(__file__)).parent.parent.parent
 if _ON_JEAN_ZAY:
     # script_dir = pathlib.Path(os.environ["HOME"]) / "single-word-processing-model" # TODO actualize this
     work_dir = pathlib.Path(os.environ["WORK"])
-    dataset_dir = pathlib.Path(os.environ["WORK"]) / "stimuli"
+    script_dir = work_dir / "scripts"
+    dataset_dir = work_dir / "stimuli"
+    weights_dir = work_dir / "weights"
+    result_dir = work_dir / "results"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
     # TODO add more paths for JZ
 elif _ON_OBERON:
@@ -66,6 +69,12 @@ def get_gridsearch_dir() -> pathlib.Path:
     gridsearch_dir = result_dir / "gridsearch"
     gridsearch_dir.mkdir(parents=True, exist_ok=True)
     return gridsearch_dir
+
+
+def get_log_dir() -> pathlib.Path:
+    log_dir = get_gridsearch_dir() / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
 
 
 def get_graphemes_dir() -> pathlib.Path:
