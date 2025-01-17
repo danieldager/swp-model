@@ -3,6 +3,8 @@ from typing import Iterable
 import torch
 import torch.nn as nn
 
+from swp.utils.datasets import get_phoneme_to_id
+
 
 def alignment_loss(output, target, criterion, penalty):
     r"""
@@ -139,4 +141,6 @@ class AuditoryXENT(nn.CrossEntropyLoss):
         audit_preds = preds[0]
         audit_preds = audit_preds.flatten(end_dim=-2)
         targets = targets.flatten()
+        targets = targets.clone()
+        targets[targets == get_phoneme_to_id()["<PAD>"]] = -100
         return super().forward(audit_preds, targets)  # TODO ignore pad tokens

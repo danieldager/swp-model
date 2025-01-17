@@ -233,6 +233,7 @@ def create_folds(
     Randomness of splits can be controlled through the `generator` argument.
     If left as `None`, a generator is deterministically seeded and used.
     """
+    # TODO check that folds are balanced
     if generator is None:
         generator = np.random.default_rng(seed=42)
     folds_dir = get_folds_dir()

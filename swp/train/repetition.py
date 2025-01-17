@@ -70,7 +70,7 @@ def train(
             optimizer.zero_grad()
 
             # Forward pass
-            output = model(data, target)  # throw away object prediction
+            output = model(data, target)
 
             # Loss computation
             loss = criterion(output, target)

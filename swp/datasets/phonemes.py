@@ -2,6 +2,7 @@ from typing import Any
 
 import numpy as np
 import torch
+from torch.nested import nested_tensor
 from torch.utils.data import DataLoader, Dataset
 
 from ..utils.datasets import (
@@ -53,7 +54,9 @@ class PhonemeTrainDataset(Dataset):
         self.pad_length = pad_to_length
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
-        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]]["Phonemes"]
+        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
+            "Phonemes"
+        ].copy()
         phonemes.append("<EOS>")
         if self.pad_length > 0:
             phonemes.extend(["<PAD>" for _ in range(self.pad_length - len(phonemes))])
@@ -64,6 +67,16 @@ class PhonemeTrainDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.epoch_ids)
+
+
+def phoneme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value: int):
+    # TODO docstring
+    data, target = tuple(zip(*batch))
+    nt_data = nested_tensor(list(data), dtype=torch.long)
+    nt_target = nested_tensor(list(target), dtype=torch.long)
+    padded_data = nt_data.to_padded_tensor(padding=pad_value)
+    padded_target = nt_target.to_padded_tensor(padding=pad_value)
+    return padded_data, padded_target
 
 
 def get_phoneme_trainloader(
@@ -79,16 +92,23 @@ def get_phoneme_trainloader(
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
     """
+    phoneme_to_id = get_phoneme_to_id()
     phoneme_set = PhonemeTrainDataset(
         fold_id=fold_id,
         train=train,
-        phoneme_to_id=get_phoneme_to_id(),
+        phoneme_to_id=phoneme_to_id,
         pad_to_length=pad_to_length,
     )
     if generator is None:
         generator = torch.Generator().manual_seed(42)
     phoneme_loader = DataLoader(
-        phoneme_set, batch_size, shuffle=True, generator=generator
+        phoneme_set,
+        batch_size,
+        shuffle=True,
+        generator=generator,
+        collate_fn=lambda batch: phoneme_collate_fn(
+            batch, pad_value=phoneme_to_id["<PAD>"]
+        ),
     )
     return phoneme_loader
 
@@ -135,9 +155,16 @@ class PhonemeTestDataset(Dataset):
 
 def get_phoneme_testloader(batch_size: int, pad_to_length: int) -> DataLoader:
     r"""Return a dataloader containing the phoneme test data batched in size `batch_size`."""
+    phoneme_to_id = get_phoneme_to_id()
     phoneme_set = PhonemeTestDataset(
-        phoneme_to_id=get_phoneme_to_id(),
+        phoneme_to_id=phoneme_to_id,
         pad_to_length=pad_to_length,
     )
-    phoneme_loader = DataLoader(phoneme_set, batch_size)
+    phoneme_loader = DataLoader(
+        phoneme_set,
+        batch_size,
+        collate_fn=lambda batch: phoneme_collate_fn(
+            batch, pad_value=phoneme_to_id["<PAD>"]
+        ),
+    )
     return phoneme_loader

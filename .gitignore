@@ -165,5 +165,9 @@ weights_old
 figures_old
 grid_search.csv
 simulations.ipynb
-stimuli/graphemes/*
+stimuli/graphemes
 public_datasets
+stimuli/folds
+stimuli/dataframe
+stimuli/phonemes
+results
