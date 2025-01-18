@@ -82,18 +82,24 @@ def grid_search_log(
     if log is None:
         log = get_empty_training_log()
     # Save the DataFrame to a CSV file
-    log.to_csv(logfile_path, index=False)
+    log.to_csv(logfile_path)
 
 
 # TODO add log for tests
 
 
 def grid_search_aggregate():
-    # TODO docstring
-    aggregatedfile_path = get_gridsearch_dir() / "aggregated.csv"
+    r"""Aggregates all the training logs into one .csv file."""
+    aggregatedfile_path = get_gridsearch_dir() / "aggregated_training.csv"
     aggregated = None
-    # TODO code
+    log_path = get_log_dir() / "train"
+    for file in log_path.glob("*.csv"):
+        log_df = pd.read_csv(file, index_col=0)
+        if aggregated is None:
+            aggregated = log_df
+        else:
+            aggregated = pd.concat([aggregated, log_df], ignore_index=True)
     if aggregated is None:
         aggregated = get_empty_training_log()
     # Save the DataFrame to a CSV file
-    aggregated.to_csv(aggregatedfile_path, index=False)
+    aggregated.to_csv(aggregatedfile_path)
