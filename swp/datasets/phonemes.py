@@ -187,3 +187,76 @@ def get_phoneme_testloader(
         ),
     )
     return phoneme_loader
+
+
+def get_sonority_dataset():
+    vowels = {
+        "AH0",
+        "OY0",
+        "AA0",
+        "AY0",
+        "ER0",
+        "AO0",
+        "UW0",
+        "IH0",
+        "EH0",
+        "UH0",
+        "IY0",
+        "EY0",
+        "OW0",
+        "AE0",
+        "AW0",
+    }
+
+    plosives = ["P", "T", "K", "B", "D", "G"]
+    fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
+    affricates = ["CH", "JH"]
+    nasals = ["M", "N", "NG"]
+    liquids = ["L", "R"]
+    glides = ["W", "Y"]
+
+    consonants = plosives + fricatives + affricates + nasals + liquids + glides
+
+    def get_sonority(c):
+        if c in plosives:
+            return 0
+        elif c in fricatives:
+            return 1
+        elif c in affricates:
+            return 2
+        elif c in nasals:
+            return 3
+        elif c in liquids:
+            return 4
+        elif c in glides:
+            return 5
+
+    def get_sonority_score(c1, c2):
+        return get_sonority(c2) - get_sonority(c1)
+
+    ccv = {}
+    vcc = {}
+    for c1 in consonants:
+        for c2 in consonants:
+            if c1 != c2:
+                score = get_sonority_score(c1, c2)
+                for v in vowels:
+                    ccv[(c1, c2, v)] = score
+                    vcc[(v, c1, c2)] = score
+
+    # create test dataframe for sonority plotting
+    ccv_df = pd.DataFrame(
+        # [(repr(list(phonemes)), score) for phonemes, score in ccv.items()],
+        [(list(phonemes), score) for phonemes, score in ccv.items()],
+        columns=["Phonemes", "Sonority"],
+    )
+    vcc_df = pd.DataFrame(
+        # [(repr(list(phonemes)), score) for phonemes, score in vcc.items()],
+        [(list(phonemes), score) for phonemes, score in vcc.items()],
+        columns=["Phonemes", "Sonority"],
+    )
+    ccv_df["Type"] = "CCV"
+    vcc_df["Type"] = "VCC"
+    sonority_dataset = pd.concat([ccv_df, vcc_df])
+
+    return sonority_dataset

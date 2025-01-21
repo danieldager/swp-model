@@ -15,7 +15,7 @@ if _ON_JEAN_ZAY:
     script_dir = work_dir / "scripts"
     dataset_dir = work_dir / "stimuli"
     weights_dir = work_dir / "weights"
-    result_dir = work_dir / "results"
+    results_dir = work_dir / "results"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
     # TODO add more paths for JZ
 elif _ON_OBERON:
@@ -24,7 +24,7 @@ else:  # personnal computer
     script_dir = repo_root / "scripts"
     dataset_dir = repo_root / "stimuli"
     weights_dir = repo_root / "weights"
-    result_dir = repo_root / "results"
+    results_dir = repo_root / "results"
     public_dataset_dir = repo_root / "public_datasets"
 
 
@@ -54,19 +54,19 @@ def get_weights_dir() -> pathlib.Path:
     return weights_dir
 
 
-def get_result_dir() -> pathlib.Path:
-    result_dir.mkdir(parents=True, exist_ok=True)
-    return result_dir
+def get_results_dir() -> pathlib.Path:
+    results_dir.mkdir(parents=True, exist_ok=True)
+    return results_dir
 
 
 def get_figures_dir() -> pathlib.Path:
-    figures_dir = result_dir / "figures"
+    figures_dir = results_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
     return figures_dir
 
 
 def get_gridsearch_dir() -> pathlib.Path:
-    gridsearch_dir = result_dir / "gridsearch"
+    gridsearch_dir = results_dir / "gridsearch"
     gridsearch_dir.mkdir(parents=True, exist_ok=True)
     return gridsearch_dir
 

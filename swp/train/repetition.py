@@ -104,6 +104,7 @@ def train(
         train_losses.append(train_loss)
 
         if verbose:
+            # TODO print 3 last significant digits
             print(f"Train loss: {train_loss:.3f}")
 
         ### VALIDATION LOOP ###

@@ -219,5 +219,5 @@ def get_training_args(training_name: str) -> dict[str, Any]:
     elif str_args["s"] == "n":
         typed_args["s"] = False
     else:
-        raise ValueError(f"Stress value not recognized : {str_args["s"]}")
+        raise ValueError(f'Stress value not recognized : {str_args["s"]}')
     return typed_args

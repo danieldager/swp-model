@@ -192,14 +192,14 @@ if __name__ == "__main__":
     print(f"Valid_loader size: {len(valid_loader)}\n")
 
     train(
-        train_loader=train_loader,
-        valid_loader=valid_loader,
         model=model,
+        model_name=model_name,
         criterion=criterion,
         optimizer=optimizer,
         device=device,
-        model_name=model_name,
         training_name=training_name,
+        train_loader=train_loader,
+        valid_loader=valid_loader,
         num_epochs=args.num_epochs,
         verbose=args.verbose,
     )
