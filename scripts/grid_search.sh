@@ -4,15 +4,15 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-n_epochs=(20)
+n_epochs=(40)
 fold_ids=(0)
 b_sizes=(1024)
 r_types=("lstm")
-h_sizes=(128 256 512)
+h_sizes=(256)
 n_layers=(1)
-l_rates=(0.001)
-dropouts=(0.2)
-tf_ratios=(0.2)
+l_rates=(0.005 0.0001)
+dropouts=(0.25 0.5)
+tf_ratios=(0.25 0.5)
 
 # Initialize counter for total combinations
 total=0
@@ -50,6 +50,6 @@ done
 echo "All jobs submitted! Total combinations: $total"
 
 # git submodule update --init --recursive
-# scp -r ddager@oberon2:/scratch2/ddager/swp-model/weights ~/Desktop/swp-model/weights
-# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/figures ~/Desktop/swp-model/results/figures
-# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/gridsearch ~/Desktop/swp-model/results/gridsearch
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/weights ~/Desktop/swp-model/
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/figures ~/Desktop/swp-model/results/
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/gridsearch ~/Desktop/swp-model/results/
