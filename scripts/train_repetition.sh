@@ -66,7 +66,7 @@ export PYTHONUNBUFFERED=1
 # launch your computation
 echo "computation start : $(date)"
 
-python scripts/generate_main_data.py
+# python scripts/generate_main_data.py
 
 python scripts/train_repetition.py \
     --fold_id "$FOLD_ID" \
@@ -78,6 +78,7 @@ python scripts/train_repetition.py \
     --learn_rate "$LEARN_RATE" \
     --dropout "$DROPOUT" \
     --tf_ratio "$TF_RATIO" \
+    --include_stress \
     --verbose
 
 echo "computation end : $(date)"

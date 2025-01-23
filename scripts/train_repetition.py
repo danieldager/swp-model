@@ -33,12 +33,6 @@ if __name__ == "__main__":
         help="Evaluation fold id",
     )
     parser.add_argument(
-        "--include_stress",
-        type=bool,
-        action="store_true",
-        help="Include stress in phonemes",
-    )
-    parser.add_argument(
         "--num_epochs",
         type=int,
         default=10,
@@ -51,22 +45,10 @@ if __name__ == "__main__":
         help="Batch size (fixed to 1 for repetition)",
     )
     parser.add_argument(
-        "--learn_rate",
-        type=float,
-        default=0.001,
-        help="Learning rate",
-    )
-    parser.add_argument(
         "--recurrent_type",
         type=str,
         default="rnn",
         help="Recurrent network architecture : RNN or LSTM",
-    )
-    parser.add_argument(
-        "--num_layers",
-        type=int,
-        default=1,
-        help="Number of layers in recurrent subnetworks for encoder and decoder",
     )
     parser.add_argument(
         "--hidden_size",
@@ -75,10 +57,16 @@ if __name__ == "__main__":
         help="Hidden size of recurrent subnetworks.",
     )
     parser.add_argument(
-        "--tf_ratio",
+        "--num_layers",
+        type=int,
+        default=1,
+        help="Number of layers in recurrent subnetworks for encoder and decoder",
+    )
+    parser.add_argument(
+        "--learn_rate",
         type=float,
-        default=0.2,
-        help="Teacher forcing ratio for decoder",
+        default=0.001,
+        help="Learning rate",
     )
     parser.add_argument(
         "--dropout",
@@ -86,7 +74,17 @@ if __name__ == "__main__":
         default=0.2,
         help="Dropout rate for encoders and decoders",
     )
-
+    parser.add_argument(
+        "--tf_ratio",
+        type=float,
+        default=0.2,
+        help="Teacher forcing ratio for decoder",
+    )
+    parser.add_argument(
+        "--include_stress",
+        action="store_true",
+        help="Include stress in phonemes",
+    )
     parser.add_argument(
         "--verbose",
         action="store_true",

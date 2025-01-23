@@ -21,6 +21,57 @@ results_test_dir = get_results_dir() / "test"
 results_test_dir.mkdir(exist_ok=True, parents=True)
 
 
+def beta_test(
+    model: Unimodel | Bimodel,
+    epoch: int,
+    checkpoint: int | None,
+    device: str | torch.device,
+    input_df: pd.DataFrame,
+    test_loader: DataLoader,
+    model_name: str,
+    training_name: str,
+    include_stress: bool,
+    override_extra_str: str | None = None,
+):
+    r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
+
+    if include_stress:
+        phoneme_key = "Phonemes"
+    else:
+        phoneme_key = "No Stress"
+    id_to_phoneme = list(get_phoneme_to_id())
+    last_index = 0
+    predictions = []
+    with torch.no_grad():
+        for inputs, target in test_loader:
+            inputs = inputs.to(device)
+            target = target.to(device)
+
+            output = model(inputs, target)
+            auditory_out = output[0]
+            preds = torch.argmax(auditory_out, dim=-1)
+
+            batch_size = target.shape[0]
+            for i in range(batch_size):
+                ground_truth = input_df.iloc[last_index + i][phoneme_key]
+                phoneme_list = [
+                    id_to_phoneme[id] for id in preds[i, : len(ground_truth)]
+                ]
+                predictions.append(phoneme_list)
+            last_index += batch_size
+    input_df["Prediction"] = predictions
+
+    model_results_dir = results_test_dir / f"{model_name}~{training_name}"
+    model_results_dir.mkdir(exist_ok=True, parents=True)
+    file_name = f"{epoch}"
+
+    if checkpoint is not None:
+        file_name = f"{file_name}_{checkpoint}"
+    if override_extra_str is not None:
+        file_name = f"{file_name}~{override_extra_str}"
+    input_df.to_csv(model_results_dir / f"{file_name}.csv")
+
+
 def test(
     test_loader: DataLoader,
     model: Unimodel | Bimodel,
@@ -140,63 +191,12 @@ def test(
         test_data["Error Indices"] = error_indices
         test_data["Sequence Length"] = sequence_lengths
 
-        error_plots(test_data, model_name, epoch)
+        # error_plots(test_data, model_name, epoch)
         # confusion_matrix(confusions, model_name, epoch)
 
         dataframes.append(test_data)
 
     return dataframes
-
-
-def beta_test(
-    model: Unimodel | Bimodel,
-    epoch: int,
-    checkpoint: int | None,
-    device: str | torch.device,
-    input_df: pd.DataFrame,
-    test_loader: DataLoader,
-    model_name: str,
-    training_name: str,
-    include_stress: bool,
-    override_extra_str: str | None = None,
-):
-    r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
-
-    if include_stress:
-        phoneme_key = "Phonemes"
-    else:
-        phoneme_key = "No Stress"
-    id_to_phoneme = list(get_phoneme_to_id())
-    last_index = 0
-    predictions = []
-    with torch.no_grad():
-        for inputs, target in test_loader:
-            inputs = inputs.to(device)
-            target = target.to(device)
-
-            output = model(inputs, target)
-            auditory_out = output[0]
-            preds = torch.argmax(auditory_out, dim=-1)
-
-            batch_size = target.shape[0]
-            for i in range(batch_size):
-                ground_truth = input_df.iloc[last_index + i][phoneme_key]
-                phoneme_list = [
-                    id_to_phoneme[id] for id in preds[i, : len(ground_truth)]
-                ]
-                predictions.append(phoneme_list)
-            last_index += batch_size
-    input_df["Prediction"] = predictions
-
-    model_results_dir = results_test_dir / f"{model_name}~{training_name}"
-    model_results_dir.mkdir(exist_ok=True, parents=True)
-    file_name = f"{epoch}"
-
-    if checkpoint is not None:
-        file_name = f"{file_name}_{checkpoint}"
-    if override_extra_str is not None:
-        file_name = f"{file_name}~{override_extra_str}"
-    input_df.to_csv(model_results_dir / f"{file_name}.csv")
 
 
 ### LEGACY CODE ###
@@ -294,8 +294,8 @@ def test_repetition(model: str, device) -> list:
         test_data["Error Indices"] = error_indices
         test_data["Sequence Length"] = sequence_lengths
 
-        error_plots(test_data, model, epoch)
-        confusion_matrix(confusions, model, epoch)
+        # error_plots(test_data, model, epoch)
+        # confusion_matrix(confusions, model, epoch)
 
         dataframes.append(test_data)
 
