@@ -1,5 +1,12 @@
 import os
 import sys
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="The PyTorch API of nested tensors is in prototype stage",
+)
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -35,17 +42,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=10,
+        default=2,
         help="Number of training epochs",
     )
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=1,
+        default=512,
         help="Batch size (fixed to 1 for repetition)",
     )
     parser.add_argument(
-        "--recurrent_type",
+        "--recur_type",
         type=str,
         default="rnn",
         help="Recurrent network architecture : RNN or LSTM",
@@ -53,7 +60,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=4,
+        default=256,
         help="Hidden size of recurrent subnetworks.",
     )
     parser.add_argument(
@@ -115,22 +122,13 @@ if __name__ == "__main__":
         learn_rate = training_args["l"]
         fold_id = training_args["f"]
 
-    print(f"\nTraining name: {training_name}")
-    print(f"Batch size: {batch_size}")
-    print(f"Hidden size: {args.hidden_size}")
-    print(f"Learning rate: {learn_rate}")
-    print(f"Number of epochs: {args.num_epochs}")
-    print(f"Number of layers: {args.num_layers}")
-    print(f"Teacher forcing ratio: {args.tf_ratio}")
-    print(f"Dropout rate: {args.dropout}")
-
     # TODO mutually exclusive args
     # TODO printing arguments for debugging purposes
     if True:
-        rec_type = args.recurrent_type.upper()
-        phoneme_to_id = get_phoneme_to_id()
+        recur_type = args.recur_type.upper()
+        phoneme_to_id = get_phoneme_to_id(include_stress=include_stress)
         vocab_size = len(phoneme_to_id)
-        if rec_type == "LSTM":
+        if recur_type == "LSTM":
             encoder = EncoderLSTM(
                 vocab_size=vocab_size,
                 hidden_size=args.hidden_size,
@@ -144,7 +142,7 @@ if __name__ == "__main__":
                 dropout=args.dropout,
                 tf_ratio=args.tf_ratio,
             )
-        elif rec_type == "RNN":
+        elif recur_type == "RNN":
             encoder = EncoderRNN(
                 vocab_size=vocab_size,
                 hidden_size=args.hidden_size,
@@ -160,7 +158,7 @@ if __name__ == "__main__":
             )
         else:
             raise ValueError(
-                f"Recurrent subnetwork {rec_type} is not recognized. Try RNN or LSTM."
+                f"Recurrent subnetwork {recur_type} is not recognized. Try RNN or LSTM."
             )
         model = Unimodel(
             encoder=encoder, decoder=decoder, start_token_id=phoneme_to_id["<SOS>"]
@@ -185,9 +183,12 @@ if __name__ == "__main__":
     criterion = AuditoryXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
 
-    # print all the parameters for debugging purposes
-    print(f"Train_loader size: {len(train_loader)}")
-    print(f"Valid_loader size: {len(valid_loader)}\n")
+    if args.verbose:
+        print("\n")
+        print("-" * 60)
+        print(f"\nModel name: {model_name}")
+        print(f"Training name: {training_name}")
+        print(f"Number of epochs: {args.num_epochs}")
 
     train(
         model=model,
@@ -201,3 +202,8 @@ if __name__ == "__main__":
         num_epochs=args.num_epochs,
         verbose=args.verbose,
     )
+
+    if args.verbose:
+        print("\n")
+        print("-" * 60)
+        print("\n")

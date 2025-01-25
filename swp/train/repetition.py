@@ -63,7 +63,7 @@ def train(
         for i, (data, target) in enumerate(train_loader, 1):
             if verbose:
                 print(f"{i}/{len(train_loader)}", end="\r")
-            timer.start()
+            timer.start("Train step")
 
             data = data.to(device)
             target = target.to(device)
@@ -88,7 +88,6 @@ def train(
             #         # errors.append((p, t))
 
             # Backward pass
-            timer.start()
             loss.backward()
             optimizer.step()
             timer.stop("Train step")
@@ -102,10 +101,11 @@ def train(
 
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
-
         if verbose:
-            # TODO print 3 last significant digits
-            print(f"Train loss: {train_loss:.3f}")
+            if train_loss >= 0.001:
+                print(f"Train Loss: {train_loss:.3f}")
+            else:
+                print(f"Train Loss: {train_loss:.2e}")
 
         ### VALIDATION LOOP ###
         model.eval()
@@ -130,7 +130,10 @@ def train(
         valid_loss /= len(valid_loader)
         valid_losses.append(valid_loss)
         if verbose:
-            print(f"Valid loss: {valid_loss:.3f}")
+            if valid_loss >= 0.001:
+                print(f"Valid Loss: {valid_loss:.3f}")
+            else:
+                print(f"Valid Loss: {valid_loss:.2e}")
 
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)
@@ -147,11 +150,11 @@ def train(
     grid_search_log(train_losses, valid_losses, model_name, training_name, num_epochs)
 
     # Print timing summary
-    timer.summary()
+    # timer.summary()
 
     # Print error summary
-    if verbose:
-        print(f"\nError rate: {error_count / len(train_loader):.2f}")
-        # for p, t in errors:
-        #     print(p)
-        #     print(t, "\n")
+    # if verbose:
+    #     print(f"\nError rate: {error_count / len(train_loader):.2f}")
+    # for p, t in errors:
+    #     print(p)
+    #     print(t, "\n")

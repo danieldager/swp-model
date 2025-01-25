@@ -67,19 +67,12 @@ export PYTHONUNBUFFERED=1
 # launch your computation
 echo "computation start : $(date)"
 
-# python scripts/generate_main_data.py
-
-python scripts/train_repetition.py \
+python scripts/test_repetition.py \
     --fold_id "$FOLD_ID" \
-    --num_epochs "$NUM_EPOCHS" \
+    --model_name "$MODEL_NAME" \
+    --training_name "$TRAINING_NAME" \
     --batch_size "$BATCH_SIZE" \
-    --recurrent_type "$RECURRENT_TYPE" \
-    --hidden_size "$HIDDEN_SIZE" \
-    --num_layers "$NUM_LAYERS" \
-    --learn_rate "$LEARN_RATE" \
-    --dropout "$DROPOUT" \
-    --tf_ratio "$TF_RATIO" \
-    --include_stress \
-    --verbose
+    --verbose \
+    # --include_stress \
 
 echo "computation end : $(date)"

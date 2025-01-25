@@ -2,7 +2,7 @@ import pandas as pd
 
 from swp.utils.models import get_args_from_model_name, get_training_args
 
-from .paths import get_gridsearch_dir, get_log_dir
+from .paths import get_gridsearch_dir, get_gridsearch_train_dir
 
 
 def get_empty_training_log() -> pd.DataFrame:
@@ -43,11 +43,11 @@ def grid_search_log(
     (described through `training_name`).
     """
     # Initialize log
-    logfile_path = get_log_dir() / "train" / f"{model_name}~{training_name}.csv"
+    logfile_path = get_gridsearch_train_dir() / f"{model_name}~{training_name}.csv"
     logfile_path.parent.mkdir(exist_ok=True, parents=True)
     log = None
     # Extract parameters from the model name
-    model_type, recurrent_type, model_args = get_args_from_model_name(model_name)
+    model_type, recur_type, model_args = get_args_from_model_name(model_name)
     cnn_args = None
     if "c" in model_args:
         cnn_args = model_args["c"]
@@ -58,7 +58,7 @@ def grid_search_log(
             "Training name": [training_name],
             "Model type": [model_type],
             "Start token id": [model_args["s"]],
-            "Recurrent type": [recurrent_type],
+            "Recurrent type": [recur_type],
             "Hidden size": [model_args["h"]],
             "Num layers": [model_args["l"]],
             "Dropout": [model_args["d"]],

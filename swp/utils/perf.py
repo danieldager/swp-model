@@ -20,21 +20,22 @@ def timeit(func):
 
 class Timer:
     def __init__(self):
+        self.starts = {}
         self.times = defaultdict(float)
         self.counts = defaultdict(int)
 
-    def start(self):
-        self._start_time = time.time()
+    def start(self, operation):
+        self.starts[operation] = time.time()
 
-    def stop(self, name):
-        elapsed = time.time() - self._start_time
-        self.times[name] += elapsed
-        self.counts[name] += 1
+    def stop(self, operation):
+        elapsed = time.time() - self.starts[operation]
+        self.times[operation] += elapsed
+        self.counts[operation] += 1
 
     def summary(self):
         print("\nTiming Summary:")
         print("-" * 60)
         print(f"{'Operation':<30} {'Total (s)':<15}")
         print("-" * 60)
-        for name in self.times:
-            print(f"{name:<30} {self.times[name]:>13.3f}s")
+        for operation in self.times:
+            print(f"{operation:<30} {self.times[operation]:>13.3f}s")

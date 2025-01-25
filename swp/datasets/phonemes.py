@@ -173,7 +173,7 @@ def get_phoneme_testloader(
     If `include_stress` is set to `True`, phonemes will include stress.
     Pass a dataframe as `override_data_df` to override the test data used.
     """
-    phoneme_to_id = get_phoneme_to_id()
+    phoneme_to_id = get_phoneme_to_id(include_stress=include_stress)
     phoneme_set = PhonemeTestDataset(
         phoneme_to_id=phoneme_to_id,
         include_stress=include_stress,
@@ -189,8 +189,10 @@ def get_phoneme_testloader(
     return phoneme_loader
 
 
-def get_sonority_dataset():
-    vowels = {
+def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
+    # TODO Daniel docstring, save dataset to file
+
+    vowels = [
         "AH0",
         "OY0",
         "AA0",
@@ -206,7 +208,10 @@ def get_sonority_dataset():
         "OW0",
         "AE0",
         "AW0",
-    }
+    ]
+
+    if not include_stress:
+        vowels = [vowel[:-1] for vowel in vowels]
 
     plosives = ["P", "T", "K", "B", "D", "G"]
     fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
@@ -248,12 +253,12 @@ def get_sonority_dataset():
     ccv_df = pd.DataFrame(
         # [(repr(list(phonemes)), score) for phonemes, score in ccv.items()],
         [(list(phonemes), score) for phonemes, score in ccv.items()],
-        columns=["Phonemes", "Sonority"],
+        columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
     )
     vcc_df = pd.DataFrame(
         # [(repr(list(phonemes)), score) for phonemes, score in vcc.items()],
         [(list(phonemes), score) for phonemes, score in vcc.items()],
-        columns=["Phonemes", "Sonority"],
+        columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
     )
     ccv_df["Type"] = "CCV"
     vcc_df["Type"] = "VCC"

@@ -12,7 +12,7 @@ from g2p_en import G2p
 from morphemes import Morphemes
 from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 
-from .paths import get_dataframe_dir, get_dataset_dir, get_folds_dir
+from .paths import get_dataframe_dir, get_stimuli_dir, get_folds_dir
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -38,7 +38,7 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
 def get_morphological_data(word: str):
     r"""Get morphological data for a `word`"""
     mrp = Morphemes(
-        str(get_dataset_dir() / "morphemes_data")
+        str(get_stimuli_dir() / "morphemes_data")
     )  # TODO check that the path is ok
     parse = mrp.parse(word)
 
@@ -128,14 +128,14 @@ def clean_and_enrich_data(
 def create_test_data() -> pd.DataFrame:
     r"""Combine and reformat the real and pseudo word datasets"""
     # Process real words
-    handmade_real_path = get_dataset_dir() / "handmade" / "test_dataset_real"
+    handmade_real_path = get_stimuli_dir() / "handmade" / "test_dataset_real"
     csv_real_path = get_dataframe_dir() / "real_test.csv"
     real_words = process_dataset(handmade_real_path, real=True)
     real_words = clean_and_enrich_data(real_words, real=True)
     real_words.to_csv(csv_real_path)
 
     # Process pseudo words
-    handmade_pseudo_path = get_dataset_dir() / "handmade" / "test_dataset_pseudo"
+    handmade_pseudo_path = get_stimuli_dir() / "handmade" / "test_dataset_pseudo"
     csv_pseudo_path = get_dataframe_dir() / "pseudo_test.csv"
     pseudo_words = process_dataset(handmade_pseudo_path)
     pseudo_words = clean_and_enrich_data(pseudo_words)
@@ -393,29 +393,53 @@ def get_word_to_freq(word_data: pd.DataFrame) -> dict[str, float]:
     return word_to_freq
 
 
-def create_phoneme_to_id(train_data: pd.DataFrame) -> dict[str, int]:
+def create_phoneme_to_id(
+    train_data: pd.DataFrame, include_stress: bool = False
+) -> dict[str, int]:
     r"""Creates a dictionary mapping every phonemes present in `train_data` to ids for tokenization.
     Extra tokens are `<SOS>`, `<EOS>` and `<PAD>`."""
-    phoneme_dict_path = get_dataset_dir() / "phonemes_to_id.json"
     phonemes = train_data["Phonemes"]
     phonemes_unique = set().union(*phonemes)
     sorted_phonemes = sorted(list(phonemes_unique))
     all_tokens = ["<PAD>", "<SOS>", "<EOS>"] + sorted_phonemes
-    phoneme_to_id = {token: i for i, token in enumerate(all_tokens)}
+
+    no_stress_tokens = []
+    for t in all_tokens:
+        if t[-1].isdigit():
+            if t[:-1] not in no_stress_tokens:
+                no_stress_tokens.append(t[:-1])
+        else:
+            no_stress_tokens.append(t)
+
+    phoneme_to_id_sw = {token: i for i, token in enumerate(all_tokens)}
+    phoneme_to_id_sn = {token: i for i, token in enumerate(no_stress_tokens)}
+
+    phoneme_dict_path = get_stimuli_dir() / "phonemes_to_id_sw.json"
     with phoneme_dict_path.open("w") as f:
-        json.dump(phoneme_to_id, f)
-    return phoneme_to_id
+        json.dump(phoneme_to_id_sw, f)
+
+    phoneme_dict_path = get_stimuli_dir() / "phonemes_to_id_sn.json"
+    with phoneme_dict_path.open("w") as f:
+        json.dump(phoneme_to_id_sn, f)
+
+    if include_stress:
+        return phoneme_to_id_sw
+    else:
+        return phoneme_to_id_sn
 
 
-def get_phoneme_to_id(force_recreate: bool = False) -> dict[str, int]:
+def get_phoneme_to_id(
+    force_recreate: bool = False, include_stress: bool = False
+) -> dict[str, int]:
     r"""Get saved validation phoneme to id dictionary if it exists, recreate it otherwise.
 
     Use `force_recreate` to recreate training set from scratch"""
-    phoneme_dict_path = get_dataset_dir() / "phonemes_to_id.json"
+    phoneme_dict_path = f'phonemes_to_id{"_sw" if include_stress else "_sn"}.json'
+    phoneme_dict_path = get_stimuli_dir() / phoneme_dict_path
     if phoneme_dict_path.exists() and not force_recreate:
         with phoneme_dict_path.open("r") as f:
             phoneme_dict = json.load(f)
     else:
         train_data = get_train_data(force_recreate)
-        phoneme_dict = create_phoneme_to_id(train_data)
+        phoneme_dict = create_phoneme_to_id(train_data, include_stress)
     return phoneme_dict

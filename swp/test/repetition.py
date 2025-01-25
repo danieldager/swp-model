@@ -13,18 +13,17 @@ from ..utils.datasets import (
     get_train_data,
     phoneme_statistics,
 )
-from ..utils.models import load_weigths
-from ..utils.paths import get_weights_dir, get_results_dir
+from ..utils.models import load_weights
+from ..utils.paths import get_weights_dir, get_gridsearch_test_dir
 from .core import calculate_errors
 
-results_test_dir = get_results_dir() / "test"
-results_test_dir.mkdir(exist_ok=True, parents=True)
+results_dir = get_gridsearch_test_dir()
+results_dir.mkdir(exist_ok=True, parents=True)
 
 
 def beta_test(
     model: Unimodel | Bimodel,
-    epoch: int,
-    checkpoint: int | None,
+    checkpoint: str,
     device: str | torch.device,
     input_df: pd.DataFrame,
     test_loader: DataLoader,
@@ -35,13 +34,10 @@ def beta_test(
 ):
     r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
 
-    if include_stress:
-        phoneme_key = "Phonemes"
-    else:
-        phoneme_key = "No Stress"
-    id_to_phoneme = list(get_phoneme_to_id())
     last_index = 0
     predictions = []
+    phoneme_key = "Phonemes" if include_stress else "No Stress"
+    id_to_phoneme = list(get_phoneme_to_id(include_stress=include_stress))
     with torch.no_grad():
         for inputs, target in test_loader:
             inputs = inputs.to(device)
@@ -61,15 +57,11 @@ def beta_test(
             last_index += batch_size
     input_df["Prediction"] = predictions
 
-    model_results_dir = results_test_dir / f"{model_name}~{training_name}"
+    model_results_dir = results_dir / f"{model_name}~{training_name}"
     model_results_dir.mkdir(exist_ok=True, parents=True)
-    file_name = f"{epoch}"
-
-    if checkpoint is not None:
-        file_name = f"{file_name}_{checkpoint}"
     if override_extra_str is not None:
-        file_name = f"{file_name}~{override_extra_str}"
-    input_df.to_csv(model_results_dir / f"{file_name}.csv")
+        checkpoint = f"{checkpoint}~{override_extra_str}"
+    input_df.to_csv(model_results_dir / f"{checkpoint}.csv")
 
 
 def test(
@@ -94,7 +86,7 @@ def test(
     m, h, l, v, d, t, s = [p[1:] for p in model_name.split("_")[1:]]
     if verbose:
         print(f"Parameters: e={e} h={h} l={l} d={d} t={t} l={r}")
-    recurrent_type = "lstm" if m[0] == "S" else "rnn"
+    recur_type = "lstm" if m[0] == "S" else "rnn"
     h_size, n_layers, dropout, tf_ratio = int(h), int(l), int(d), float(t)
 
     # Unpack variables from Phonemes class
@@ -117,19 +109,19 @@ def test(
         """LOAD MODEL"""
         model_weights_dir = get_weights_dir() / model
 
-        if recurrent_type == "rnn":
+        if recur_type == "rnn":
             encoder = EncoderRNN(vocab_size, h_size, n_layers, dropout).to(device)
             decoder = DecoderRNN(vocab_size, h_size, n_layers, dropout, tf_ratio).to(
                 device
             )
 
-        elif recurrent_type == "lstm":
+        elif recur_type == "lstm":
             encoder = EncoderLSTM(vocab_size, h_size, n_layers, dropout).to(device)
             decoder = DecoderLSTM(vocab_size, h_size, n_layers, dropout, tf_ratio).to(
                 device
             )
 
-        load_weigths(model_weights_dir, encoder, decoder, epoch, device)
+        load_weights(model_weights_dir, encoder, decoder, epoch, device)
 
         """ TESTING LOOP """
         predictions = []
@@ -232,7 +224,7 @@ def test_repetition(model: str, device) -> list:
 
         encoder = EncoderLSTM(vocab_size, h_size, n_layers).to(device)
         decoder = DecoderLSTM(h_size, vocab_size, n_layers).to(device)
-        load_weigths(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, device)
+        load_weights(MODEL_WEIGHTS_DIR, encoder, decoder, epoch, device)
 
         """ TESTING LOOP """
         predictions = []
