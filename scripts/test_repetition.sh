@@ -2,7 +2,7 @@
 #SBATCH --job-name=swpm-train         # Job name
 #SBATCH --partition=gpu               # Take a node from the 'gpu' partition
 #SBATCH --export=ALL                  # Export your environment to the compute node
-#SBATCH --cpus-per-task=2             # Number of CPU cores requested
+#SBATCH --cpus-per-task=4             # Number of CPU cores requested
 #SBATCH --gres=gpu:A40:1              # Number and type of GPUs requested
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=10:00:00               # Time limit hrs:min:sec
@@ -66,20 +66,18 @@ export PYTHONUNBUFFERED=1
 
 # launch your computation
 echo "computation start : $(date)"
+echo ""
 
-# python scripts/generate_main_data.py
-
-python scripts/train_repetition.py \
+python scripts/test_repetition.py \
     --fold_id "$FOLD_ID" \
-    --num_epochs "$NUM_EPOCHS" \
+    --model_name "$MODEL_NAME" \
+    --train_name "$TRAIN_NAME" \
     --batch_size "$BATCH_SIZE" \
-    --recurrent_type "$RECURRENT_TYPE" \
-    --hidden_size "$HIDDEN_SIZE" \
-    --num_layers "$NUM_LAYERS" \
-    --learn_rate "$LEARN_RATE" \
-    --dropout "$DROPOUT" \
-    --tf_ratio "$TF_RATIO" \
-    --include_stress \
-    --verbose
+    --verbose \
+    # --include_stress \
 
+echo ""
 echo "computation end : $(date)"
+
+echo ""
+echo ""

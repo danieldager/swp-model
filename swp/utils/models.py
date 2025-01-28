@@ -11,37 +11,33 @@ from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
 
 def save_weights(
     model_name: str,
-    training_name: str,
+    train_name: str,
     model: Unimodel | Bimodel,
     epoch: int,
     checkpoint: int | None = None,
 ) -> None:
     r"""Save weights of a model for a given training procedure."""
-    save_dir = get_weights_dir() / model_name / training_name
+    save_dir = get_weights_dir() / model_name / train_name
     save_dir.mkdir(exist_ok=True, parents=True)
     epoch_str = f"{epoch}"
     if checkpoint is not None:
         epoch_str = f"{epoch_str}_{checkpoint}"
-    model_path = save_dir / f"model_{epoch_str}.pth"
+    model_path = save_dir / f"{epoch_str}.pth"
     torch.save(model.state_dict(), model_path)
 
 
-def load_weigths(
-    model_name: str,
-    training_name: str,
+def load_weights(
     model: Unimodel | Bimodel,
-    epoch: str,
+    checkpoint: str,
+    model_name: str,
+    train_name: str,
     device: torch.device,
-    checkpoint: int | None = None,
 ) -> None:
     r"""Load the weights of a model for a given training procedure at a specific
     epoch and potential checkpoint.
     """
-    save_dir = get_weights_dir() / model_name / training_name
-    epoch_str = f"{epoch}"
-    if checkpoint is not None:
-        epoch_str = f"{epoch_str}_{checkpoint}"
-    model_path = save_dir / f"model_{epoch_str}.pth"
+    save_dir = get_weights_dir() / model_name / train_name
+    model_path = save_dir / f"{checkpoint}.pth"
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)
     )
@@ -57,7 +53,7 @@ def get_args_from_model_name(model_name: str) -> tuple[str, str, dict[str, Any]]
     main_name = big_split[0]
     name_split = main_name.split("_")
     model_class = name_split[0]
-    rec_type = name_split[1]
+    recur_type = name_split[1]
     str_args = {arg[0]: arg[1:] for arg in name_split[2:]}
     typed_args = {}
     typed_args["h"] = int(str_args["h"])
@@ -73,22 +69,22 @@ def get_args_from_model_name(model_name: str) -> tuple[str, str, dict[str, Any]]
         typed_cnn_args["h"] = int(str_cnn_args["h"])
         typed_cnn_args["m"] = str_cnn_args["m"]
         typed_args["c"] = typed_cnn_args
-    return model_class, rec_type, typed_args
+    return model_class, recur_type, typed_args
 
 
 def get_model(model_name: str) -> Unimodel | Bimodel:
     r"""Create a model corresponding to the `model_name`"""
     # TODO make modular with other CNN encoders
-    model_class, rec_type, typed_args = get_args_from_model_name(model_name)
-    if rec_type.upper() == "LSTM":
+    model_class, recur_type, typed_args = get_args_from_model_name(model_name)
+    if recur_type.upper() == "LSTM":
         audit_encoder_class = EncoderLSTM
         decoder_class = DecoderLSTM
-    elif rec_type.upper() == "RNN":
+    elif recur_type.upper() == "RNN":
         audit_encoder_class = EncoderRNN
         decoder_class = DecoderRNN
     else:
         raise NotImplementedError(
-            f"Recurrent type {rec_type} is not currently supported"
+            f"Recurrent type {recur_type} is not currently supported"
         )
     decoder = decoder_class(
         vocab_size=typed_args["v"],
@@ -169,7 +165,7 @@ def get_model_name(model: Unimodel | Bimodel) -> str:
 
 def get_model_name_from_args(
     model_class: str,
-    rec_type: str,
+    recur_type: str,
     hidden_size: int,
     num_layers: int,
     vocab_size: int,
@@ -180,7 +176,7 @@ def get_model_name_from_args(
 ) -> str:
     r"""Generate the `model_name` from the arguments that would allow to generate the model"""
     # TODO make modular with other CNN encoders
-    model_name = f"{model_class}_{rec_type.upper()}"
+    model_name = f"{model_class}_{recur_type.upper()}"
     model_name = f"{model_name}_h{hidden_size}"
     model_name = f"{model_name}_l{num_layers}"
     model_name = f"{model_name}_v{vocab_size}"
@@ -193,23 +189,23 @@ def get_model_name_from_args(
     return model_name
 
 
-def get_training_name(
+def get_train_name(
     batch_size: int, learning_rate: float, fold_id: int, include_stress: bool
 ) -> str:
-    r"""Generate the `training_name` from the training arguments."""
-    training_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
+    r"""Generate the `train_name` from the training arguments."""
+    train_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
     if include_stress:
-        training_name = f"{training_name}_sw"
+        train_name = f"{train_name}_sw"
     else:
-        training_name = f"{training_name}_sn"
+        train_name = f"{train_name}_sn"
     # TODO add support for visual dataset, mixed or not
-    return training_name
+    return train_name
 
 
-def get_training_args(training_name: str) -> dict[str, Any]:
-    r"""Returns a dictionnary containing the arguments corresponding to the `training_name`."""
+def get_train_args(train_name: str) -> dict[str, Any]:
+    r"""Returns a dictionnary containing the arguments corresponding to the `train_name`."""
     # TODO add support for visual dataset, mixed or not
-    str_args = {arg[0]: arg[1:] for arg in training_name.split("_")}
+    str_args = {arg[0]: arg[1:] for arg in train_name.split("_")}
     typed_args = {}
     typed_args["b"] = int(str_args["b"])
     typed_args["l"] = float(str_args["l"])

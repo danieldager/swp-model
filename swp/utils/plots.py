@@ -303,25 +303,23 @@ def calculate_errors(phonemes: list, prediction: list, phoneme_to_id: dict) -> d
     }
 
 
+# TODO Average across folds
 # Function to combine all plots into one figure
 def create_error_plots(
     test_df: pd.DataFrame,
     sonority_df: pd.DataFrame,
     model_name: str,
-    training_name: str,
-    epoch: str,
-    checkpoint: str = None,
+    train_name: str,
+    checkpoint: str,
 ) -> None:
     # TODO Daniel docstring
 
     # Parse model parameters for title
     m, h, l, v, d, t, s = [p[1:] for p in model_name.split("_")[1:]]
-    b, r, f = [p[1:] for p in training_name.split("_")]
+    b, r, f, ss = [p[1:] for p in train_name.split("_")]
     m = "LSTM" if m[0] == "S" else "RNN"
 
-    if checkpoint is not None:
-        epoch = f"{epoch}_{checkpoint}"
-    title = f"{m}: E={epoch} H={h}, L={l}, D={d}, TF={t}, LR={r} V={v} F={f}"
+    title = f"{m}: E={checkpoint} H={h}, L={l}, D={d}, TF={t}, LR={r} V={v} F={f}"
 
     fig, axes = plt.subplots(2, 2, figsize=(20, 12))
 
@@ -336,14 +334,12 @@ def create_error_plots(
     fig.suptitle(title, fontsize=16, y=0.95)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-    dir_name = f"{model_name}~{training_name}"
-    results_figures_dir = get_figures_dir() / dir_name
-    results_figures_dir.mkdir(exist_ok=True)
+    model_dir = f"{model_name}~{train_name}"
+    results_model_dir = get_figures_dir() / model_dir
+    results_model_dir.mkdir(exist_ok=True)
 
-    filename = f"errors_{epoch}"
-    if checkpoint is not None:
-        filename = f"{filename}_{checkpoint}"
-    plt.savefig(results_figures_dir / f"{filename}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(results_model_dir / f"{checkpoint}.png", dpi=300, bbox_inches="tight")
+    plt.close()
 
 
 # Plot the confusion matrix for the test data

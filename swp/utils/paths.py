@@ -13,7 +13,7 @@ if _ON_JEAN_ZAY:
     # script_dir = pathlib.Path(os.environ["HOME"]) / "single-word-processing-model" # TODO actualize this
     work_dir = pathlib.Path(os.environ["WORK"])
     script_dir = work_dir / "scripts"
-    dataset_dir = work_dir / "stimuli"
+    stimuli_dir = work_dir / "stimuli"
     weights_dir = work_dir / "weights"
     results_dir = work_dir / "results"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
@@ -22,7 +22,7 @@ elif _ON_OBERON:
     pass  # TODO set paths for Oberon
 else:  # personnal computer
     script_dir = repo_root / "scripts"
-    dataset_dir = repo_root / "stimuli"
+    stimuli_dir = repo_root / "stimuli"
     weights_dir = repo_root / "weights"
     results_dir = repo_root / "results"
     public_dataset_dir = repo_root / "public_datasets"
@@ -32,19 +32,19 @@ def get_root() -> pathlib.Path:
     return repo_root
 
 
-def get_dataset_dir() -> pathlib.Path:
-    dataset_dir.mkdir(parents=True, exist_ok=True)
-    return dataset_dir
+def get_stimuli_dir() -> pathlib.Path:
+    stimuli_dir.mkdir(parents=True, exist_ok=True)
+    return stimuli_dir
 
 
 def get_dataframe_dir() -> pathlib.Path:
-    dataframe_dir = dataset_dir / "dataframe"
+    dataframe_dir = stimuli_dir / "dataframe"
     dataframe_dir.mkdir(parents=True, exist_ok=True)
     return dataframe_dir
 
 
 def get_folds_dir() -> pathlib.Path:
-    folds_dir = dataset_dir / "folds"
+    folds_dir = stimuli_dir / "folds"
     folds_dir.mkdir(parents=True, exist_ok=True)
     return folds_dir
 
@@ -71,14 +71,20 @@ def get_gridsearch_dir() -> pathlib.Path:
     return gridsearch_dir
 
 
-def get_log_dir() -> pathlib.Path:
-    log_dir = get_gridsearch_dir() / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    return log_dir
+def get_gridsearch_train_dir() -> pathlib.Path:
+    gridsearch_train_dir = get_gridsearch_dir() / "train"
+    gridsearch_train_dir.mkdir(parents=True, exist_ok=True)
+    return gridsearch_train_dir
+
+
+def get_gridsearch_test_dir() -> pathlib.Path:
+    gridsearch_test_dir = get_gridsearch_dir() / "test"
+    gridsearch_test_dir.mkdir(parents=True, exist_ok=True)
+    return gridsearch_test_dir
 
 
 def get_graphemes_dir() -> pathlib.Path:
-    graphemes_dir = get_dataset_dir() / "graphemes"
+    graphemes_dir = get_stimuli_dir() / "graphemes"
     graphemes_dir.mkdir(parents=True, exist_ok=True)
     return graphemes_dir
 

@@ -1,5 +1,12 @@
 import os
 import sys
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="The PyTorch API of nested tensors is in prototype stage",
+)
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -19,8 +26,8 @@ from swp.utils.datasets import get_phoneme_to_id
 from swp.utils.models import (
     get_model,
     get_model_name,
-    get_training_args,
-    get_training_name,
+    get_train_args,
+    get_train_name,
 )
 from swp.utils.setup import seed_everything, set_device
 
@@ -29,31 +36,31 @@ if __name__ == "__main__":
     parser.add_argument(
         "--fold_id",
         type=int,
-        required=True,
+        default=0,
         help="Evaluation fold id",
     )
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=10,
+        default=20,
         help="Number of training epochs",
     )
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=1,
+        default=512,
         help="Batch size (fixed to 1 for repetition)",
     )
     parser.add_argument(
-        "--recurrent_type",
+        "--recur_type",
         type=str,
-        default="rnn",
+        default="lstm",
         help="Recurrent network architecture : RNN or LSTM",
     )
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=4,
+        default=256,
         help="Hidden size of recurrent subnetworks.",
     )
     parser.add_argument(
@@ -65,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learn_rate",
         type=float,
-        default=0.001,
+        default=0.0005,
         help="Learning rate",
     )
     parser.add_argument(
@@ -77,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tf_ratio",
         type=float,
-        default=0.2,
+        default=0.3,
         help="Teacher forcing ratio for decoder",
     )
     parser.add_argument(
@@ -90,81 +97,53 @@ if __name__ == "__main__":
         action="store_true",
         help="Print logs during training",
     )
-
     args = parser.parse_args()
     seed_everything()
     device = set_device()
 
-    # TODO group args
     # TODO mutually exclusive args
     if True:
         batch_size = args.batch_size
         learn_rate = args.learn_rate
         fold_id = args.fold_id
         include_stress = args.include_stress
-        training_name = get_training_name(
+        train_name = get_train_name(
             batch_size,
             learn_rate,
             fold_id,
             include_stress,
         )
     else:
-        training_name = args.training_name
-        training_args = get_training_args(training_name)
-        batch_size = training_args["b"]
-        learn_rate = training_args["l"]
-        fold_id = training_args["f"]
-
-    print(f"\nTraining name: {training_name}")
-    print(f"Batch size: {batch_size}")
-    print(f"Hidden size: {args.hidden_size}")
-    print(f"Learning rate: {learn_rate}")
-    print(f"Number of epochs: {args.num_epochs}")
-    print(f"Number of layers: {args.num_layers}")
-    print(f"Teacher forcing ratio: {args.tf_ratio}")
-    print(f"Dropout rate: {args.dropout}")
+        train_name = args.train_name
+        train_args = get_train_args(train_name)
+        batch_size = train_args["b"]
+        learn_rate = train_args["l"]
+        fold_id = train_args["f"]
 
     # TODO mutually exclusive args
-    # TODO printing arguments for debugging purposes
     if True:
-        rec_type = args.recurrent_type.upper()
-        phoneme_to_id = get_phoneme_to_id()
+        recur_type = args.recur_type.upper()
+        if recur_type not in ["RNN", "LSTM"]:
+            raise ValueError("Invalid recurrent layer type")
+        Encoder = EncoderRNN if recur_type == "RNN" else EncoderLSTM
+        Decoder = DecoderRNN if recur_type == "RNN" else DecoderLSTM
+
+        phoneme_to_id = get_phoneme_to_id(include_stress)
         vocab_size = len(phoneme_to_id)
-        if rec_type == "LSTM":
-            encoder = EncoderLSTM(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-            )
-            decoder = DecoderLSTM(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-                tf_ratio=args.tf_ratio,
-            )
-        elif rec_type == "RNN":
-            encoder = EncoderRNN(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-            )
-            decoder = DecoderRNN(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-                tf_ratio=args.tf_ratio,
-            )
-        else:
-            raise ValueError(
-                f"Recurrent subnetwork {rec_type} is not recognized. Try RNN or LSTM."
-            )
-        model = Unimodel(
-            encoder=encoder, decoder=decoder, start_token_id=phoneme_to_id["<SOS>"]
+        encoder = Encoder(
+            vocab_size=vocab_size,
+            hidden_size=args.hidden_size,
+            num_layers=args.num_layers,
+            dropout=args.dropout,
         )
+        decoder = Decoder(
+            vocab_size=vocab_size,
+            hidden_size=args.hidden_size,
+            num_layers=args.num_layers,
+            dropout=args.dropout,
+            tf_ratio=args.tf_ratio,
+        )
+        model = Unimodel(encoder, decoder, start_token_id=phoneme_to_id["<SOS>"])
         model_name = get_model_name(model)
     else:
         model_name = args.model_name
@@ -184,20 +163,26 @@ if __name__ == "__main__":
     )
     criterion = AuditoryXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
+    phoneme_to_id = get_phoneme_to_id(include_stress)
 
-    # print all the parameters for debugging purposes
-    print(f"Train_loader size: {len(train_loader)}")
-    print(f"Valid_loader size: {len(valid_loader)}\n")
+    if args.verbose:
+        print("-" * 60)
+        print(f"\n{model_name}~{train_name}")
 
     train(
         model=model,
         model_name=model_name,
+        train_name=train_name,
         criterion=criterion,
         optimizer=optimizer,
-        device=device,
-        training_name=training_name,
+        phoneme_to_id=phoneme_to_id,
         train_loader=train_loader,
         valid_loader=valid_loader,
         num_epochs=args.num_epochs,
+        device=device,
         verbose=args.verbose,
     )
+
+    if args.verbose:
+        print(f"\n{model_name}~{train_name}\n")
+        print("-" * 60)
