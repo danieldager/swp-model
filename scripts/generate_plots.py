@@ -19,14 +19,14 @@ results_test_dir = get_gridsearch_test_dir()
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, required=True)
-    parser.add_argument("--training_name", type=str, required=True)
+    parser.add_argument("--train_name", type=str, required=True)
     parser.add_argument("--checkpoint", type=str, default=None)
     parser.add_argument("--include_stress", action="store_true")
     args = parser.parse_args()
 
     # TODO this needs to take "include stress" into account
     phoneme_to_id = get_phoneme_to_id(include_stress=args.include_stress)
-    results_model_dir = results_test_dir / f"{args.model_name}~{args.training_name}"
+    results_model_dir = results_test_dir / f"{args.model_name}~{args.train_name}"
 
     if args.checkpoint is None:
         checkpoints = set(
@@ -76,6 +76,6 @@ if __name__ == "__main__":
             test_df,
             sonority_df,
             args.model_name,
-            args.training_name,
+            args.train_name,
             checkpoint,
         )

@@ -20,7 +20,7 @@ def train(
     optimizer: Optimizer,
     device: str | torch.device,
     model_name: str,
-    training_name: str,
+    train_name: str,
     num_epochs: int,
     verbose: bool = False,
 ):
@@ -100,7 +100,7 @@ def train(
             if epoch == 0 and checkpoint != 10 and i % ((len(train_loader) // 10)) == 0:
                 save_weights(
                     model_name,
-                    training_name,
+                    train_name,
                     model,
                     epoch,
                     checkpoint,
@@ -146,10 +146,10 @@ def train(
             )
 
         # Save model weights for every epoch
-        save_weights(model_name, training_name, model, epoch)
+        save_weights(model_name, train_name, model, epoch)
 
     # Create gridsearch log
-    grid_search_log(train_losses, valid_losses, model_name, training_name, num_epochs)
+    grid_search_log(train_losses, valid_losses, model_name, train_name, num_epochs)
 
     # Print timing summary
     timer.summary()

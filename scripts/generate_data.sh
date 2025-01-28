@@ -60,3 +60,6 @@ python scripts/generate_main_data.py
 
 echo ""
 echo "computation end : $(date)"
+
+echo ""
+echo ""

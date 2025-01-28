@@ -7,20 +7,21 @@ from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.grid_search import grid_search_log
+from ..utils.datasets import get_phoneme_to_id
 from ..utils.models import save_weights
-from ..utils.perf import Timer
 
 
 def train(
-    train_loader: DataLoader,
-    valid_loader: DataLoader,
     model: Unimodel | Bimodel,
+    model_name: str,
+    train_name: str,
     criterion: nn.Module,
     optimizer: Optimizer,
-    device: str | torch.device,
-    model_name: str,
-    training_name: str,
+    phoneme_to_id: dict[str, int],
+    train_loader: DataLoader,
+    valid_loader: DataLoader,
     num_epochs: int,
+    device: str | torch.device,
     verbose: bool = False,
 ) -> None:
     r"""Trains the `model` over `num_epoch` epochs with the data contained in the `train_loader`,
@@ -35,20 +36,17 @@ def train(
     """
 
     if isinstance(model, Unimodel) and not model.is_auditory:
-        raise ValueError(
-            "The model to train is not made to be trained with auditory data"
-        )
+        raise ValueError("Auditory model required")
     if isinstance(model, Bimodel):
         model.to_audio()
     model.to(device)
+    model.train()
 
-    timer = Timer()
     train_losses = []
     valid_losses = []
+    train_errors = []
+    valid_errors = []
     epoch_times = []
-
-    errors = []
-    error_count = 0
 
     for epoch in range(1, num_epochs + 1):
         epoch_start = time.time()
@@ -58,12 +56,12 @@ def train(
         ### TRAINING LOOP ###
         model.train()
         train_loss = 0
+        train_error = 0
         checkpoint = 1
 
         for i, (data, target) in enumerate(train_loader, 1):
             if verbose:
                 print(f"{i}/{len(train_loader)}", end="\r")
-            timer.start("Train step")
 
             data = data.to(device)
             target = target.to(device)
@@ -76,31 +74,24 @@ def train(
             loss = criterion(output, target)
             train_loss += loss.item()
 
-            # TODO reconsider this
-            # if epoch == num_epochs:
-            #     p = torch.argmax(output, dim=1)
-            #     p = p.squeeze().tolist()
-            #     t = target.squeeze().tolist()
-            #     if p != t:
-            #         error_count += 1
-            #         # p = [index_to_phone[i] for i in p]
-            #         # t = [index_to_phone[i] for i in t]
-            #         # errors.append((p, t))
+            # Error computation
+            preds = torch.argmax(output[0], dim=-1)
+            mask = target != phoneme_to_id["<PAD>"]
+            train_error += torch.any((preds != target) * mask, dim=1).sum().item()
 
             # Backward pass
             loss.backward()
             optimizer.step()
-            timer.stop("Train step")
 
             if epoch == 1 and checkpoint != 10 and i % ((len(train_loader) // 10)) == 0:
-                save_weights(model_name, training_name, model, epoch, checkpoint)
+                save_weights(model_name, train_name, model, epoch, checkpoint)
                 if verbose:
                     print(f"Checkpoint {checkpoint}: {(train_loss / i):.3f}")
-
                 checkpoint += 1
 
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
+        train_errors.append(train_error)
         if verbose:
             if train_loss >= 0.001:
                 print(f"Train Loss: {train_loss:.3f}")
@@ -110,6 +101,7 @@ def train(
         ### VALIDATION LOOP ###
         model.eval()
         valid_loss = 0
+        valid_error = 0
 
         with torch.no_grad():
             for i, (data, target) in enumerate(valid_loader, 1):
@@ -119,42 +111,45 @@ def train(
                 data = data.to(device)
                 target = target.to(device)
 
-                # Forward passes
-
+                # Forward pass
                 output = model(data, target)
 
                 # Loss computation
                 loss = criterion(output, target)
                 valid_loss += loss.item()
 
+                # Error computation
+                preds = torch.argmax(output[0], dim=-1)
+                mask = target != phoneme_to_id["<PAD>"]
+                valid_error += torch.any((preds != target) * mask, dim=1).sum().item()
+
         valid_loss /= len(valid_loader)
         valid_losses.append(valid_loss)
+        valid_errors.append(valid_error)
         if verbose:
             if valid_loss >= 0.001:
                 print(f"Valid Loss: {valid_loss:.3f}")
             else:
                 print(f"Valid Loss: {valid_loss:.2e}")
 
+        ### POST TRAIN/VALID ###
+        save_weights(model_name, train_name, model=model, epoch=epoch)
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)
         if verbose:
-            print(
-                f"Epoch time: {epoch_time // 3600:.0f}h {epoch_time % 3600 // 60:.0f}m {epoch_time % 3600:.0f}s"
-            )
+            print(f"Train Errors: {train_error}")
+            print(f"Valid Errors: {valid_error}")
+            h = epoch_time // 3600
+            m = epoch_time % 3600 // 60
+            s = epoch_time % 3600
+            print(f"Epoch Time: {h:.0f}h {m:.0f}m {s:.0f}s")
 
-        # Save model weights for every epoch
-        save_weights(model_name, training_name, model=model, epoch=epoch)
-
-    # Plot loss curves and create gridsearch log
-    # training_curves(train_losses, valid_losses, model_name, num_epochs)
-    grid_search_log(train_losses, valid_losses, model_name, training_name, num_epochs)
-
-    # Print timing summary
-    # timer.summary()
-
-    # Print error summary
-    # if verbose:
-    #     print(f"\nError rate: {error_count / len(train_loader):.2f}")
-    # for p, t in errors:
-    #     print(p)
-    #     print(t, "\n")
+    grid_search_log(
+        train_losses,
+        valid_losses,
+        train_errors,
+        valid_errors,
+        model_name,
+        train_name,
+        num_epochs,
+    )

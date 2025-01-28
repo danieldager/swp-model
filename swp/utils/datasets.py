@@ -429,7 +429,8 @@ def create_phoneme_to_id(
 
 
 def get_phoneme_to_id(
-    force_recreate: bool = False, include_stress: bool = False
+    include_stress: bool = False,
+    force_recreate: bool = False,
 ) -> dict[str, int]:
     r"""Get saved validation phoneme to id dictionary if it exists, recreate it otherwise.
 

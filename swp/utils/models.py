@@ -11,13 +11,13 @@ from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
 
 def save_weights(
     model_name: str,
-    training_name: str,
+    train_name: str,
     model: Unimodel | Bimodel,
     epoch: int,
     checkpoint: int | None = None,
 ) -> None:
     r"""Save weights of a model for a given training procedure."""
-    save_dir = get_weights_dir() / model_name / training_name
+    save_dir = get_weights_dir() / model_name / train_name
     save_dir.mkdir(exist_ok=True, parents=True)
     epoch_str = f"{epoch}"
     if checkpoint is not None:
@@ -30,13 +30,13 @@ def load_weights(
     model: Unimodel | Bimodel,
     checkpoint: str,
     model_name: str,
-    training_name: str,
+    train_name: str,
     device: torch.device,
 ) -> None:
     r"""Load the weights of a model for a given training procedure at a specific
     epoch and potential checkpoint.
     """
-    save_dir = get_weights_dir() / model_name / training_name
+    save_dir = get_weights_dir() / model_name / train_name
     model_path = save_dir / f"{checkpoint}.pth"
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)
@@ -189,23 +189,23 @@ def get_model_name_from_args(
     return model_name
 
 
-def get_training_name(
+def get_train_name(
     batch_size: int, learning_rate: float, fold_id: int, include_stress: bool
 ) -> str:
-    r"""Generate the `training_name` from the training arguments."""
-    training_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
+    r"""Generate the `train_name` from the training arguments."""
+    train_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
     if include_stress:
-        training_name = f"{training_name}_sw"
+        train_name = f"{train_name}_sw"
     else:
-        training_name = f"{training_name}_sn"
+        train_name = f"{train_name}_sn"
     # TODO add support for visual dataset, mixed or not
-    return training_name
+    return train_name
 
 
-def get_training_args(training_name: str) -> dict[str, Any]:
-    r"""Returns a dictionnary containing the arguments corresponding to the `training_name`."""
+def get_train_args(train_name: str) -> dict[str, Any]:
+    r"""Returns a dictionnary containing the arguments corresponding to the `train_name`."""
     # TODO add support for visual dataset, mixed or not
-    str_args = {arg[0]: arg[1:] for arg in training_name.split("_")}
+    str_args = {arg[0]: arg[1:] for arg in train_name.split("_")}
     typed_args = {}
     typed_args["b"] = int(str_args["b"])
     typed_args["l"] = float(str_args["l"])

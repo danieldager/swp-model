@@ -51,5 +51,6 @@ echo "All jobs submitted! Total combinations: $total"
 
 # git submodule update --init --recursive
 # scp -r ddager@oberon2:/scratch2/ddager/swp-model/weights ~/Desktop/swp-model/
+# scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/gridsearch/train ~/Desktop/swp-model/results/gridsearch/
 # scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/figures ~/Desktop/swp-model/results/
 # scp -r ddager@oberon2:/scratch2/ddager/swp-model/results/gridsearch ~/Desktop/swp-model/results/

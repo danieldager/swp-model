@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import warnings
 
 warnings.filterwarnings(
@@ -12,13 +13,11 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-import argparse
-
-from swp.test.repetition import beta_test
+from swp.test.repetition import test
 from swp.utils.paths import get_weights_dir
-from swp.utils.datasets import get_test_data
 from swp.utils.models import get_model, load_weights
 from swp.utils.setup import seed_everything, set_device
+from swp.utils.datasets import get_test_data, get_train_data
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
 
 if __name__ == "__main__":
@@ -30,7 +29,7 @@ if __name__ == "__main__":
         help="Model name string",
     )
     parser.add_argument(
-        "--training_name",
+        "--train_name",
         type=str,
         required=True,
         help="Training name string",
@@ -52,10 +51,15 @@ if __name__ == "__main__":
         action="store_true",
         help="Include stress in phonemes",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print verbose output",
+    )
 
     args = parser.parse_args()
     model_name = args.model_name
-    training_name = args.training_name
+    train_name = args.train_name
     batch_size = args.batch_size
     checkpoint = args.checkpoint
     include_stress = args.include_stress
@@ -65,7 +69,7 @@ if __name__ == "__main__":
     device = "cpu"  # TODO why do error out when using MPS ?
 
     if checkpoint is None:
-        model_weights_dir = get_weights_dir() / model_name / training_name
+        model_weights_dir = get_weights_dir() / model_name / train_name
         checkpoints = [f.stem.split(".")[-1] for f in model_weights_dir.glob("*.pth")]
     else:
         checkpoints = [checkpoint]
@@ -76,38 +80,59 @@ if __name__ == "__main__":
             model=model,
             checkpoint=checkpoint,
             model_name=model_name,
-            training_name=training_name,
+            train_name=train_name,
             device=device,
         )
 
-        input_df = get_test_data()
+        test_df = get_test_data()
         test_loader = get_phoneme_testloader(batch_size, include_stress)
-        dfrs = beta_test(
+        test(
             model=model,
             checkpoint=checkpoint,
             device=device,
-            input_df=input_df,
+            test_df=test_df,
             test_loader=test_loader,
             model_name=model_name,
-            training_name=training_name,
+            train_name=train_name,
             include_stress=include_stress,
+            verbose=args.verbose,
         )
 
         # Test also on the sonority dataset
-        override_extra_str = "ssp"
-        override_df = get_sonority_dataset(include_stress=include_stress)
+        sonority_df = get_sonority_dataset(include_stress=include_stress)
         override_loader = get_phoneme_testloader(
-            batch_size, include_stress, override_df
+            batch_size, include_stress, sonority_df
         )
 
-        dfrs = beta_test(
+        test(
             model=model,
             checkpoint=checkpoint,
             device=device,
-            input_df=override_df,
+            test_df=sonority_df,
             test_loader=override_loader,
             model_name=model_name,
-            training_name=training_name,
+            train_name=train_name,
             include_stress=include_stress,
-            override_extra_str=override_extra_str,
+            override_extra_str="ssp",
+            verbose=args.verbose,
         )
+
+        # Test also on the train dataset
+        train_df = get_train_data()
+        train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
+
+        test(
+            model=model,
+            checkpoint=checkpoint,
+            device=device,
+            test_df=train_df,
+            test_loader=train_loader,
+            model_name=model_name,
+            train_name=train_name,
+            include_stress=include_stress,
+            override_extra_str="train",
+            verbose=args.verbose,
+        )
+
+        if args.verbose:
+            print("-" * 60)

@@ -26,8 +26,8 @@ from swp.utils.datasets import get_phoneme_to_id
 from swp.utils.models import (
     get_model,
     get_model_name,
-    get_training_args,
-    get_training_name,
+    get_train_args,
+    get_train_name,
 )
 from swp.utils.setup import seed_everything, set_device
 
@@ -36,13 +36,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--fold_id",
         type=int,
-        required=True,
+        default=0,
         help="Evaluation fold id",
     )
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=2,
+        default=20,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--recur_type",
         type=str,
-        default="rnn",
+        default="lstm",
         help="Recurrent network architecture : RNN or LSTM",
     )
     parser.add_argument(
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learn_rate",
         type=float,
-        default=0.001,
+        default=0.0005,
         help="Learning rate",
     )
     parser.add_argument(
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tf_ratio",
         type=float,
-        default=0.2,
+        default=0.3,
         help="Teacher forcing ratio for decoder",
     )
     parser.add_argument(
@@ -97,72 +97,53 @@ if __name__ == "__main__":
         action="store_true",
         help="Print logs during training",
     )
-
     args = parser.parse_args()
     seed_everything()
     device = set_device()
 
-    # TODO group args
     # TODO mutually exclusive args
     if True:
         batch_size = args.batch_size
         learn_rate = args.learn_rate
         fold_id = args.fold_id
         include_stress = args.include_stress
-        training_name = get_training_name(
+        train_name = get_train_name(
             batch_size,
             learn_rate,
             fold_id,
             include_stress,
         )
     else:
-        training_name = args.training_name
-        training_args = get_training_args(training_name)
-        batch_size = training_args["b"]
-        learn_rate = training_args["l"]
-        fold_id = training_args["f"]
+        train_name = args.train_name
+        train_args = get_train_args(train_name)
+        batch_size = train_args["b"]
+        learn_rate = train_args["l"]
+        fold_id = train_args["f"]
 
     # TODO mutually exclusive args
-    # TODO printing arguments for debugging purposes
     if True:
         recur_type = args.recur_type.upper()
-        phoneme_to_id = get_phoneme_to_id(include_stress=include_stress)
+        if recur_type not in ["RNN", "LSTM"]:
+            raise ValueError("Invalid recurrent layer type")
+        Encoder = EncoderRNN if recur_type == "RNN" else EncoderLSTM
+        Decoder = DecoderRNN if recur_type == "RNN" else DecoderLSTM
+
+        phoneme_to_id = get_phoneme_to_id(include_stress)
         vocab_size = len(phoneme_to_id)
-        if recur_type == "LSTM":
-            encoder = EncoderLSTM(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-            )
-            decoder = DecoderLSTM(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-                tf_ratio=args.tf_ratio,
-            )
-        elif recur_type == "RNN":
-            encoder = EncoderRNN(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-            )
-            decoder = DecoderRNN(
-                vocab_size=vocab_size,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                dropout=args.dropout,
-                tf_ratio=args.tf_ratio,
-            )
-        else:
-            raise ValueError(
-                f"Recurrent subnetwork {recur_type} is not recognized. Try RNN or LSTM."
-            )
-        model = Unimodel(
-            encoder=encoder, decoder=decoder, start_token_id=phoneme_to_id["<SOS>"]
+        encoder = Encoder(
+            vocab_size=vocab_size,
+            hidden_size=args.hidden_size,
+            num_layers=args.num_layers,
+            dropout=args.dropout,
         )
+        decoder = Decoder(
+            vocab_size=vocab_size,
+            hidden_size=args.hidden_size,
+            num_layers=args.num_layers,
+            dropout=args.dropout,
+            tf_ratio=args.tf_ratio,
+        )
+        model = Unimodel(encoder, decoder, start_token_id=phoneme_to_id["<SOS>"])
         model_name = get_model_name(model)
     else:
         model_name = args.model_name
@@ -182,28 +163,26 @@ if __name__ == "__main__":
     )
     criterion = AuditoryXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
+    phoneme_to_id = get_phoneme_to_id(include_stress)
 
     if args.verbose:
-        print("\n")
         print("-" * 60)
-        print(f"\nModel name: {model_name}")
-        print(f"Training name: {training_name}")
-        print(f"Number of epochs: {args.num_epochs}")
+        print(f"\n{model_name}~{train_name}")
 
     train(
         model=model,
         model_name=model_name,
+        train_name=train_name,
         criterion=criterion,
         optimizer=optimizer,
-        device=device,
-        training_name=training_name,
+        phoneme_to_id=phoneme_to_id,
         train_loader=train_loader,
         valid_loader=valid_loader,
         num_epochs=args.num_epochs,
+        device=device,
         verbose=args.verbose,
     )
 
     if args.verbose:
-        print("\n")
+        print(f"\n{model_name}~{train_name}\n")
         print("-" * 60)
-        print("\n")

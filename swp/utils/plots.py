@@ -309,14 +309,14 @@ def create_error_plots(
     test_df: pd.DataFrame,
     sonority_df: pd.DataFrame,
     model_name: str,
-    training_name: str,
+    train_name: str,
     checkpoint: str,
 ) -> None:
     # TODO Daniel docstring
 
     # Parse model parameters for title
     m, h, l, v, d, t, s = [p[1:] for p in model_name.split("_")[1:]]
-    b, r, f, ss = [p[1:] for p in training_name.split("_")]
+    b, r, f, ss = [p[1:] for p in train_name.split("_")]
     m = "LSTM" if m[0] == "S" else "RNN"
 
     title = f"{m}: E={checkpoint} H={h}, L={l}, D={d}, TF={t}, LR={r} V={v} F={f}"
@@ -334,7 +334,7 @@ def create_error_plots(
     fig.suptitle(title, fontsize=16, y=0.95)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-    model_dir = f"{model_name}~{training_name}"
+    model_dir = f"{model_name}~{train_name}"
     results_model_dir = get_figures_dir() / model_dir
     results_model_dir.mkdir(exist_ok=True)
 
