@@ -162,8 +162,7 @@ cache
 weights
 figures
 grid_search.csv
-simulations.ipynb
-sonority.ipynb
+
 stimuli/graphemes
 public_datasets
 stimuli/folds

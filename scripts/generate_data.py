@@ -16,6 +16,7 @@ from swp.utils.datasets import (
     create_train_data,
     get_phoneme_to_id,
     get_train_fold,
+    get_phoneme_statistics,
 )
 from swp.utils.setup import seed_everything
 
@@ -24,11 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--vocab_size", type=int, default=50000)
     parser.add_argument("--epoch_size", type=int, default=1000000)
     parser.add_argument("--num_folds", type=int, default=5)
-
     args = parser.parse_args()
-
-    # log the arguments
-    print(args)
 
     print("\nGenerating test data...")
     seed_everything()
@@ -46,4 +43,5 @@ if __name__ == "__main__":
         fold_train_df = get_train_fold(fold_id)
         create_epoch(fold_id, fold_train_df, args.epoch_size, generator)
 
-    get_phoneme_to_id()
+    print("Computing phoneme statistics...")
+    get_phoneme_statistics(train_df)

@@ -353,34 +353,58 @@ def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     return train_fold.iloc[indices]
 
 
-def phoneme_statistics(phonemes: list):
+def get_phoneme_statistics(train_df: pd.DataFrame):
     # TODO Daniel docstring
-    # Get the counts for each phoneme
-    phoneme_stats = defaultdict(int)
-    for word in phonemes:
-        for phoneme in word:
-            phoneme_stats[phoneme] += 1
 
-    # Sort descending by count
-    phoneme_stats = dict(
-        sorted(phoneme_stats.items(), key=lambda x: x[1], reverse=True)
-    )
-    phoneme_stats["<STOP>"] = 0  # Add stop token
+    # iterate over the rows of the dataframe
+    for phoneme_key in ["Phonemes", "No Stress"]:
+        phoneme_stats = defaultdict(int)
+        bigram_stats = defaultdict(int)
+        trigram_stats = defaultdict(int)
 
-    # Get the bigram counts for each phoneme pair
-    bigram_stats = defaultdict(int)
-    for word in phonemes:
-        for i in range(len(word) - 1):
-            bigram = " ".join(word[i : i + 2])
-            bigram_stats[bigram] += 1
+        for _, row in train_df.iterrows():
+            phonemes = row[phoneme_key]
+            for phoneme in phonemes:
+                phoneme_stats[phoneme] += 1 * row["Frequency"]
 
-    # trigram_stats = defaultdict(0)
-    # for sequence in phonemes:
-    #     for i in range(len(sequence) - 2):
-    #         trigram = " ".join(sequence[i:i+3])
-    #         trigram_stats[trigram] += 1
+            for i in range(len(phonemes) - 1):
+                bigram = " ".join(phonemes[i : i + 2])
+                bigram_stats[bigram] += 1 * row["Frequency"]
 
-    return phoneme_stats, bigram_stats
+            for i in range(len(phonemes) - 2):
+                trigram = " ".join(phonemes[i : i + 3])
+                trigram_stats[trigram] += 1 * row["Frequency"]
+
+        # Normalize frequencies
+        phoneme_total = sum(phoneme_stats.values())
+        bigram_total = sum(bigram_stats.values())
+        trigram_total = sum(trigram_stats.values())
+
+        # Convert to dataframes with normalized frequencies
+        phoneme_df = pd.DataFrame(
+            [(k, v, v / phoneme_total) for k, v in phoneme_stats.items()],
+            columns=["Phoneme", "Frequency", "Normalized Frequency"],
+        )
+        bigram_df = pd.DataFrame(
+            [(k, v, v / bigram_total) for k, v in bigram_stats.items()],
+            columns=["Bigram", "Frequency", "Normalized Frequency"],
+        )
+        trigram_df = pd.DataFrame(
+            [(k, v, v / trigram_total) for k, v in trigram_stats.items()],
+            columns=["Trigram", "Frequency", "Normalized Frequency"],
+        )
+
+        statistics_dir = get_stimuli_dir() / "statistics"
+        statistics_dir.mkdir(exist_ok=True, parents=True)
+
+        if phoneme_key == "Phonemes":
+            phoneme_df.to_csv(statistics_dir / "phoneme_stats_sw.csv")
+            bigram_df.to_csv(statistics_dir / "bigram_stats_sw.csv")
+            trigram_df.to_csv(statistics_dir / "trigram_stats_sw.csv")
+        else:
+            phoneme_df.to_csv(statistics_dir / "phoneme_stats_sn.csv")
+            bigram_df.to_csv(statistics_dir / "bigram_stats_sn.csv")
+            trigram_df.to_csv(statistics_dir / "trigram_stats_sn.csv")
 
 
 def get_word_to_freq(word_data: pd.DataFrame) -> dict[str, float]:

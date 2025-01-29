@@ -30,11 +30,7 @@ def test(
     if isinstance(model, Bimodel):
         model.to_audio()
 
-    if verbose:
-        print(f"\n{model_name}~{train_name}~{checkpoint}~{override_extra_str}")
-
     test_error = 0
-    test_error2 = 0
     last_index = 0
     predictions = []
     phoneme_key = "Phonemes" if include_stress else "No Stress"
@@ -65,8 +61,7 @@ def test(
     test_df["Prediction"] = predictions
 
     if verbose:
-        print(f"Test error: {test_error}/{len(test_df)}")
-        print(f"Test error2: {test_error2}/{len(test_df)}")
+        print(f"test error: {test_error}/{len(test_df)}")
 
     if override_extra_str is not None:
         checkpoint = f"{checkpoint}~{override_extra_str}"

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=20,
+        default=50,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--recur_type",
         type=str,
-        default="lstm",
+        default="rnn",
         help="Recurrent network architecture : RNN or LSTM",
     )
     parser.add_argument(
@@ -72,19 +72,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learn_rate",
         type=float,
-        default=0.0005,
+        default=0.00001,
         help="Learning rate",
     )
     parser.add_argument(
         "--dropout",
         type=float,
-        default=0.2,
+        default=0.1,
         help="Dropout rate for encoders and decoders",
     )
     parser.add_argument(
         "--tf_ratio",
         type=float,
-        default=0.3,
+        default=0.1,
         help="Teacher forcing ratio for decoder",
     )
     parser.add_argument(

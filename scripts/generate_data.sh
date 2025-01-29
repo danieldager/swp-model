@@ -56,7 +56,7 @@ export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 echo "computation start : $(date)"
 echo ""
 
-python scripts/generate_main_data.py
+python scripts/generate_data.py
 
 echo ""
 echo "computation end : $(date)"
