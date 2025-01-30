@@ -1,13 +1,10 @@
-import torch
 import pandas as pd
+import torch
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.datasets import get_phoneme_to_id
 from ..utils.paths import get_gridsearch_test_dir
-
-results_dir = get_gridsearch_test_dir()
-results_dir.mkdir(exist_ok=True, parents=True)
 
 
 def test(
@@ -65,7 +62,7 @@ def test(
 
     if override_extra_str is not None:
         checkpoint = f"{checkpoint}~{override_extra_str}"
-    results_model_dir = results_dir / f"{model_name}~{train_name}"
+    results_model_dir = get_gridsearch_test_dir() / f"{model_name}~{train_name}"
     results_model_dir.mkdir(exist_ok=True, parents=True)
     test_df.to_csv(results_model_dir / f"{checkpoint}.csv")
 

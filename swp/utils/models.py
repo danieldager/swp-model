@@ -190,10 +190,12 @@ def get_model_name_from_args(
 
 
 def get_train_name(
-    batch_size: int, learning_rate: float, fold_id: int, include_stress: bool
+    batch_size: int, learning_rate: float, fold_id: int | None, include_stress: bool
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
-    train_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
+    train_name = (
+        f"b{batch_size}_l{learning_rate}_f{'all' if fold_id is None else fold_id}"
+    )
     if include_stress:
         train_name = f"{train_name}_sw"
     else:
@@ -207,7 +209,10 @@ def get_train_args(train_name: str) -> dict[str, Any]:
     # TODO add support for visual dataset, mixed or not
     str_args = {arg[0]: arg[1:] for arg in train_name.split("_")}
     typed_args = {}
-    typed_args["b"] = int(str_args["b"])
+    if str_args["b"] == "all":
+        typed_args["b"] = None
+    else:
+        typed_args["b"] = int(str_args["b"])
     typed_args["l"] = float(str_args["l"])
     typed_args["f"] = int(str_args["f"])
     if str_args["s"] == "w":

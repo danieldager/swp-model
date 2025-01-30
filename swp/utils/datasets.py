@@ -1,5 +1,4 @@
 import json
-import random
 from ast import literal_eval
 from collections import defaultdict
 from pathlib import Path
@@ -12,7 +11,7 @@ from g2p_en import G2p
 from morphemes import Morphemes
 from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 
-from .paths import get_dataframe_dir, get_stimuli_dir, get_folds_dir
+from .paths import get_dataframe_dir, get_folds_dir, get_stimuli_dir
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -172,9 +171,15 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     Set `force_recreate` to `True` to enforce recomputation of the data."""
     csv_test_path = get_dataframe_dir() / "complete_test.csv"
     if csv_test_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(csv_test_path, index_col=0, converters={"Word": str})
-        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
-        dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
+        dataframe = pd.read_csv(
+            csv_test_path,
+            index_col=0,
+            converters={
+                "Word": str,
+                "Phonemes": literal_eval,
+                "No Stress": literal_eval,
+            },
+        )
     else:
         dataframe = create_test_data()
     return dataframe
@@ -222,9 +227,15 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
     Use `force_recreate` to recreate the training set from scratch"""
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     if csv_train_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(csv_train_path, index_col=0, converters={"Word": str})
-        dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
-        dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
+        dataframe = pd.read_csv(
+            csv_train_path,
+            index_col=0,
+            converters={
+                "Word": str,
+                "Phonemes": literal_eval,
+                "No Stress": literal_eval,
+            },
+        )
     else:
         dataframe = create_train_data()
     return dataframe
@@ -264,17 +275,28 @@ def create_folds(
         ith_valid_fold.to_csv(csv_ith_valid_fold_path)
 
 
-def get_train_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved training fold number `fold_id` if it exists, recreate all folds otherwise.
+    If `fold_id` is None, return the complete training set.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
+    train_df = None
     csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}.csv"
     if force_recreate or not csv_train_fold_path.exists():
         train_df = get_train_data(force_recreate)
         create_folds(train_df)
-    dataframe = pd.read_csv(csv_train_fold_path, index_col=0, converters={"Word": str})
-    dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
-    dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
+    if fold_id is None:
+        dataframe = get_train_data(force_recreate) if train_df is None else train_df
+    else:
+        dataframe = pd.read_csv(
+            csv_train_fold_path,
+            index_col=0,
+            converters={
+                "Word": str,
+                "Phonemes": literal_eval,
+                "No Stress": literal_eval,
+            },
+        )
     return dataframe
 
 
@@ -286,20 +308,23 @@ def get_valid_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
     if force_recreate or not csv_valid_fold_path.exists():
         train_df = get_train_data(force_recreate)
         create_folds(train_df)
-    dataframe = pd.read_csv(csv_valid_fold_path, index_col=0, converters={"Word": str})
-    dataframe["Phonemes"] = dataframe["Phonemes"].apply(literal_eval)
-    dataframe["No Stress"] = dataframe["No Stress"].apply(literal_eval)
+    dataframe = pd.read_csv(
+        csv_valid_fold_path,
+        index_col=0,
+        converters={"Word": str, "Phonemes": literal_eval, "No Stress": literal_eval},
+    )
     return dataframe
 
 
 def create_epoch(
-    fold_id: int,
-    train_split: pd.DataFrame,
+    fold_id: int | None,
+    train_data: pd.DataFrame,
     epoch_size: int = 100000000,
     generator: np.random.Generator | None = None,
 ) -> np.ndarray:
-    r"""Samples `epoch_size` samples from the training split `train_split`.
+    r"""Samples `epoch_size` samples from the training split `train_data`.
     Saves the generated ids in a `.npy` file depeding on ̀`fold_id`.
+    If `fold_id` is None, consider it is a complete set and save it under a specific name.
 
     Generated epoch contains at least each sample once, and is sampled according to word frequency.
 
@@ -308,9 +333,12 @@ def create_epoch(
     """
     if generator is None:
         generator = np.random.default_rng(seed=42)
-    array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
-    indices = train_split.index.to_numpy()
-    weights = train_split["Frequency"].to_numpy()
+    array_epoch_path = (
+        get_folds_dir()
+        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}.npy"
+    )
+    indices = train_data.index.to_numpy()
+    weights = train_data["Frequency"].to_numpy()
     normalized_weights = weights / np.sum(weights)
     # Generate epoch_size samples
     weighted_samples = generator.choice(indices, epoch_size, p=normalized_weights)
@@ -326,12 +354,15 @@ def create_epoch(
 
 
 def get_epoch_numpy(
-    fold_id: int, force_recreate: bool = False, epoch_size: int = 10**8
+    fold_id: int | None, force_recreate: bool = False, epoch_size: int = 10**8
 ) -> np.ndarray:
     r"""Get saved training fold `fold_id` epoch ids as numpy array if they exist, create them otherwise.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
-    array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
+    array_epoch_path = (
+        get_folds_dir()
+        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}.npy"
+    )
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)
     else:

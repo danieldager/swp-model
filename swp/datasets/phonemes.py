@@ -10,7 +10,6 @@ from ..utils.datasets import (
     get_epoch_numpy,
     get_phoneme_to_id,
     get_test_data,
-    get_train_data,
     get_train_fold,
     get_valid_fold,
 )
@@ -23,7 +22,7 @@ class PhonemeTrainDataset(Dataset):
 
     Args :
         `fold_id` : fold number to load classes from, if `None`, returns the complete training set
-        `train` : return training split if set to `True`, validation split otherwise
+        `train` : return training split if set to `True`, validation split otherwise, useless when `fold_id` is None
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         `include_stress` : if set to `True`, the phonemes will include stress
 
@@ -45,18 +44,12 @@ class PhonemeTrainDataset(Dataset):
     ):
         self.fold_id = fold_id
         self.train = train
-        if self.fold_id is not None:
-            if self.train:
-                self.data_df = get_train_fold(self.fold_id)
-                self.epoch_ids = get_epoch_numpy(
-                    fold_id=self.fold_id, epoch_size=int(1e6)
-                )
-            else:
-                self.data_df = get_valid_fold(self.fold_id)
-                self.epoch_ids = np.arange(len(self.data_df))
+        if self.train or self.fold_id is None:
+            self.data_df = get_train_fold(self.fold_id)
+            self.epoch_ids = get_epoch_numpy(fold_id=self.fold_id, epoch_size=int(1e6))
         else:
-            self.data_df = get_train_data()
-            self.epoch_ids = ...  # TODO
+            self.data_df = get_valid_fold(self.fold_id)
+            self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
         if include_stress:
             self.phoneme_key = "Phonemes"
@@ -88,7 +81,7 @@ def phoneme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value
 
 
 def get_phoneme_trainloader(
-    fold_id: int,
+    fold_id: int | None,
     train: bool,
     batch_size: int,
     generator: torch.Generator | None = None,
@@ -101,6 +94,7 @@ def get_phoneme_trainloader(
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
+    If `fold_id` is None, returns the complete training set, independently of `train` value.
     """
     phoneme_to_id = get_phoneme_to_id()
     phoneme_set = PhonemeTrainDataset(
