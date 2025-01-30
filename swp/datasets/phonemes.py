@@ -10,6 +10,7 @@ from ..utils.datasets import (
     get_epoch_numpy,
     get_phoneme_to_id,
     get_test_data,
+    get_train_data,
     get_train_fold,
     get_valid_fold,
 )
@@ -21,7 +22,7 @@ class PhonemeTrainDataset(Dataset):
     Training fold is used if ̀`train` is set to ̀`True`, validation otherwise.
 
     Args :
-        `fold_id` : fold number to load classes from
+        `fold_id` : fold number to load classes from, if `None`, returns the complete training set
         `train` : return training split if set to `True`, validation split otherwise
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         `include_stress` : if set to `True`, the phonemes will include stress
@@ -37,19 +38,25 @@ class PhonemeTrainDataset(Dataset):
     # is map-style dataset
     def __init__(
         self,
-        fold_id: int,
+        fold_id: int | None,
         train: bool,
         phoneme_to_id: dict[str, int],
         include_stress: bool = False,
     ):
         self.fold_id = fold_id
         self.train = train
-        if self.train:
-            self.data_df = get_train_fold(self.fold_id)
-            self.epoch_ids = get_epoch_numpy(fold_id=self.fold_id, epoch_size=int(1e6))
+        if self.fold_id is not None:
+            if self.train:
+                self.data_df = get_train_fold(self.fold_id)
+                self.epoch_ids = get_epoch_numpy(
+                    fold_id=self.fold_id, epoch_size=int(1e6)
+                )
+            else:
+                self.data_df = get_valid_fold(self.fold_id)
+                self.epoch_ids = np.arange(len(self.data_df))
         else:
-            self.data_df = get_valid_fold(self.fold_id)
-            self.epoch_ids = np.arange(len(self.data_df))
+            self.data_df = get_train_data()
+            self.epoch_ids = ...  # TODO
         self.phoneme_to_id = phoneme_to_id
         if include_stress:
             self.phoneme_key = "Phonemes"
@@ -235,6 +242,10 @@ def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
             return 4
         elif c in glides:
             return 5
+        else:
+            raise ValueError(
+                f"Phoneme {c} was not recognized in any of the consonant classes"
+            )
 
     def get_sonority_score(c1, c2):
         return get_sonority(c2) - get_sonority(c1)
