@@ -1,9 +1,8 @@
 import logging
 import pathlib
 
-from swp.utils.models import get_model_name_from_args, get_train_name
-
 from ..grid_search import Grid, grid_iter
+from ..models import get_model_name_from_args, get_train_name
 from ..paths import get_generated_scripts_dir
 from .script_gen import autoarg_slurmarray_file_generator, base_slurm_file_generator
 from .script_queueing import queue_job

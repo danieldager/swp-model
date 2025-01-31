@@ -3,7 +3,7 @@ from typing import Iterable
 import torch
 import torch.nn as nn
 
-from swp.utils.datasets import get_phoneme_to_id
+from ..utils.datasets import get_phoneme_to_id
 
 
 def alignment_loss(output, target, criterion, penalty):

@@ -51,28 +51,28 @@ def grid_search_log(
     logfile_path.parent.mkdir(exist_ok=True, parents=True)
     log = None
     # Extract parameters from the model name
-    model_type, recur_type, model_args = get_model_args(model_name)
-    cnn_args = None
-    if "c" in model_args:
-        cnn_args = model_args["c"]
+    model_args = get_model_args(model_name)
     train_args = get_train_args(train_name)
+    cnn_args = model_args["cnn_args"]
     for epoch in range(num_epochs):
         row_dict = {
             "Model name": [model_name],
             "Train name": [train_name],
-            "Model type": [model_type],
-            "Start token id": [model_args["s"]],
-            "Recurrent type": [recur_type],
-            "Hidden size": [model_args["h"]],
-            "Num layers": [model_args["l"]],
-            "Dropout": [model_args["d"]],
-            "Tf ratio": [model_args["t"]],
-            "CNN hidden size": [cnn_args] if cnn_args is None else [cnn_args["h"]],
-            "CorNet model": [cnn_args] if cnn_args is None else [cnn_args["m"]],
-            "Batch size": [train_args["b"]],
-            "Learning rate": [train_args["l"]],
-            "Fold": [train_args["f"]],
-            "Include stress": [train_args["s"]],
+            "Model type": [model_args["model_class"]],
+            "Start token id": [model_args["start_token_id"]],
+            "Recurrent type": [model_args["recur_type"]],
+            "Hidden size": [model_args["hidden_size"]],
+            "Num layers": [model_args["num_layers"]],
+            "Dropout": [model_args["droprate"]],
+            "Tf ratio": [model_args["tf_ratio"]],
+            "CNN hidden size": (
+                [cnn_args] if cnn_args is None else [cnn_args["hidden_size"]]
+            ),
+            "CorNet model": [cnn_args] if cnn_args is None else [cnn_args["cnn_model"]],
+            "Batch size": [train_args["batch_size"]],
+            "Learning rate": [train_args["learning_rate"]],
+            "Fold": [train_args["fold_id"]],
+            "Include stress": [train_args["include_stress"]],
             "Epoch": [epoch + 1],
             "Train loss": [train_losses[epoch]],
             "Validation loss": [valid_losses[epoch]],

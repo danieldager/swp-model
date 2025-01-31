@@ -123,9 +123,10 @@ if __name__ == "__main__":
     else:
         train_name = args.train_name
         train_args = get_train_args(train_name)
-        batch_size = train_args["b"]
-        learn_rate = train_args["l"]
-        fold_id = train_args["f"]
+        batch_size = train_args["batch_size"]
+        learn_rate = train_args["learning_rate"]
+        fold_id = train_args["fold_id"]
+        include_stress = train_args["include_stress"]
 
     # TODO mutually exclusive args
     if args.model_name is None:
