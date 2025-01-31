@@ -1,5 +1,5 @@
-import torch
 import pandas as pd
+import torch
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel

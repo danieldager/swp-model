@@ -21,8 +21,8 @@ class PhonemeTrainDataset(Dataset):
     Training fold is used if ̀`train` is set to ̀`True`, validation otherwise.
 
     Args :
-        `fold_id` : fold number to load classes from
-        `train` : return training split if set to `True`, validation split otherwise
+        `fold_id` : fold number to load classes from, if `None`, returns the complete training set
+        `train` : return training split if set to `True`, validation split otherwise, useless when `fold_id` is None
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         `include_stress` : if set to `True`, the phonemes will include stress
 
@@ -37,14 +37,14 @@ class PhonemeTrainDataset(Dataset):
     # is map-style dataset
     def __init__(
         self,
-        fold_id: int,
+        fold_id: int | None,
         train: bool,
         phoneme_to_id: dict[str, int],
         include_stress: bool = False,
     ):
         self.fold_id = fold_id
         self.train = train
-        if self.train:
+        if self.train or self.fold_id is None:
             self.data_df = get_train_fold(self.fold_id)
             self.epoch_ids = get_epoch_numpy(fold_id=self.fold_id, epoch_size=int(1e6))
         else:
@@ -81,7 +81,7 @@ def phoneme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value
 
 
 def get_phoneme_trainloader(
-    fold_id: int,
+    fold_id: int | None,
     train: bool,
     batch_size: int,
     generator: torch.Generator | None = None,
@@ -94,6 +94,7 @@ def get_phoneme_trainloader(
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
+    If `fold_id` is None, returns the complete training set, independently of `train` value.
     """
     phoneme_to_id = get_phoneme_to_id()
     phoneme_set = PhonemeTrainDataset(
@@ -235,6 +236,10 @@ def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
             return 4
         elif c in glides:
             return 5
+        else:
+            raise ValueError(
+                f"Phoneme {c} was not recognized in any of the consonant classes"
+            )
 
     def get_sonority_score(c1, c2):
         return get_sonority(c2) - get_sonority(c1)

@@ -191,10 +191,12 @@ def get_model_name_from_args(
 
 
 def get_train_name(
-    batch_size: int, learning_rate: float, fold_id: int, include_stress: bool
+    batch_size: int, learning_rate: float, fold_id: int | None, include_stress: bool
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
-    train_name = f"b{batch_size}_l{learning_rate}_f{fold_id}"
+    train_name = (
+        f"b{batch_size}_l{learning_rate}_f{'all' if fold_id is None else fold_id}"
+    )
     if include_stress:
         train_name = f"{train_name}_sw"
     else:

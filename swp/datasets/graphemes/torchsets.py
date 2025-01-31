@@ -53,6 +53,7 @@ class RepetitionDataset(ImageFolder):
         g2p = G2p()
 
         # TODO rework to get max length beforehand
+        # TODO handle stress and no stress data
         length_to_pad = 10  # max_len + 5
 
         def to_phoneme(word: str) -> torch.Tensor:
