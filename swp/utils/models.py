@@ -45,11 +45,28 @@ def load_weights(
 
 
 class CNNArgs(TypedDict):
+    r"""TypedDict containing values required to create a visual encoder :
+    `hidden_size` : hidden size of the network
+    `cnn_model` : expected to contain values `"R"`, `"RT"`, `"S"` or `"Z"`.
+    """
+
     hidden_size: int
     cnn_model: str
 
 
 class ModelArgs(TypedDict):
+    r"""TypedDict containing values required to create a model :
+    `model_class` : expected to contain values `"Ua"`, `"Uv"` or `"B"` for Unimodel auditory, Unimodel visual and Bimodel
+    `recur_type` : expected to contain values `"LSTM"` or `"RNN"`
+    `hidden_size` : hidden size of the network
+    `num_layers` : number of recurrent layers
+    `vocab_size` : size of the vocabulary
+    `droprate` : dropout ratio
+    `tf_ratio` : teacher forcing ratio
+    `start_token_id` : id of the token to use as first input for decoding
+    `cnn_args` : `CNNArgs` dict containing the information for the visual decoder, or None if not relevant
+    """
+
     model_class: str
     recur_type: str
     hidden_size: int
@@ -70,8 +87,7 @@ class TrainArgs(TypedDict):
 
 def get_model_args(model_name: str) -> ModelArgs:
     r"""Create a dictionnary containing the necessary arguments to build a model
-    from a `model_name`."""
-    # TODO improve docstring
+    from a `model_name`. See `ModelArgs` class for more information."""
     # TODO make modular with other cnn encoders
     big_split = model_name.split("__")
     main_name = big_split[0]

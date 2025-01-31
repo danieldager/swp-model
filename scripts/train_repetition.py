@@ -31,13 +31,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         type=str,
-        required=True,
         help="Model name string, overrides other model parameters",
     )
     parser.add_argument(
         "--train_name",
         type=str,
-        required=True,
         help="Training name string, overrides other training parameters",
     )
     parser.add_argument(

@@ -10,14 +10,12 @@ _ON_OBERON = False  # TODO commands to detect oberon
 repo_root = pathlib.Path(os.path.realpath(__file__)).parent.parent.parent
 
 if _ON_JEAN_ZAY:
-    # script_dir = pathlib.Path(os.environ["HOME"]) / "single-word-processing-model" # TODO actualize this
     work_dir = pathlib.Path(os.environ["WORK"])
     gen_script_dir = work_dir / "generated_scripts"
     stimuli_dir = work_dir / "stimuli"
     weights_dir = work_dir / "weights"
     results_dir = work_dir / "results"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
-    # TODO add more paths for JZ
 elif _ON_OBERON:
     pass  # TODO set paths for Oberon
 else:  # personnal computer
