@@ -158,16 +158,12 @@ cython_debug/
 # Miscillaneous
 .DS_Store
 .vscode
-cache
 weights
-figures
-grid_search.csv
-
-stimuli/graphemes
+results
 public_datasets
 stimuli/folds
-stimuli/dataframe
 stimuli/phonemes
-results
+stimuli/graphemes
+stimuli/dataframe
 stimuli/phonemes_to_id.json
 *.csv

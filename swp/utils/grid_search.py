@@ -1,8 +1,8 @@
 import pandas as pd
 
-from swp.utils.models import get_args_from_model_name, get_train_args
+from swp.utils.models import get_model_args, get_train_args
 
-from .paths import get_gridsearch_dir, get_gridsearch_train_dir
+from .paths import get_gridsearch_dir, get_train_dir
 
 
 def get_empty_training_log() -> pd.DataFrame:
@@ -45,11 +45,11 @@ def grid_search_log(
     (described through `train_name`).
     """
     # Initialize log
-    logfile_path = get_gridsearch_train_dir() / f"{model_name}~{train_name}.csv"
+    logfile_path = get_train_dir() / f"{model_name}~{train_name}.csv"
     logfile_path.parent.mkdir(exist_ok=True, parents=True)
     log = None
     # Extract parameters from the model name
-    model_type, recur_type, model_args = get_args_from_model_name(model_name)
+    model_type, recur_type, model_args = get_model_args(model_name)
     cnn_args = None
     if "c" in model_args:
         cnn_args = model_args["c"]
@@ -71,7 +71,7 @@ def grid_search_log(
             "Learning rate": [train_args["l"]],
             "Fold": [train_args["f"]],
             "Include stress": [train_args["s"]],
-            "Epoch": [epoch+1],
+            "Epoch": [epoch + 1],
             "Train loss": [train_losses[epoch]],
             "Validation loss": [valid_losses[epoch]],
             "Train errors": [train_errors[epoch]],
@@ -94,9 +94,9 @@ def grid_search_log(
 
 def grid_search_aggregate():
     r"""Aggregates all the training logs into one .csv file."""
-    aggregatedfile_path = get_gridsearch_dir() / "aggregated_training.csv"
+    aggregated_file_path = get_gridsearch_dir() / "aggregated_training.csv"
     aggregated = None
-    log_path = get_gridsearch_train_dir()
+    log_path = get_train_dir()
     for file in log_path.glob("*.csv"):
         log_df = pd.read_csv(file, index_col=0)
         if aggregated is None:
@@ -106,4 +106,4 @@ def grid_search_aggregate():
     if aggregated is None:
         aggregated = get_empty_training_log()
     # Save the DataFrame to a CSV file
-    aggregated.to_csv(aggregatedfile_path)
+    aggregated.to_csv(aggregated_file_path)

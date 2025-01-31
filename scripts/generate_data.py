@@ -1,20 +1,17 @@
 import os
 import sys
+import argparse
+import numpy as np
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-
-import argparse
-
-import numpy as np
 
 from swp.utils.datasets import (
     create_epoch,
     create_folds,
     create_test_data,
     create_train_data,
-    get_phoneme_to_id,
     get_train_fold,
     get_phoneme_statistics,
 )

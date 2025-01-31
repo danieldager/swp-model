@@ -1,20 +1,17 @@
 import os
 import sys
+import argparse
+import pandas as pd
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-import argparse
-import numpy as np
-import pandas as pd
-from ast import literal_eval
-
-from swp.utils.paths import get_gridsearch_test_dir
+from swp.utils.paths import get_test_dir
 from swp.datasets.phonemes import get_phoneme_to_id
 from swp.utils.plots import enrich_for_plotting, error_plots, regression_plots
 
-results_test_dir = get_gridsearch_test_dir()
+test_results_dir = get_test_dir()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -25,7 +22,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     phoneme_to_id = get_phoneme_to_id(include_stress=args.include_stress)
-    model_dir = results_test_dir / f"{args.model_name}~{args.train_name}"
+    model_dir = test_results_dir / f"{args.model_name}~{args.train_name}"
 
     if args.checkpoint is None:
         checkpoints = set([f.stem.split("~")[0] for f in model_dir.glob("*.csv")])

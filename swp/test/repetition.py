@@ -4,24 +4,16 @@ from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.datasets import get_phoneme_to_id
-from ..utils.paths import get_gridsearch_test_dir
-
-results_dir = get_gridsearch_test_dir()
-results_dir.mkdir(exist_ok=True, parents=True)
 
 
 def test(
     model: Unimodel | Bimodel,
-    checkpoint: str,
     device: str | torch.device,
     test_df: pd.DataFrame,
     test_loader: DataLoader,
-    model_name: str,
-    train_name: str,
     include_stress: bool,
-    override_extra_str: str | None = None,
     verbose: bool = False,
-):
+) -> tuple[pd.DataFrame, float]:
     r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
 
     if isinstance(model, Unimodel) and not model.is_auditory:
@@ -37,6 +29,7 @@ def test(
     phoneme_to_id = get_phoneme_to_id(include_stress)
     id_to_phoneme = list(phoneme_to_id)
 
+    model.to(device)
     model.eval()
     with torch.no_grad():
         for inputs, target in test_loader:
@@ -58,24 +51,10 @@ def test(
                 phonemes = [id_to_phoneme[id] for id in preds[i, : len(ground_truth)]]
                 predictions.append(phonemes)
             last_index += batch_size
+
     test_df["Prediction"] = predictions
 
     if verbose:
         print(f"test error: {test_error}/{len(test_df)}")
 
-    if override_extra_str is not None:
-        checkpoint = f"{checkpoint}~{override_extra_str}"
-    results_model_dir = results_dir / f"{model_name}~{train_name}"
-    results_model_dir.mkdir(exist_ok=True, parents=True)
-    test_df.to_csv(results_model_dir / f"{checkpoint}.csv")
-
-    # TODO move this to plots.py
-    # Initialize the confusion matrix
-    # confusions = {}
-    # for t in phoneme_stats.keys():
-    #     confusions[t] = {p: 0 for p in phoneme_stats.keys()}
-
-    # Tabulate confusion between prediction and target
-    # if len(target) == len(prediction):
-    #     for t, p in zip(target, prediction):
-    #         confusions[t][p] += 1
+    return test_df, test_error

@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 import argparse
 import warnings
 
@@ -14,9 +15,9 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 from swp.test.repetition import test
-from swp.utils.paths import get_weights_dir
 from swp.utils.models import get_model, load_weights
 from swp.utils.setup import seed_everything, set_device
+from swp.utils.paths import get_weights_dir, get_test_dir
 from swp.utils.datasets import get_test_data, get_train_data
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
 
@@ -66,11 +67,15 @@ if __name__ == "__main__":
 
     seed_everything()
     device = set_device()
-    device = "cpu"  # TODO why do error out when using MPS ?
+    device = torch.device("cpu")  # TODO why do error out when using MPS ?
+
+    test_dir = get_test_dir()
+    model_dir = test_dir / f"{model_name}~{train_name}"
+    model_dir.mkdir(exist_ok=True, parents=True)
+    weights_dir = get_weights_dir() / model_name / train_name
 
     if checkpoint is None:
-        model_weights_dir = get_weights_dir() / model_name / train_name
-        checkpoints = [f.stem.split(".")[-1] for f in model_weights_dir.glob("*.pth")]
+        checkpoints = [f.stem.split(".")[-1] for f in weights_dir.glob("*.pth")]
     else:
         checkpoints = [checkpoint]
 
@@ -78,61 +83,49 @@ if __name__ == "__main__":
         model = get_model(args.model_name)
         load_weights(
             model=model,
-            checkpoint=checkpoint,
             model_name=model_name,
             train_name=train_name,
+            checkpoint=checkpoint,
             device=device,
         )
 
         test_df = get_test_data()
         test_loader = get_phoneme_testloader(batch_size, include_stress)
-        test(
+        results, _ = test(
             model=model,
-            checkpoint=checkpoint,
             device=device,
             test_df=test_df,
             test_loader=test_loader,
-            model_name=model_name,
-            train_name=train_name,
             include_stress=include_stress,
             verbose=args.verbose,
         )
+        results.to_csv(model_dir / f"{checkpoint}.csv")
 
         # Test also on the sonority dataset
-        sonority_df = get_sonority_dataset(include_stress=include_stress)
-        override_loader = get_phoneme_testloader(
-            batch_size, include_stress, sonority_df
-        )
-
-        test(
+        ssp_df = get_sonority_dataset(include_stress=include_stress)
+        ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
+        results, _ = test(
             model=model,
-            checkpoint=checkpoint,
             device=device,
-            test_df=sonority_df,
-            test_loader=override_loader,
-            model_name=model_name,
-            train_name=train_name,
+            test_df=ssp_df,
+            test_loader=ssp_loader,
             include_stress=include_stress,
-            override_extra_str="ssp",
             verbose=args.verbose,
         )
+        results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
 
         # Test also on the train dataset
         train_df = get_train_data()
         train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-
-        test(
+        results, _ = test(
             model=model,
-            checkpoint=checkpoint,
             device=device,
             test_df=train_df,
             test_loader=train_loader,
-            model_name=model_name,
-            train_name=train_name,
             include_stress=include_stress,
-            override_extra_str="train",
             verbose=args.verbose,
         )
+        results.to_csv(model_dir / f"{checkpoint}~train.csv")
 
         if args.verbose:
             print("-" * 60)

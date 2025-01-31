@@ -28,9 +28,9 @@ def save_weights(
 
 def load_weights(
     model: Unimodel | Bimodel,
-    checkpoint: str,
     model_name: str,
     train_name: str,
+    checkpoint: str,
     device: torch.device,
 ) -> None:
     r"""Load the weights of a model for a given training procedure at a specific
@@ -38,13 +38,14 @@ def load_weights(
     """
     save_dir = get_weights_dir() / model_name / train_name
     model_path = save_dir / f"{checkpoint}.pth"
+    model.to(device)
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)
     )
     model.bind()
 
 
-def get_args_from_model_name(model_name: str) -> tuple[str, str, dict[str, Any]]:
+def get_model_args(model_name: str) -> tuple[str, str, dict[str, Any]]:
     r"""Create a dictionnary containing the necessary arguments to build a model
     from a `model_name`."""
     # TODO improve docstring
@@ -75,7 +76,7 @@ def get_args_from_model_name(model_name: str) -> tuple[str, str, dict[str, Any]]
 def get_model(model_name: str) -> Unimodel | Bimodel:
     r"""Create a model corresponding to the `model_name`"""
     # TODO make modular with other CNN encoders
-    model_class, recur_type, typed_args = get_args_from_model_name(model_name)
+    model_class, recur_type, typed_args = get_model_args(model_name)
     if recur_type.upper() == "LSTM":
         audit_encoder_class = EncoderLSTM
         decoder_class = DecoderLSTM
@@ -207,10 +208,10 @@ def get_train_args(train_name: str) -> dict[str, Any]:
     # TODO add support for visual dataset, mixed or not
     str_args = {arg[0]: arg[1:] for arg in train_name.split("_")}
     typed_args = {}
-    typed_args["b"] = int(str_args["b"])
-    typed_args["l"] = float(str_args["l"])
-    typed_args["f"] = int(str_args["f"])
-    if str_args["s"] == "w":
+    typed_args["b"] = int(str_args["b"])  # batch_size
+    typed_args["l"] = float(str_args["l"])  # learning_rate
+    typed_args["f"] = int(str_args["f"])  # fold_id
+    if str_args["s"] == "w":  # include_stress
         typed_args["s"] = True
     elif str_args["s"] == "n":
         typed_args["s"] = False

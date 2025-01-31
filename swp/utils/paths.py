@@ -71,16 +71,16 @@ def get_gridsearch_dir() -> pathlib.Path:
     return gridsearch_dir
 
 
-def get_gridsearch_train_dir() -> pathlib.Path:
-    gridsearch_train_dir = get_gridsearch_dir() / "train"
-    gridsearch_train_dir.mkdir(parents=True, exist_ok=True)
-    return gridsearch_train_dir
+def get_train_dir() -> pathlib.Path:
+    train_dir = get_gridsearch_dir() / "train"
+    train_dir.mkdir(parents=True, exist_ok=True)
+    return train_dir
 
 
-def get_gridsearch_test_dir() -> pathlib.Path:
-    gridsearch_test_dir = get_gridsearch_dir() / "test"
-    gridsearch_test_dir.mkdir(parents=True, exist_ok=True)
-    return gridsearch_test_dir
+def get_test_dir() -> pathlib.Path:
+    test_dir = get_gridsearch_dir() / "test"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    return test_dir
 
 
 def get_graphemes_dir() -> pathlib.Path:
@@ -94,3 +94,9 @@ def get_imagenet_dir() -> pathlib.Path:
         parents=True, exist_ok=True
     )  # TODO check it doesn't break JZ
     return public_dataset_dir
+
+
+def get_ablations_dir() -> pathlib.Path:
+    ablations_dir = results_dir / "ablations"
+    ablations_dir.mkdir(parents=True, exist_ok=True)
+    return ablations_dir

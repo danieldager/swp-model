@@ -2,7 +2,7 @@
 #SBATCH --job-name=swpm-gen           # Job name
 #SBATCH --partition=gpu               # Take a node from the 'gpu' partition
 #SBATCH --export=ALL                  # Export your environment to the compute node
-#SBATCH --cpus-per-task=2             # Number of CPU cores requested
+#SBATCH --cpus-per-task=4             # Number of CPU cores requested
 #SBATCH --gres=gpu:A40:1              # Number and type of GPUs requested
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=10:00:00               # Time limit hrs:min:sec

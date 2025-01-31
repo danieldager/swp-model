@@ -123,8 +123,6 @@ def plot_errors_by_length(df, ax=None):
         ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
             If None, a new figure and axes are created.
 
-    Returns:
-        None
     """
     data = df.copy()
     data = data[data["Sequence Length"] != 10]
@@ -179,8 +177,6 @@ def plot_errors_by_frequency(df, ax=None):
         ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
             If None, a new figure and axes are created.
 
-    Returns:
-        None
     """
     data = df[df["Lexicality"].isin(["real", "pseudo"])].copy()
     data["Zipf Bin"] = pd.cut(
@@ -232,8 +228,6 @@ def plot_errors_by_category(df, ax=None):
         ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
             If None, a new figure and axes are created.
 
-    Returns:
-        None
     """
     data = df.copy()
 
@@ -311,8 +305,6 @@ def plot_errors_by_position(df, ax=None):
         ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
             If None, a new figure and axes are created.
 
-    Returns:
-        None
     """
     data_by_lexicality = []
 
@@ -382,8 +374,6 @@ def plot_errors_by_sonority(df, ax=None):
         ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
             If None, a new figure and axes are created.
 
-    Returns:
-        None
     """
     data = df.copy()
     grouped_df = (
@@ -437,8 +427,6 @@ def error_plots(
         train_name (str): Name of the training configuration.
         checkpoint (str): Identifier for the current checkpoint/epoch.
 
-    Returns:
-        None
     """
     m, h, l, v, d, t, s = [p[1:] for p in model_name.split("_")[1:]]
     b, r, f, ss = [p[1:] for p in train_name.split("_")]
@@ -452,7 +440,7 @@ def error_plots(
     plot_errors_by_position(test_df, axes[2])
     plot_errors_by_sonority(sonority_df, axes[3])
     fig.suptitle(title, fontsize=16, y=0.95)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.tight_layout(rect=(0, 0, 1, 0.95))
 
     figures_dir = get_figures_dir() / f"{model_name}~{train_name}"
     figures_dir.mkdir(exist_ok=True)
@@ -597,52 +585,62 @@ def regression_plots(
 
 
 # Plot the confusion matrix for the test data
-def confusion_matrix(confusions: dict, model_name: str, epoch: str) -> None:
-    # TODO Daniel docstring
-    df = pd.DataFrame.from_dict(confusions, orient="index")
+# def confusion_matrix(confusions: dict, model_name: str, epoch: str) -> None:
+#     # TODO Daniel docstring
 
-    # TODO get_phoneme_to_id
-    phonemes = None
+#     # Initialize the confusion matrix
+#     # confusions = {}
+#     # for t in phoneme_stats.keys():
+#     #     confusions[t] = {p: 0 for p in phoneme_stats.keys()}
 
-    # Normalize the confusion matrix
-    # df = np.log1p(df) # log scale
-    # df = df.div(df.sum(axis=1), axis=0) # row normal
-    # df = (df - df.min().min()) / (df.max().max() - df.min().min()) # min max
-    df = (df - df.mean()) / df.std()  # z score
+#     # Tabulate confusion between prediction and target
+#     # if len(target) == len(prediction):
+#     #     for t, p in zip(target, prediction):
+#     #         confusions[t][p] += 1
+#     df = pd.DataFrame.from_dict(confusions, orient="index")
 
-    # Create a confusion matrix
-    plt.figure(figsize=(8, 7))
+#     # TODO get_phoneme_to_id
+#     phonemes = None
 
-    # Plot the heatmap with enhanced aesthetics
-    heatmap = sns.heatmap(
-        df,
-        annot=False,
-        cmap="Blues",
-        square=True,
-        cbar_kws={"label": "Counts"},
-        xticklabels=True,
-        yticklabels=True,
-    )
+#     # Normalize the confusion matrix
+#     # df = np.log1p(df) # log scale
+#     # df = df.div(df.sum(axis=1), axis=0) # row normal
+#     # df = (df - df.min().min()) / (df.max().max() - df.min().min()) # min max
+#     df = (df - df.mean()) / df.std()  # z score
 
-    # Adjust the colorbar
-    cbar = heatmap.collections[0].colorbar
-    cbar.ax.set_aspect(10)  # Larger values make the colorbar narrower
+#     # Create a confusion matrix
+#     plt.figure(figsize=(8, 7))
 
-    # Display X-ticks on the top
-    plt.gca().xaxis.tick_top()
-    plt.gca().xaxis.set_label_position("top")
+#     # Plot the heatmap with enhanced aesthetics
+#     heatmap = sns.heatmap(
+#         df,
+#         annot=False,
+#         cmap="Blues",
+#         square=True,
+#         cbar_kws={"label": "Counts"},
+#         xticklabels=True,
+#         yticklabels=True,
+#     )
 
-    # Set axis labels and title
-    plt.title("Confusion Matrix", fontsize=14, pad=20)
-    plt.xlabel("Prediction", fontsize=10)
-    plt.ylabel("Ground Truth", fontsize=10)
-    plt.xticks(fontsize=5, rotation=90)
-    plt.yticks(fontsize=5, rotation=0)
-    plt.tight_layout()
+#     # Adjust the colorbar
+#     cbar = heatmap.collections[0].colorbar
+#     cbar.ax.set_aspect(10)  # Larger values make the colorbar narrower
 
-    MODEL_FIGURES_DIR = get_figures_dir() / model_name
-    MODEL_FIGURES_DIR.mkdir(exist_ok=True)
+#     # Display X-ticks on the top
+#     plt.gca().xaxis.tick_top()
+#     plt.gca().xaxis.set_label_position("top")
 
-    filename = f"confusion{epoch}.png"
-    plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches="tight")
-    plt.close()
+#     # Set axis labels and title
+#     plt.title("Confusion Matrix", fontsize=14, pad=20)
+#     plt.xlabel("Prediction", fontsize=10)
+#     plt.ylabel("Ground Truth", fontsize=10)
+#     plt.xticks(fontsize=5, rotation=90)
+#     plt.yticks(fontsize=5, rotation=0)
+#     plt.tight_layout()
+
+#     MODEL_FIGURES_DIR = get_figures_dir() / model_name
+#     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
+
+#     filename = f"confusion{epoch}.png"
+#     plt.savefig(MODEL_FIGURES_DIR / filename, dpi=300, bbox_inches="tight")
+#     plt.close()
