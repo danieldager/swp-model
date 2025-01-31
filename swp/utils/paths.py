@@ -12,7 +12,7 @@ repo_root = pathlib.Path(os.path.realpath(__file__)).parent.parent.parent
 if _ON_JEAN_ZAY:
     # script_dir = pathlib.Path(os.environ["HOME"]) / "single-word-processing-model" # TODO actualize this
     work_dir = pathlib.Path(os.environ["WORK"])
-    script_dir = work_dir / "scripts"
+    gen_script_dir = work_dir / "generated_scripts"
     stimuli_dir = work_dir / "stimuli"
     weights_dir = work_dir / "weights"
     results_dir = work_dir / "results"
@@ -21,7 +21,7 @@ if _ON_JEAN_ZAY:
 elif _ON_OBERON:
     pass  # TODO set paths for Oberon
 else:  # personnal computer
-    script_dir = repo_root / "scripts"
+    gen_script_dir = repo_root / "generated_scripts"
     stimuli_dir = repo_root / "stimuli"
     weights_dir = repo_root / "weights"
     results_dir = repo_root / "results"
@@ -87,6 +87,16 @@ def get_graphemes_dir() -> pathlib.Path:
     graphemes_dir = get_stimuli_dir() / "graphemes"
     graphemes_dir.mkdir(parents=True, exist_ok=True)
     return graphemes_dir
+
+
+def get_generated_scripts_dir() -> pathlib.Path:
+    gen_script_dir.mkdir(parents=True, exist_ok=True)
+    return gen_script_dir
+
+
+def get_python_scripts_dir() -> pathlib.Path:
+    python_scripts_dir = repo_root / "scripts"
+    return python_scripts_dir
 
 
 def get_imagenet_dir() -> pathlib.Path:

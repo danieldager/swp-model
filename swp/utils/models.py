@@ -174,6 +174,7 @@ def get_model_name_from_args(
     tf_ratio: float,
     start_token_id: int,
     cnn_args: dict[str, Any] | None = None,
+    **kwargs,
 ) -> str:
     r"""Generate the `model_name` from the arguments that would allow to generate the model"""
     # TODO make modular with other CNN encoders
@@ -191,7 +192,11 @@ def get_model_name_from_args(
 
 
 def get_train_name(
-    batch_size: int, learning_rate: float, fold_id: int | None, include_stress: bool
+    batch_size: int,
+    learning_rate: float,
+    fold_id: int | None,
+    include_stress: bool,
+    **kwargs,
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
     train_name = (

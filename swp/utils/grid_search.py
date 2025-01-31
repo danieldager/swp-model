@@ -1,7 +1,9 @@
+from itertools import product
+from typing import Iterable, TypedDict
+
 import pandas as pd
 
-from swp.utils.models import get_model_args, get_train_args
-
+from .models import get_model_args, get_train_args
 from .paths import get_gridsearch_dir, get_train_dir
 
 
@@ -107,3 +109,30 @@ def grid_search_aggregate():
         aggregated = get_empty_training_log()
     # Save the DataFrame to a CSV file
     aggregated.to_csv(aggregated_file_path)
+
+
+class Grid(
+    TypedDict, total=True
+):  # Wait for PEP 728 for proper typing : https://peps.python.org/pep-0728/
+    model_class: Iterable[str]
+    vocab_size: Iterable[int]
+    start_token_id: Iterable[int]
+    cnn_args: Iterable[dict | None]
+    fold_id: Iterable[int | None]
+    num_epochs: Iterable[int]
+    batch_size: Iterable[int]
+    recur_type: Iterable[str]
+    hidden_size: Iterable[int]
+    num_layers: Iterable[int]
+    learning_rate: Iterable[float]
+    droprate: Iterable[float]
+    tf_ratio: Iterable[float]
+    include_stress: Iterable[bool]
+
+
+def grid_iter(grid: dict[str, Iterable[int | str | float | bool | None]]):
+    r"""Iterate through `grid` and yields arg dicts corresponding
+    to the configurations contained in the grid"""
+    keys = grid.keys()
+    for instance in product(*grid.values()):
+        yield dict(zip(keys, instance))
