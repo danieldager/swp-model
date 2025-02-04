@@ -17,9 +17,17 @@ sys.path.append(parent)
 from swp.test.repetition import test
 from swp.utils.models import get_model, load_weights
 from swp.utils.setup import seed_everything, set_device
-from swp.utils.paths import get_weights_dir, get_test_dir
-from swp.utils.datasets import get_test_data, get_train_data
+from swp.utils.paths import get_weights_dir, get_test_dir, get_figures_dir
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
+from swp.utils.datasets import get_test_data, get_train_data, enrich_for_plotting
+from swp.utils.plots import (
+    regression_plots,
+    plot_length_errors,
+    plot_position_errors,
+    plot_sonority_errors,
+    plot_category_errors,
+)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -57,6 +65,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Print verbose output",
     )
+    parser.add_argument(
+        "--plot",
+        action="store_true",
+        help="Generate plots",
+    )
 
     args = parser.parse_args()
     model_name = args.model_name
@@ -91,7 +104,7 @@ if __name__ == "__main__":
 
         test_df = get_test_data()
         test_loader = get_phoneme_testloader(batch_size, include_stress)
-        results, _ = test(
+        test_results, _ = test(
             model=model,
             device=device,
             test_df=test_df,
@@ -99,12 +112,12 @@ if __name__ == "__main__":
             include_stress=include_stress,
             verbose=args.verbose,
         )
-        results.to_csv(model_dir / f"{checkpoint}.csv")
+        test_results.to_csv(model_dir / f"{checkpoint}.csv")
 
         # Test also on the sonority dataset
         ssp_df = get_sonority_dataset(include_stress=include_stress)
         ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
-        results, _ = test(
+        ssp_results, _ = test(
             model=model,
             device=device,
             test_df=ssp_df,
@@ -112,20 +125,39 @@ if __name__ == "__main__":
             include_stress=include_stress,
             verbose=args.verbose,
         )
-        results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
+        ssp_results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
 
         # Test also on the train dataset
-        train_df = get_train_data()
-        train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-        results, _ = test(
-            model=model,
-            device=device,
-            test_df=train_df,
-            test_loader=train_loader,
-            include_stress=include_stress,
-            verbose=args.verbose,
-        )
-        results.to_csv(model_dir / f"{checkpoint}~train.csv")
+        # train_df = get_train_data()
+        # train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
+        # results, _ = test(
+        #     model=model,
+        #     device=device,
+        #     test_df=train_df,
+        #     test_loader=train_loader,
+        #     include_stress=include_stress,
+        #     verbose=args.verbose,
+        # )
+        # results.to_csv(model_dir / f"{checkpoint}~train.csv")
+
+        if args.plot:
+            figures_dir = get_figures_dir() / f"{args.model_name}~{args.train_name}"
+            figures_dir.mkdir(exist_ok=True)
+
+            test_df = enrich_for_plotting(test_results, include_stress)
+            ssp_df = enrich_for_plotting(ssp_results, include_stress)
+
+            plot_length_errors(test_df, checkpoint, figures_dir)
+            plot_position_errors(test_df, checkpoint, figures_dir)
+            plot_sonority_errors(ssp_df, checkpoint, figures_dir)
+            plot_category_errors(test_df, checkpoint, figures_dir)
+            regression_plots(
+                test_df,
+                args.model_name,
+                args.train_name,
+                checkpoint,
+                figures_dir,
+            )
 
         if args.verbose:
             print("-" * 60)

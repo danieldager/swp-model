@@ -9,7 +9,7 @@ def get_empty_training_log() -> pd.DataFrame:
     r"""Returns an empty DataFrame with column names set up for training logs"""
     columns = [
         "Model name",
-        "Training name",
+        "Train name",
         "Model type",
         "Start token id",
         "Recurrent type",
@@ -25,7 +25,9 @@ def get_empty_training_log() -> pd.DataFrame:
         "Include stress",
         "Epoch",
         "Train loss",
-        "Validation loss",
+        "Valid loss",
+        "Train errors",
+        "Valid errors",
     ]
     df = pd.DataFrame(columns=columns)
     return df
@@ -73,9 +75,9 @@ def grid_search_log(
             "Include stress": [train_args["s"]],
             "Epoch": [epoch + 1],
             "Train loss": [train_losses[epoch]],
-            "Validation loss": [valid_losses[epoch]],
+            "Valid loss": [valid_losses[epoch]],
             "Train errors": [train_errors[epoch]],
-            "Validation errors": [valid_errors[epoch]],
+            "Valid errors": [valid_errors[epoch]],
         }
         row_df = pd.DataFrame.from_dict(row_dict)
         if log is None:
@@ -102,7 +104,7 @@ def grid_search_aggregate():
         if aggregated is None:
             aggregated = log_df
         else:
-            aggregated = pd.concat([aggregated, log_df], ignore_index=True)
+            aggregated = pd.concat([aggregated, log_df], ignore_index=False)
     if aggregated is None:
         aggregated = get_empty_training_log()
     # Save the DataFrame to a CSV file

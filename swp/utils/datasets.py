@@ -1,13 +1,15 @@
 import json
-from ast import literal_eval
-from collections import defaultdict
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
+from pathlib import Path
+from ast import literal_eval
+from collections import defaultdict, Counter
+
 import spacy
 import spacy.cli
 from g2p_en import G2p
+from collections import Counter
+from Levenshtein import editops
 from morphemes import Morphemes
 from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 
@@ -36,9 +38,8 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
 
 def get_morphological_data(word: str):
     r"""Get morphological data for a `word`"""
-    mrp = Morphemes(
-        str(get_stimuli_dir() / "morphemes_data")
-    )  # TODO check that the path is ok
+    # TODO check that the path is ok
+    mrp = Morphemes(str(get_stimuli_dir() / "morphemes_data"))
     parse = mrp.parse(word)
 
     if parse["status"] == "NOT_FOUND":
@@ -73,8 +74,8 @@ def clean_and_enrich_data(
     Set `morph` to `True` to add morphological data (might be consequently slower).
     """
     g2p = G2p()
-    if not spacy.util.is_package("en_core_web_lg"):
-        spacy.cli.download("en_core_web_lg")
+    # if not spacy.util.is_package("en_core_web_lg"):
+    #     spacy.cli.download("en_core_web_lg")
     nlp = spacy.load("en_core_web_lg")
 
     # Rename columns
@@ -96,6 +97,8 @@ def clean_and_enrich_data(
         )
         df["Zipf Frequency"] = df["Word"].apply(lambda x: zipf_frequency(x, "en"))
         df["Part of Speech"] = df["Word"].apply(lambda x: nlp(x)[0].pos_)
+    else:
+        df["Zipf Frequency"] = 0.0
 
     # Add Phonemes column
     df["Phonemes"] = df["Word"].apply(g2p)
@@ -121,6 +124,134 @@ def clean_and_enrich_data(
             lambda word: pd.Series(get_morphological_data(word))
         )
 
+    return df
+
+
+def enrich_for_plotting(df: pd.DataFrame, include_stress: bool) -> pd.DataFrame:
+    """
+    Calculate error and bigram statistics for each row in the DataFrame and append them as new columns.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame with columns for phonemes, predictions, and optionally stress.
+        phoneme_to_id (dict): A mapping of phonemes to their corresponding IDs.
+        include_stress (bool): Whether to use the "Phonemes" column or "No Stress" column.
+
+    Returns:
+        pd.DataFrame: The DataFrame with additional columns for error statistics.
+    """
+    phoneme_to_id = get_phoneme_to_id(include_stress)
+    phoneme_key = "Phonemes" if include_stress else "No Stress"
+    # df[phoneme_key] = df[phoneme_key].apply(literal_eval)
+    # df["Prediction"] = df["Prediction"].apply(literal_eval)
+    df = df[df[phoneme_key].apply(len) > 1].copy()
+
+    # Initialize lists to store results
+    edit_distances = []
+    insertions = []
+    deletions = []
+    substitutions = []
+    sequence_lengths = []
+    error_indices = []
+    bigram_frequency = []
+
+    stress = "sw" if include_stress else "sn"
+    stats_dir = get_stimuli_dir() / "statistics"
+    bigram_stats_df = pd.read_csv(stats_dir / f"bigram_stats_{stress}.csv")
+    bigram_to_freq = dict(
+        zip(bigram_stats_df["Bigram"], bigram_stats_df["Normalized Frequency"])
+    )
+
+    for _, row in df.iterrows():
+        # Compute average bigram frequency for the sequence
+        phonemes = row[phoneme_key]
+        bigrams = [" ".join(phonemes[i : i + 2]) for i in range(len(phonemes) - 1)]
+        bigram_freqs = [bigram_to_freq.get(bigram, 0) for bigram in bigrams]
+        avg_bigram_freq = sum(bigram_freqs) / len(bigram_freqs)
+
+        # Tally edit operations and identify error indices
+        phonemes = [phoneme_to_id[p] for p in phonemes]
+        prediction = [phoneme_to_id[p] for p in row["Prediction"]]
+        errors = editops(phonemes, prediction)
+        counts = Counter(op for op, _, _ in errors)
+        mismatched_indices = [
+            i + 1 for i, (j, k) in enumerate(zip(phonemes, prediction)) if j != k
+        ]
+
+        # Append results to the respective lists
+        edit_distances.append(len(errors))
+        insertions.append(counts["insert"])
+        deletions.append(counts["delete"])
+        substitutions.append(counts["replace"])
+        sequence_lengths.append(len(phonemes))
+        error_indices.append(mismatched_indices)
+        bigram_frequency.append(avg_bigram_freq)
+
+    # Add results as new columns to the DataFrame
+    df["Edit Distance"] = edit_distances
+    df["Insertions"] = insertions
+    df["Deletions"] = deletions
+    df["Substitutions"] = substitutions
+    df["Sequence Length"] = sequence_lengths
+    df["Error Indices"] = error_indices
+    df["Bigram Frequency"] = bigram_frequency
+
+    return df
+
+
+def enrich_for_ablations(df: pd.DataFrame) -> pd.DataFrame:
+    r"""Enrich training data with word size and morphological complexity."""
+    df = df.copy()
+    mrp = Morphemes(str(get_stimuli_dir() / "morphemes_data"))
+
+    # Process "Size" column
+    if "Size" not in df.columns:
+        df["Size"] = df["Word"].apply(lambda x: "short" if len(x) <= 6 else "long")
+    else:
+        missing_ids = df["Size"].isna()
+        df.loc[missing_ids, "Size"] = df.loc[missing_ids, "Word"].apply(
+            lambda x: "short" if len(x) <= 6 else "long"
+        )
+
+    # Process "Morphology" column
+    if "Morphology" not in df.columns:
+        df["Morphology"] = df["Word"].apply(
+            lambda x: "simple" if mrp.parse(x)["morpheme_count"] <= 1 else "complex"
+        )
+    else:
+        missing_ids = df["Morphology"].isna()
+        df.loc[missing_ids, "Morphology"] = df.loc[missing_ids, "Word"].apply(
+            lambda x: "simple" if mrp.parse(x)["morpheme_count"] <= 1 else "complex"
+        )
+
+    return df
+
+
+def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add 'Primacy Error' and 'Recency Error' columns to the DataFrame.
+
+    For each row:
+      - 'Primacy Error' is 1 if any index in 'Error Indices' is less than or equal to half
+        of 'Sequence Length'; otherwise 0.
+      - 'Recency Error' is 1 if any index in 'Error Indices' is greater than half
+        of 'Sequence Length'; otherwise 0.
+    """
+    df = df.copy()
+
+    def classify(row):
+        threshold = row["Sequence Length"] // 2
+        return pd.Series(
+            {
+                "Primacy Error": int(
+                    any(idx <= threshold for idx in row["Error Indices"])
+                ),
+                "Recency Error": int(
+                    any(idx > threshold for idx in row["Error Indices"])
+                ),
+            }
+        )
+
+    df.loc[:, ["Primacy Error", "Recency Error"]] = df.apply(classify, axis=1)
     return df
 
 
@@ -214,9 +345,12 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
 
     dataframe = pd.DataFrame({"Word": word_list, "Frequency": freq_list})
     dataframe = clean_and_enrich_data(dataframe, real=True)
-
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     dataframe.to_csv(csv_train_path)
+
+    ablation_train = dataframe.sample(frac=0.1)
+    ablation_train = enrich_for_ablations(ablation_train)
+    ablation_train.to_csv(get_dataframe_dir() / "ablation_train.csv")
 
     return dataframe
 
@@ -226,6 +360,26 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
 
     Use `force_recreate` to recreate the training set from scratch"""
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
+    if csv_train_path.exists() and not force_recreate:
+        dataframe = pd.read_csv(
+            csv_train_path,
+            index_col=0,
+            converters={
+                "Word": str,
+                "Phonemes": literal_eval,
+                "No Stress": literal_eval,
+            },
+        )
+    else:
+        dataframe = create_train_data()
+    return dataframe
+
+
+def get_ablation_train_data(force_recreate: bool = False) -> pd.DataFrame:
+    r"""Get saved ablation training dataset if it exists, create it otherwise.
+
+    Use `force_recreate` to recreate the training set from scratch"""
+    csv_train_path = get_dataframe_dir() / "ablation_train.csv"
     if csv_train_path.exists() and not force_recreate:
         dataframe = pd.read_csv(
             csv_train_path,

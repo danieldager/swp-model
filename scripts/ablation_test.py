@@ -3,9 +3,6 @@ import sys
 import torch
 import argparse
 import warnings
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 warnings.filterwarnings(
     "ignore",
@@ -130,7 +127,11 @@ if __name__ == "__main__":
     phoneme_to_id = get_phoneme_to_id(include_stress)
 
     ablations_dir = get_ablations_dir()
-    model_dir = ablations_dir / f"{model_name}~{train_name}~{checkpoint}"
+    model_dir = (
+        ablations_dir
+        / f"{model_name}~{train_name}~{checkpoint}"
+        / f"{layer_name}_{neuron_idx}"
+    )
     model_dir.mkdir(exist_ok=True, parents=True)
 
     model = get_model(args.model_name)
@@ -188,7 +189,6 @@ if __name__ == "__main__":
         verbose=args.verbose,
     )
     train_results.to_csv(model_dir / f"{checkpoint}~train.csv")
-
     # restore_lstm_weights(layer, original_weights)
 
     ## Plotting ##
@@ -199,15 +199,17 @@ if __name__ == "__main__":
     error_plots(
         test_df,
         ssp_df,
-        args.model_name,
-        args.train_name,
+        model_name,
+        train_name,
         checkpoint,
+        model_dir,
     )
 
     regression_plots(
         test_df,
         train_df,
-        args.model_name,
-        args.train_name,
+        model_name,
+        train_name,
         checkpoint,
+        model_dir,
     )

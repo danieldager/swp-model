@@ -40,5 +40,5 @@ if __name__ == "__main__":
         fold_train_df = get_train_fold(fold_id)
         create_epoch(fold_id, fold_train_df, args.epoch_size, generator)
 
-    print("Computing phoneme statistics...")
+    print("\nComputing phoneme statistics...\n")
     get_phoneme_statistics(train_df)
