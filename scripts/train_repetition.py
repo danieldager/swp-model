@@ -23,16 +23,21 @@ from swp.models.encoders import EncoderLSTM, EncoderRNN
 from swp.models.losses import AuditoryXENT
 from swp.train.repetition import train
 from swp.utils.datasets import get_phoneme_to_id
-from swp.utils.models import (
-    get_model,
-    get_model_name,
-    get_train_args,
-    get_train_name,
-)
+from swp.utils.models import get_model, get_model_name, get_train_args, get_train_name
 from swp.utils.setup import seed_everything, set_device
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        help="Model name string, overrides other model parameters",
+    )
+    parser.add_argument(
+        "--train_name",
+        type=str,
+        help="Training name string, overrides other training parameters",
+    )
     parser.add_argument(
         "--fold_id",
         type=int,
@@ -102,7 +107,7 @@ if __name__ == "__main__":
     device = set_device()
 
     # TODO mutually exclusive args
-    if True:
+    if args.train_name is None:
         batch_size = args.batch_size
         learn_rate = args.learn_rate
         fold_id = args.fold_id
@@ -116,12 +121,13 @@ if __name__ == "__main__":
     else:
         train_name = args.train_name
         train_args = get_train_args(train_name)
-        batch_size = train_args["b"]
-        learn_rate = train_args["l"]
-        fold_id = train_args["f"]
+        batch_size = train_args["batch_size"]
+        learn_rate = train_args["learning_rate"]
+        fold_id = train_args["fold_id"]
+        include_stress = train_args["include_stress"]
 
     # TODO mutually exclusive args
-    if True:
+    if args.model_name is None:
         recur_type = args.recur_type.upper()
         if recur_type not in ["RNN", "LSTM"]:
             raise ValueError("Invalid recurrent layer type")

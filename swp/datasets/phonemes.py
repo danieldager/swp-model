@@ -71,7 +71,8 @@ class PhonemeTrainDataset(Dataset):
 
 
 def phoneme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value: int):
-    # TODO Robin docstring
+    r"""A collate function that get tensors of different length from `batch`, then
+    batch them together by extending them to the max length, filling with `pad_value`"""
     data, target = tuple(zip(*batch))
     nt_data = nested_tensor(list(data), dtype=torch.long)
     nt_target = nested_tensor(list(target), dtype=torch.long)
@@ -191,7 +192,7 @@ def get_phoneme_testloader(
 
 
 def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
-    # TODO Daniel docstring, save dataset to file !!! create vs get 
+    # TODO Daniel docstring, save dataset to file !!! create vs get
 
     vowels = [
         "AH0",

@@ -1,12 +1,11 @@
-from typing import Any
+from typing import TypedDict
 
 import torch
-
-from swp.utils.paths import get_weights_dir
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
+from .paths import get_weights_dir
 
 
 def save_weights(
@@ -45,10 +44,50 @@ def load_weights(
     model.bind()
 
 
-def get_model_args(model_name: str) -> tuple[str, str, dict[str, Any]]:
+class CNNArgs(TypedDict):
+    r"""TypedDict containing values required to create a visual encoder :
+    `hidden_size` : hidden size of the network
+    `cnn_model` : expected to contain values `"R"`, `"RT"`, `"S"` or `"Z"`.
+    """
+
+    hidden_size: int
+    cnn_model: str
+
+
+class ModelArgs(TypedDict):
+    r"""TypedDict containing values required to create a model :
+    `model_class` : expected to contain values `"Ua"`, `"Uv"` or `"B"` for Unimodel auditory, Unimodel visual and Bimodel
+    `recur_type` : expected to contain values `"LSTM"` or `"RNN"`
+    `hidden_size` : hidden size of the network
+    `num_layers` : number of recurrent layers
+    `vocab_size` : size of the vocabulary
+    `droprate` : dropout ratio
+    `tf_ratio` : teacher forcing ratio
+    `start_token_id` : id of the token to use as first input for decoding
+    `cnn_args` : `CNNArgs` dict containing the information for the visual decoder, or None if not relevant
+    """
+
+    model_class: str
+    recur_type: str
+    hidden_size: int
+    num_layers: int
+    vocab_size: int
+    droprate: float
+    tf_ratio: float
+    start_token_id: int
+    cnn_args: CNNArgs | None
+
+
+class TrainArgs(TypedDict):
+    batch_size: int
+    learning_rate: float
+    fold_id: int | None
+    include_stress: bool
+
+
+def get_model_args(model_name: str) -> ModelArgs:
     r"""Create a dictionnary containing the necessary arguments to build a model
-    from a `model_name`."""
-    # TODO improve docstring
+    from a `model_name`. See `ModelArgs` class for more information."""
     # TODO make modular with other cnn encoders
     big_split = model_name.split("__")
     main_name = big_split[0]
@@ -56,31 +95,41 @@ def get_model_args(model_name: str) -> tuple[str, str, dict[str, Any]]:
     model_class = name_split[0]
     recur_type = name_split[1]
     str_args = {arg[0]: arg[1:] for arg in name_split[2:]}
-    typed_args = {}
-    typed_args["h"] = int(str_args["h"])
-    typed_args["l"] = int(str_args["l"])
-    typed_args["v"] = int(str_args["v"])
-    typed_args["d"] = float(str_args["d"])
-    typed_args["t"] = float(str_args["t"])
-    typed_args["s"] = int(str_args["s"])
+    cnn_args = None
     if len(big_split) > 1:
         cnn_str = big_split[1][1:]
         str_cnn_args = {arg[0]: arg[1:] for arg in cnn_str.split("_")}
-        typed_cnn_args = {}
-        typed_cnn_args["h"] = int(str_cnn_args["h"])
-        typed_cnn_args["m"] = str_cnn_args["m"]
-        typed_args["c"] = typed_cnn_args
-    return model_class, recur_type, typed_args
+        cnn_args = CNNArgs(
+            {
+                "hidden_size": int(str_cnn_args["h"]),
+                "cnn_model": str_cnn_args["m"],
+            }
+        )
+    model_args = ModelArgs(
+        {
+            "model_class": model_class,
+            "recur_type": recur_type,
+            "hidden_size": int(str_args["h"]),
+            "num_layers": int(str_args["l"]),
+            "vocab_size": int(str_args["v"]),
+            "droprate": float(str_args["d"]),
+            "tf_ratio": float(str_args["t"]),
+            "start_token_id": int(str_args["s"]),
+            "cnn_args": cnn_args,
+        }
+    )
+    return model_args
 
 
 def get_model(model_name: str) -> Unimodel | Bimodel:
     r"""Create a model corresponding to the `model_name`"""
     # TODO make modular with other CNN encoders
-    model_class, recur_type, typed_args = get_model_args(model_name)
-    if recur_type.upper() == "LSTM":
+    model_args = get_model_args(model_name)
+    recur_type = model_args["recur_type"].upper()
+    if recur_type == "LSTM":
         audit_encoder_class = EncoderLSTM
         decoder_class = DecoderLSTM
-    elif recur_type.upper() == "RNN":
+    elif recur_type == "RNN":
         audit_encoder_class = EncoderRNN
         decoder_class = DecoderRNN
     else:
@@ -88,46 +137,59 @@ def get_model(model_name: str) -> Unimodel | Bimodel:
             f"Recurrent type {recur_type} is not currently supported"
         )
     decoder = decoder_class(
-        vocab_size=typed_args["v"],
-        hidden_size=typed_args["h"],
-        num_layers=typed_args["l"],
-        dropout=typed_args["d"],
-        tf_ratio=typed_args["t"],
+        vocab_size=model_args["vocab_size"],
+        hidden_size=model_args["hidden_size"],
+        num_layers=model_args["num_layers"],
+        dropout=model_args["droprate"],
+        tf_ratio=model_args["tf_ratio"],
     )
+    model_class = model_args["model_class"]
     if model_class.startswith("U"):
         if model_class[1] == "a":
             encoder = audit_encoder_class(
-                vocab_size=typed_args["v"],
-                hidden_size=typed_args["h"],
-                num_layers=typed_args["l"],
-                dropout=typed_args["d"],
+                vocab_size=model_args["vocab_size"],
+                hidden_size=model_args["hidden_size"],
+                num_layers=model_args["num_layers"],
+                dropout=model_args["droprate"],
             )
         elif model_class[1] == "v":
+            if model_args["cnn_args"] is None:
+                raise ValueError(
+                    "No arguments corresponding to the visual encoder in a visual model"
+                )
             encoder = CorNetEncoder(
-                hidden_size=typed_args["c"]["h"], cornet_model=typed_args["c"]["m"]
+                hidden_size=model_args["cnn_args"]["hidden_size"],
+                cornet_model=model_args["cnn_args"]["cnn_model"],
             )
         else:
             raise ValueError(
                 f"Trying to name a Unimodel that is neither auditory nor visual, type : {model_class[1:]}"
             )
         model = Unimodel(
-            encoder=encoder, decoder=decoder, start_token_id=typed_args["s"]
+            encoder=encoder,
+            decoder=decoder,
+            start_token_id=model_args["start_token_id"],
         )
     elif model_class == "B":
         audit_encoder = audit_encoder_class(
-            vocab_size=typed_args["v"],
-            hidden_size=typed_args["h"],
-            num_layers=typed_args["l"],
-            dropout=typed_args["d"],
+            vocab_size=model_args["vocab_size"],
+            hidden_size=model_args["hidden_size"],
+            num_layers=model_args["num_layers"],
+            dropout=model_args["droprate"],
         )
+        if model_args["cnn_args"] is None:
+            raise ValueError(
+                "No arguments corresponding to the visual encoder in a visual model"
+            )
         visual_encoder = CorNetEncoder(
-            hidden_size=typed_args["c"]["h"], cornet_model=typed_args["c"]["m"]
+            hidden_size=model_args["cnn_args"]["hidden_size"],
+            cornet_model=model_args["cnn_args"]["cnn_model"],
         )
         model = Bimodel(
             audit_encoder=audit_encoder,
             visual_encoder=visual_encoder,
             decoder=decoder,
-            start_token_id=typed_args["s"],
+            start_token_id=model_args["start_token_id"],
         )
     else:
         raise ValueError(f"Model class not recognized : {model_class}")
@@ -173,7 +235,8 @@ def get_model_name_from_args(
     droprate: float,
     tf_ratio: float,
     start_token_id: int,
-    cnn_args: dict[str, Any] | None = None,
+    cnn_args: CNNArgs | None = None,
+    **kwargs,
 ) -> str:
     r"""Generate the `model_name` from the arguments that would allow to generate the model"""
     # TODO make modular with other CNN encoders
@@ -191,7 +254,11 @@ def get_model_name_from_args(
 
 
 def get_train_name(
-    batch_size: int, learning_rate: float, fold_id: int | None, include_stress: bool
+    batch_size: int,
+    learning_rate: float,
+    fold_id: int | None,
+    include_stress: bool,
+    **kwargs,
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
     train_name = (
@@ -205,18 +272,22 @@ def get_train_name(
     return train_name
 
 
-def get_train_args(train_name: str) -> dict[str, Any]:
+def get_train_args(train_name: str) -> TrainArgs:
     r"""Returns a dictionnary containing the arguments corresponding to the `train_name`."""
     # TODO add support for visual dataset, mixed or not
     str_args = {arg[0]: arg[1:] for arg in train_name.split("_")}
-    typed_args = {}
-    typed_args["b"] = int(str_args["b"])  # batch_size
-    typed_args["l"] = float(str_args["l"])  # learning_rate
-    typed_args["f"] = int(str_args["f"])  # fold_id
     if str_args["s"] == "w":  # include_stress
-        typed_args["s"] = True
+        include_stress = True
     elif str_args["s"] == "n":
-        typed_args["s"] = False
+        include_stress = False
     else:
         raise ValueError(f'Stress value not recognized : {str_args["s"]}')
-    return typed_args
+    train_args = TrainArgs(
+        {
+            "batch_size": int(str_args["b"]),
+            "learning_rate": float(str_args["l"]),
+            "fold_id": None if str_args["f"] == "all" else int(str_args["f"]),
+            "include_stress": include_stress,
+        }
+    )
+    return train_args

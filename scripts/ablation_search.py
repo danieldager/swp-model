@@ -1,12 +1,13 @@
+import argparse
 import os
 import sys
-import torch
-import argparse
 import warnings
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+import torch
 
 warnings.filterwarnings(
     "ignore",
@@ -18,19 +19,17 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from swp.test.repetition import test
-from swp.utils.setup import seed_everything
-from swp.utils.paths import get_ablations_dir
-from swp.utils.models import get_model, load_weights
 from swp.datasets.phonemes import get_phoneme_testloader
-from swp.utils.models import get_model_args, get_train_args
+from swp.test.repetition import test
 from swp.utils.datasets import (
     get_test_data,
     get_phoneme_to_id,
     enrich_for_plotting,
     get_ablation_train_data,
     classify_error_positions,
-)
+)from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
+from swp.utils.paths import get_ablations_dir
+from swp.utils.setup import seed_everything
 
 
 def cache_lstm_weights(layer):
@@ -139,8 +138,8 @@ if __name__ == "__main__":
 
     model_class, recur_type, model_args = get_model_args(model_name)
     train_args = get_train_args(train_name)
-    include_stress = train_args["s"]
-    batch_size = train_args["b"]
+    include_stress = train_args["include_stress"]
+    batch_size = train_args["batch_size"]
 
     seed_everything()
     device = torch.device("cpu")

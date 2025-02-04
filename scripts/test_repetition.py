@@ -1,8 +1,9 @@
+import argparse
 import os
 import sys
-import torch
-import argparse
 import warnings
+
+import torch
 
 warnings.filterwarnings(
     "ignore",
@@ -14,8 +15,11 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
+from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
 from swp.test.repetition import test
+from swp.utils.datasets import get_test_data, get_train_data
 from swp.utils.models import get_model, load_weights
+from swp.utils.paths import get_test_dir, get_weights_dir
 from swp.utils.setup import seed_everything, set_device
 from swp.utils.paths import get_weights_dir, get_test_dir, get_figures_dir
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset

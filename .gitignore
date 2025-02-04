@@ -167,3 +167,4 @@ stimuli/graphemes
 stimuli/dataframe
 stimuli/phonemes_to_id.json
 *.csv
+generated_scripts
