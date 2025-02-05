@@ -1,14 +1,13 @@
 import json
+from ast import literal_eval
+from collections import Counter, defaultdict
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from ast import literal_eval
-from collections import defaultdict, Counter
-
 import spacy
 import spacy.cli
 from g2p_en import G2p
-from collections import Counter
 from Levenshtein import editops
 from morphemes import Morphemes
 from wordfreq import iter_wordlist, word_frequency, zipf_frequency

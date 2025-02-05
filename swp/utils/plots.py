@@ -1,15 +1,15 @@
 import pathlib
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
-
-from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from .paths import get_figures_dir

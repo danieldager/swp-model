@@ -7,14 +7,17 @@ from .datasets.graphemes import get_grapheme_trainloader, get_mixed_trainloader
 from .datasets.phonemes import get_phoneme_trainloader
 from .models.autoencoder import Bimodel, Unimodel
 from .models.decoders import DecoderLSTM, DecoderRNN
-from .models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
+from .models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN, VisualEncoder
 from .models.losses import AuditoryXENT, TaskLosses
 from .utils.datasets import get_phoneme_to_id
 from .utils.models import (
+    CNNArgs,
+    ModelArgs,
+    TrainArgs,
     get_model,
     get_model_name,
-    get_training_args,
-    get_training_name,
+    get_train_args,
+    get_train_name,
 )
 
 
@@ -63,7 +66,7 @@ def get_train_method(
     model, training_name, batch_size, learn_rate, fold_id, include_stress, mode
 ):
     if training_name is not None:
-        training_name = get_training_name(
+        training_name = get_train_name(
             batch_size,
             learn_rate,
             fold_id,
@@ -71,10 +74,10 @@ def get_train_method(
         )
     else:
         training_name = training_name
-        training_args = get_training_args(training_name)
-        batch_size = training_args["b"]
-        learn_rate = training_args["l"]
-        fold_id = training_args["f"]
+        training_args = get_train_args(training_name)
+        batch_size = training_args["batch_size"]
+        learn_rate = training_args["learning_rate"]
+        fold_id = training_args["fold_id"]
     criterion = AuditoryXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
     return criterion, optimizer
@@ -88,7 +91,7 @@ def build_model(
     num_layers: int,
     dropout: float,
     tf_ratio: float,
-    cnn_args: dict,
+    cnn_args: CNNArgs,
     mode: str,
 ) -> tuple[Unimodel | Bimodel, str]: ...
 
@@ -113,7 +116,7 @@ def build_model(
     num_layers: int | None = None,
     dropout: float | None = None,
     tf_ratio: float | None = None,
-    cnn_args: dict = None,
+    cnn_args: CNNArgs | None = None,
     mode: str | None = None,
 ) -> tuple[Unimodel | Bimodel, str]:
     # TODO docstring
@@ -171,7 +174,14 @@ def build_model(
                 start_token_id=start_token_id,
             )
         else:
-            # TODO CNN from args
+            if cnn_args is None:
+                raise ValueError(
+                    "No arguments corresponding to the visual encoder in a visual model"
+                )
+            visual_encoder = CorNetEncoder(
+                cornet_model=cnn_args["cnn_model"],
+                hidden_size=cnn_args["hidden_size"],
+            )
             if mode == "Visual":
                 model = Unimodel(
                     encoder=visual_encoder,

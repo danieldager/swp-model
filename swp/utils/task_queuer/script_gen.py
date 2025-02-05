@@ -5,7 +5,7 @@ import sys
 from ..paths import get_generated_scripts_dir, get_python_scripts_dir
 
 logger = logging.getLogger()
-jz_module = "pytorch-gpu/py3/1.11.0"  # TODO check right env to load
+jz_module = "pytorch-gpu/py3/2.5.0"
 
 
 def trim(string: str) -> str:

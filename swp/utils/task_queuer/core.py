@@ -1,5 +1,7 @@
 import logging
+import os
 import pathlib
+import stat
 
 from ..grid_search import Grid, grid_iter
 from ..models import get_model_name_from_args, get_train_name
@@ -109,6 +111,10 @@ def create_jean_zay_train_repetition_queuer(
     commands.extend(aggregate_commands)
     # queue training plots ?
     script_name = f"train_repetition_queuer.sh"
-    with (gen_script_dir / script_name).open("w") as f:
+    script_path = gen_script_dir / script_name
+    with (script_path).open("w") as f:
         f.writelines(f"{line}\n" for line in commands)
     logger.info(f"Script created : {script_name}")
+    st = os.stat(script_path)
+    os.chmod(script_path, st.st_mode | stat.S_IEXEC)
+    logger.info(f"Made script executable : {script_name}")
