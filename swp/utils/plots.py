@@ -2,21 +2,17 @@ import pathlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from ast import literal_eval
 import matplotlib.pyplot as plt
-
-from collections import Counter
-from Levenshtein import editops
+from matplotlib.ticker import FuncFormatter
 
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from .models import get_model_args, get_train_args
-from .paths import get_figures_dir, get_stimuli_dir
+from .paths import get_figures_dir
 
 sns.set_palette("colorblind")
 
@@ -27,7 +23,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     h, r, d, t, l, m, f = [p[1:] for p in model.split("_")]
     m = "RNN" if m[0] == "n" else "LSTM"
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 6))
     sns.lineplot(x=range(1, n_epochs + 1), y=train_losses, label="Training")
     sns.lineplot(x=range(1, n_epochs + 1), y=valid_losses, label="Validation")
     plt.title(f"{m} (fold {f}): H={h}, LR={r}, L={l}, D={d}, TF={t}, LR={r}")
@@ -68,7 +64,7 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         .mean()
         .reset_index()
     )
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(11, 6))
     sns.lineplot(
         data=grouped_df,
         x="Sequence Length",
@@ -79,12 +75,34 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         markersize=8,
         linewidth=3,
     )
-    plt.xlabel("Phoneme Sequence Length", fontsize=14, labelpad=10)
-    plt.ylabel("Average Edit Distance", fontsize=14, labelpad=10)
-    plt.legend(title="Lexicality & Morphology", fontsize=11, title_fontsize=12)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.xlabel("Phoneme Sequence Length", fontsize=22, labelpad=10)
+    plt.ylabel("Average Edit Distance", fontsize=22, labelpad=10)
+    plt.legend(title="Lexicality & Morphology", fontsize=18, title_fontsize=20)
     plt.grid(True)
+
+    ax = plt.gca()
+
+    # Define a formatter for the x-axis:
+    def x_formatter(x, pos):
+        ticks = ax.get_xticks()
+        # Use np.isclose to avoid floating-point issues.
+        if np.isclose(x, ticks[0]) or np.isclose(x, ticks[-1]):
+            return f"{x:.0f}"
+        return ""
+
+    # Define a formatter for the y-axis:
+    def y_formatter(y, pos):
+        ticks = ax.get_yticks()
+        if np.isclose(y, ticks[0]):
+            return f"{y:.0f}"
+        elif np.isclose(y, ticks[-1]):
+            return format(y, ".1g")  # one significant digit
+        return ""
+
+    # Set the custom formatters
+    ax.xaxis.set_major_formatter(FuncFormatter(x_formatter))
+    ax.yaxis.set_major_formatter(FuncFormatter(y_formatter))
+
     plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 

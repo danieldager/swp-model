@@ -19,17 +19,17 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from swp.datasets.phonemes import get_phoneme_testloader
 from swp.test.repetition import test
+from swp.utils.paths import get_ablations_dir
+from swp.utils.setup import seed_everything
+from swp.datasets.phonemes import get_phoneme_testloader
+from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
 from swp.utils.datasets import (
     get_test_data,
-    get_phoneme_to_id,
     enrich_for_plotting,
     get_ablation_train_data,
     classify_error_positions,
-)from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
-from swp.utils.paths import get_ablations_dir
-from swp.utils.setup import seed_everything
+)
 
 
 def cache_lstm_weights(layer):
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     train_name = args.train_name
     checkpoint = args.checkpoint
 
-    model_class, recur_type, model_args = get_model_args(model_name)
+    model_args = get_model_args(model_name)
     train_args = get_train_args(train_name)
     include_stress = train_args["include_stress"]
     batch_size = train_args["batch_size"]
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     # Load and prepare data.
     test_data = get_test_data()
     train_data = get_ablation_train_data()
-    train_data = train_data.sample(frac=0.2)
+    train_data = train_data.sample(frac=0.3)
     ablation_data = pd.concat([test_data, train_data])
     ablation_loader = get_phoneme_testloader(batch_size, include_stress, ablation_data)
 
@@ -166,101 +166,106 @@ if __name__ == "__main__":
     model_dir = ablations_dir / f"{model_name}~{train_name}~{checkpoint}"
     model_dir.mkdir(exist_ok=True, parents=True)
 
-    # Loop over layers and neurons for ablation.
-    ablation_results = []
-    layers = [
-        ("encoder", model.encoder.recurrent),
-        ("decoder", model.decoder.recurrent),
-    ]
-    for layer_name, layer in layers:
-        num_neurons = layer.hidden_size
-        original_weights = cache_lstm_weights(layer)
+    # check if results_df already exists
+    if not (model_dir / "ablation_results.csv").exists():
+        results_df = pd.read_csv(model_dir / "ablation_results.csv")
 
-        for neuron_idx in range(num_neurons):
-            print(
-                f"Ablating neuron {neuron_idx+1}/{num_neurons} in {layer_name}",
-                end="\r",
-            )
-            ablate_lstm_neuron(layer, neuron_idx, num_neurons)
-            df, _ = test(
-                model=model,
-                device=device,
-                test_df=ablation_data,
-                test_loader=ablation_loader,
-                include_stress=include_stress,
-            )
-            restore_lstm_weights(layer, original_weights)
-            df = enrich_for_plotting(df, include_stress)
-            df = classify_error_positions(df)
+        # Loop over layers and neurons for ablation.
+        ablation_results = []
+        layers = [
+            ("encoder", model.encoder.recurrent),
+            ("decoder", model.decoder.recurrent),
+        ]
+        for layer_name, layer in layers:
+            num_neurons = layer.hidden_size
+            original_weights = cache_lstm_weights(layer)
 
-            # Compute accuracy values using our helper
-            real_accuracy = calc_accuracy(
-                df,
-                (df["Lexicality"] == "real") & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real"),
-            )
-            pseudo_accuracy = calc_accuracy(
-                df,
-                (df["Lexicality"] == "pseudo") & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "pseudo"),
-            )
-            low_freq_accuracy = calc_accuracy(
-                df,
-                (df["Lexicality"] == "real")
-                & (df["Zipf Frequency"] < 3.0)
-                & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real") & (df["Zipf Frequency"] < 3.0),
-            )
-            high_freq_accuracy = calc_accuracy(
-                df,
-                (df["Lexicality"] == "real")
-                & (df["Zipf Frequency"] >= 3.0)
-                & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real") & (df["Zipf Frequency"] >= 3.0),
-            )
-            simple_accuracy = calc_accuracy(
-                df,
-                (df["Lexicality"] == "real")
-                & (df["Morphology"] == "simple")
-                & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real") & (df["Morphology"] == "simple"),
-            )
-            complex_accuracy = calc_accuracy(
-                df,
-                (df["Lexicality"] == "real")
-                & (df["Morphology"] == "complex")
-                & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real") & (df["Morphology"] == "complex"),
-            )
-            primacy_accuracy = calc_accuracy(
-                df,
-                (df["Primacy Error"] > 0),
-                df["Edit Distance"] >= 0,
-            )
-            recency_accuracy = calc_accuracy(
-                df,
-                (df["Recency Error"] > 0),
-                (df["Edit Distance"] >= 0),
-            )
-            ablation_results.append(
-                {
-                    "neuron_idx": neuron_idx,
-                    "layer_name": layer_name,
-                    "real_accuracy": real_accuracy,
-                    "pseudo_accuracy": pseudo_accuracy,
-                    "low_freq_accuracy": low_freq_accuracy,
-                    "high_freq_accuracy": high_freq_accuracy,
-                    "simple_accuracy": simple_accuracy,
-                    "complex_accuracy": complex_accuracy,
-                    "primacy_accuracy": primacy_accuracy,
-                    "recency_accuracy": recency_accuracy,
-                }
-            )
+            for neuron_idx in range(num_neurons):
+                print(
+                    f"Ablating neuron {neuron_idx+1}/{num_neurons} in {layer_name}",
+                    end="\r",
+                )
+                ablate_lstm_neuron(layer, neuron_idx, num_neurons)
+                df, _ = test(
+                    model=model,
+                    device=device,
+                    test_df=ablation_data,
+                    test_loader=ablation_loader,
+                    include_stress=include_stress,
+                )
+                restore_lstm_weights(layer, original_weights)
+                df = enrich_for_plotting(df, include_stress)
+                df = classify_error_positions(df)
 
-    # Save results.
-    results_df = pd.DataFrame(ablation_results)
-    results_df.to_csv(model_dir / "ablation_results.csv", index=False)
+                # Compute accuracy values using our helper
+                real_accuracy = calc_accuracy(
+                    df,
+                    (df["Lexicality"] == "real") & (df["Edit Distance"] > 0),
+                    (df["Lexicality"] == "real"),
+                )
+                pseudo_accuracy = calc_accuracy(
+                    df,
+                    (df["Lexicality"] == "pseudo") & (df["Edit Distance"] > 0),
+                    (df["Lexicality"] == "pseudo"),
+                )
+                low_freq_accuracy = calc_accuracy(
+                    df,
+                    (df["Lexicality"] == "real")
+                    & (df["Zipf Frequency"] < 3.0)
+                    & (df["Edit Distance"] > 0),
+                    (df["Lexicality"] == "real") & (df["Zipf Frequency"] < 3.0),
+                )
+                high_freq_accuracy = calc_accuracy(
+                    df,
+                    (df["Lexicality"] == "real")
+                    & (df["Zipf Frequency"] >= 3.0)
+                    & (df["Edit Distance"] > 0),
+                    (df["Lexicality"] == "real") & (df["Zipf Frequency"] >= 3.0),
+                )
+                simple_accuracy = calc_accuracy(
+                    df,
+                    (df["Lexicality"] == "real")
+                    & (df["Morphology"] == "simple")
+                    & (df["Edit Distance"] > 0),
+                    (df["Lexicality"] == "real") & (df["Morphology"] == "simple"),
+                )
+                complex_accuracy = calc_accuracy(
+                    df,
+                    (df["Lexicality"] == "real")
+                    & (df["Morphology"] == "complex")
+                    & (df["Edit Distance"] > 0),
+                    (df["Lexicality"] == "real") & (df["Morphology"] == "complex"),
+                )
+                primacy_accuracy = calc_accuracy(
+                    df,
+                    (df["Primacy Error"] > 0),
+                    df["Edit Distance"] >= 0,
+                )
+                recency_accuracy = calc_accuracy(
+                    df,
+                    (df["Recency Error"] > 0),
+                    (df["Edit Distance"] >= 0),
+                )
+                ablation_results.append(
+                    {
+                        "neuron_idx": neuron_idx,
+                        "layer_name": layer_name,
+                        "real_accuracy": real_accuracy,
+                        "pseudo_accuracy": pseudo_accuracy,
+                        "low_freq_accuracy": low_freq_accuracy,
+                        "high_freq_accuracy": high_freq_accuracy,
+                        "simple_accuracy": simple_accuracy,
+                        "complex_accuracy": complex_accuracy,
+                        "primacy_accuracy": primacy_accuracy,
+                        "recency_accuracy": recency_accuracy,
+                    }
+                )
 
+        # Save results.
+        results_df = pd.DataFrame(ablation_results)
+        results_df.to_csv(model_dir / "ablation_results.csv", index=False)
+
+    results_df = pd.read_csv(model_dir / "ablation_results.csv")
     print("\nLowest accuracies:")
     for condition in [
         "real_accuracy",
@@ -284,8 +289,8 @@ if __name__ == "__main__":
         results_df,
         "real_accuracy",
         "pseudo_accuracy",
-        "Real Accuracy (Lexical Processing)",
-        "Pseudo Accuracy (Sublexical Processing)",
+        "Real (Lexical Processing)",
+        "Pseudo (Sublexical Processing)",
         "lex_scatter.png",
         model_dir,
     )
@@ -294,8 +299,8 @@ if __name__ == "__main__":
         results_df,
         "low_freq_accuracy",
         "high_freq_accuracy",
-        "Low Frequency Accuracy",
-        "High Frequency Accuracy",
+        "Low Frequency",
+        "High Frequency",
         "frq_scatter.png",
         model_dir,
     )
@@ -304,8 +309,8 @@ if __name__ == "__main__":
         results_df,
         "simple_accuracy",
         "complex_accuracy",
-        "Simple Morphology Accuracy",
-        "Complex Morphology Accuracy",
+        "Morphologically Simple",
+        "Morphologically Complex",
         "mor_scatter.png",
         model_dir,
     )
@@ -314,8 +319,8 @@ if __name__ == "__main__":
         results_df,
         "primacy_accuracy",
         "recency_accuracy",
-        "Primacy Accuracy",
-        "Recency Accuracy",
+        "Primacy",
+        "Recency",
         "pos_scatter.png",
         model_dir,
     )
