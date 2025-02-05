@@ -12,7 +12,7 @@ from Levenshtein import editops
 from morphemes import Morphemes
 from wordfreq import iter_wordlist, word_frequency, zipf_frequency
 
-from .paths import get_dataframe_dir, get_folds_dir, get_stimuli_dir
+from .paths import get_dataframe_dir, get_folds_dir, get_morphemes_dir, get_stimuli_dir
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -38,7 +38,7 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
 def get_morphological_data(word: str):
     r"""Get morphological data for a `word`"""
     # TODO check that the path is ok
-    mrp = Morphemes(str(get_stimuli_dir() / "morphemes_data"))
+    mrp = Morphemes(str(get_morphemes_dir()))
     parse = mrp.parse(word)
 
     if parse["status"] == "NOT_FOUND":
@@ -200,7 +200,7 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool) -> pd.DataFrame:
 def enrich_for_ablations(df: pd.DataFrame) -> pd.DataFrame:
     r"""Enrich training data with word size and morphological complexity."""
     df = df.copy()
-    mrp = Morphemes(str(get_stimuli_dir() / "morphemes_data"))
+    mrp = Morphemes(str(get_morphemes_dir()))
 
     # Process "Size" column
     if "Size" not in df.columns:
