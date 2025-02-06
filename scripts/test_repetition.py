@@ -17,7 +17,7 @@ sys.path.append(parent)
 
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
 from swp.test.repetition import test
-from swp.utils.datasets import get_test_data, get_train_data
+from swp.utils.datasets import get_test_data, get_train_data, get_valid_fold
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_test_dir, get_weights_dir
 from swp.utils.setup import seed_everything, set_device
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     seed_everything()
     device = set_device()
-    device = torch.device("cpu")  # TODO why do error out when using MPS ?
+    # device = torch.device("cpu")  # TODO why do error out when using MPS ?
 
     test_dir = get_test_dir()
     model_dir = test_dir / f"{model_name}~{train_name}"
@@ -132,30 +132,35 @@ if __name__ == "__main__":
         ssp_results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
 
         # Test also on the train dataset
-        # train_df = get_train_data()
-        # train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-        # results, _ = test(
-        #     model=model,
-        #     device=device,
-        #     test_df=train_df,
-        #     test_loader=train_loader,
-        #     include_stress=include_stress,
-        #     verbose=args.verbose,
-        # )
-        # results.to_csv(model_dir / f"{checkpoint}~train.csv")
+        train_df = get_train_data()
+        train_df = get_valid_fold(fold_id=0)  ### HARDCODE ###
+        train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
+        train_results, train_error = test(
+            model=model,
+            device=device,
+            test_df=train_df,
+            test_loader=train_loader,
+            include_stress=include_stress,
+            verbose=args.verbose,
+        )
+        train_results.to_csv(model_dir / f"{checkpoint}~train.csv")
+
+        print(f"Train error: {train_error}")
 
         if args.plot:
             figures_dir = get_figures_dir() / f"{args.model_name}~{args.train_name}"
             figures_dir.mkdir(exist_ok=True)
 
-            test_df = enrich_for_plotting(test_results, include_stress)
-            ssp_df = enrich_for_plotting(ssp_results, include_stress)
+            test_results = enrich_for_plotting(test_results, include_stress)
+            ssp_results = enrich_for_plotting(ssp_results, include_stress)
 
-            plot_length_errors(test_df, checkpoint, figures_dir)
-            plot_position_errors(test_df, checkpoint, figures_dir)
-            plot_sonority_errors(ssp_df, checkpoint, figures_dir)
-            plot_category_errors(test_df, checkpoint, figures_dir)
-            regression_plots(test_df, checkpoint, figures_dir)
+            plot_length_errors(test_results, checkpoint, figures_dir)
+            plot_position_errors(test_results, checkpoint, figures_dir)
+            plot_sonority_errors(ssp_results, checkpoint, figures_dir)
+            plot_category_errors(test_results, checkpoint, figures_dir)
+            regression_plots(test_results, checkpoint, figures_dir, 1)
+            regression_plots(test_results, checkpoint, figures_dir, 2)
+            # regression_plots(train_results, checkpoint, figures_dir, 3)
 
         if args.verbose:
             print("-" * 60)

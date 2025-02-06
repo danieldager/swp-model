@@ -4,14 +4,14 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-n_epochs=(70)
+n_epochs=(100)
 fold_ids=(0)
 b_sizes=(1024)
 r_types=("lstm")
-h_sizes=(128)
+h_sizes=(64)
 n_layers=(1)
-l_rates=(0.005 0.001 0.0005)
-dropouts=(0.4 0.5 0.6 0.7)
+l_rates=(0.001 0.0005)
+dropouts=(0.4 0.5)
 tf_ratios=(0.0)
 
 # Initialize counter for total combinations
@@ -30,7 +30,7 @@ for e in "${n_epochs[@]}"; do
                                     echo "Submitting f=$f m=$m h=$h n=$l l=$r d=$d tf=$t e=$e"
 
                                     # Submit job with parameters passed as environment variables
-                                    sbatch --export=ALL,FOLD_ID=$f,RECUR_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e,BATCH_SIZE=$b "$TRAIN_SCRIPT"
+                                    sbatch --export=ALL,RECUR_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e,BATCH_SIZE=$b "$TRAIN_SCRIPT"
 
                                     # Increment counter
                                     ((total++))

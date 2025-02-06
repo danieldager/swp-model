@@ -7,7 +7,7 @@
 #SBATCH --mem=10G                     # Memory request; MB assumed if not specified
 #SBATCH --time=10:00:00               # Time limit hrs:min:sec
 #SBATCH --output=logs/%j.log          # Standard output and error log
-#SBATCH --nice=1000                   # Priority; higher is lower priority
+#SBATCH --nice=10                     # Priority; higher is lower priority
 
 echo ""
 echo ""
@@ -68,7 +68,6 @@ export PYTHONUNBUFFERED=1
 echo "computation start : $(date)"
 
 python scripts/train_repetition.py \
-    --fold_id "$FOLD_ID" \
     --num_epochs "$NUM_EPOCHS" \
     --batch_size "$BATCH_SIZE" \
     --recur_type "$RECUR_TYPE" \
@@ -78,6 +77,7 @@ python scripts/train_repetition.py \
     --dropout "$DROPOUT" \
     --tf_ratio "$TF_RATIO" \
     --verbose \
+    # --fold_id "$FOLD_ID" \
     # --include_stress \
 
 echo "computation end : $(date)"

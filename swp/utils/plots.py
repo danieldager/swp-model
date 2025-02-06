@@ -1,4 +1,5 @@
 import pathlib
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +16,11 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from .paths import get_figures_dir
 
 sns.set_palette("colorblind")
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="set_ticklabels() should only be used with a fixed number of ticks",
+)
 
 
 # Plot the training and validation loss curves
@@ -322,6 +328,7 @@ def regression_plots(
     df: pd.DataFrame,
     checkpoint: str,
     filepath: pathlib.Path,
+    plot_num: int,
 ) -> None:
     """Perform regression analysis on test data, plot feature importance and correlation matrix.
 
@@ -337,9 +344,14 @@ def regression_plots(
     df = df.copy()
     df.loc[df["Lexicality"] == "pseudo", "Zipf Frequency"] = 0
 
-    # Define features.
-    categorical_features = ["Morphology", "Lexicality"]
-    continuous_features = ["Sequence Length", "Zipf Frequency"]
+    # Define features
+    categorical_features = (
+        ["Morphology", "Lexicality"] if plot_num == 1 else ["Morphology"]
+    )
+    continuous_features = (
+        ["Sequence Length"] if plot_num == 1 else ["Sequence Length", "Zipf Frequency"]
+    )
+
     X = df[categorical_features + continuous_features]
     y = df["Edit Distance"]
 
@@ -381,7 +393,7 @@ def regression_plots(
         next((v for k, v in mapping.items() if k in fn), fn) for fn in raw_feature_names
     ]
 
-    # Retrieve coefficients and prepare the feature importance DataFrame.
+    # Retrieve coefficients and prepare the feature importance DataFrame
     coefficients = pipeline.named_steps["regressor"].coef_
     feature_importance = pd.DataFrame(
         {
@@ -389,22 +401,20 @@ def regression_plots(
             "Coefficient": coefficients,
         }
     )
-    # Use absolute values for bar lengths.
+    # Use absolute values for bar lengths
     feature_importance["Importance"] = feature_importance["Coefficient"].abs()
-    # Create a new column for sign.
+    # Create a new column for sign
     feature_importance["Sign"] = feature_importance["Coefficient"].apply(
         lambda x: "Positive" if x >= 0 else "Negative"
     )
-    # Sort so that the smallest importance is at the top.
+    # Sort so that the smallest importance is at the top
     feature_importance_sorted = feature_importance.sort_values(
         by="Importance", ascending=True
     )
 
     plt.rcParams.update({"font.size": 24})
-
-    # Create a separate figure for feature importance.
     fig1, ax1 = plt.subplots(figsize=(11, 6))
-    custom_palette = {"Positive": "#08519c", "Negative": "#cb181d"}
+    custom_palette = {"Positive": "#5bc25f", "Negative": "#f54e4e"}
     sns.barplot(
         x="Importance",
         y="Feature",
@@ -417,7 +427,6 @@ def regression_plots(
     ax1.axvline(0, color="black", linestyle="--", linewidth=1)
     ax1.set_xlabel("Feature Importance")
     ax1.set_ylabel("")
-    # Remove any legend title.
     ax1.legend(title=None)
 
     ax = plt.gca()
@@ -438,9 +447,9 @@ def regression_plots(
         for i, tick in enumerate(xticks)
     ]
     ax.set_xticklabels(new_xticklabels, fontsize=22)
-
-    # Save the feature importance plot.
-    fig1.savefig(filepath / f"{checkpoint}~fimport.png", dpi=300, bbox_inches="tight")
+    fig1.savefig(
+        filepath / f"{checkpoint}~fimport{plot_num}.png", dpi=300, bbox_inches="tight"
+    )
     plt.close(fig1)
 
     # --- Correlation Matrix Plot ---
@@ -463,130 +472,10 @@ def regression_plots(
         cbar=False,
     )
     ax2.tick_params(axis="both", labelsize=16)
-
-    # Save the correlation matrix plot.
-    fig2.savefig(filepath / f"{checkpoint}~cmatrix.png", dpi=300, bbox_inches="tight")
+    fig2.savefig(
+        filepath / f"{checkpoint}~cmatrix{plot_num}.png", dpi=300, bbox_inches="tight"
+    )
     plt.close(fig2)
-
-
-# def regression_plots(
-#     df: pd.DataFrame,
-#     model_name: str,
-#     train_name: str,
-#     checkpoint: str,
-#     filepath: pathlib.Path,
-# ) -> None:
-#     """Perform regression analysis on test data, plot feature importance and correlation matrix.
-
-#     Parameters:
-#         df (pd.DataFrame): Dataframe containing features ('Lexicality', 'Zipf Frequency',
-#             'Morphology', 'Sequence Length', 'Bigram Frequency') and target ('Edit Distance').
-#         model_name (str): Name of the model (used in output/logging).
-#         train_name (str): Training configuration name (used in output/logging).
-#         checkpoint (str): Identifier for the current checkpoint/epoch.
-#     """
-
-#     df = df.copy()
-#     # TODO change frequency when generating the data
-#     df.loc[df["Lexicality"] == "pseudo", "Zipf Frequency"] = 0
-
-#     # Define features
-#     categorical_features = ["Morphology", "Lexicality"]
-#     continuous_features = ["Sequence Length", "Zipf Frequency"]  # "Bigram Frequency"]
-
-#     X = df[categorical_features + continuous_features]
-#     y = df["Edit Distance"]
-
-#     X_train, X_test, y_train, y_test = train_test_split(
-#         X, y, test_size=0.2, random_state=42
-#     )
-
-#     # Preprocessing: one-hot encode (dropping first) and standardize
-#     preprocessor = ColumnTransformer(
-#         transformers=[
-#             ("cat", OneHotEncoder(drop="first"), categorical_features),
-#             ("num", StandardScaler(), continuous_features),
-#         ]
-#     )
-
-#     pipeline = Pipeline(
-#         steps=[("preprocessor", preprocessor), ("regressor", LinearRegression())]
-#     )
-#     pipeline.fit(X_train, y_train)
-#     y_pred = pipeline.predict(X_test)
-
-#     mse = mean_squared_error(y_test, y_pred)
-#     r_value = np.corrcoef(y_test, y_pred)[0, 1]
-#     print(f"\nMSE: {mse:.4f}, r: {r_value:.4f}\n")
-
-#     # Get feature names from the preprocessor and map them to simpler names
-#     raw_feature_names = pipeline.named_steps["preprocessor"].get_feature_names_out()
-#     mapped_feature_names = []
-#     for fn in raw_feature_names:
-#         if "Sequence Length" in fn:
-#             mapped_feature_names.append("Length")
-#         elif "Bigram Frequency" in fn:
-#             mapped_feature_names.append("Bigram")
-#         elif "Zipf Frequency" in fn:
-#             mapped_feature_names.append("Frequency")
-#         elif "Morphology" in fn:
-#             mapped_feature_names.append(f"Morphology")
-#         elif "Lexicality" in fn:
-#             mapped_feature_names.append(f"Lexicality")
-#         else:
-#             mapped_feature_names.append(fn)
-
-#     # Retrieve coefficients
-#     coefficients = pipeline.named_steps["regressor"].coef_
-#     feature_importance = pd.DataFrame(
-#         {
-#             "Feature": mapped_feature_names,
-#             "Coefficient": coefficients,
-#         }
-#     )
-#     # Compute absolute importance and sort so the smallest is at the top
-#     feature_importance["Importance"] = feature_importance["Coefficient"].abs()
-#     feature_importance_sorted = feature_importance.sort_values(
-#         by="Importance", ascending=True
-#     )
-
-#     # Compute the correlation matrix on the processed training data
-#     X_train_processed = pipeline.named_steps["preprocessor"].transform(X_train)
-#     X_train_processed_df = pd.DataFrame(
-#         X_train_processed, columns=mapped_feature_names, index=X_train.index
-#     )
-#     corr_matrix = X_train_processed_df.corr()
-
-#     # Set up a figure with two subplots
-#     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-
-#     sns.barplot(
-#         x="Coefficient",
-#         y="Feature",
-#         hue="Feature",
-#         data=feature_importance_sorted,
-#         orient="h",
-#         palette="Blues",
-#         ax=axes[0],
-#     )
-#     axes[0].axvline(0, color="black", linestyle="--", linewidth=1)
-#     axes[0].set_xlabel("Coefficient")
-#     axes[0].set_title("Feature Importance")
-#     axes[0].set_ylabel("")
-
-#     sns.heatmap(
-#         corr_matrix,
-#         annot=True,
-#         fmt=".2f",
-#         cmap="Blues",
-#         ax=axes[1],
-#         cbar=False,
-#     )
-#     axes[1].set_title("Feature Correlation Matrix")
-
-#     plt.savefig(filepath / f"{checkpoint}~importance.png", dpi=300, bbox_inches="tight")
-#     plt.savefig(filepath / f"{checkpoint}~cormatrix.png", dpi=300, bbox_inches="tight")
-#     plt.close()
 
 
 # Plot the confusion matrix for the test data

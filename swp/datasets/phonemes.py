@@ -47,10 +47,6 @@ class PhonemeTrainDataset(Dataset):
         if self.train or self.fold_id is None:
             self.data_df = get_train_fold(fold_id)
             self.epoch_ids = get_epoch_numpy(fold_id=fold_id, epoch_size=int(1e6))
-        # elif self.train is False and self.fold_id is None:
-        #     print("Loading short validation fold")
-        #     self.data_df = get_valid_fold(self.fold_id)
-        #     self.epoch_ids = get_epoch_numpy(fold_id=fold_id, epoch_size=int(100))
         else:
             self.data_df = get_valid_fold(self.fold_id)
             self.epoch_ids = np.arange(len(self.data_df))
@@ -59,8 +55,6 @@ class PhonemeTrainDataset(Dataset):
             self.phoneme_key = "Phonemes"
         else:
             self.phoneme_key = "No Stress"
-        # print the size of the dataset
-        print(f"Size of the dataset 1: {len(self.data_df)}")
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][

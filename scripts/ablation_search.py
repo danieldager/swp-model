@@ -4,7 +4,6 @@ import sys
 import warnings
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
@@ -77,7 +76,6 @@ def calc_accuracy(df, error_condition, total_condition):
     """
     total = df.loc[total_condition].shape[0]
     errors = df.loc[error_condition].shape[0]
-    print(f"Total: {total}, Errors: {errors}")
     return 1 - errors / total
 
 
@@ -98,11 +96,7 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
                           and above that the scale is logarithmic. The lower and upper ticks are
                           forced to be 0 and 100 respectively, with intermediate ticks as whole numbers.
     """
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from matplotlib.ticker import FuncFormatter
-
-    # Set text elements to font size 18.
+    # Set text elements to font size 18
     plt.rcParams.update({"font.size": 18})
 
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -114,7 +108,7 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
     print(f"Lowest {xlabel}: {results_df[x].min()}")
     print(f"Lowest {ylabel}: {results_df[y].min()}")
 
-    # Plot the scatter points.
+    # Plot the scatter points
     sns.scatterplot(
         data=results_df,
         x=x,
@@ -135,41 +129,21 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
         ax.set_xlim(-1e-4, 1)
         ax.set_ylim(-1e-4, 1)
 
-        # Define tick locations:
-        # - The lower tick is at 1e-7 (to be formatted as 0).
-        # - Then ticks at 0.1, 0.2, …, 0.9, and finally 1.
-        # ticks = [1e-7] + [i / 10 for i in range(1, 11)]
-        # ax.set_xticks(ticks)
-        # ax.set_yticks(ticks)
+        ticks = ["0", "0.1", "1", "10", "100"]
+        ax.set_xticklabels(ticks)
+        ax.set_yticklabels(ticks)
 
-        # Custom formatter:
-        # For the very first tick (1e-7) display "0",
-        # otherwise multiply by 100 and display as an integer.
-        # def custom_formatter(x, pos):
-        #     if abs(x - 1e-7) < 1e-12:
-        #         return "0"
-        #     else:
-        #         return f"{int(round(x * 100))}"
-
-        # ax.xaxis.set_major_formatter(FuncFormatter(custom_formatter))
-        # ax.yaxis.set_major_formatter(FuncFormatter(custom_formatter))
-
-        # Draw grid lines at these major tick locations.
-        # ax.grid(True, which="major", linestyle="--", linewidth=1)
-        grid_list = [i * 1e-4 for i in [0, 2.5, 5, 7.5]] + [
+        ax.grid(True)
+        log_grid = [i * 1e-4 for i in [0, 2.5, 5, 7.5]] + [
             i * 10 ** -(3 - j) for j in range(0, 4) for i in range(1, 10)
         ]
-        # print(grid_list)
-        ax.grid(True)
-        for x in grid_list:
+        for x in log_grid:
             ax.axhline(x, linestyle="--", color="k", alpha=0.1)
             ax.axvline(x, linestyle="--", color="k", alpha=0.1)
 
-    # Draw a diagonal reference line (from lower limit to upper limit).
+    # Draw a diagonal reference line
     ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
-
     ax.legend(title="Layer", loc="upper left")
-
     plt.savefig(model_dir / filename)
     plt.close(fig)
 
@@ -237,7 +211,6 @@ if __name__ == "__main__":
 
     # Check if results_df already exists
     if not (model_dir / "ablation_results.csv").exists():
-        results_df = pd.read_csv(model_dir / "ablation_results.csv")
 
         # Loop over layers and neurons for ablation.
         ablation_results = []

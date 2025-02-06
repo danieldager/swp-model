@@ -19,7 +19,7 @@ from swp.utils.setup import seed_everything
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--vocab_size", type=int, default=50000)
+    parser.add_argument("--vocab_size", type=int, default=30000)
     parser.add_argument("--epoch_size", type=int, default=1000000)
     parser.add_argument("--num_folds", type=int, default=5)
     args = parser.parse_args()
@@ -30,6 +30,7 @@ if __name__ == "__main__":
 
     print("\nGenerating train data...")
     train_df = create_train_data(args.vocab_size)
+    print(len(train_df))
     generator = np.random.default_rng(seed=3407)
 
     print("\nGenerating folds...")
