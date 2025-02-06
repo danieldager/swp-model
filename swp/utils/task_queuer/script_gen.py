@@ -35,6 +35,23 @@ def trim(string: str) -> str:
     return "\n".join(trimmed)
 
 
+def slurm_partition_args(partition: str) -> tuple[str, str]:
+    if partition == "gpu_p5":
+        partition = "a100"
+    elif partition == "gpu_p6":
+        partition = "h100"
+    module_str = ""
+    if partition in {"a100", "h100", "v100-16g", "v100-32g"}:
+        partition_str = f"-C {partition}"
+        if partition == "a100":
+            module_str = "arch/a100"
+        elif partition == "h100":
+            module_str = "arch/h100"
+    else:
+        partition_str = f"--partition={partition}"
+    return partition_str, module_str
+
+
 def base_slurm_file_generator(
     job_name: str,
     partition: str,
@@ -60,25 +77,26 @@ def base_slurm_file_generator(
     logger.info(f"Generating slurm file for {job_name}")
     slurm_directory = get_generated_scripts_dir()
     file_path = slurm_directory / f"{job_name}.slurm"
+    partition_str, module_str = slurm_partition_args(partition)
     file_as_string = f"""
     #!/bin/bash
     #SBATCH --job-name={job_name}
-    #SBATCH --partition={partition}
+    #SBATCH {partition_str}
     #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_{'%j' if array_arg is None else '%A_%a'}.out
     #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_{'%j' if array_arg is None else '%A_%a'}.err
     #SBATCH --time={timestr}
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
     #SBATCH --hint=nomultithread
-    #SBATCH --gres=gpu:{n_gpus}
     #SBATCH --cpus-per-task={n_cpus}
+    {f'#SBATCH --gres=gpu:{n_gpus}' if partition not in {'prepost', 'visu', 'archive', 'compil'} else ""}
     {f'#SBATCH --qos={qos}' if qos is not None else ""}
     {f'#SBATCH --array={array_arg}' if array_arg is not None else ""}
 
     module purge
     conda deactivate
 
-    module load {jz_module}
+    module load {module_str} {jz_module}
     set -x
 
     cd {str(get_python_scripts_dir().absolute())}
@@ -116,10 +134,11 @@ def autoarg_slurmarray_file_generator(
     logger.info(f"Generating slurm file for {job_name}")
     slurm_directory = get_generated_scripts_dir()
     file_path = slurm_directory / f"{job_name}.slurm"
+    partition_str, module_str = slurm_partition_args(partition)
     file_as_string = f"""
     #!/bin/bash
     #SBATCH --job-name={job_name}
-    #SBATCH --partition={partition}
+    #SBATCH {partition_str}
     #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_%A_%a.out
     #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_%A_%a.err
     #SBATCH --time={timestr}
@@ -134,7 +153,7 @@ def autoarg_slurmarray_file_generator(
     module purge
     conda deactivate
 
-    module load {jz_module}
+    module load {module_str} {jz_module}
     set -x
 
     ARGS=$(sed -n '$SLURM_ARRAY_TASK_ID p' < {str(arg_file.absolute())})

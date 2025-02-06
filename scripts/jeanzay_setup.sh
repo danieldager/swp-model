@@ -13,7 +13,7 @@ pip install --user --upgrade --no-cache-dir spacy
 pip install --user --upgrade --no-cache-dir wordfreq
 
 python -m spacy download en_core_web_lg
-python -c "import nltk; nltk.download('averaged_perceptron_tagger_eng')"
+python -m nltk.downloader "averaged_perceptron_tagger" "cmudict"
 
 module purge
 conda deactivate

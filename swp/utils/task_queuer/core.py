@@ -25,7 +25,7 @@ def create_and_queue_datagen(
         timestr="5:00:00",
         n_gpus=0,
         n_cpus=4,
-        python_script="generate_main_data.py",
+        python_script="generate_data.py",
         script_options=script_options,
     )
     datagen_id_var, datagen_commands = queue_job(
@@ -40,7 +40,7 @@ def create_and_queue_train_repetition(
     training_path = autoarg_slurmarray_file_generator(
         job_name="train_rep_array",
         partition="gpu_p5",
-        qos="qos_gpu-t3",
+        qos="qos_gpu_a100-t3",
         timestr="20:00:00",
         n_gpus=1,
         n_cpus=4,
@@ -64,7 +64,7 @@ def create_and_queue_aggregate(dependency_id_vars: list[str]) -> tuple[str, list
         timestr="2:00:00",
         n_gpus=0,
         n_cpus=4,
-        python_script="generate_main_data.py",
+        python_script="aggregate.py",
         script_options="",
     )
     aggregate_id, aggregate_commands = queue_job(
