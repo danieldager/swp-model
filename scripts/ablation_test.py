@@ -15,17 +15,22 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
+from swp.test.repetition import test
+from swp.utils.setup import seed_everything
+from swp.utils.datasets import get_test_data, get_train_data, enrich_for_plotting
+from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
+from swp.utils.paths import get_ablations_dir
 from swp.datasets.phonemes import (
     get_phoneme_testloader,
     get_phoneme_to_id,
     get_sonority_dataset,
 )
-from swp.test.repetition import test
-from swp.utils.datasets import get_test_data, get_train_data, enrich_for_plotting
-from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
-from swp.utils.paths import get_ablations_dir
-from swp.utils.plots import regression_plots
-from swp.utils.setup import seed_everything
+from swp.utils.plots import (
+    plot_length_errors,
+    plot_position_errors,
+    plot_sonority_errors,
+    regression_plots,
+)
 
 
 def cache_lstm_weights(layer):
@@ -188,24 +193,11 @@ if __name__ == "__main__":
     # restore_lstm_weights(layer, original_weights)
 
     ## Plotting ##
-    test_df = enrich_for_plotting(test_df, phoneme_to_id, include_stress)
-    ssp_df = enrich_for_plotting(ssp_df, phoneme_to_id, include_stress)
-    train_df = enrich_for_plotting(train_df, phoneme_to_id, include_stress)
+    test_df = enrich_for_plotting(test_df, include_stress)
+    ssp_df = enrich_for_plotting(ssp_df, include_stress)
+    train_df = enrich_for_plotting(train_df, include_stress)
 
-    error_plots(
-        test_df,
-        ssp_df,
-        model_name,
-        train_name,
-        checkpoint,
-        model_dir,
-    )
-
-    regression_plots(
-        test_df,
-        train_df,
-        model_name,
-        train_name,
-        checkpoint,
-        model_dir,
-    )
+    plot_length_errors(test_df, checkpoint, model_dir)
+    plot_position_errors(test_df, checkpoint, model_dir)
+    plot_sonority_errors(ssp_df, checkpoint, model_dir)
+    regression_plots(test_df, checkpoint, model_dir)

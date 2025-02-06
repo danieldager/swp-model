@@ -155,13 +155,7 @@ if __name__ == "__main__":
             plot_position_errors(test_df, checkpoint, figures_dir)
             plot_sonority_errors(ssp_df, checkpoint, figures_dir)
             plot_category_errors(test_df, checkpoint, figures_dir)
-            regression_plots(
-                test_df,
-                args.model_name,
-                args.train_name,
-                checkpoint,
-                figures_dir,
-            )
+            regression_plots(test_df, checkpoint, figures_dir)
 
         if args.verbose:
             print("-" * 60)

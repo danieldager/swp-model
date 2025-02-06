@@ -371,6 +371,8 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
         )
     else:
         dataframe = create_train_data()
+
+    print(f"Size of the dataset 2: {len(dataframe)}")
     return dataframe
 
 
@@ -450,6 +452,7 @@ def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
                 "No Stress": literal_eval,
             },
         )
+        print(f"Size of the dataset 3: {len(dataframe)}")
     return dataframe
 
 

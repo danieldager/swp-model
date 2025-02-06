@@ -74,20 +74,47 @@ def ablate_lstm_neuron(layer, neuron_idx, num_neurons):
 def calc_accuracy(df, error_condition, total_condition):
     """
     Compute accuracy as 1 - (number of errors / total items) for a given condition.
-    Returns NaN if no rows satisfy the total_condition.
     """
     total = df.loc[total_condition].shape[0]
-    if total == 0:
-        return np.nan
     errors = df.loc[error_condition].shape[0]
+    print(f"Total: {total}, Errors: {errors}")
     return 1 - errors / total
 
 
-def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir):
+def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scale=True):
     """
     Produce and save a scatter plot for the specified x and y columns.
+
+    Parameters:
+        results_df (DataFrame): DataFrame containing the data.
+        x (str): Name of the x column.
+        y (str): Name of the y column.
+        xlabel (str): Label for the x axis.
+        ylabel (str): Label for the y axis.
+        filename (str): File name to save the plot.
+        model_dir (Path): Directory where to save the plot.
+        log_scale (bool): If True, set both axes to a combined linear/logarithmic scale.
+                          The region from 0 to 0.01 is linear (with 0 shown as the lower tick),
+                          and above that the scale is logarithmic. The lower and upper ticks are
+                          forced to be 0 and 100 respectively, with intermediate ticks as whole numbers.
     """
-    plt.figure(figsize=(8, 8))
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from matplotlib.ticker import FuncFormatter
+
+    # Set text elements to font size 18.
+    plt.rcParams.update({"font.size": 18})
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    results_df = results_df.copy()
+    results_df[x] = 1 - results_df[x]
+    results_df[y] = 1 - results_df[y]
+
+    print(f"Lowest {xlabel}: {results_df[x].min()}")
+    print(f"Lowest {ylabel}: {results_df[y].min()}")
+
+    # Plot the scatter points.
     sns.scatterplot(
         data=results_df,
         x=x,
@@ -95,14 +122,56 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir):
         hue="layer_name",
         palette={"encoder": "blue", "decoder": "red"},
         edgecolor="black",
+        alpha=0.9,
+        s=50,
+        ax=ax,
     )
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.plot([0, 1], [0, 1], color="grey", linestyle="--", linewidth=1)
-    plt.legend(title="Layer")
-    plt.grid(True)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    if log_scale:
+        ax.set_xscale("symlog", linthresh=0.001)
+        ax.set_yscale("symlog", linthresh=0.001)
+        ax.set_xlim(-1e-4, 1)
+        ax.set_ylim(-1e-4, 1)
+
+        # Define tick locations:
+        # - The lower tick is at 1e-7 (to be formatted as 0).
+        # - Then ticks at 0.1, 0.2, …, 0.9, and finally 1.
+        # ticks = [1e-7] + [i / 10 for i in range(1, 11)]
+        # ax.set_xticks(ticks)
+        # ax.set_yticks(ticks)
+
+        # Custom formatter:
+        # For the very first tick (1e-7) display "0",
+        # otherwise multiply by 100 and display as an integer.
+        # def custom_formatter(x, pos):
+        #     if abs(x - 1e-7) < 1e-12:
+        #         return "0"
+        #     else:
+        #         return f"{int(round(x * 100))}"
+
+        # ax.xaxis.set_major_formatter(FuncFormatter(custom_formatter))
+        # ax.yaxis.set_major_formatter(FuncFormatter(custom_formatter))
+
+        # Draw grid lines at these major tick locations.
+        # ax.grid(True, which="major", linestyle="--", linewidth=1)
+        grid_list = [i * 1e-4 for i in [0, 2.5, 5, 7.5]] + [
+            i * 10 ** -(3 - j) for j in range(0, 4) for i in range(1, 10)
+        ]
+        # print(grid_list)
+        ax.grid(True)
+        for x in grid_list:
+            ax.axhline(x, linestyle="--", color="k", alpha=0.1)
+            ax.axvline(x, linestyle="--", color="k", alpha=0.1)
+
+    # Draw a diagonal reference line (from lower limit to upper limit).
+    ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
+
+    ax.legend(title="Layer", loc="upper left")
+
     plt.savefig(model_dir / filename)
-    plt.close()
+    plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -144,14 +213,14 @@ if __name__ == "__main__":
     seed_everything()
     device = torch.device("cpu")
 
-    # Load and prepare data.
+    # Load and prepare data
     test_data = get_test_data()
     train_data = get_ablation_train_data()
     train_data = train_data.sample(frac=0.3)
     ablation_data = pd.concat([test_data, train_data])
     ablation_loader = get_phoneme_testloader(batch_size, include_stress, ablation_data)
 
-    # Load the model and weights.
+    # Load the model and weights
     model = get_model(model_name)
     load_weights(
         model=model,
@@ -161,12 +230,12 @@ if __name__ == "__main__":
         device=device,
     )
 
-    # Set up directories.
+    # Set up directories
     ablations_dir = get_ablations_dir()
     model_dir = ablations_dir / f"{model_name}~{train_name}~{checkpoint}"
     model_dir.mkdir(exist_ok=True, parents=True)
 
-    # check if results_df already exists
+    # Check if results_df already exists
     if not (model_dir / "ablation_results.csv").exists():
         results_df = pd.read_csv(model_dir / "ablation_results.csv")
 
@@ -197,7 +266,7 @@ if __name__ == "__main__":
                 df = enrich_for_plotting(df, include_stress)
                 df = classify_error_positions(df)
 
-                # Compute accuracy values using our helper
+                # Compute accuracy values
                 real_accuracy = calc_accuracy(
                     df,
                     (df["Lexicality"] == "real") & (df["Edit Distance"] > 0),

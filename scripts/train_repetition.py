@@ -40,14 +40,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--fold_id",
-        type=int,
-        default=0,
+        type=str,
+        default=None,
         help="Evaluation fold id",
     )
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=50,
+        default=100,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -155,6 +155,7 @@ if __name__ == "__main__":
         model_name = args.model_name
         model = get_model(model_name)
 
+    fold_id = None  ### HARDCODE ###
     train_loader = get_phoneme_trainloader(
         fold_id=fold_id,
         train=True,
@@ -162,7 +163,7 @@ if __name__ == "__main__":
         include_stress=include_stress,
     )
     valid_loader = get_phoneme_trainloader(
-        fold_id=fold_id,
+        fold_id=0,
         train=False,
         batch_size=batch_size,
         include_stress=include_stress,
