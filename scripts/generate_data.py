@@ -1,6 +1,7 @@
+import argparse
 import os
 import sys
-import argparse
+
 import numpy as np
 
 current = os.path.dirname(os.path.realpath(__file__))
@@ -12,8 +13,8 @@ from swp.utils.datasets import (
     create_folds,
     create_test_data,
     create_train_data,
-    get_train_fold,
     get_phoneme_statistics,
+    get_train_fold,
 )
 from swp.utils.setup import seed_everything
 
@@ -40,6 +41,7 @@ if __name__ == "__main__":
     for fold_id in range(args.num_folds):
         fold_train_df = get_train_fold(fold_id)
         create_epoch(fold_id, fold_train_df, args.epoch_size, generator)
+    create_epoch(None, train_df, epoch_size=args.epoch_size, generator=generator)
 
     print("\nComputing phoneme statistics...\n")
     get_phoneme_statistics(train_df)
