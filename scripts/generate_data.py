@@ -30,8 +30,8 @@ if __name__ == "__main__":
 
     print("\nGenerating train data...")
     train_df = create_train_data(args.vocab_size)
-    print(len(train_df))
     generator = np.random.default_rng(seed=3407)
+    print("train_df len: ", len(train_df))
 
     print("\nGenerating folds...")
     create_folds(train_df, num_folds=args.num_folds, generator=generator)

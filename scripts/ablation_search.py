@@ -3,16 +3,24 @@ import os
 import sys
 import warnings
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-import torch
+import warnings
 
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
     message="The PyTorch API of nested tensors is in prototype stage",
 )
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=r".*set_ticklabels\(\) should only be used with a fixed number of ticks.*",
+)
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import torch
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -105,9 +113,6 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
     results_df[x] = 1 - results_df[x]
     results_df[y] = 1 - results_df[y]
 
-    print(f"Lowest {xlabel}: {results_df[x].min()}")
-    print(f"Lowest {ylabel}: {results_df[y].min()}")
-
     # Plot the scatter points
     sns.scatterplot(
         data=results_df,
@@ -115,7 +120,7 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
         y=y,
         hue="layer_name",
         palette={"encoder": "blue", "decoder": "red"},
-        edgecolor="black",
+        # edgecolor="black",
         alpha=0.9,
         s=50,
         ax=ax,
@@ -143,9 +148,20 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
 
     # Draw a diagonal reference line
     ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
-    ax.legend(title="Layer", loc="upper left")
-    plt.savefig(model_dir / filename)
+    ax.get_legend().remove()
+    plt.savefig(model_dir / filename, dpi=300)
+
+    # Create a legend figure
+    ax.legend(title="Layer")
+    handles, labels = ax.get_legend_handles_labels()
+    figLegend = plt.figure(figsize=(2, 2))
+    figLegend.legend(handles, labels, loc="center", title="Layer")
+    figLegend.canvas.draw()
+    plt.axis("off")
+    figLegend.savefig(model_dir / "legend.png", dpi=300, bbox_inches="tight")
+
     plt.close(fig)
+    plt.close(figLegend)
 
 
 if __name__ == "__main__":
@@ -288,6 +304,16 @@ if __name__ == "__main__":
                     (df["Recency Error"] > 0),
                     (df["Edit Distance"] >= 0),
                 )
+                short_accuracy = calc_accuracy(
+                    df,
+                    (df["Size"] == "short") & (df["Edit Distance"] > 0),
+                    (df["Size"] == "short"),
+                )
+                long_accuracy = calc_accuracy(
+                    df,
+                    (df["Size"] == "long") & (df["Edit Distance"] > 0),
+                    (df["Size"] == "long"),
+                )
                 ablation_results.append(
                     {
                         "neuron_idx": neuron_idx,
@@ -300,6 +326,8 @@ if __name__ == "__main__":
                         "complex_accuracy": complex_accuracy,
                         "primacy_accuracy": primacy_accuracy,
                         "recency_accuracy": recency_accuracy,
+                        "short_accuracy": short_accuracy,
+                        "long_accuracy": long_accuracy,
                     }
                 )
 
@@ -318,6 +346,8 @@ if __name__ == "__main__":
         "complex_accuracy",
         "primacy_accuracy",
         "recency_accuracy",
+        "short_accuracy",
+        "long_accuracy",
     ]:
         # print the neuron indices as well
         print(
@@ -364,5 +394,15 @@ if __name__ == "__main__":
         "Primacy",
         "Recency",
         "pos_scatter.png",
+        model_dir,
+    )
+
+    scatter_plot(
+        results_df,
+        "short_accuracy",
+        "long_accuracy",
+        "Short",
+        "Long",
+        "len_scatter.png",
         model_dir,
     )

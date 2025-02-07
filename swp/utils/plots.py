@@ -1,6 +1,12 @@
 import pathlib
 import warnings
 
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=r".*set_ticklabels\(\) should only be used with a fixed number of ticks.*",
+)
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,11 +22,6 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from .paths import get_figures_dir
 
 sns.set_palette("colorblind")
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message="set_ticklabels() should only be used with a fixed number of ticks",
-)
 
 
 # Plot the training and validation loss curves
@@ -41,7 +42,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     MODEL_FIGURES_DIR = get_figures_dir() / model
     MODEL_FIGURES_DIR.mkdir(exist_ok=True)
     filename = MODEL_FIGURES_DIR / "training.png"
-    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.savefig(filename, dpi=300)  # , bbox_inches="tight")
     plt.close()
 
 
@@ -122,7 +123,7 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
     ax.set_yticklabels(new_yticklabels, fontsize=22)
 
     plt.grid(True)
-    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)  # , box_inches="tight")
     plt.close()
 
 
@@ -202,7 +203,7 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     ax.set_yticklabels(new_yticklabels, fontsize=22)
 
     plt.grid(True)
-    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
 
 
@@ -255,7 +256,7 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
     ax.set_yticklabels(new_yticklabels, fontsize=22)
 
     plt.grid(True)
-    plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
 
 
@@ -320,7 +321,7 @@ def plot_category_errors(df, checkpoint: str, dir: pathlib.Path):
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.grid(True)
-    plt.savefig(dir / f"{checkpoint}~cat_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / f"{checkpoint}~cat_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
 
 
@@ -447,9 +448,8 @@ def regression_plots(
         for i, tick in enumerate(xticks)
     ]
     ax.set_xticklabels(new_xticklabels, fontsize=22)
-    fig1.savefig(
-        filepath / f"{checkpoint}~fimport{plot_num}.png", dpi=300, bbox_inches="tight"
-    )
+    filename = f"{checkpoint}~fimport{plot_num}.png"
+    fig1.savefig(filepath / filename, dpi=300, bbox_inches="tight")
     plt.close(fig1)
 
     # --- Correlation Matrix Plot ---
@@ -472,9 +472,8 @@ def regression_plots(
         cbar=False,
     )
     ax2.tick_params(axis="both", labelsize=16)
-    fig2.savefig(
-        filepath / f"{checkpoint}~cmatrix{plot_num}.png", dpi=300, bbox_inches="tight"
-    )
+    filename = f"{checkpoint}~cmatrix{plot_num}.png"
+    fig2.savefig(filepath / filename, dpi=300)  # , bbox_inches="tight")
     plt.close(fig2)
 
 

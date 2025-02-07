@@ -53,19 +53,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=512,
+        default=1024,
         help="Batch size (fixed to 1 for repetition)",
     )
     parser.add_argument(
         "--recur_type",
         type=str,
-        default="rnn",
+        default="lstm",
         help="Recurrent network architecture : RNN or LSTM",
     )
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=256,
+        default=64,
         help="Hidden size of recurrent subnetworks.",
     )
     parser.add_argument(
@@ -77,19 +77,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learn_rate",
         type=float,
-        default=0.00001,
+        default=0.001,
         help="Learning rate",
     )
     parser.add_argument(
         "--dropout",
         type=float,
-        default=0.1,
+        default=0.4,
         help="Dropout rate for encoders and decoders",
     )
     parser.add_argument(
         "--tf_ratio",
         type=float,
-        default=0.1,
+        default=0.0,
         help="Teacher forcing ratio for decoder",
     )
     parser.add_argument(

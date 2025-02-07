@@ -104,6 +104,7 @@ def get_phoneme_trainloader(
         phoneme_to_id=phoneme_to_id,
         include_stress=include_stress,
     )
+    print(f"Phoneme set length: {len(phoneme_set)}")
     if generator is None:
         generator = torch.Generator().manual_seed(42)
     phoneme_loader = DataLoader(

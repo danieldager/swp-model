@@ -347,7 +347,7 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     dataframe.to_csv(csv_train_path)
 
-    ablation_train = dataframe.sample(frac=0.1)
+    ablation_train = dataframe.sample(frac=0.01)
     ablation_train = enrich_for_ablations(ablation_train)
     ablation_train.to_csv(get_dataframe_dir() / "ablation_train.csv")
 
