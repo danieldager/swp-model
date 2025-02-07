@@ -10,7 +10,8 @@ import spacy.cli
 from g2p_en import G2p
 from Levenshtein import editops
 from morphemes import Morphemes
-from wordfreq import iter_wordlist, word_frequency, zipf_frequency
+from nltk.corpus import cmudict
+from wordfreq import word_frequency, zipf_frequency
 
 from .paths import get_dataframe_dir, get_folds_dir, get_morphemes_dir, get_stimuli_dir
 
@@ -72,7 +73,6 @@ def clean_and_enrich_data(
     Set `real` to `True` for extended data (Zipf freq, part of speech).
     Set `morph` to `True` to add morphological data (might be consequently slower).
     """
-    g2p = G2p()
     # if not spacy.util.is_package("en_core_web_lg"):
     #     spacy.cli.download("en_core_web_lg")
     nlp = spacy.load("en_core_web_lg")
@@ -100,7 +100,16 @@ def clean_and_enrich_data(
         df["Zipf Frequency"] = 0.0
 
     # Add Phonemes column
-    df["Phonemes"] = df["Word"].apply(g2p)
+    cmu = cmudict.dict()
+    g2p = G2p()
+
+    def phonemize(word: str) -> list[str]:
+        if word in cmu:
+            return cmu[word][0]
+        else:
+            return g2p(word)
+
+    df["Phonemes"] = df["Word"].apply(phonemize)
 
     # Add Phonemes column with no stress
     def remove_stress(phonemes):
@@ -315,34 +324,53 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     return dataframe
 
 
+def get_currated_words() -> list[tuple[str, float]]:
+    r"""Returns a list of currated english words sorted by descending frequency"""
+    # TODO add support for language maybe ?
+    cmu = cmudict.dict()
+    currated = []
+    for k in cmu:
+        freq = word_frequency(k, "en")
+        if (
+            all(
+                substr not in k
+                for substr in [
+                    "'",
+                    ".",
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "0",
+                ]
+            )
+            and freq != 0
+            and k[0].isalpha()
+        ):
+            currated.append((k, freq))
+    currated.sort(key=lambda x: x[1], reverse=True)
+    return currated
+
+
 def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     r"""Create a training dataset with `num_unique_words` words selected from the most frequent english words.
 
     Data is enrichened with word Frequency, Zipf Frequency, Part of Speech and Phonemes
     """
-    word_list = []
-    freq_list = []
-    count = 0
-    for word in iter_wordlist("en"):
-        # Skip any non-alphabetic words
-        if not word.isalpha():
-            continue
-        # Skip any words that don't have vowels
-        if not any(char in "aeiouy" for char in word):
-            continue
-
-        word_list.append(word)
-        freq_list.append(word_frequency(word, "en"))
-        count += 1
-        if count == num_unique_words:
-            break
-
-    if count != num_unique_words:
-        raise RuntimeError(
-            f"Extracted {count}/{num_unique_words} words before exhausting vocabulary."
+    currated = get_currated_words()
+    if num_unique_words > len(currated):
+        raise ValueError(
+            f"Not enough unique words to pick from, only {len(currated)} words available"
         )
+    selected = currated[:num_unique_words]
+    word_tuple, freq_tuple = zip(*selected)
 
-    dataframe = pd.DataFrame({"Word": word_list, "Frequency": freq_list})
+    dataframe = pd.DataFrame({"Word": list(word_tuple), "Frequency": list(freq_tuple)})
     dataframe = clean_and_enrich_data(dataframe, real=True)
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     dataframe.to_csv(csv_train_path)
