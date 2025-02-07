@@ -331,27 +331,7 @@ def get_currated_words() -> list[tuple[str, float]]:
     currated = []
     for k in cmu:
         freq = word_frequency(k, "en")
-        if (
-            all(
-                substr not in k
-                for substr in [
-                    "'",
-                    ".",
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "0",
-                ]
-            )
-            and freq != 0
-            and k[0].isalpha()
-        ):
+        if k.isalpha() and freq != 0:
             currated.append((k, freq))
     currated.sort(key=lambda x: x[1], reverse=True)
     return currated
