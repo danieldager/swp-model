@@ -4,6 +4,8 @@ conda deactivate
 git submodule init
 git submodule update
 
+cp -r ../stimuli/ $WORK
+
 module load pytorch-gpu/py3/2.5.0
 
 pip install --user --upgrade --no-cache-dir g2p_en
