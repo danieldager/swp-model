@@ -44,7 +44,7 @@ class PhonemeTrainDataset(Dataset):
     ):
         self.fold_id = fold_id
         self.train = train
-        if self.train or self.fold_id is None:
+        if self.train:
             self.data_df = get_train_fold(fold_id)
             self.epoch_ids = get_epoch_numpy(fold_id=fold_id, epoch_size=int(1e6))
         else:

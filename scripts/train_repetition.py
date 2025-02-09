@@ -31,11 +31,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         type=str,
+        default=None,
         help="Model name string, overrides other model parameters",
     )
     parser.add_argument(
         "--train_name",
         type=str,
+        default=None,
         help="Training name string, overrides other training parameters",
     )
     parser.add_argument(
@@ -155,7 +157,6 @@ if __name__ == "__main__":
         model_name = args.model_name
         model = get_model(model_name)
 
-    fold_id = None  ### HARDCODE ###
     train_loader = get_phoneme_trainloader(
         fold_id=fold_id,
         train=True,
@@ -163,7 +164,7 @@ if __name__ == "__main__":
         include_stress=include_stress,
     )
     valid_loader = get_phoneme_trainloader(
-        fold_id=0,  ### HARDCODE ###
+        fold_id=fold_id,
         train=False,
         batch_size=batch_size,
         include_stress=include_stress,

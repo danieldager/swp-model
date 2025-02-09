@@ -467,19 +467,28 @@ def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
     return dataframe
 
 
-def get_valid_fold(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+def get_valid_fold(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved validation fold number `fold_id` if it exists, recreate all folds otherwise.
+    If `fold_id` is None, return the complete training set.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
+    train_df = None
     csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}.csv"
     if force_recreate or not csv_valid_fold_path.exists():
         train_df = get_train_data(force_recreate)
         create_folds(train_df)
-    dataframe = pd.read_csv(
-        csv_valid_fold_path,
-        index_col=0,
-        converters={"Word": str, "Phonemes": literal_eval, "No Stress": literal_eval},
-    )
+    if fold_id is None:
+        dataframe = get_train_data(force_recreate) if train_df is None else train_df
+    else:
+        dataframe = pd.read_csv(
+            csv_valid_fold_path,
+            index_col=0,
+            converters={
+                "Word": str,
+                "Phonemes": literal_eval,
+                "No Stress": literal_eval,
+            },
+        )
     return dataframe
 
 
