@@ -634,24 +634,26 @@ def create_phoneme_to_id(
     sorted_phonemes = sorted(list(phonemes_unique))
     all_tokens = ["<PAD>", "<SOS>", "<EOS>"] + sorted_phonemes
 
-    no_stress_tokens = []
-    for t in all_tokens:
-        if t[-1].isdigit():
-            if t[:-1] not in no_stress_tokens:
-                no_stress_tokens.append(t[:-1])
+    phoneme_to_id_sw = {}
+    phoneme_to_id_sn = {}
+    no_stress_index = 0
+    for i, token in enumerate(all_tokens):
+        phoneme_to_id_sw[token] = i
+        if token[-1].isdigit():
+            no_stress_token = token[:-1]
         else:
-            no_stress_tokens.append(t)
-
-    phoneme_to_id_sw = {token: i for i, token in enumerate(all_tokens)}
-    phoneme_to_id_sn = {token: i for i, token in enumerate(no_stress_tokens)}
+            no_stress_token = token
+        if no_stress_token not in phoneme_to_id_sn:
+            phoneme_to_id_sn[no_stress_token] = no_stress_index
+            no_stress_index += 1
 
     phoneme_dict_path = get_stimuli_dir() / "phonemes_to_id_sw.json"
     with phoneme_dict_path.open("w") as f:
-        json.dump(phoneme_to_id_sw, f)
+        json.dump(phoneme_to_id_sw, f, indent=4)
 
     phoneme_dict_path = get_stimuli_dir() / "phonemes_to_id_sn.json"
     with phoneme_dict_path.open("w") as f:
-        json.dump(phoneme_to_id_sn, f)
+        json.dump(phoneme_to_id_sn, f, indent=4)
 
     if include_stress:
         return phoneme_to_id_sw

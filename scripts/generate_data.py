@@ -11,6 +11,7 @@ sys.path.append(parent)
 from swp.utils.datasets import (
     create_epoch,
     create_folds,
+    create_phoneme_to_id,
     create_test_data,
     create_train_data,
     get_phoneme_statistics,
@@ -45,3 +46,6 @@ if __name__ == "__main__":
 
     print("\nComputing phoneme statistics...\n")
     get_phoneme_statistics(train_df)
+
+    print("\nComputing phoneme tokens...\n")
+    create_phoneme_to_id(train_df, False)

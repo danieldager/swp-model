@@ -98,7 +98,7 @@ def create_gen_arg_dict(path: Path, words: Sequence[str]):
     }
     gen_args_path = train_path / "gen_args.json"
     with gen_args_path.open("w") as f:
-        json.dump(dataset_gen_dict, f)
+        json.dump(dataset_gen_dict, f, indent=4)
     return dataset_gen_dict
 
 
