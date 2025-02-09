@@ -93,7 +93,7 @@ def create_jean_zay_train_repetition_queuer(
     for arg_dict in grid_iter(grid):  # type: ignore
         model_name = get_model_name_from_args(**arg_dict)  # type: ignore
         training_name = get_train_name(**arg_dict)  # type: ignore
-        args = f"--model_name {model_name} --train_name {training_name}"
+        args = f"--model_name {model_name} --train_name {training_name} --num_epochs {arg_dict['num_epochs']}"
         all_args.append(args)
         job_array_len += 1
     arg_file = gen_script_dir / "train_repetition_args.txt"

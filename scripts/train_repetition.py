@@ -163,7 +163,7 @@ if __name__ == "__main__":
         include_stress=include_stress,
     )
     valid_loader = get_phoneme_trainloader(
-        fold_id=0,
+        fold_id=0,  ### HARDCODE ###
         train=False,
         batch_size=batch_size,
         include_stress=include_stress,
