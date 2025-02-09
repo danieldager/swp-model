@@ -13,6 +13,7 @@ from morphemes import Morphemes
 from nltk.corpus import cmudict
 from wordfreq import word_frequency, zipf_frequency
 
+from .abbreviations import abbreviations_en
 from .paths import get_dataframe_dir, get_folds_dir, get_morphemes_dir, get_stimuli_dir
 
 
@@ -335,6 +336,7 @@ def get_currated_words() -> list[tuple[str, float]]:
             k.isalpha()
             and freq != 0
             and (k in {"a", "i"}) ** (len(k) == 1)  # reverse implication
+            and k not in abbreviations_en
         ):
             currated.append((k, freq))
     currated.sort(key=lambda x: x[1], reverse=True)
