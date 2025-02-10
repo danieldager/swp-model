@@ -218,7 +218,6 @@ def enrich_for_ablations(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     mrp = Morphemes(str(get_morphemes_dir()))
 
-    # Process "Size" column
     if "Size" not in df.columns:
         df["Size"] = df["Word"].apply(lambda x: "short" if len(x) <= 6 else "long")
     else:
@@ -227,7 +226,8 @@ def enrich_for_ablations(df: pd.DataFrame) -> pd.DataFrame:
             lambda x: "short" if len(x) <= 6 else "long"
         )
 
-    # Process "Morphology" column
+    # TODO make a set with complex and simple words for lookup
+    # if not found, then use the morphemes API
     if "Morphology" not in df.columns:
         df["Morphology"] = df["Word"].apply(
             lambda x: "simple" if mrp.parse(x)["morpheme_count"] <= 1 else "complex"
@@ -268,6 +268,7 @@ def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
 
     df.loc[:, ["Primacy Error", "Recency Error"]] = df.apply(classify, axis=1)
     return df
+
 
 def get_test_data() -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
@@ -325,9 +326,9 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     dataframe.to_csv(csv_train_path)
 
-    ablation_train = dataframe.sample(frac=0.1)
-    ablation_train = enrich_for_ablations(ablation_train)
-    ablation_train.to_csv(get_dataframe_dir() / "ablation_train.csv")
+    # ablation_train = dataframe.sample(frac=0.1)
+    # ablation_train = enrich_for_ablations(ablation_train)
+    # ablation_train.to_csv(get_dataframe_dir() / "ablation_train.csv")
 
     return dataframe
 

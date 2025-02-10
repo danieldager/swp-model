@@ -1032,7 +1032,7 @@ plued,PSC,pseudo,short,complex,,4,,"['P', 'L', 'UW1', 'D']","['P', 'L', 'UW', 'D
 axen,PSC,pseudo,short,complex,,5,,"['AE1', 'K', 'S', 'AH0', 'N']","['AE', 'K', 'S', 'AH', 'N']",,,,
 deards,PSC,pseudo,short,complex,,5,,"['D', 'IH1', 'R', 'D', 'Z']","['D', 'IH', 'R', 'D', 'Z']",,,,
 fourness,PSC,pseudo,short,complex,,6,,"['F', 'AO1', 'R', 'N', 'AH0', 'S']","['F', 'AO', 'R', 'N', 'AH', 'S']",,,,
-eaiew,PSC,pseudo,short,complex,,2,,"['IY1', 'W']","['IY', 'W']",,,,
+geth,PSC,pseudo,short,complex,,3,,"['G', 'EH1', 'TH']","['G', 'EH', 'TH']",,,,
 lasy,PSC,pseudo,short,complex,,4,,"['L', 'EY1', 'Z', 'IY0']","['L', 'EY', 'Z', 'IY']",,,,
 bemoad,PSC,pseudo,short,complex,,6,,"['B', 'IH0', 'M', 'OW1', 'AH0', 'D']","['B', 'IH', 'M', 'OW', 'AH', 'D']",,,,
 eames,PSC,pseudo,short,complex,,3,,"['IY1', 'M', 'Z']","['IY', 'M', 'Z']",,,,

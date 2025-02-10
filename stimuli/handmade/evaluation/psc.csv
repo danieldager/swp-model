@@ -1,0 +1,408 @@
+Unnamed: 0,Word,Size,Length,Frequency,Zipf Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No Stress,Condition
+2,devally,short,6,,,complex,pseudo,,"['D', 'EH1', 'V', 'AH0', 'L', 'IY0']","['D', 'EH', 'V', 'AH', 'L', 'IY']",PSC
+3,dislave,short,6,,,complex,pseudo,,"['D', 'IH0', 'S', 'L', 'AA1', 'V']","['D', 'IH', 'S', 'L', 'AA', 'V']",PSC
+4,enslike,short,6,,,complex,pseudo,,"['EH1', 'N', 'S', 'L', 'AY2', 'K']","['EH', 'N', 'S', 'L', 'AY', 'K']",PSC
+6,fatalue,short,6,,,complex,pseudo,,"['F', 'AE1', 'T', 'AH0', 'L', 'UW2']","['F', 'AE', 'T', 'AH', 'L', 'UW']",PSC
+7,fatcher,short,4,,,complex,pseudo,,"['F', 'AE1', 'CH', 'ER0']","['F', 'AE', 'CH', 'ER']",PSC
+8,immover,short,5,,,complex,pseudo,,"['IH1', 'M', 'OW0', 'V', 'ER0']","['IH', 'M', 'OW', 'V', 'ER']",PSC
+9,inslave,short,6,,,complex,pseudo,,"['IH0', 'N', 'S', 'L', 'EY1', 'V']","['IH', 'N', 'S', 'L', 'EY', 'V']",PSC
+10,inslike,short,6,,,complex,pseudo,,"['IH1', 'L', 'N', 'S', 'AY2', 'K']","['IH', 'L', 'N', 'S', 'AY', 'K']",PSC
+11,modalue,short,6,,,complex,pseudo,,"['M', 'AA1', 'D', 'AH0', 'L', 'UW2']","['M', 'AA', 'D', 'AH', 'L', 'UW']",PSC
+12,movally,short,6,,,complex,pseudo,,"['M', 'UW1', 'V', 'AH0', 'L', 'IY0']","['M', 'UW', 'V', 'AH', 'L', 'IY']",PSC
+13,movalue,short,6,,,complex,pseudo,,"['M', 'OW1', 'V', 'AH0', 'L', 'UW2']","['M', 'OW', 'V', 'AH', 'L', 'UW']",PSC
+14,nonsory,short,6,,,complex,pseudo,,"['N', 'AA1', 'N', 'S', 'ER0', 'IY0']","['N', 'AA', 'N', 'S', 'ER', 'IY']",PSC
+15,nonstor,short,6,,,complex,pseudo,,"['N', 'AA1', 'N', 'S', 'T', 'ER0']","['N', 'AA', 'N', 'S', 'T', 'ER']",PSC
+16,reactop,short,6,,,complex,pseudo,,"['R', 'IY1', 'K', 'T', 'AA2', 'P']","['R', 'IY', 'K', 'T', 'AA', 'P']",PSC
+18,recoder,short,6,,,complex,pseudo,,"['R', 'IY0', 'K', 'OW1', 'D', 'ER0']","['R', 'IY', 'K', 'OW', 'D', 'ER']",PSC
+20,rensory,short,6,,,complex,pseudo,,"['R', 'EH1', 'N', 'S', 'ER0', 'IY0']","['R', 'EH', 'N', 'S', 'ER', 'IY']",PSC
+22,renstor,short,6,,,complex,pseudo,,"['R', 'EH1', 'N', 'S', 'T', 'ER0']","['R', 'EH', 'N', 'S', 'T', 'ER']",PSC
+23,senewal,short,6,,,complex,pseudo,,"['S', 'EH1', 'N', 'W', 'AH0', 'L']","['S', 'EH', 'N', 'W', 'AH', 'L']",PSC
+25,senstor,short,6,,,complex,pseudo,,"['S', 'EH1', 'N', 'S', 'T', 'ER0']","['S', 'EH', 'N', 'S', 'T', 'ER']",PSC
+26,teactop,short,6,,,complex,pseudo,,"['T', 'IY1', 'K', 'T', 'AA2', 'P']","['T', 'IY', 'K', 'T', 'AA', 'P']",PSC
+27,teactor,short,5,,,complex,pseudo,,"['T', 'IY1', 'K', 'T', 'ER0']","['T', 'IY', 'K', 'T', 'ER']",PSC
+28,tenewal,short,6,,,complex,pseudo,,"['T', 'EH1', 'N', 'W', 'AH0', 'L']","['T', 'EH', 'N', 'W', 'AH', 'L']",PSC
+29,tensory,short,6,,,complex,pseudo,,"['T', 'EH1', 'N', 'S', 'ER0', 'IY0']","['T', 'EH', 'N', 'S', 'ER', 'IY']",PSC
+31,tenstor,short,6,,,complex,pseudo,,"['T', 'EH1', 'N', 'S', 'T', 'ER0']","['T', 'EH', 'N', 'S', 'T', 'ER']",PSC
+32,watally,short,6,,,complex,pseudo,,"['W', 'AO1', 'T', 'AH0', 'L', 'IY0']","['W', 'AO', 'T', 'AH', 'L', 'IY']",PSC
+33,watalue,short,6,,,complex,pseudo,,"['W', 'AO1', 'T', 'AH0', 'L', 'AW0']","['W', 'AO', 'T', 'AH', 'L', 'AW']",PSC
+36,egoisely,short,6,,,complex,pseudo,,"['IY1', 'JH', 'AH0', 'S', 'L', 'IY0']","['IY', 'JH', 'AH', 'S', 'L', 'IY']",PSC
+38,egoister,short,6,,,complex,pseudo,,"['IY1', 'G', 'AH0', 'S', 'T', 'ER0']","['IY', 'G', 'AH', 'S', 'T', 'ER']",PSC
+40,fourness,short,6,,,complex,pseudo,,"['F', 'AO1', 'R', 'N', 'AH0', 'S']","['F', 'AO', 'R', 'N', 'AH', 'S']",PSC
+41,fourtive,short,6,,,complex,pseudo,,"['F', 'AO1', 'R', 'T', 'IH0', 'V']","['F', 'AO', 'R', 'T', 'IH', 'V']",PSC
+43,overster,short,6,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'S', 'T', 'ER0']","['OW', 'V', 'ER', 'S', 'T', 'ER']",PSC
+47,reustler,short,6,,,complex,pseudo,,"['R', 'OY1', 'S', 'T', 'L', 'ER0']","['R', 'OY', 'S', 'T', 'L', 'ER']",PSC
+48,searless,short,5,,,complex,pseudo,,"['S', 'ER1', 'L', 'AH0', 'S']","['S', 'ER', 'L', 'AH', 'S']",PSC
+49,seasonor,short,6,,,complex,pseudo,,"['S', 'IY1', 'Z', 'AH0', 'N', 'ER0']","['S', 'IY', 'Z', 'AH', 'N', 'ER']",PSC
+50,sourtive,short,6,,,complex,pseudo,,"['S', 'AO1', 'R', 'T', 'IH0', 'V']","['S', 'AO', 'R', 'T', 'IH', 'V']",PSC
+60,teasonor,short,6,,,complex,pseudo,,"['T', 'IY1', 'Z', 'AH0', 'N', 'ER0']","['T', 'IY', 'Z', 'AH', 'N', 'ER']",PSC
+67,unshonor,short,6,,,complex,pseudo,,"['AH0', 'N', 'SH', 'AA1', 'N', 'ER0']","['AH', 'N', 'SH', 'AA', 'N', 'ER']",PSC
+81,discreach,short,6,,,complex,pseudo,,"['D', 'IH1', 'S', 'K', 'R', 'IY0']","['D', 'IH', 'S', 'K', 'R', 'IY']",PSC
+89,immerlize,short,6,,,complex,pseudo,,"['IH1', 'M', 'ER0', 'L', 'AY2', 'Z']","['IH', 'M', 'ER', 'L', 'AY', 'Z']",PSC
+90,immerpass,short,6,,,complex,pseudo,,"['IH1', 'M', 'ER0', 'P', 'AE2', 'S']","['IH', 'M', 'ER', 'P', 'AE', 'S']",PSC
+92,immertile,short,6,,,complex,pseudo,,"['IH1', 'M', 'ER0', 'T', 'IH0', 'L']","['IH', 'M', 'ER', 'T', 'IH', 'L']",PSC
+93,immorance,short,6,,,complex,pseudo,,"['IH1', 'M', 'ER0', 'AH0', 'N', 'S']","['IH', 'M', 'ER', 'AH', 'N', 'S']",PSC
+105,overiline,short,6,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'L', 'AY2', 'N']","['OW', 'V', 'ER', 'L', 'AY', 'N']",PSC
+108,overreate,short,6,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'R', 'IY2', 'T']","['OW', 'V', 'ER', 'R', 'IY', 'T']",PSC
+133,sterreach,short,6,,,complex,pseudo,,"['S', 'T', 'EH1', 'R', 'IY0', 'K']","['S', 'T', 'EH', 'R', 'IY', 'K']",PSC
+147,uneartile,short,6,,,complex,pseudo,,"['AH0', 'N', 'ER1', 'T', 'AH0', 'L']","['AH', 'N', 'ER', 'T', 'AH', 'L']",PSC
+153,unnaturse,short,6,,,complex,pseudo,,"['AH0', 'N', 'AE1', 'CH', 'AH0', 'S']","['AH', 'N', 'AE', 'CH', 'AH', 'S']",PSC
+158,weimburse,short,6,,,complex,pseudo,,"['W', 'AY1', 'M', 'B', 'ER2', 'S']","['W', 'AY', 'M', 'B', 'ER', 'S']",PSC
+171,woodorize,short,6,,,complex,pseudo,,"['W', 'UH1', 'D', 'ER0', 'AY2', 'Z']","['W', 'UH', 'D', 'ER', 'AY', 'Z']",PSC
+173,yellowess,short,6,,,complex,pseudo,,"['Y', 'EH1', 'L', 'OW0', 'IH0', 'S']","['Y', 'EH', 'L', 'OW', 'IH', 'S']",PSC
+175,dislave,short,6,,,complex,pseudo,,"['D', 'IH0', 'S', 'L', 'AA1', 'V']","['D', 'IH', 'S', 'L', 'AA', 'V']",PSC
+176,enslike,short,6,,,complex,pseudo,,"['EH1', 'N', 'S', 'L', 'AY2', 'K']","['EH', 'N', 'S', 'L', 'AY', 'K']",PSC
+178,fatalue,short,6,,,complex,pseudo,,"['F', 'AE1', 'T', 'AH0', 'L', 'UW2']","['F', 'AE', 'T', 'AH', 'L', 'UW']",PSC
+179,fatcher,short,4,,,complex,pseudo,,"['F', 'AE1', 'CH', 'ER0']","['F', 'AE', 'CH', 'ER']",PSC
+180,immover,short,5,,,complex,pseudo,,"['IH1', 'M', 'OW0', 'V', 'ER0']","['IH', 'M', 'OW', 'V', 'ER']",PSC
+181,nonsory,short,6,,,complex,pseudo,,"['N', 'AA1', 'N', 'S', 'ER0', 'IY0']","['N', 'AA', 'N', 'S', 'ER', 'IY']",PSC
+183,recoder,short,6,,,complex,pseudo,,"['R', 'IY0', 'K', 'OW1', 'D', 'ER0']","['R', 'IY', 'K', 'OW', 'D', 'ER']",PSC
+186,teactor,short,5,,,complex,pseudo,,"['T', 'IY1', 'K', 'T', 'ER0']","['T', 'IY', 'K', 'T', 'ER']",PSC
+187,tensory,short,6,,,complex,pseudo,,"['T', 'EH1', 'N', 'S', 'ER0', 'IY0']","['T', 'EH', 'N', 'S', 'ER', 'IY']",PSC
+188,watally,short,6,,,complex,pseudo,,"['W', 'AO1', 'T', 'AH0', 'L', 'IY0']","['W', 'AO', 'T', 'AH', 'L', 'IY']",PSC
+191,egoisely,short,6,,,complex,pseudo,,"['IY1', 'JH', 'AH0', 'S', 'L', 'IY0']","['IY', 'JH', 'AH', 'S', 'L', 'IY']",PSC
+193,fourtive,short,6,,,complex,pseudo,,"['F', 'AO1', 'R', 'T', 'IH0', 'V']","['F', 'AO', 'R', 'T', 'IH', 'V']",PSC
+194,overster,short,6,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'S', 'T', 'ER0']","['OW', 'V', 'ER', 'S', 'T', 'ER']",PSC
+195,reustler,short,6,,,complex,pseudo,,"['R', 'OY1', 'S', 'T', 'L', 'ER0']","['R', 'OY', 'S', 'T', 'L', 'ER']",PSC
+196,searless,short,5,,,complex,pseudo,,"['S', 'ER1', 'L', 'AH0', 'S']","['S', 'ER', 'L', 'AH', 'S']",PSC
+197,seasonor,short,6,,,complex,pseudo,,"['S', 'IY1', 'Z', 'AH0', 'N', 'ER0']","['S', 'IY', 'Z', 'AH', 'N', 'ER']",PSC
+201,unshonor,short,6,,,complex,pseudo,,"['AH0', 'N', 'SH', 'AA1', 'N', 'ER0']","['AH', 'N', 'SH', 'AA', 'N', 'ER']",PSC
+218,woodorize,short,6,,,complex,pseudo,,"['W', 'UH1', 'D', 'ER0', 'AY2', 'Z']","['W', 'UH', 'D', 'ER', 'AY', 'Z']",PSC
+0,arns,short,4,,,complex,pseudo,,"['AA1', 'R', 'N', 'Z']","['AA', 'R', 'N', 'Z']",PSC
+1,arth,short,3,,,complex,pseudo,,"['AA1', 'R', 'TH']","['AA', 'R', 'TH']",PSC
+2,axen,short,5,,,complex,pseudo,,"['AE1', 'K', 'S', 'AH0', 'N']","['AE', 'K', 'S', 'AH', 'N']",PSC
+3,axin,short,5,,,complex,pseudo,,"['AE1', 'K', 'S', 'IH0', 'N']","['AE', 'K', 'S', 'IH', 'N']",PSC
+4,axit,short,5,,,complex,pseudo,,"['AE1', 'K', 'S', 'IH0', 'T']","['AE', 'K', 'S', 'IH', 'T']",PSC
+5,cugs,short,4,,,complex,pseudo,,"['K', 'AH1', 'G', 'Z']","['K', 'AH', 'G', 'Z']",PSC
+6,cuns,short,4,,,complex,pseudo,,"['K', 'AH1', 'N', 'Z']","['K', 'AH', 'N', 'Z']",PSC
+7,cupa,short,5,,,complex,pseudo,,"['K', 'Y', 'UW1', 'P', 'AH0']","['K', 'Y', 'UW', 'P', 'AH']",PSC
+8,curn,short,3,,,complex,pseudo,,"['K', 'ER1', 'N']","['K', 'ER', 'N']",PSC
+9,cury,short,5,,,complex,pseudo,,"['K', 'Y', 'UW1', 'R', 'IY0']","['K', 'Y', 'UW', 'R', 'IY']",PSC
+10,cuto,short,4,,,complex,pseudo,,"['K', 'UW1', 'T', 'OW0']","['K', 'UW', 'T', 'OW']",PSC
+11,dedo,short,4,,,complex,pseudo,,"['D', 'EY1', 'D', 'OW0']","['D', 'EY', 'D', 'OW']",PSC
+12,deds,short,4,,,complex,pseudo,,"['D', 'EH1', 'D', 'Z']","['D', 'EH', 'D', 'Z']",PSC
+13,deen,short,3,,,complex,pseudo,,"['D', 'IY1', 'N']","['D', 'IY', 'N']",PSC
+14,dees,short,3,,,complex,pseudo,,"['D', 'IY1', 'Z']","['D', 'IY', 'Z']",PSC
+15,deth,short,3,,,complex,pseudo,,"['D', 'EH1', 'TH']","['D', 'EH', 'TH']",PSC
+16,deto,short,4,,,complex,pseudo,,"['D', 'EH1', 'T', 'OW0']","['D', 'EH', 'T', 'OW']",PSC
+17,dets,short,4,,,complex,pseudo,,"['D', 'EH1', 'T', 'S']","['D', 'EH', 'T', 'S']",PSC
+18,dety,short,4,,,complex,pseudo,,"['D', 'EH1', 'T', 'IY0']","['D', 'EH', 'T', 'IY']",PSC
+19,diar,short,3,,,complex,pseudo,,"['D', 'AY1', 'ER0']","['D', 'AY', 'ER']",PSC
+20,dien,short,3,,,complex,pseudo,,"['D', 'AY1', 'N']","['D', 'AY', 'N']",PSC
+21,dier,short,3,,,complex,pseudo,,"['D', 'IY1', 'ER0']","['D', 'IY', 'ER']",PSC
+22,dirn,short,3,,,complex,pseudo,,"['D', 'ER1', 'N']","['D', 'ER', 'N']",PSC
+23,dorn,short,4,,,complex,pseudo,,"['D', 'AO1', 'R', 'N']","['D', 'AO', 'R', 'N']",PSC
+24,dosy,short,4,,,complex,pseudo,,"['D', 'OW1', 'Z', 'IY0']","['D', 'OW', 'Z', 'IY']",PSC
+25,eain,short,3,,,complex,pseudo,,"['IY1', 'IH0', 'N']","['IY', 'IH', 'N']",PSC
+26,eary,short,3,,,complex,pseudo,,"['IH1', 'R', 'IY0']","['IH', 'R', 'IY']",PSC
+27,geds,short,4,,,complex,pseudo,,"['G', 'EH1', 'D', 'Z']","['G', 'EH', 'D', 'Z']",PSC
+28,geth,short,3,,,complex,pseudo,,"['G', 'EH1', 'TH']","['G', 'EH', 'TH']",PSC
+29,geto,short,4,,,complex,pseudo,,"['JH', 'EH1', 'T', 'OW0']","['JH', 'EH', 'T', 'OW']",PSC
+30,gews,short,3,,,complex,pseudo,,"['JH', 'UW1', 'Z']","['JH', 'UW', 'Z']",PSC
+31,gexy,short,5,,,complex,pseudo,,"['G', 'EH1', 'K', 'S', 'IY0']","['G', 'EH', 'K', 'S', 'IY']",PSC
+32,gorn,short,4,,,complex,pseudo,,"['G', 'AO1', 'R', 'N']","['G', 'AO', 'R', 'N']",PSC
+33,gosy,short,4,,,complex,pseudo,,"['G', 'OW1', 'Z', 'IY0']","['G', 'OW', 'Z', 'IY']",PSC
+34,hais,short,3,,,complex,pseudo,,"['HH', 'EY1', 'Z']","['HH', 'EY', 'Z']",PSC
+35,hait,short,3,,,complex,pseudo,,"['HH', 'EY1', 'T']","['HH', 'EY', 'T']",PSC
+36,hasy,short,4,,,complex,pseudo,,"['HH', 'EY1', 'Z', 'IY0']","['HH', 'EY', 'Z', 'IY']",PSC
+37,hets,short,4,,,complex,pseudo,,"['HH', 'EH1', 'T', 'S']","['HH', 'EH', 'T', 'S']",PSC
+38,hexy,short,5,,,complex,pseudo,,"['HH', 'EH1', 'K', 'S', 'IY0']","['HH', 'EH', 'K', 'S', 'IY']",PSC
+39,inis,short,4,,,complex,pseudo,,"['IH1', 'N', 'IH0', 'S']","['IH', 'N', 'IH', 'S']",PSC
+40,ints,short,4,,,complex,pseudo,,"['IH1', 'N', 'T', 'S']","['IH', 'N', 'T', 'S']",PSC
+41,inty,short,4,,,complex,pseudo,,"['IH1', 'N', 'T', 'IY0']","['IH', 'N', 'T', 'IY']",PSC
+42,juns,short,4,,,complex,pseudo,,"['JH', 'AH1', 'N', 'Z']","['JH', 'AH', 'N', 'Z']",PSC
+43,jupa,short,4,,,complex,pseudo,,"['JH', 'UW1', 'P', 'AH0']","['JH', 'UW', 'P', 'AH']",PSC
+44,jurn,short,3,,,complex,pseudo,,"['JH', 'ER1', 'N']","['JH', 'ER', 'N']",PSC
+45,lais,short,3,,,complex,pseudo,,"['L', 'EY1', 'Z']","['L', 'EY', 'Z']",PSC
+46,lasy,short,4,,,complex,pseudo,,"['L', 'EY1', 'Z', 'IY0']","['L', 'EY', 'Z', 'IY']",PSC
+47,ledo,short,4,,,complex,pseudo,,"['L', 'EY1', 'D', 'OW0']","['L', 'EY', 'D', 'OW']",PSC
+48,leds,short,4,,,complex,pseudo,,"['L', 'EH1', 'D', 'Z']","['L', 'EH', 'D', 'Z']",PSC
+49,lewn,short,3,,,complex,pseudo,,"['L', 'UW1', 'N']","['L', 'UW', 'N']",PSC
+50,lews,short,3,,,complex,pseudo,,"['L', 'UW1', 'Z']","['L', 'UW', 'Z']",PSC
+51,lexy,short,5,,,complex,pseudo,,"['L', 'EH1', 'K', 'S', 'IY0']","['L', 'EH', 'K', 'S', 'IY']",PSC
+52,muns,short,4,,,complex,pseudo,,"['M', 'AH1', 'N', 'Z']","['M', 'AH', 'N', 'Z']",PSC
+53,mupa,short,5,,,complex,pseudo,,"['M', 'Y', 'UW1', 'P', 'AH0']","['M', 'Y', 'UW', 'P', 'AH']",PSC
+54,mury,short,3,,,complex,pseudo,,"['M', 'ER1', 'IY0']","['M', 'ER', 'IY']",PSC
+55,muto,short,4,,,complex,pseudo,,"['M', 'UW1', 'T', 'OW0']","['M', 'UW', 'T', 'OW']",PSC
+56,nais,short,3,,,complex,pseudo,,"['N', 'EY1', 'Z']","['N', 'EY', 'Z']",PSC
+57,nasy,short,4,,,complex,pseudo,,"['N', 'EY1', 'Z', 'IY0']","['N', 'EY', 'Z', 'IY']",PSC
+58,nato,short,4,,,complex,pseudo,,"['N', 'EY1', 'T', 'OW0']","['N', 'EY', 'T', 'OW']",PSC
+59,nats,short,4,,,complex,pseudo,,"['N', 'AE1', 'T', 'S']","['N', 'AE', 'T', 'S']",PSC
+60,nory,short,4,,,complex,pseudo,,"['N', 'AO1', 'R', 'IY0']","['N', 'AO', 'R', 'IY']",PSC
+61,nowy,short,3,,,complex,pseudo,,"['N', 'OW1', 'IY0']","['N', 'OW', 'IY']",PSC
+62,onco,short,4,,,complex,pseudo,,"['AA1', 'N', 'K', 'OW0']","['AA', 'N', 'K', 'OW']",PSC
+63,onis,short,5,,,complex,pseudo,,"['W', 'AH1', 'N', 'IY0', 'Z']","['W', 'AH', 'N', 'IY', 'Z']",PSC
+64,onit,short,6,,,complex,pseudo,,"['OW0', 'N', 'IY1', 'T', 'AH0', 'T']","['OW', 'N', 'IY', 'T', 'AH', 'T']",PSC
+65,onth,short,3,,,complex,pseudo,,"['AH1', 'N', 'TH']","['AH', 'N', 'TH']",PSC
+66,onts,short,4,,,complex,pseudo,,"['AA1', 'N', 'T', 'S']","['AA', 'N', 'T', 'S']",PSC
+67,oxer,short,4,,,complex,pseudo,,"['AA1', 'K', 'S', 'ER0']","['AA', 'K', 'S', 'ER']",PSC
+68,oxin,short,5,,,complex,pseudo,,"['AA1', 'K', 'S', 'AH0', 'N']","['AA', 'K', 'S', 'AH', 'N']",PSC
+69,poen,short,3,,,complex,pseudo,,"['P', 'OW1', 'N']","['P', 'OW', 'N']",PSC
+70,pory,short,4,,,complex,pseudo,,"['P', 'AO1', 'R', 'IY0']","['P', 'AO', 'R', 'IY']",PSC
+71,pown,short,3,,,complex,pseudo,,"['P', 'AW1', 'N']","['P', 'AW', 'N']",PSC
+72,reto,short,4,,,complex,pseudo,,"['R', 'IY1', 'T', 'UW1']","['R', 'IY', 'T', 'UW']",PSC
+73,rets,short,4,,,complex,pseudo,,"['R', 'EH1', 'T', 'S']","['R', 'EH', 'T', 'S']",PSC
+74,rewn,short,3,,,complex,pseudo,,"['R', 'UW1', 'N']","['R', 'UW', 'N']",PSC
+75,rews,short,3,,,complex,pseudo,,"['R', 'UW1', 'Z']","['R', 'UW', 'Z']",PSC
+76,rupa,short,4,,,complex,pseudo,,"['R', 'UW1', 'P', 'AH0']","['R', 'UW', 'P', 'AH']",PSC
+77,rury,short,4,,,complex,pseudo,,"['R', 'UW1', 'R', 'IY0']","['R', 'UW', 'R', 'IY']",PSC
+78,ruto,short,4,,,complex,pseudo,,"['R', 'UW1', 'T', 'OW0']","['R', 'UW', 'T', 'OW']",PSC
+79,sedo,short,4,,,complex,pseudo,,"['S', 'EY1', 'D', 'OW0']","['S', 'EY', 'D', 'OW']",PSC
+80,seds,short,4,,,complex,pseudo,,"['S', 'EH1', 'D', 'Z']","['S', 'EH', 'D', 'Z']",PSC
+81,seth,short,3,,,complex,pseudo,,"['S', 'EH1', 'TH']","['S', 'EH', 'TH']",PSC
+82,seto,short,4,,,complex,pseudo,,"['S', 'EH1', 'T', 'OW0']","['S', 'EH', 'T', 'OW']",PSC
+83,sewy,short,3,,,complex,pseudo,,"['S', 'UW1', 'IY0']","['S', 'UW', 'IY']",PSC
+84,soer,short,3,,,complex,pseudo,,"['S', 'AO1', 'R']","['S', 'AO', 'R']",PSC
+85,sorn,short,4,,,complex,pseudo,,"['S', 'AO1', 'R', 'N']","['S', 'AO', 'R', 'N']",PSC
+86,sory,short,4,,,complex,pseudo,,"['S', 'AO1', 'R', 'IY0']","['S', 'AO', 'R', 'IY']",PSC
+87,sosy,short,4,,,complex,pseudo,,"['S', 'OW1', 'Z', 'IY0']","['S', 'OW', 'Z', 'IY']",PSC
+88,towy,short,3,,,complex,pseudo,,"['T', 'OW1', 'IY0']","['T', 'OW', 'IY']",PSC
+89,unin,short,5,,,complex,pseudo,,"['Y', 'UW1', 'N', 'IH0', 'N']","['Y', 'UW', 'N', 'IH', 'N']",PSC
+90,unts,short,4,,,complex,pseudo,,"['AH1', 'N', 'T', 'S']","['AH', 'N', 'T', 'S']",PSC
+91,unty,short,4,,,complex,pseudo,,"['AH1', 'N', 'T', 'IY0']","['AH', 'N', 'T', 'IY']",PSC
+92,usen,short,5,,,complex,pseudo,,"['Y', 'UW1', 'S', 'AH0', 'N']","['Y', 'UW', 'S', 'AH', 'N']",PSC
+93,wiar,short,4,,,complex,pseudo,,"['W', 'AY1', 'AA0', 'R']","['W', 'AY', 'AA', 'R']",PSC
+94,wien,short,3,,,complex,pseudo,,"['W', 'IY1', 'N']","['W', 'IY', 'N']",PSC
+95,wirn,short,3,,,complex,pseudo,,"['W', 'ER1', 'N']","['W', 'ER', 'N']",PSC
+96,wodo,short,4,,,complex,pseudo,,"['W', 'OW1', 'D', 'OW0']","['W', 'OW', 'D', 'OW']",PSC
+97,woer,short,3,,,complex,pseudo,,"['W', 'AO1', 'R']","['W', 'AO', 'R']",PSC
+98,wory,short,4,,,complex,pseudo,,"['W', 'AO1', 'R', 'IY0']","['W', 'AO', 'R', 'IY']",PSC
+99,wosy,short,4,,,complex,pseudo,,"['W', 'OW1', 'Z', 'IY0']","['W', 'OW', 'Z', 'IY']",PSC
+100,abier,short,4,,,complex,pseudo,,"['EY1', 'B', 'IY0', 'ER0']","['EY', 'B', 'IY', 'ER']",PSC
+101,actly,short,5,,,complex,pseudo,,"['AE1', 'K', 'T', 'L', 'IY0']","['AE', 'K', 'T', 'L', 'IY']",PSC
+102,actoy,short,4,,,complex,pseudo,,"['AE1', 'K', 'T', 'OY0']","['AE', 'K', 'T', 'OY']",PSC
+103,amony,short,5,,,complex,pseudo,,"['AH0', 'M', 'AO1', 'N', 'IY0']","['AH', 'M', 'AO', 'N', 'IY']",PSC
+104,beade,short,3,,,complex,pseudo,,"['B', 'IY1', 'D']","['B', 'IY', 'D']",PSC
+105,bebun,short,5,,,complex,pseudo,,"['B', 'EH1', 'B', 'AH0', 'N']","['B', 'EH', 'B', 'AH', 'N']",PSC
+106,bebut,short,5,,,complex,pseudo,,"['B', 'EH1', 'B', 'AH0', 'T']","['B', 'EH', 'B', 'AH', 'T']",PSC
+107,berts,short,4,,,complex,pseudo,,"['B', 'ER1', 'T', 'S']","['B', 'ER', 'T', 'S']",PSC
+108,beser,short,4,,,complex,pseudo,,"['B', 'IY1', 'S', 'ER0']","['B', 'IY', 'S', 'ER']",PSC
+109,beses,short,5,,,complex,pseudo,,"['B', 'IY1', 'S', 'IY0', 'Z']","['B', 'IY', 'S', 'IY', 'Z']",PSC
+110,betit,short,5,,,complex,pseudo,,"['B', 'EH1', 'T', 'IH0', 'T']","['B', 'EH', 'T', 'IH', 'T']",PSC
+111,betor,short,4,,,complex,pseudo,,"['B', 'EH1', 'T', 'ER0']","['B', 'EH', 'T', 'ER']",PSC
+112,blact,short,5,,,complex,pseudo,,"['B', 'L', 'AE1', 'K', 'T']","['B', 'L', 'AE', 'K', 'T']",PSC
+113,blula,short,5,,,complex,pseudo,,"['B', 'L', 'UW1', 'L', 'AH0']","['B', 'L', 'UW', 'L', 'AH']",PSC
+114,boler,short,4,,,complex,pseudo,,"['B', 'OW1', 'L', 'ER0']","['B', 'OW', 'L', 'ER']",PSC
+115,boser,short,4,,,complex,pseudo,,"['B', 'OW1', 'Z', 'ER0']","['B', 'OW', 'Z', 'ER']",PSC
+116,bosew,short,4,,,complex,pseudo,,"['B', 'OW1', 'Z', 'S']","['B', 'OW', 'Z', 'S']",PSC
+117,daier,short,3,,,complex,pseudo,,"['D', 'EY1', 'ER0']","['D', 'EY', 'ER']",PSC
+118,damer,short,4,,,complex,pseudo,,"['D', 'EY1', 'M', 'ER0']","['D', 'EY', 'M', 'ER']",PSC
+119,daues,short,3,,,complex,pseudo,,"['D', 'AW1', 'Z']","['D', 'AW', 'Z']",PSC
+120,dayly,short,4,,,complex,pseudo,,"['D', 'EY1', 'L', 'IY0']","['D', 'EY', 'L', 'IY']",PSC
+122,ealer,short,3,,,complex,pseudo,,"['IY1', 'L', 'ER0']","['IY', 'L', 'ER']",PSC
+123,eales,short,3,,,complex,pseudo,,"['IY1', 'L', 'Z']","['IY', 'L', 'Z']",PSC
+124,eames,short,3,,,complex,pseudo,,"['IY1', 'M', 'Z']","['IY', 'M', 'Z']",PSC
+125,earts,short,3,,,complex,pseudo,,"['ER1', 'T', 'S']","['ER', 'T', 'S']",PSC
+126,earut,short,4,,,complex,pseudo,,"['IH1', 'R', 'AH0', 'T']","['IH', 'R', 'AH', 'T']",PSC
+127,eatie,short,3,,,complex,pseudo,,"['IY1', 'T', 'IY0']","['IY', 'T', 'IY']",PSC
+129,eauly,short,4,,,complex,pseudo,,"['Y', 'UW1', 'L', 'IY0']","['Y', 'UW', 'L', 'IY']",PSC
+131,eayls,short,3,,,complex,pseudo,,"['IY1', 'L', 'Z']","['IY', 'L', 'Z']",PSC
+132,enade,short,4,,,complex,pseudo,,"['EH0', 'N', 'EY1', 'D']","['EH', 'N', 'EY', 'D']",PSC
+133,entew,short,5,,,complex,pseudo,,"['EH1', 'N', 'T', 'W', 'IY0']","['EH', 'N', 'T', 'W', 'IY']",PSC
+134,entoy,short,4,,,complex,pseudo,,"['EH1', 'N', 'T', 'OY0']","['EH', 'N', 'T', 'OY']",PSC
+135,enzie,short,4,,,complex,pseudo,,"['EH1', 'N', 'Z', 'IY0']","['EH', 'N', 'Z', 'IY']",PSC
+136,enzit,short,5,,,complex,pseudo,,"['EH1', 'N', 'Z', 'IH0', 'T']","['EH', 'N', 'Z', 'IH', 'T']",PSC
+137,flade,short,4,,,complex,pseudo,,"['F', 'L', 'EY1', 'D']","['F', 'L', 'EY', 'D']",PSC
+138,flars,short,5,,,complex,pseudo,,"['F', 'L', 'AA1', 'R', 'Z']","['F', 'L', 'AA', 'R', 'Z']",PSC
+139,gails,short,4,,,complex,pseudo,,"['G', 'EY1', 'L', 'Z']","['G', 'EY', 'L', 'Z']",PSC
+140,galla,short,4,,,complex,pseudo,,"['G', 'AE1', 'L', 'AH0']","['G', 'AE', 'L', 'AH']",PSC
+141,gamew,short,4,,,complex,pseudo,,"['G', 'AE1', 'M', 'IY0']","['G', 'AE', 'M', 'IY']",PSC
+142,garla,short,5,,,complex,pseudo,,"['G', 'AA1', 'R', 'L', 'AH0']","['G', 'AA', 'R', 'L', 'AH']",PSC
+143,hepay,short,4,,,complex,pseudo,,"['HH', 'EH1', 'P', 'IY0']","['HH', 'EH', 'P', 'IY']",PSC
+144,herla,short,5,,,complex,pseudo,,"['HH', 'EH1', 'R', 'AH0', 'L']","['HH', 'EH', 'R', 'AH', 'L']",PSC
+145,herls,short,4,,,complex,pseudo,,"['HH', 'ER1', 'L', 'Z']","['HH', 'ER', 'L', 'Z']",PSC
+146,heser,short,4,,,complex,pseudo,,"['HH', 'EH1', 'S', 'ER0']","['HH', 'EH', 'S', 'ER']",PSC
+147,heter,short,4,,,complex,pseudo,,"['HH', 'IY1', 'T', 'ER0']","['HH', 'IY', 'T', 'ER']",PSC
+148,hunew,short,4,,,complex,pseudo,,"['HH', 'AH1', 'N', 'IY0']","['HH', 'AH', 'N', 'IY']",PSC
+149,lauly,short,4,,,complex,pseudo,,"['L', 'AO1', 'L', 'IY0']","['L', 'AO', 'L', 'IY']",PSC
+150,lidip,short,5,,,complex,pseudo,,"['L', 'AY1', 'D', 'AH0', 'P']","['L', 'AY', 'D', 'AH', 'P']",PSC
+151,livet,short,5,,,complex,pseudo,,"['L', 'IH1', 'V', 'IH0', 'T']","['L', 'IH', 'V', 'IH', 'T']",PSC
+152,lonny,short,4,,,complex,pseudo,,"['L', 'AO1', 'N', 'IY0']","['L', 'AO', 'N', 'IY']",PSC
+153,loset,short,5,,,complex,pseudo,,"['L', 'OW1', 'S', 'AH0', 'T']","['L', 'OW', 'S', 'AH', 'T']",PSC
+154,oddie,short,3,,,complex,pseudo,,"['AA1', 'D', 'IY0']","['AA', 'D', 'IY']",PSC
+155,pamew,short,4,,,complex,pseudo,,"['P', 'AE1', 'M', 'IY0']","['P', 'AE', 'M', 'IY']",PSC
+156,patie,short,4,,,complex,pseudo,,"['P', 'AE1', 'T', 'IY0']","['P', 'AE', 'T', 'IY']",PSC
+157,pauer,short,3,,,complex,pseudo,,"['P', 'AW1', 'ER0']","['P', 'AW', 'ER']",PSC
+158,plact,short,5,,,complex,pseudo,,"['P', 'AE1', 'L', 'K', 'T']","['P', 'AE', 'L', 'K', 'T']",PSC
+159,plags,short,5,,,complex,pseudo,,"['P', 'L', 'AE1', 'G', 'Z']","['P', 'L', 'AE', 'G', 'Z']",PSC
+160,plars,short,5,,,complex,pseudo,,"['P', 'L', 'AA1', 'R', 'Z']","['P', 'L', 'AA', 'R', 'Z']",PSC
+161,plued,short,4,,,complex,pseudo,,"['P', 'L', 'UW1', 'D']","['P', 'L', 'UW', 'D']",PSC
+162,plues,short,4,,,complex,pseudo,,"['P', 'L', 'UW1', 'Z']","['P', 'L', 'UW', 'Z']",PSC
+163,reade,short,3,,,complex,pseudo,,"['R', 'EH1', 'D']","['R', 'EH', 'D']",PSC
+164,rebug,short,5,,,complex,pseudo,,"['R', 'EH1', 'B', 'AH0', 'G']","['R', 'EH', 'B', 'AH', 'G']",PSC
+165,refie,short,4,,,complex,pseudo,,"['R', 'EH1', 'F', 'IY0']","['R', 'EH', 'F', 'IY']",PSC
+166,refip,short,5,,,complex,pseudo,,"['R', 'EH1', 'F', 'IH0', 'P']","['R', 'EH', 'F', 'IH', 'P']",PSC
+167,rerly,short,5,,,complex,pseudo,,"['R', 'EH1', 'R', 'L', 'IY0']","['R', 'EH', 'R', 'L', 'IY']",PSC
+168,reser,short,4,,,complex,pseudo,,"['R', 'IY1', 'Z', 'ER0']","['R', 'IY', 'Z', 'ER']",PSC
+169,retly,short,5,,,complex,pseudo,,"['R', 'EH1', 'T', 'L', 'IY0']","['R', 'EH', 'T', 'L', 'IY']",PSC
+170,retor,short,4,,,complex,pseudo,,"['R', 'IY1', 'T', 'ER0']","['R', 'IY', 'T', 'ER']",PSC
+171,roays,short,3,,,complex,pseudo,,"['R', 'OY1', 'Z']","['R', 'OY', 'Z']",PSC
+172,ronng,short,3,,,complex,pseudo,,"['R', 'AO1', 'NG']","['R', 'AO', 'NG']",PSC
+173,roser,short,4,,,complex,pseudo,,"['R', 'OW1', 'Z', 'ER0']","['R', 'OW', 'Z', 'ER']",PSC
+174,shyes,short,3,,,complex,pseudo,,"['SH', 'AY1', 'Z']","['SH', 'AY', 'Z']",PSC
+175,skide,short,4,,,complex,pseudo,,"['S', 'K', 'AY1', 'D']","['S', 'K', 'AY', 'D']",PSC
+176,skiew,short,5,,,complex,pseudo,,"['S', 'K', 'IY1', 'W', 'EH0']","['S', 'K', 'IY', 'W', 'EH']",PSC
+177,skily,short,5,,,complex,pseudo,,"['S', 'K', 'AY1', 'L', 'IY0']","['S', 'K', 'AY', 'L', 'IY']",PSC
+178,suner,short,4,,,complex,pseudo,,"['S', 'AH1', 'N', 'ER0']","['S', 'AH', 'N', 'ER']",PSC
+179,unact,short,5,,,complex,pseudo,,"['AH0', 'N', 'AE1', 'K', 'T']","['AH', 'N', 'AE', 'K', 'T']",PSC
+180,unade,short,4,,,complex,pseudo,,"['AH0', 'N', 'EY1', 'D']","['AH', 'N', 'EY', 'D']",PSC
+181,unage,short,5,,,complex,pseudo,,"['Y', 'UW1', 'N', 'IH0', 'JH']","['Y', 'UW', 'N', 'IH', 'JH']",PSC
+182,unags,short,6,,,complex,pseudo,,"['Y', 'UW1', 'N', 'AH0', 'G', 'Z']","['Y', 'UW', 'N', 'AH', 'G', 'Z']",PSC
+183,undit,short,5,,,complex,pseudo,,"['AH0', 'N', 'D', 'IH1', 'T']","['AH', 'N', 'D', 'IH', 'T']",PSC
+184,unjor,short,5,,,complex,pseudo,,"['AH0', 'N', 'JH', 'AO1', 'R']","['AH', 'N', 'JH', 'AO', 'R']",PSC
+185,unjoy,short,4,,,complex,pseudo,,"['AH0', 'N', 'JH', 'OY1']","['AH', 'N', 'JH', 'OY']",PSC
+186,untla,short,5,,,complex,pseudo,,"['AH1', 'N', 'T', 'L', 'AH0']","['AH', 'N', 'T', 'L', 'AH']",PSC
+187,unzie,short,4,,,complex,pseudo,,"['AH1', 'N', 'Z', 'IY0']","['AH', 'N', 'Z', 'IY']",PSC
+188,unzit,short,5,,,complex,pseudo,,"['AH0', 'N', 'S', 'AY1', 'T']","['AH', 'N', 'S', 'AY', 'T']",PSC
+189,uppay,short,3,,,complex,pseudo,,"['AH0', 'P', 'AY1']","['AH', 'P', 'AY']",PSC
+190,uppes,short,4,,,complex,pseudo,,"['AH1', 'P', 'AH0', 'S']","['AH', 'P', 'AH', 'S']",PSC
+191,uppet,short,4,,,complex,pseudo,,"['AH1', 'P', 'AH0', 'T']","['AH', 'P', 'AH', 'T']",PSC
+192,usads,short,6,,,complex,pseudo,,"['Y', 'UW1', 'Z', 'AE0', 'D', 'Z']","['Y', 'UW', 'Z', 'AE', 'D', 'Z']",PSC
+193,usags,short,6,,,complex,pseudo,,"['Y', 'UW1', 'S', 'AE0', 'G', 'Z']","['Y', 'UW', 'S', 'AE', 'G', 'Z']",PSC
+194,usars,short,5,,,complex,pseudo,,"['Y', 'UW1', 'Z', 'ER0', 'Z']","['Y', 'UW', 'Z', 'ER', 'Z']",PSC
+195,weays,short,3,,,complex,pseudo,,"['W', 'IY1', 'Z']","['W', 'IY', 'Z']",PSC
+196,webut,short,5,,,complex,pseudo,,"['W', 'EH1', 'B', 'AH0', 'T']","['W', 'EH', 'B', 'AH', 'T']",PSC
+197,wetor,short,4,,,complex,pseudo,,"['W', 'EH1', 'T', 'ER0']","['W', 'EH', 'T', 'ER']",PSC
+198,wiver,short,4,,,complex,pseudo,,"['W', 'AY1', 'V', 'ER0']","['W', 'AY', 'V', 'ER']",PSC
+199,wivet,short,5,,,complex,pseudo,,"['W', 'IH1', 'V', 'IH0', 'T']","['W', 'IH', 'V', 'IH', 'T']",PSC
+200,abroic,short,5,,,complex,pseudo,,"['AH0', 'B', 'R', 'AY1', 'K']","['AH', 'B', 'R', 'AY', 'K']",PSC
+201,abroot,short,5,,,complex,pseudo,,"['AH0', 'B', 'R', 'UW1', 'T']","['AH', 'B', 'R', 'UW', 'T']",PSC
+202,abross,short,5,,,complex,pseudo,,"['EY1', 'B', 'R', 'AH0', 'S']","['EY', 'B', 'R', 'AH', 'S']",PSC
+203,acroad,short,5,,,complex,pseudo,,"['AE1', 'K', 'R', 'OW0', 'D']","['AE', 'K', 'R', 'OW', 'D']",PSC
+204,acroic,short,6,,,complex,pseudo,,"['AH0', 'K', 'R', 'OY1', 'IH0', 'K']","['AH', 'K', 'R', 'OY', 'IH', 'K']",PSC
+205,acroot,short,5,,,complex,pseudo,,"['AH0', 'K', 'R', 'UW1', 'T']","['AH', 'K', 'R', 'UW', 'T']",PSC
+206,allown,short,4,,,complex,pseudo,,"['AE1', 'L', 'OW0', 'N']","['AE', 'L', 'OW', 'N']",PSC
+207,awarly,short,5,,,complex,pseudo,,"['AO1', 'ER0', 'AH0', 'L', 'IY0']","['AO', 'ER', 'AH', 'L', 'IY']",PSC
+208,awarts,short,6,,,complex,pseudo,,"['AH0', 'W', 'AO1', 'R', 'T', 'S']","['AH', 'W', 'AO', 'R', 'T', 'S']",PSC
+209,baread,short,4,,,complex,pseudo,,"['B', 'ER0', 'IY1', 'D']","['B', 'ER', 'IY', 'D']",PSC
+210,barels,short,6,,,complex,pseudo,,"['B', 'EH1', 'R', 'AH0', 'L', 'Z']","['B', 'EH', 'R', 'AH', 'L', 'Z']",PSC
+211,befill,short,5,,,complex,pseudo,,"['B', 'IH0', 'F', 'IH1', 'L']","['B', 'IH', 'F', 'IH', 'L']",PSC
+212,befort,short,5,,,complex,pseudo,,"['B', 'EH1', 'F', 'ER0', 'T']","['B', 'EH', 'F', 'ER', 'T']",PSC
+214,bemoad,short,6,,,complex,pseudo,,"['B', 'IH0', 'M', 'OW1', 'AH0', 'D']","['B', 'IH', 'M', 'OW', 'AH', 'D']",PSC
+215,blamer,short,5,,,complex,pseudo,,"['B', 'L', 'EY1', 'M', 'ER0']","['B', 'L', 'EY', 'M', 'ER']",PSC
+216,blanes,short,5,,,complex,pseudo,,"['B', 'L', 'EY1', 'N', 'Z']","['B', 'L', 'EY', 'N', 'Z']",PSC
+217,blowly,short,5,,,complex,pseudo,,"['B', 'L', 'OW1', 'L', 'IY0']","['B', 'L', 'OW', 'L', 'IY']",PSC
+218,brants,short,6,,,complex,pseudo,,"['B', 'R', 'AE1', 'N', 'T', 'S']","['B', 'R', 'AE', 'N', 'T', 'S']",PSC
+219,brimes,short,5,,,complex,pseudo,,"['B', 'R', 'AY1', 'M', 'Z']","['B', 'R', 'AY', 'M', 'Z']",PSC
+220,bypase,short,5,,,complex,pseudo,,"['B', 'AY1', 'P', 'AH0', 'S']","['B', 'AY', 'P', 'AH', 'S']",PSC
+221,counds,short,5,,,complex,pseudo,,"['K', 'AW1', 'N', 'D', 'Z']","['K', 'AW', 'N', 'D', 'Z']",PSC
+222,crints,short,6,,,complex,pseudo,,"['K', 'R', 'IH1', 'N', 'T', 'S']","['K', 'R', 'IH', 'N', 'T', 'S']",PSC
+223,crites,short,5,,,complex,pseudo,,"['K', 'R', 'AY1', 'T', 'S']","['K', 'R', 'AY', 'T', 'S']",PSC
+224,deards,short,5,,,complex,pseudo,,"['D', 'IH1', 'R', 'D', 'Z']","['D', 'IH', 'R', 'D', 'Z']",PSC
+225,dearts,short,4,,,complex,pseudo,,"['D', 'ER1', 'T', 'S']","['D', 'ER', 'T', 'S']",PSC
+226,disows,short,5,,,complex,pseudo,,"['D', 'IH1', 'S', 'OW0', 'Z']","['D', 'IH', 'S', 'OW', 'Z']",PSC
+227,easile,short,4,,,complex,pseudo,,"['IY1', 'Z', 'AH0', 'L']","['IY', 'Z', 'AH', 'L']",PSC
+228,encask,short,6,,,complex,pseudo,,"['IH0', 'N', 'K', 'AA1', 'S', 'K']","['IH', 'N', 'K', 'AA', 'S', 'K']",PSC
+229,encast,short,6,,,complex,pseudo,,"['EH0', 'N', 'K', 'AE1', 'S', 'T']","['EH', 'N', 'K', 'AE', 'S', 'T']",PSC
+230,enclad,short,6,,,complex,pseudo,,"['IH0', 'N', 'K', 'L', 'AE1', 'D']","['IH', 'N', 'K', 'L', 'AE', 'D']",PSC
+231,enmase,short,6,,,complex,pseudo,,"['EH0', 'N', 'M', 'AA1', 'S', 'IY0']","['EH', 'N', 'M', 'AA', 'S', 'IY']",PSC
+232,enmass,short,5,,,complex,pseudo,,"['EH1', 'N', 'M', 'AH0', 'S']","['EH', 'N', 'M', 'AH', 'S']",PSC
+233,enmest,short,6,,,complex,pseudo,,"['EH1', 'N', 'M', 'AH0', 'S', 'T']","['EH', 'N', 'M', 'AH', 'S', 'T']",PSC
+234,enrels,short,6,,,complex,pseudo,,"['EH1', 'N', 'R', 'AH0', 'L', 'Z']","['EH', 'N', 'R', 'AH', 'L', 'Z']",PSC
+235,entoot,short,5,,,complex,pseudo,,"['EH0', 'N', 'T', 'UW1', 'T']","['EH', 'N', 'T', 'UW', 'T']",PSC
+237,expors,short,6,,,complex,pseudo,,"['EH1', 'K', 'S', 'P', 'ER0', 'Z']","['EH', 'K', 'S', 'P', 'ER', 'Z']",PSC
+238,flanes,short,5,,,complex,pseudo,,"['F', 'L', 'EY1', 'N', 'Z']","['F', 'L', 'EY', 'N', 'Z']",PSC
+239,flants,short,6,,,complex,pseudo,,"['F', 'L', 'AE1', 'N', 'T', 'S']","['F', 'L', 'AE', 'N', 'T', 'S']",PSC
+240,heross,short,5,,,complex,pseudo,,"['HH', 'EH1', 'R', 'OW0', 'S']","['HH', 'EH', 'R', 'OW', 'S']",PSC
+241,hoters,short,5,,,complex,pseudo,,"['HH', 'OW1', 'T', 'ER0', 'Z']","['HH', 'OW', 'T', 'ER', 'Z']",PSC
+242,icones,short,5,,,complex,pseudo,,"['IY1', 'K', 'OW0', 'N', 'Z']","['IY', 'K', 'OW', 'N', 'Z']",PSC
+243,imporm,short,6,,,complex,pseudo,,"['IH0', 'M', 'P', 'AO1', 'R', 'M']","['IH', 'M', 'P', 'AO', 'R', 'M']",PSC
+244,insers,short,5,,,complex,pseudo,,"['IH1', 'N', 'S', 'ER0', 'Z']","['IH', 'N', 'S', 'ER', 'Z']",PSC
+245,insnap,short,6,,,complex,pseudo,,"['IH1', 'N', 'S', 'P', 'AE2', 'N']","['IH', 'N', 'S', 'P', 'AE', 'N']",PSC
+246,labely,short,5,,,complex,pseudo,,"['L', 'EY1', 'B', 'L', 'IY0']","['L', 'EY', 'B', 'L', 'IY']",PSC
+247,maints,short,5,,,complex,pseudo,,"['M', 'EY1', 'N', 'T', 'S']","['M', 'EY', 'N', 'T', 'S']",PSC
+248,maised,short,4,,,complex,pseudo,,"['M', 'EY1', 'Z', 'D']","['M', 'EY', 'Z', 'D']",PSC
+249,misarm,short,6,,,complex,pseudo,,"['M', 'IH0', 'S', 'AA1', 'R', 'M']","['M', 'IH', 'S', 'AA', 'R', 'M']",PSC
+250,misbar,short,6,,,complex,pseudo,,"['S', 'IH0', 'S', 'B', 'AA1', 'R']","['S', 'IH', 'S', 'B', 'AA', 'R']",PSC
+251,mistil,short,6,,,complex,pseudo,,"['M', 'IH1', 'S', 'T', 'IH0', 'L']","['M', 'IH', 'S', 'T', 'IH', 'L']",PSC
+252,opeaks,short,6,,,complex,pseudo,,"['OW1', 'P', 'IY0', 'AE2', 'K', 'S']","['OW', 'P', 'IY', 'AE', 'K', 'S']",PSC
+253,orains,short,5,,,complex,pseudo,,"['AO0', 'R', 'EY1', 'N', 'Z']","['AO', 'R', 'EY', 'N', 'Z']",PSC
+254,orants,short,6,,,complex,pseudo,,"['AO1', 'R', 'AH0', 'N', 'T', 'S']","['AO', 'R', 'AH', 'N', 'T', 'S']",PSC
+255,placks,short,5,,,complex,pseudo,,"['P', 'L', 'AE1', 'K', 'S']","['P', 'L', 'AE', 'K', 'S']",PSC
+256,prings,short,5,,,complex,pseudo,,"['P', 'R', 'IH1', 'NG', 'Z']","['P', 'R', 'IH', 'NG', 'Z']",PSC
+257,priter,short,5,,,complex,pseudo,,"['P', 'R', 'AY1', 'T', 'ER0']","['P', 'R', 'AY', 'T', 'ER']",PSC
+258,prites,short,5,,,complex,pseudo,,"['P', 'R', 'AY1', 'T', 'S']","['P', 'R', 'AY', 'T', 'S']",PSC
+259,raread,short,5,,,complex,pseudo,,"['R', 'EH1', 'R', 'AH0', 'D']","['R', 'EH', 'R', 'AH', 'D']",PSC
+260,raresh,short,5,,,complex,pseudo,,"['R', 'EH1', 'R', 'IH0', 'SH']","['R', 'EH', 'R', 'IH', 'SH']",PSC
+261,rarmes,short,5,,,complex,pseudo,,"['R', 'AA1', 'R', 'M', 'Z']","['R', 'AA', 'R', 'M', 'Z']",PSC
+262,recase,short,5,,,complex,pseudo,,"['R', 'IY0', 'K', 'EY1', 'S']","['R', 'IY', 'K', 'EY', 'S']",PSC
+263,recask,short,6,,,complex,pseudo,,"['R', 'IY0', 'K', 'AE1', 'S', 'K']","['R', 'IY', 'K', 'AE', 'S', 'K']",PSC
+264,refily,short,6,,,complex,pseudo,,"['R', 'EH1', 'F', 'AH0', 'L', 'IY0']","['R', 'EH', 'F', 'AH', 'L', 'IY']",PSC
+265,refors,short,5,,,complex,pseudo,,"['R', 'IY1', 'F', 'ER0', 'Z']","['R', 'IY', 'F', 'ER', 'Z']",PSC
+266,refoul,short,5,,,complex,pseudo,,"['R', 'IY0', 'F', 'UW1', 'L']","['R', 'IY', 'F', 'UW', 'L']",PSC
+267,refued,short,6,,,complex,pseudo,,"['R', 'IY0', 'F', 'Y', 'UW1', 'D']","['R', 'IY', 'F', 'Y', 'UW', 'D']",PSC
+268,rerest,short,6,,,complex,pseudo,,"['R', 'IY0', 'EH1', 'R', 'T', 'S']","['R', 'IY', 'EH', 'R', 'T', 'S']",PSC
+269,rerved,short,4,,,complex,pseudo,,"['R', 'ER1', 'V', 'D']","['R', 'ER', 'V', 'D']",PSC
+270,retomb,short,5,,,complex,pseudo,,"['R', 'IY0', 'T', 'AA1', 'M']","['R', 'IY', 'T', 'AA', 'M']",PSC
+271,retoot,short,5,,,complex,pseudo,,"['R', 'IY0', 'T', 'UW1', 'T']","['R', 'IY', 'T', 'UW', 'T']",PSC
+272,seroic,short,5,,,complex,pseudo,,"['S', 'ER0', 'OW1', 'IH0', 'K']","['S', 'ER', 'OW', 'IH', 'K']",PSC
+273,sharly,short,5,,,complex,pseudo,,"['SH', 'AA1', 'R', 'L', 'IY0']","['SH', 'AA', 'R', 'L', 'IY']",PSC
+274,sloody,short,5,,,complex,pseudo,,"['S', 'L', 'UW1', 'D', 'IY0']","['S', 'L', 'UW', 'D', 'IY']",PSC
+275,snorly,short,6,,,complex,pseudo,,"['S', 'N', 'AO1', 'R', 'L', 'IY0']","['S', 'N', 'AO', 'R', 'L', 'IY']",PSC
+276,sounts,short,5,,,complex,pseudo,,"['S', 'AW1', 'N', 'T', 'S']","['S', 'AW', 'N', 'T', 'S']",PSC
+277,spenly,short,6,,,complex,pseudo,,"['S', 'P', 'EH1', 'N', 'L', 'IY0']","['S', 'P', 'EH', 'N', 'L', 'IY']",PSC
+278,trally,short,5,,,complex,pseudo,,"['T', 'R', 'AE1', 'L', 'IY0']","['T', 'R', 'AE', 'L', 'IY']",PSC
+279,tranes,short,5,,,complex,pseudo,,"['T', 'R', 'EY1', 'N', 'Z']","['T', 'R', 'EY', 'N', 'Z']",PSC
+280,unbold,short,6,,,complex,pseudo,,"['AH1', 'N', 'B', 'OW2', 'L', 'D']","['AH', 'N', 'B', 'OW', 'L', 'D']",PSC
+281,unmase,short,5,,,complex,pseudo,,"['AH0', 'N', 'M', 'EY1', 'Z']","['AH', 'N', 'M', 'EY', 'Z']",PSC
+282,unmesh,short,5,,,complex,pseudo,,"['AH0', 'N', 'M', 'EH1', 'SH']","['AH', 'N', 'M', 'EH', 'SH']",PSC
+283,unmest,short,6,,,complex,pseudo,,"['AH0', 'N', 'M', 'EH1', 'S', 'T']","['AH', 'N', 'M', 'EH', 'S', 'T']",PSC
+284,unresh,short,5,,,complex,pseudo,,"['AH0', 'N', 'R', 'EH1', 'SH']","['AH', 'N', 'R', 'EH', 'SH']",PSC
+285,unrich,short,5,,,complex,pseudo,,"['AH1', 'N', 'R', 'IH0', 'CH']","['AH', 'N', 'R', 'IH', 'CH']",PSC
+286,unsers,short,5,,,complex,pseudo,,"['AH0', 'N', 'S', 'ER0', 'Z']","['AH', 'N', 'S', 'ER', 'Z']",PSC
+287,uphile,short,5,,,complex,pseudo,,"['AH0', 'P', 'HH', 'IY1', 'L']","['AH', 'P', 'HH', 'IY', 'L']",PSC
+288,upholt,short,5,,,complex,pseudo,,"['AH0', 'P', 'OW1', 'L', 'T']","['AH', 'P', 'OW', 'L', 'T']",PSC
+289,uproic,short,5,,,complex,pseudo,,"['AH0', 'P', 'R', 'UW1', 'K']","['AH', 'P', 'R', 'UW', 'K']",PSC
+290,waread,short,5,,,complex,pseudo,,"['W', 'EH1', 'R', 'AH0', 'D']","['W', 'EH', 'R', 'AH', 'D']",PSC
+291,warels,short,6,,,complex,pseudo,,"['W', 'EH1', 'R', 'AH0', 'L', 'Z']","['W', 'EH', 'R', 'AH', 'L', 'Z']",PSC
+292,warely,short,5,,,complex,pseudo,,"['W', 'EH1', 'R', 'L', 'IY0']","['W', 'EH', 'R', 'L', 'IY']",PSC
+293,warmes,short,5,,,complex,pseudo,,"['W', 'AO1', 'R', 'M', 'Z']","['W', 'AO', 'R', 'M', 'Z']",PSC
+294,watels,short,6,,,complex,pseudo,,"['W', 'AO1', 'T', 'AH0', 'L', 'Z']","['W', 'AO', 'T', 'AH', 'L', 'Z']",PSC
+295,wately,short,5,,,complex,pseudo,,"['W', 'EY1', 'T', 'L', 'IY0']","['W', 'EY', 'T', 'L', 'IY']",PSC
+296,wounts,short,5,,,complex,pseudo,,"['W', 'UW1', 'N', 'T', 'S']","['W', 'UW', 'N', 'T', 'S']",PSC
+297,wrimes,short,4,,,complex,pseudo,,"['R', 'AY1', 'M', 'Z']","['R', 'AY', 'M', 'Z']",PSC
+298,yeadly,short,5,,,complex,pseudo,,"['Y', 'IY1', 'D', 'L', 'IY0']","['Y', 'IY', 'D', 'L', 'IY']",PSC
+299,yeards,short,5,,,complex,pseudo,,"['Y', 'IH1', 'R', 'D', 'Z']","['Y', 'IH', 'R', 'D', 'Z']",PSC
+300,arns,short,4,,,complex,pseudo,,"['AA1', 'R', 'N', 'Z']","['AA', 'R', 'N', 'Z']",PSC
+301,axen,short,5,,,complex,pseudo,,"['AE1', 'K', 'S', 'AH0', 'N']","['AE', 'K', 'S', 'AH', 'N']",PSC
+302,deth,short,3,,,complex,pseudo,,"['D', 'EH1', 'TH']","['D', 'EH', 'TH']",PSC
+303,eary,short,3,,,complex,pseudo,,"['IH1', 'R', 'IY0']","['IH', 'R', 'IY']",PSC
+304,geth,short,3,,,complex,pseudo,,"['G', 'EH1', 'TH']","['G', 'EH', 'TH']",PSC
+305,inty,short,4,,,complex,pseudo,,"['IH1', 'N', 'T', 'IY0']","['IH', 'N', 'T', 'IY']",PSC
+306,lasy,short,4,,,complex,pseudo,,"['L', 'EY1', 'Z', 'IY0']","['L', 'EY', 'Z', 'IY']",PSC
+307,oxer,short,4,,,complex,pseudo,,"['AA1', 'K', 'S', 'ER0']","['AA', 'K', 'S', 'ER']",PSC
+308,onit,short,6,,,complex,pseudo,,"['OW0', 'N', 'IY1', 'T', 'AH0', 'T']","['OW', 'N', 'IY', 'T', 'AH', 'T']",PSC
+309,pown,short,3,,,complex,pseudo,,"['P', 'AW1', 'N']","['P', 'AW', 'N']",PSC
+310,rews,short,3,,,complex,pseudo,,"['R', 'UW1', 'Z']","['R', 'UW', 'Z']",PSC
+311,soer,short,3,,,complex,pseudo,,"['S', 'AO1', 'R']","['S', 'AO', 'R']",PSC
+312,usen,short,5,,,complex,pseudo,,"['Y', 'UW1', 'S', 'AH0', 'N']","['Y', 'UW', 'S', 'AH', 'N']",PSC
+313,wiar,short,4,,,complex,pseudo,,"['W', 'AY1', 'AA0', 'R']","['W', 'AY', 'AA', 'R']",PSC
+314,wosy,short,4,,,complex,pseudo,,"['W', 'OW1', 'Z', 'IY0']","['W', 'OW', 'Z', 'IY']",PSC
+315,actly,short,5,,,complex,pseudo,,"['AE1', 'K', 'T', 'L', 'IY0']","['AE', 'K', 'T', 'L', 'IY']",PSC
+316,bebut,short,5,,,complex,pseudo,,"['B', 'EH1', 'B', 'AH0', 'T']","['B', 'EH', 'B', 'AH', 'T']",PSC
+317,boser,short,4,,,complex,pseudo,,"['B', 'OW1', 'Z', 'ER0']","['B', 'OW', 'Z', 'ER']",PSC
+318,earts,short,3,,,complex,pseudo,,"['ER1', 'T', 'S']","['ER', 'T', 'S']",PSC
+319,entoy,short,4,,,complex,pseudo,,"['EH1', 'N', 'T', 'OY0']","['EH', 'N', 'T', 'OY']",PSC
+320,herls,short,4,,,complex,pseudo,,"['HH', 'ER1', 'L', 'Z']","['HH', 'ER', 'L', 'Z']",PSC
+321,lonny,short,4,,,complex,pseudo,,"['L', 'AO1', 'N', 'IY0']","['L', 'AO', 'N', 'IY']",PSC
+322,pamew,short,4,,,complex,pseudo,,"['P', 'AE1', 'M', 'IY0']","['P', 'AE', 'M', 'IY']",PSC
+323,plact,short,5,,,complex,pseudo,,"['P', 'AE1', 'L', 'K', 'T']","['P', 'AE', 'L', 'K', 'T']",PSC
+324,reade,short,3,,,complex,pseudo,,"['R', 'EH1', 'D']","['R', 'EH', 'D']",PSC
+325,rebug,short,5,,,complex,pseudo,,"['R', 'EH1', 'B', 'AH0', 'G']","['R', 'EH', 'B', 'AH', 'G']",PSC
+326,unage,short,5,,,complex,pseudo,,"['Y', 'UW1', 'N', 'IH0', 'JH']","['Y', 'UW', 'N', 'IH', 'JH']",PSC
+327,unjoy,short,4,,,complex,pseudo,,"['AH0', 'N', 'JH', 'OY1']","['AH', 'N', 'JH', 'OY']",PSC
+328,webut,short,5,,,complex,pseudo,,"['W', 'EH1', 'B', 'AH0', 'T']","['W', 'EH', 'B', 'AH', 'T']",PSC
+329,wivet,short,5,,,complex,pseudo,,"['W', 'IH1', 'V', 'IH0', 'T']","['W', 'IH', 'V', 'IH', 'T']",PSC
+330,abroot,short,5,,,complex,pseudo,,"['AH0', 'B', 'R', 'UW1', 'T']","['AH', 'B', 'R', 'UW', 'T']",PSC
+332,bemoad,short,6,,,complex,pseudo,,"['B', 'IH0', 'M', 'OW1', 'AH0', 'D']","['B', 'IH', 'M', 'OW', 'AH', 'D']",PSC
+333,enmass,short,5,,,complex,pseudo,,"['EH1', 'N', 'M', 'AH0', 'S']","['EH', 'N', 'M', 'AH', 'S']",PSC
+334,expors,short,6,,,complex,pseudo,,"['EH1', 'K', 'S', 'P', 'ER0', 'Z']","['EH', 'K', 'S', 'P', 'ER', 'Z']",PSC
+335,misarm,short,6,,,complex,pseudo,,"['M', 'IH0', 'S', 'AA1', 'R', 'M']","['M', 'IH', 'S', 'AA', 'R', 'M']",PSC
+336,prings,short,5,,,complex,pseudo,,"['P', 'R', 'IH1', 'NG', 'Z']","['P', 'R', 'IH', 'NG', 'Z']",PSC
+337,retomb,short,5,,,complex,pseudo,,"['R', 'IY0', 'T', 'AA1', 'M']","['R', 'IY', 'T', 'AA', 'M']",PSC
+338,seroic,short,5,,,complex,pseudo,,"['S', 'ER0', 'OW1', 'IH0', 'K']","['S', 'ER', 'OW', 'IH', 'K']",PSC
+339,spenly,short,6,,,complex,pseudo,,"['S', 'P', 'EH1', 'N', 'L', 'IY0']","['S', 'P', 'EH', 'N', 'L', 'IY']",PSC
+340,unrich,short,5,,,complex,pseudo,,"['AH1', 'N', 'R', 'IH0', 'CH']","['AH', 'N', 'R', 'IH', 'CH']",PSC
+341,upholt,short,5,,,complex,pseudo,,"['AH0', 'P', 'OW1', 'L', 'T']","['AH', 'P', 'OW', 'L', 'T']",PSC
+342,warels,short,6,,,complex,pseudo,,"['W', 'EH1', 'R', 'AH0', 'L', 'Z']","['W', 'EH', 'R', 'AH', 'L', 'Z']",PSC
+343,wately,short,5,,,complex,pseudo,,"['W', 'EY1', 'T', 'L', 'IY0']","['W', 'EY', 'T', 'L', 'IY']",PSC
+344,yeards,short,5,,,complex,pseudo,,"['Y', 'IH1', 'R', 'D', 'Z']","['Y', 'IH', 'R', 'D', 'Z']",PSC

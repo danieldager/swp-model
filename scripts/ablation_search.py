@@ -224,10 +224,7 @@ if __name__ == "__main__":
 
     # Load and prepare data
     test_data = get_test_data()
-    # train_data = get_ablation_train_data()
-    # train_data = train_data.sample(frac=0.3)
-    # ablation_data = pd.concat([test_data, train_data])
-    ablation_loader = get_phoneme_testloader(batch_size, include_stress, test_data)
+    test_loader = get_phoneme_testloader(batch_size, include_stress)
 
     # Load the model and weights
     model = get_model(model_name)
@@ -267,7 +264,7 @@ if __name__ == "__main__":
                     model=model,
                     device=device,
                     test_df=test_data,
-                    test_loader=ablation_loader,
+                    test_loader=test_loader,
                     include_stress=include_stress,
                 )
                 restore_lstm_weights(layer, original_weights)

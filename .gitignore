@@ -164,10 +164,7 @@ stimuli/folds
 stimuli/phonemes
 stimuli/graphemes
 stimuli/dataframe
+stimuli/statistics
 phonemes_to_id.json
 public_datasets
 generated_scripts
-
-*.csv
-!test_equalized.csv
-!complete_train.csv

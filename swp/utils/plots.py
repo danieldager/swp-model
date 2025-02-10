@@ -64,7 +64,6 @@ def set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2)
         [f"{x_min:.{x_decimal_places}f}", f"{x_max:.{x_decimal_places}f}"],
         fontsize=tick_fontsize,
     )
-    print(x_min, x_max)
 
     # For the y-axis, lower limit will be set a bit below zero for clarity.
     new_y_min = -0.05 * y_max  # Adjust the factor as needed.
