@@ -1,3 +1,4 @@
+import math
 import pathlib
 import warnings
 
@@ -46,6 +47,42 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     plt.close()
 
 
+def set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2):
+    # Force the figure to render so we get the final limits.
+    plt.draw()
+    # Retrieve current x- and y-axis limits.
+    x_min, x_max = ax.get_xlim()
+    y_min, y_max = ax.get_ylim()
+
+    # round x limits
+    x_min = int(round(x_min))
+    x_max = int(round(x_max))
+
+    # Set x-axis ticks to exactly the minimum and maximum values.
+    ax.set_xticks([x_min, x_max])
+    ax.set_xticklabels(
+        [f"{x_min:.{x_decimal_places}f}", f"{x_max:.{x_decimal_places}f}"],
+        fontsize=tick_fontsize,
+    )
+    print(x_min, x_max)
+
+    # For the y-axis, lower limit will be set a bit below zero for clarity.
+    new_y_min = -0.05 * y_max  # Adjust the factor as needed.
+    ax.set_ylim(new_y_min, y_max)
+    ax.set_yticks([0, y_max])
+    ax.set_yticklabels(["0", f"{y_max:.{y_decimal_places}f}"], fontsize=tick_fontsize)
+
+    # use linspace to get a range of values between the min and max
+    x_lines = np.linspace(x_min, x_max, 6)
+    y_lines = np.linspace(new_y_min, y_max, 6)
+
+    # Draw grid lines
+    for x in x_lines:
+        ax.axvline(x, color="gray", linewidth=0.5, linestyle="--")
+    for y in y_lines:
+        ax.axhline(y, color="gray", linewidth=0.5, linestyle="--")
+
+
 # Function to plot Edit Distance by Length
 def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
     """Plot average edit distance by sequence length.
@@ -82,9 +119,8 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         markersize=8,
         linewidth=3,
     )
-    plt.xlabel("Phoneme Sequence Length", fontsize=24, labelpad=-15)
-    plt.ylabel("Average Edit Distance", fontsize=24, labelpad=-35)
-
+    plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-40)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
     filtered_labels = []
@@ -92,38 +128,17 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         if l not in ["Lexicality", "Morphology"]:
             filtered_handles.append(h)
             filtered_labels.append(l)
-
     leg = plt.legend(
         filtered_handles,
         filtered_labels,
         title="Lexicality & Morphology",
-        fontsize=24,
-        title_fontsize=24,
+        fontsize=22,
+        title_fontsize=22,
         ncol=2,
     )
-    plt.setp(leg.get_title(), multialignment="center")
-
-    ax = plt.gca()
-    xticks = ax.get_xticks()
-    new_xticklabels = [
-        f"{tick:.0f}" if (i == 1 or i == len(xticks) - 2) else ""
-        for i, tick in enumerate(xticks)
-    ]
-    ax.set_xticklabels(new_xticklabels, fontsize=22)
-
-    yticks = ax.get_yticks()
-    new_yticklabels = [
-        (
-            f"{tick:.0f}"
-            if i == 1
-            else (format(tick, ".1g") if i == len(yticks) - 1 else "")
-        )
-        for i, tick in enumerate(yticks)
-    ]
-    ax.set_yticklabels(new_yticklabels, fontsize=22)
-
-    plt.grid(True)
-    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)  # , box_inches="tight")
+    plt.setp(leg.get_title(), multialignment="left")
+    set_edge_ticks(ax, tick_fontsize=22)
+    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)
     plt.close()
 
 
@@ -139,12 +154,10 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
 
     """
     data_by_lexicality = []
-
     # Iterate through rows grouped by Lexicality
     for lexicality, group_df in df.groupby("Lexicality"):
         totals = {}
         errors = {}
-
         for _, row in group_df.iterrows():
             length = row["Sequence Length"]
 
@@ -170,7 +183,7 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
         )
     plot_df = pd.DataFrame(data_by_lexicality)
     plt.figure(figsize=(11, 6))
-    sns.lineplot(
+    ax = sns.lineplot(
         x="Position",
         y="Error Rate",
         hue="Lexicality",
@@ -179,30 +192,10 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
         markersize=8,
         linewidth=3,
     )
-    plt.xlabel("Relative Position", fontsize=24, labelpad=-15)
-    plt.ylabel("Average Edit Distance", fontsize=24, labelpad=-25)
+    plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
+    plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
-
-    ax = plt.gca()
-    xticks = ax.get_xticks()
-    new_xticklabels = [
-        f"{tick:.0f}" if (i == 1 or i == len(xticks) - 2) else ""
-        for i, tick in enumerate(xticks)
-    ]
-    ax.set_xticklabels(new_xticklabels, fontsize=22)
-
-    yticks = ax.get_yticks()
-    new_yticklabels = [
-        (
-            f"{tick:.0f}"
-            if i == 1
-            else (format(tick, ".1g") if i == len(yticks) - 1 else "")
-        )
-        for i, tick in enumerate(yticks)
-    ]
-    ax.set_yticklabels(new_yticklabels, fontsize=22)
-
-    plt.grid(True)
+    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
 
@@ -223,7 +216,7 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
         .reset_index()
     )
     plt.figure(figsize=(11, 6))
-    sns.lineplot(
+    ax = sns.lineplot(
         data=grouped_df,
         x="Sonority",
         y="Edit Distance",
@@ -232,30 +225,10 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
         markersize=8,
         linewidth=3,
     )
-    plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-5)
-    plt.ylabel("Average Edit Distance", fontsize=24, labelpad=5)
+    plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
-
-    ax = plt.gca()
-    xticks = ax.get_xticks()
-    new_xticklabels = [
-        f"{tick:.0f}" if (i == 1 or i == len(xticks) - 2) else ""
-        for i, tick in enumerate(xticks)
-    ]
-    ax.set_xticklabels(new_xticklabels, fontsize=22)
-
-    yticks = ax.get_yticks()
-    new_yticklabels = [
-        (
-            f"{tick:.0f}"
-            if i == 1
-            else (format(tick, ".2g") if i == len(yticks) - 2 else "")
-        )
-        for i, tick in enumerate(yticks)
-    ]
-    ax.set_yticklabels(new_yticklabels, fontsize=22)
-
-    plt.grid(True)
+    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=0, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
 

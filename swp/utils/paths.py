@@ -41,6 +41,12 @@ def get_dataframe_dir() -> pathlib.Path:
     return dataframe_dir
 
 
+def get_handmade_dir() -> pathlib.Path:
+    handmade_dir = stimuli_dir / "handmade"
+    handmade_dir.mkdir(parents=True, exist_ok=True)
+    return handmade_dir
+
+
 def get_folds_dir() -> pathlib.Path:
     folds_dir = stimuli_dir / "folds"
     folds_dir.mkdir(parents=True, exist_ok=True)

@@ -160,11 +160,14 @@ cython_debug/
 .vscode
 weights
 results
-public_datasets
 stimuli/folds
 stimuli/phonemes
 stimuli/graphemes
 stimuli/dataframe
-stimuli/phonemes_to_id.json
-*.csv
+phonemes_to_id.json
+public_datasets
 generated_scripts
+
+*.csv
+!test_equalized.csv
+!complete_train.csv

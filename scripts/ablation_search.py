@@ -3,8 +3,6 @@ import os
 import sys
 import warnings
 
-import warnings
-
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
@@ -18,25 +16,30 @@ warnings.filterwarnings(
 )
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+from scipy.interpolate import make_interp_spline
+from scipy.ndimage import gaussian_filter1d
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from swp.test.repetition import test
-from swp.utils.paths import get_ablations_dir
-from swp.utils.setup import seed_everything
 from swp.datasets.phonemes import get_phoneme_testloader
-from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
+from swp.test.repetition import test
 from swp.utils.datasets import (
-    get_test_data,
+    classify_error_positions,
     enrich_for_plotting,
     get_ablation_train_data,
-    classify_error_positions,
+    get_test_data,
 )
+from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
+from swp.utils.paths import get_ablations_dir
+from swp.utils.setup import seed_everything
+
+sns.set_palette("colorblind")
 
 
 def cache_lstm_weights(layer):
@@ -112,6 +115,7 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
     results_df = results_df.copy()
     results_df[x] = 1 - results_df[x]
     results_df[y] = 1 - results_df[y]
+    results_df["distance"] = (results_df[y] - results_df[x]) / np.sqrt(2)
 
     # Plot the scatter points
     sns.scatterplot(
@@ -125,8 +129,8 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
         s=50,
         ax=ax,
     )
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel, fontsize=24, labelpad=10)
+    ax.set_ylabel(ylabel, fontsize=24)
 
     if log_scale:
         ax.set_xscale("symlog", linthresh=0.001)
@@ -149,7 +153,7 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
     # Draw a diagonal reference line
     ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
     ax.get_legend().remove()
-    plt.savefig(model_dir / filename, dpi=300)
+    plt.savefig(model_dir / f"{filename}_scatter.png", dpi=300)
 
     # Create a legend figure
     ax.legend(title="Layer")
@@ -162,6 +166,21 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
 
     plt.close(fig)
     plt.close(figLegend)
+
+    common_bins = np.linspace(
+        results_df["distance"].min(), results_df["distance"].max(), 21
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
+    for ax, layer, color in zip(axes, ["encoder", "decoder"], ["blue", "red"]):
+        subset = results_df[results_df["layer_name"] == layer]
+        ax.hist(subset["distance"], bins=common_bins, color=color)
+        ax.grid(True)
+    xlabel = fig.supxlabel("Distance from Diagonal", fontsize=24)
+    xlabel.set_position((0.54, 0.05))
+    axes[0].set_ylabel("# of Neurons", fontsize=24, labelpad=10)
+    plt.tight_layout()
+    plt.savefig(model_dir / f"{filename}_histos.png", dpi=300)
+    plt.close()
 
 
 if __name__ == "__main__":
@@ -205,10 +224,10 @@ if __name__ == "__main__":
 
     # Load and prepare data
     test_data = get_test_data()
-    train_data = get_ablation_train_data()
-    train_data = train_data.sample(frac=0.3)
-    ablation_data = pd.concat([test_data, train_data])
-    ablation_loader = get_phoneme_testloader(batch_size, include_stress, ablation_data)
+    # train_data = get_ablation_train_data()
+    # train_data = train_data.sample(frac=0.3)
+    # ablation_data = pd.concat([test_data, train_data])
+    ablation_loader = get_phoneme_testloader(batch_size, include_stress, test_data)
 
     # Load the model and weights
     model = get_model(model_name)
@@ -247,7 +266,7 @@ if __name__ == "__main__":
                 df, _ = test(
                     model=model,
                     device=device,
-                    test_df=ablation_data,
+                    test_df=test_data,
                     test_loader=ablation_loader,
                     include_stress=include_stress,
                 )
@@ -361,9 +380,9 @@ if __name__ == "__main__":
         results_df,
         "real_accuracy",
         "pseudo_accuracy",
-        "Real (Lexical Processing)",
-        "Pseudo (Sublexical Processing)",
-        "lex_scatter.png",
+        "Real (Lexical)",
+        "Pseudo (Sublexical)",
+        "lex",
         model_dir,
     )
 
@@ -373,7 +392,7 @@ if __name__ == "__main__":
         "high_freq_accuracy",
         "Low Frequency",
         "High Frequency",
-        "frq_scatter.png",
+        "frq",
         model_dir,
     )
 
@@ -383,7 +402,7 @@ if __name__ == "__main__":
         "complex_accuracy",
         "Morphologically Simple",
         "Morphologically Complex",
-        "mor_scatter.png",
+        "mor",
         model_dir,
     )
 
@@ -391,9 +410,9 @@ if __name__ == "__main__":
         results_df,
         "primacy_accuracy",
         "recency_accuracy",
-        "Primacy",
-        "Recency",
-        "pos_scatter.png",
+        "Primacy (First Half)",
+        "Recency (Second Half)",
+        "pos",
         model_dir,
     )
 
@@ -401,8 +420,8 @@ if __name__ == "__main__":
         results_df,
         "short_accuracy",
         "long_accuracy",
-        "Short",
-        "Long",
-        "len_scatter.png",
+        "Short Words",
+        "Long Words",
+        "len",
         model_dir,
     )

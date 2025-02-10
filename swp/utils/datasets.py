@@ -13,8 +13,18 @@ from morphemes import Morphemes
 from nltk.corpus import cmudict
 from wordfreq import word_frequency, zipf_frequency
 
+<<<<<<< Updated upstream
 from .abbreviations import abbreviations_en
 from .paths import get_dataframe_dir, get_folds_dir, get_morphemes_dir, get_stimuli_dir
+=======
+from .paths import (
+    get_dataframe_dir,
+    get_folds_dir,
+    get_handmade_dir,
+    get_morphemes_dir,
+    get_stimuli_dir,
+)
+>>>>>>> Stashed changes
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -309,8 +319,8 @@ def create_test_data() -> pd.DataFrame:
 def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
     Set `force_recreate` to `True` to enforce recomputation of the data."""
-    csv_test_path = get_dataframe_dir() / "complete_test.csv"
-    if csv_test_path.exists() and not force_recreate:
+    csv_test_path = get_handmade_dir() / "test_equalized.csv"
+    if csv_test_path.exists():
         dataframe = pd.read_csv(
             csv_test_path,
             index_col=0,
@@ -321,7 +331,8 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
             },
         )
     else:
-        dataframe = create_test_data()
+        raise FileNotFoundError("User does not have the evaluation dataset.")
+
     return dataframe
 
 
@@ -361,7 +372,7 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     csv_train_path = get_dataframe_dir() / "complete_train.csv"
     dataframe.to_csv(csv_train_path)
 
-    ablation_train = dataframe.sample(frac=0.01)
+    ablation_train = dataframe.sample(frac=0.1)
     ablation_train = enrich_for_ablations(ablation_train)
     ablation_train.to_csv(get_dataframe_dir() / "ablation_train.csv")
 
