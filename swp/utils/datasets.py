@@ -12,6 +12,8 @@ from Levenshtein import editops
 from morphemes import Morphemes
 from nltk.corpus import cmudict
 from wordfreq import word_frequency, zipf_frequency
+
+from .abbreviations import abbreviations_en
 from .paths import (
     get_dataframe_dir,
     get_folds_dir,
@@ -341,7 +343,7 @@ def get_curated_words() -> list[tuple[str, float]]:
             k.isalpha()
             and freq != 0
             and (k in {"a", "i"}) ** (len(k) == 1)  # reverse implication
-            # and k not in abbreviations_en
+            and k not in abbreviations_en
         ):
             curated.append((k, freq))
     curated.sort(key=lambda x: x[1], reverse=True)
