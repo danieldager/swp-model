@@ -156,7 +156,7 @@ def autoarg_slurmarray_file_generator(
     module load {module_str} {jz_module}
     set -x
 
-    ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID p" < {str(arg_file.absolute())})
+    ARGS=$(sed -n "$((SLURM_ARRAY_TASK_ID+1)) p" < {str(arg_file.absolute())})
     cd {str(get_python_scripts_dir().absolute())}
     srun python {python_script} $ARGS
     """
