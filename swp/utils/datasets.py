@@ -12,11 +12,6 @@ from Levenshtein import editops
 from morphemes import Morphemes
 from nltk.corpus import cmudict
 from wordfreq import word_frequency, zipf_frequency
-
-<<<<<<< Updated upstream
-from .abbreviations import abbreviations_en
-from .paths import get_dataframe_dir, get_folds_dir, get_morphemes_dir, get_stimuli_dir
-=======
 from .paths import (
     get_dataframe_dir,
     get_folds_dir,
@@ -24,7 +19,6 @@ from .paths import (
     get_morphemes_dir,
     get_stimuli_dir,
 )
->>>>>>> Stashed changes
 
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
@@ -336,22 +330,22 @@ def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
     return dataframe
 
 
-def get_currated_words() -> list[tuple[str, float]]:
-    r"""Returns a list of currated english words sorted by descending frequency"""
+def get_curated_words() -> list[tuple[str, float]]:
+    r"""Returns a list of curated english words sorted by descending frequency"""
     # TODO add support for language maybe ?
     cmu = cmudict.dict()
-    currated = []
+    curated = []
     for k in cmu:
         freq = word_frequency(k, "en")
         if (
             k.isalpha()
             and freq != 0
             and (k in {"a", "i"}) ** (len(k) == 1)  # reverse implication
-            and k not in abbreviations_en
+            # and k not in abbreviations_en
         ):
-            currated.append((k, freq))
-    currated.sort(key=lambda x: x[1], reverse=True)
-    return currated
+            curated.append((k, freq))
+    curated.sort(key=lambda x: x[1], reverse=True)
+    return curated
 
 
 def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
@@ -359,12 +353,12 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
 
     Data is enrichened with word Frequency, Zipf Frequency, Part of Speech and Phonemes
     """
-    currated = get_currated_words()
-    if num_unique_words > len(currated):
+    curated = get_curated_words()
+    if num_unique_words > len(curated):
         raise ValueError(
-            f"Not enough unique words to pick from, only {len(currated)} words available"
+            f"Not enough unique words to pick from, only {len(curated)} words available"
         )
-    selected = currated[:num_unique_words]
+    selected = curated[:num_unique_words]
     word_tuple, freq_tuple = zip(*selected)
 
     dataframe = pd.DataFrame({"Word": list(word_tuple), "Frequency": list(freq_tuple)})
