@@ -269,50 +269,7 @@ def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
     df.loc[:, ["Primacy Error", "Recency Error"]] = df.apply(classify, axis=1)
     return df
 
-
-def create_test_data() -> pd.DataFrame:
-    r"""Combine and reformat the real and pseudo word datasets"""
-    # Process real words
-    handmade_real_path = get_stimuli_dir() / "handmade" / "test_dataset_real"
-    csv_real_path = get_dataframe_dir() / "real_test.csv"
-    real_words = process_dataset(handmade_real_path, real=True)
-    real_words = clean_and_enrich_data(real_words, real=True)
-    real_words.to_csv(csv_real_path)
-
-    # Process pseudo words
-    handmade_pseudo_path = get_stimuli_dir() / "handmade" / "test_dataset_pseudo"
-    csv_pseudo_path = get_dataframe_dir() / "pseudo_test.csv"
-    pseudo_words = process_dataset(handmade_pseudo_path)
-    pseudo_words = clean_and_enrich_data(pseudo_words)
-    pseudo_words.to_csv(csv_pseudo_path)
-
-    # Combine datasets
-    dataframe = pd.concat(
-        [real_words, pseudo_words], join="outer"
-    )  # , ignore_index=True)
-
-    # Rearrange columns
-    columns = [
-        "Word",
-        "Size",
-        "Length",
-        "Frequency",
-        "Zipf Frequency",
-        "Morphology",
-        "Lexicality",
-        "Part of Speech",
-        "Phonemes",
-        "No Stress",
-    ]
-    dataframe = dataframe.reindex(columns=columns)
-
-    csv_complete_path = get_dataframe_dir() / "complete_test.csv"
-    dataframe.to_csv(csv_complete_path)
-
-    return dataframe
-
-
-def get_test_data(force_recreate: bool = False) -> pd.DataFrame:
+def get_test_data() -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
     Set `force_recreate` to `True` to enforce recomputation of the data."""
     csv_test_path = get_handmade_dir() / "test_equalized.csv"

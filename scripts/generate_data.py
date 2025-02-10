@@ -12,7 +12,6 @@ from swp.utils.datasets import (
     create_epoch,
     create_folds,
     create_phoneme_to_id,
-    create_test_data,
     create_train_data,
     get_phoneme_statistics,
     get_train_fold,
@@ -28,7 +27,6 @@ if __name__ == "__main__":
 
     print("\nGenerating test data...")
     seed_everything()
-    create_test_data()
 
     print("\nGenerating train data...")
     train_df = create_train_data(args.vocab_size)
