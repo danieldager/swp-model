@@ -24,7 +24,7 @@ from swp.models.losses import AuditoryXENT
 from swp.train.repetition import train
 from swp.utils.datasets import get_phoneme_to_id
 from swp.utils.models import get_model, get_model_name, get_train_args, get_train_name
-from swp.utils.setup import seed_everything, set_device
+from swp.utils.setup import backend_setup, seed_everything, set_device
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -106,6 +106,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     seed_everything()
+    backend_setup()
     device = set_device()
 
     # TODO mutually exclusive args

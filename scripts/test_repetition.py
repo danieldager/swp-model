@@ -34,7 +34,7 @@ from swp.utils.plots import (
     plot_sonority_errors,
     regression_plots,
 )
-from swp.utils.setup import seed_everything, set_device
+from swp.utils.setup import backend_setup, seed_everything, set_device
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     include_stress = args.include_stress
 
     seed_everything()
+    backend_setup()
     device = set_device()
 
     test_dir = get_test_dir()

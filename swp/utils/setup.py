@@ -38,6 +38,15 @@ def seed_everything(seed=42) -> None:
                 )
 
 
+def backend_setup() -> None:
+    r"""Disable CuDNN on Jean-Zay"""
+    on_jean_zay = os.getenv("SLURM_CLUSTER_NAME") == "jean-zay" or os.getenv(
+        "HOSTNAME", ""
+    ).startswith("jean-zay")
+    if on_jean_zay:
+        torch.backends.cudnn.enabled = False
+
+
 def set_device() -> torch.device:
     r"""Select available device, with priority order CUDA, then MPS and finally CPU"""
     if torch.cuda.is_available():
