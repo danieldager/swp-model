@@ -1,0 +1,525 @@
+,Word,Size,Length,Frequency,Zipf Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No Stress,Condition
+0,addreat,short,5,,,simple,pseudo,,"['AH0', 'D', 'R', 'IY1', 'T']","['AH', 'D', 'R', 'IY', 'T']",PSS
+1,advange,short,5,,,simple,pseudo,,"['AH0', 'D', 'V', 'EY1', 'NG']","['AH', 'D', 'V', 'EY', 'NG']",PSS
+2,advanna,short,6,,,simple,pseudo,,"['AE0', 'D', 'V', 'AE1', 'N', 'AH0']","['AE', 'D', 'V', 'AE', 'N', 'AH']",PSS
+3,afflity,short,6,,,simple,pseudo,,"['AE1', 'F', 'L', 'IH0', 'T', 'IY0']","['AE', 'F', 'L', 'IH', 'T', 'IY']",PSS
+4,ailence,short,5,,,simple,pseudo,,"['EY1', 'L', 'AH0', 'N', 'S']","['EY', 'L', 'AH', 'N', 'S']",PSS
+5,aillage,short,4,,,simple,pseudo,,"['AE1', 'L', 'AH0', 'JH']","['AE', 'L', 'AH', 'JH']",PSS
+6,airsute,short,5,,,simple,pseudo,,"['EH1', 'R', 'S', 'UW2', 'T']","['EH', 'R', 'S', 'UW', 'T']",PSS
+7,allenue,short,5,,,simple,pseudo,,"['AE1', 'L', 'AH0', 'N', 'UW2']","['AE', 'L', 'AH', 'N', 'UW']",PSS
+8,alleron,short,5,,,simple,pseudo,,"['AE1', 'L', 'ER0', 'AH0', 'N']","['AE', 'L', 'ER', 'AH', 'N']",PSS
+9,amallow,short,5,,,simple,pseudo,,"['AE1', 'M', 'AH0', 'L', 'OW0']","['AE', 'M', 'AH', 'L', 'OW']",PSS
+10,anaemin,short,6,,,simple,pseudo,,"['AE1', 'N', 'AH0', 'M', 'IH0', 'N']","['AE', 'N', 'AH', 'M', 'IH', 'N']",PSS
+11,anaempt,short,6,,,simple,pseudo,,"['AH0', 'N', 'EH1', 'M', 'P', 'T']","['AH', 'N', 'EH', 'M', 'P', 'T']",PSS
+12,astouac,short,6,,,simple,pseudo,,"['AH0', 'S', 'T', 'UW1', 'AH0', 'T']","['AH', 'S', 'T', 'UW', 'AH', 'T']",PSS
+13,attemin,short,6,,,simple,pseudo,,"['AH0', 'T', 'IY1', 'M', 'AH0', 'N']","['AH', 'T', 'IY', 'M', 'AH', 'N']",PSS
+14,balange,short,6,,,simple,pseudo,,"['B', 'AE1', 'L', 'AH0', 'N', 'JH']","['B', 'AE', 'L', 'AH', 'N', 'JH']",PSS
+15,blemiss,short,6,,,simple,pseudo,,"['B', 'L', 'EH1', 'M', 'IH0', 'S']","['B', 'L', 'EH', 'M', 'IH', 'S']",PSS
+16,brinbow,short,6,,,simple,pseudo,,"['B', 'R', 'IH1', 'N', 'B', 'OW0']","['B', 'R', 'IH', 'N', 'B', 'OW']",PSS
+17,brisber,short,6,,,simple,pseudo,,"['B', 'R', 'IH1', 'S', 'B', 'ER0']","['B', 'R', 'IH', 'S', 'B', 'ER']",PSS
+18,cantain,short,6,,,simple,pseudo,,"['K', 'AE1', 'N', 'T', 'EY2', 'N']","['K', 'AE', 'N', 'T', 'EY', 'N']",PSS
+19,cisteel,short,6,,,simple,pseudo,,"['S', 'IH1', 'S', 'T', 'IY2', 'L']","['S', 'IH', 'S', 'T', 'IY', 'L']",PSS
+20,cistery,short,6,,,simple,pseudo,,"['S', 'IH1', 'S', 'T', 'ER0', 'IY0']","['S', 'IH', 'S', 'T', 'ER', 'IY']",PSS
+21,contass,short,6,,,simple,pseudo,,"['K', 'AA1', 'N', 'T', 'AE2', 'S']","['K', 'AA', 'N', 'T', 'AE', 'S']",PSS
+22,conthen,short,6,,,simple,pseudo,,"['K', 'AA1', 'N', 'TH', 'AH0', 'N']","['K', 'AA', 'N', 'TH', 'AH', 'N']",PSS
+23,conthol,short,6,,,simple,pseudo,,"['K', 'AA1', 'N', 'TH', 'AH0', 'L']","['K', 'AA', 'N', 'TH', 'AH', 'L']",PSS
+24,curtish,short,5,,,simple,pseudo,,"['K', 'ER1', 'T', 'IH0', 'SH']","['K', 'ER', 'T', 'IH', 'SH']",PSS
+25,despire,short,6,,,simple,pseudo,,"['D', 'IH0', 'S', 'P', 'AY1', 'R']","['D', 'IH', 'S', 'P', 'AY', 'R']",PSS
+26,despitt,short,6,,,simple,pseudo,,"['D', 'EH1', 'S', 'P', 'IH0', 'T']","['D', 'EH', 'S', 'P', 'IH', 'T']",PSS
+27,epiphel,short,6,,,simple,pseudo,,"['EH1', 'P', 'AH0', 'F', 'EH2', 'L']","['EH', 'P', 'AH', 'F', 'EH', 'L']",PSS
+28,fantass,short,5,,,simple,pseudo,,"['F', 'AE1', 'N', 'T', 'S']","['F', 'AE', 'N', 'T', 'S']",PSS
+29,fanvass,short,6,,,simple,pseudo,,"['F', 'AE1', 'N', 'V', 'AE0', 'S']","['F', 'AE', 'N', 'V', 'AE', 'S']",PSS
+30,gentass,short,5,,,simple,pseudo,,"['JH', 'EH1', 'N', 'T', 'S']","['JH', 'EH', 'N', 'T', 'S']",PSS
+31,gentery,short,6,,,simple,pseudo,,"['JH', 'EH1', 'N', 'T', 'ER0', 'IY0']","['JH', 'EH', 'N', 'T', 'ER', 'IY']",PSS
+32,gravite,short,6,,,simple,pseudo,,"['G', 'R', 'AE1', 'V', 'IH0', 'T']","['G', 'R', 'AE', 'V', 'IH', 'T']",PSS
+33,hirlock,short,5,,,simple,pseudo,,"['HH', 'ER1', 'L', 'AA2', 'K']","['HH', 'ER', 'L', 'AA', 'K']",PSS
+34,horgive,short,6,,,simple,pseudo,,"['HH', 'AO1', 'R', 'G', 'IH0', 'V']","['HH', 'AO', 'R', 'G', 'IH', 'V']",PSS
+35,ingence,short,6,,,simple,pseudo,,"['IH1', 'NG', 'G', 'AH0', 'N', 'S']","['IH', 'NG', 'G', 'AH', 'N', 'S']",PSS
+36,inspitt,short,6,,,simple,pseudo,,"['IH1', 'N', 'S', 'P', 'IH0', 'T']","['IH', 'N', 'S', 'P', 'IH', 'T']",PSS
+37,invouac,short,6,,,simple,pseudo,,"['IH1', 'N', 'V', 'W', 'AA2', 'K']","['IH', 'N', 'V', 'W', 'AA', 'K']",PSS
+38,irisbee,short,6,,,simple,pseudo,,"['IH0', 'R', 'IH1', 'S', 'B', 'IY0']","['IH', 'R', 'IH', 'S', 'B', 'IY']",PSS
+39,irisber,short,6,,,simple,pseudo,,"['IH1', 'R', 'IH0', 'S', 'B', 'ER0']","['IH', 'R', 'IH', 'S', 'B', 'ER']",PSS
+40,javange,short,6,,,simple,pseudo,,"['JH', 'AH0', 'V', 'EY1', 'N', 'JH']","['JH', 'AH', 'V', 'EY', 'N', 'JH']",PSS
+41,jugatti,short,6,,,simple,pseudo,,"['JH', 'UW0', 'G', 'AA1', 'T', 'IY0']","['JH', 'UW', 'G', 'AA', 'T', 'IY']",PSS
+42,leprobe,short,6,,,simple,pseudo,,"['L', 'EH1', 'P', 'R', 'OW0', 'B']","['L', 'EH', 'P', 'R', 'OW', 'B']",PSS
+43,librare,short,6,,,simple,pseudo,,"['L', 'AY1', 'B', 'R', 'EY2', 'R']","['L', 'AY', 'B', 'R', 'EY', 'R']",PSS
+44,mentass,short,6,,,simple,pseudo,,"['M', 'EH1', 'N', 'T', 'AH0', 'S']","['M', 'EH', 'N', 'T', 'AH', 'S']",PSS
+45,mentery,short,6,,,simple,pseudo,,"['M', 'EH1', 'N', 'T', 'ER0', 'IY0']","['M', 'EH', 'N', 'T', 'ER', 'IY']",PSS
+46,mysteel,short,6,,,simple,pseudo,,"['M', 'IH1', 'S', 'T', 'IY2', 'L']","['M', 'IH', 'S', 'T', 'IY', 'L']",PSS
+47,mystern,short,6,,,simple,pseudo,,"['M', 'IH1', 'S', 'T', 'ER0', 'N']","['M', 'IH', 'S', 'T', 'ER', 'N']",PSS
+48,natcher,short,4,,,simple,pseudo,,"['N', 'AE1', 'CH', 'ER0']","['N', 'AE', 'CH', 'ER']",PSS
+49,outchen,short,5,,,simple,pseudo,,"['AW1', 'T', 'K', 'EH2', 'N']","['AW', 'T', 'K', 'EH', 'N']",PSS
+50,outcher,short,4,,,simple,pseudo,,"['AW1', 'T', 'K', 'ER0']","['AW', 'T', 'K', 'ER']",PSS
+51,outchet,short,4,,,simple,pseudo,,"['AW0', 'T', 'EH1', 'K']","['AW', 'T', 'EH', 'K']",PSS
+52,patchet,short,5,,,simple,pseudo,,"['P', 'AE1', 'CH', 'AH0', 'T']","['P', 'AE', 'CH', 'AH', 'T']",PSS
+53,patural,short,6,,,simple,pseudo,,"['P', 'AE1', 'CH', 'ER0', 'AH0', 'L']","['P', 'AE', 'CH', 'ER', 'AH', 'L']",PSS
+54,phalage,short,5,,,simple,pseudo,,"['F', 'AE1', 'L', 'AH0', 'JH']","['F', 'AE', 'L', 'AH', 'JH']",PSS
+55,phalgam,short,6,,,simple,pseudo,,"['F', 'AE1', 'L', 'G', 'AH0', 'M']","['F', 'AE', 'L', 'G', 'AH', 'M']",PSS
+56,phallow,short,4,,,simple,pseudo,,"['F', 'AE1', 'L', 'OW0']","['F', 'AE', 'L', 'OW']",PSS
+57,raindle,short,6,,,simple,pseudo,,"['R', 'EY1', 'N', 'D', 'AH0', 'L']","['R', 'EY', 'N', 'D', 'AH', 'L']",PSS
+58,saptact,short,6,,,simple,pseudo,,"['S', 'AE1', 'P', 'T', 'AE2', 'K']","['S', 'AE', 'P', 'T', 'AE', 'K']",PSS
+59,saptasy,short,6,,,simple,pseudo,,"['S', 'AE1', 'P', 'T', 'S', 'IY0']","['S', 'AE', 'P', 'T', 'S', 'IY']",PSS
+60,sapture,short,5,,,simple,pseudo,,"['S', 'AE1', 'P', 'CH', 'ER0']","['S', 'AE', 'P', 'CH', 'ER']",PSS
+61,satchet,short,5,,,simple,pseudo,,"['S', 'AE1', 'CH', 'AH0', 'T']","['S', 'AE', 'CH', 'AH', 'T']",PSS
+62,satural,short,6,,,simple,pseudo,,"['S', 'AE1', 'CH', 'ER0', 'AH0', 'L']","['S', 'AE', 'CH', 'ER', 'AH', 'L']",PSS
+63,savance,short,6,,,simple,pseudo,,"['S', 'AE1', 'V', 'AH0', 'N', 'S']","['S', 'AE', 'V', 'AH', 'N', 'S']",PSS
+64,shalage,short,5,,,simple,pseudo,,"['SH', 'AE1', 'L', 'IH0', 'JH']","['SH', 'AE', 'L', 'IH', 'JH']",PSS
+65,strophy,short,6,,,simple,pseudo,,"['S', 'T', 'R', 'AA1', 'F', 'IY0']","['S', 'T', 'R', 'AA', 'F', 'IY']",PSS
+66,vaccial,short,5,,,simple,pseudo,,"['V', 'AE1', 'CH', 'AH0', 'L']","['V', 'AE', 'CH', 'AH', 'L']",PSS
+67,vilence,short,6,,,simple,pseudo,,"['V', 'AY1', 'L', 'AH0', 'N', 'S']","['V', 'AY', 'L', 'AH', 'N', 'S']",PSS
+68,vilenue,short,6,,,simple,pseudo,,"['V', 'IY0', 'L', 'EY0', 'N', 'OW1']","['V', 'IY', 'L', 'EY', 'N', 'OW']",PSS
+69,vileron,short,6,,,simple,pseudo,,"['V', 'IH1', 'L', 'ER0', 'AH0', 'N']","['V', 'IH', 'L', 'ER', 'AH', 'N']",PSS
+70,vithout,short,5,,,simple,pseudo,,"['V', 'IH1', 'TH', 'AW2', 'T']","['V', 'IH', 'TH', 'AW', 'T']",PSS
+71,welfary,short,6,,,simple,pseudo,,"['W', 'EH1', 'L', 'F', 'ER0', 'IY0']","['W', 'EH', 'L', 'F', 'ER', 'IY']",PSS
+72,whithol,short,5,,,simple,pseudo,,"['W', 'IH1', 'TH', 'AH0', 'L']","['W', 'IH', 'TH', 'AH', 'L']",PSS
+73,witchen,short,5,,,simple,pseudo,,"['W', 'IH1', 'CH', 'AH0', 'N']","['W', 'IH', 'CH', 'AH', 'N']",PSS
+74,witchet,short,5,,,simple,pseudo,,"['W', 'IH1', 'CH', 'AH0', 'T']","['W', 'IH', 'CH', 'AH', 'T']",PSS
+75,absource,short,6,,,simple,pseudo,,"['AH0', 'B', 'Z', 'AO1', 'R', 'S']","['AH', 'B', 'Z', 'AO', 'R', 'S']",PSS
+76,bushrome,short,6,,,simple,pseudo,,"['B', 'UH1', 'SH', 'R', 'OW2', 'M']","['B', 'UH', 'SH', 'R', 'OW', 'M']",PSS
+77,cassence,short,6,,,simple,pseudo,,"['K', 'AE1', 'S', 'AH0', 'N', 'S']","['K', 'AE', 'S', 'AH', 'N', 'S']",PSS
+78,casserve,short,5,,,simple,pseudo,,"['K', 'AH0', 'S', 'ER1', 'V']","['K', 'AH', 'S', 'ER', 'V']",PSS
+79,cershant,short,6,,,simple,pseudo,,"['S', 'ER1', 'SH', 'AH0', 'N', 'T']","['S', 'ER', 'SH', 'AH', 'N', 'T']",PSS
+80,cremiere,short,6,,,simple,pseudo,,"['K', 'R', 'EH1', 'M', 'AY0', 'R']","['K', 'R', 'EH', 'M', 'AY', 'R']",PSS
+81,creserve,short,6,,,simple,pseudo,,"['K', 'R', 'EH1', 'S', 'ER0', 'V']","['K', 'R', 'EH', 'S', 'ER', 'V']",PSS
+82,curprich,short,6,,,simple,pseudo,,"['K', 'ER1', 'P', 'R', 'IH0', 'K']","['K', 'ER', 'P', 'R', 'IH', 'K']",PSS
+83,curprise,short,6,,,simple,pseudo,,"['K', 'ER1', 'P', 'R', 'AY0', 'Z']","['K', 'ER', 'P', 'R', 'AY', 'Z']",PSS
+84,currease,short,4,,,simple,pseudo,,"['K', 'ER0', 'IY1', 'S']","['K', 'ER', 'IY', 'S']",PSS
+85,diabette,short,6,,,simple,pseudo,,"['D', 'AY2', 'AH0', 'B', 'EH1', 'T']","['D', 'AY', 'AH', 'B', 'EH', 'T']",PSS
+86,eleather,short,5,,,simple,pseudo,,"['EH1', 'L', 'AH0', 'TH', 'ER0']","['EH', 'L', 'AH', 'TH', 'ER']",PSS
+87,freasite,short,6,,,simple,pseudo,,"['F', 'R', 'IY1', 'Z', 'IH0', 'T']","['F', 'R', 'IY', 'Z', 'IH', 'T']",PSS
+88,gargeous,short,6,,,simple,pseudo,,"['G', 'AA1', 'R', 'JH', 'AH0', 'S']","['G', 'AA', 'R', 'JH', 'AH', 'S']",PSS
+89,maintait,short,6,,,simple,pseudo,,"['M', 'EY1', 'N', 'T', 'EY2', 'T']","['M', 'EY', 'N', 'T', 'EY', 'T']",PSS
+90,maraight,short,5,,,simple,pseudo,,"['M', 'AE1', 'R', 'AH0', 'T']","['M', 'AE', 'R', 'AH', 'T']",PSS
+91,margoyle,short,6,,,simple,pseudo,,"['M', 'AA1', 'R', 'G', 'OY2', 'L']","['M', 'AA', 'R', 'G', 'OY', 'L']",PSS
+92,mountait,short,6,,,simple,pseudo,,"['M', 'AW1', 'N', 'T', 'IH0', 'T']","['M', 'AW', 'N', 'T', 'IH', 'T']",PSS
+93,mountime,short,6,,,simple,pseudo,,"['M', 'AW1', 'N', 'T', 'AY2', 'M']","['M', 'AW', 'N', 'T', 'AY', 'M']",PSS
+94,mushrome,short,6,,,simple,pseudo,,"['M', 'AH1', 'SH', 'R', 'OW2', 'M']","['M', 'AH', 'SH', 'R', 'OW', 'M']",PSS
+95,paration,short,6,,,simple,pseudo,,"['P', 'ER0', 'EY1', 'SH', 'AH0', 'N']","['P', 'ER', 'EY', 'SH', 'AH', 'N']",PSS
+96,pargoyle,short,6,,,simple,pseudo,,"['P', 'AA1', 'R', 'G', 'OW2', 'L']","['P', 'AA', 'R', 'G', 'OW', 'L']",PSS
+97,porgeous,short,6,,,simple,pseudo,,"['P', 'AO1', 'R', 'JH', 'AH0', 'S']","['P', 'AO', 'R', 'JH', 'AH', 'S']",PSS
+98,resounce,short,6,,,simple,pseudo,,"['R', 'IY0', 'S', 'UW1', 'N', 'S']","['R', 'IY', 'S', 'UW', 'N', 'S']",PSS
+99,scenacle,short,6,,,simple,pseudo,,"['S', 'EH1', 'N', 'CH', 'AH0', 'L']","['S', 'EH', 'N', 'CH', 'AH', 'L']",PSS
+100,susiness,short,6,,,simple,pseudo,,"['S', 'UW1', 'Z', 'N', 'AH0', 'S']","['S', 'UW', 'Z', 'N', 'AH', 'S']",PSS
+101,syndroom,short,6,,,simple,pseudo,,"['S', 'IH1', 'D', 'R', 'AH0', 'M']","['S', 'IH', 'D', 'R', 'AH', 'M']",PSS
+102,thoulder,short,5,,,simple,pseudo,,"['TH', 'OW1', 'L', 'D', 'ER0']","['TH', 'OW', 'L', 'D', 'ER']",PSS
+103,thousant,short,6,,,simple,pseudo,,"['TH', 'AW1', 'Z', 'AH0', 'N', 'T']","['TH', 'AW', 'Z', 'AH', 'N', 'T']",PSS
+104,apparrang,short,6,,,simple,pseudo,,"['AH0', 'P', 'AE1', 'R', 'AH0', 'NG']","['AH', 'P', 'AE', 'R', 'AH', 'NG']",PSS
+105,bouleague,short,5,,,simple,pseudo,,"['B', 'UW1', 'L', 'AH0', 'G']","['B', 'UW', 'L', 'AH', 'G']",PSS
+106,chamerane,short,6,,,simple,pseudo,,"['CH', 'AE1', 'M', 'ER0', 'N', 'EY2']","['CH', 'AE', 'M', 'ER', 'N', 'EY']",PSS
+107,chameraph,short,6,,,simple,pseudo,,"['CH', 'EH1', 'M', 'ER0', 'F', 'AA2']","['CH', 'EH', 'M', 'ER', 'F', 'AA']",PSS
+108,champague,short,6,,,simple,pseudo,,"['CH', 'AE1', 'M', 'P', 'AH0', 'JH']","['CH', 'AE', 'M', 'P', 'AH', 'JH']",PSS
+109,champaine,short,6,,,simple,pseudo,,"['CH', 'AE0', 'M', 'P', 'EY1', 'N']","['CH', 'AE', 'M', 'P', 'EY', 'N']",PSS
+110,coallenge,short,6,,,simple,pseudo,,"['K', 'OW1', 'AH0', 'L', 'EH2', 'NG']","['K', 'OW', 'AH', 'L', 'EH', 'NG']",PSS
+111,deservoir,short,6,,,simple,pseudo,,"['D', 'EH1', 'Z', 'ER0', 'V', 'OY2']","['D', 'EH', 'Z', 'ER', 'V', 'OY']",PSS
+112,embarraph,short,6,,,simple,pseudo,,"['EH1', 'M', 'B', 'R', 'AA0', 'F']","['EH', 'M', 'B', 'R', 'AA', 'F']",PSS
+113,emergenge,short,6,,,simple,pseudo,,"['IH0', 'M', 'ER1', 'JH', 'IH0', 'NG']","['IH', 'M', 'ER', 'JH', 'IH', 'NG']",PSS
+114,furrenger,short,5,,,simple,pseudo,,"['F', 'ER1', 'IH0', 'NG', 'ER0']","['F', 'ER', 'IH', 'NG', 'ER']",PSS
+115,furricane,short,6,,,simple,pseudo,,"['F', 'ER1', 'K', 'AH0', 'N', 'EY2']","['F', 'ER', 'K', 'AH', 'N', 'EY']",PSS
+116,hurrenger,short,6,,,simple,pseudo,,"['HH', 'ER1', 'IH0', 'N', 'JH', 'ER0']","['HH', 'ER', 'IH', 'N', 'JH', 'ER']",PSS
+117,surricane,short,6,,,simple,pseudo,,"['S', 'ER1', 'AH0', 'K', 'EY2', 'N']","['S', 'ER', 'AH', 'K', 'EY', 'N']",PSS
+118,advange,short,5,,,simple,pseudo,,"['AH0', 'D', 'V', 'EY1', 'NG']","['AH', 'D', 'V', 'EY', 'NG']",PSS
+119,alleron,short,5,,,simple,pseudo,,"['AE1', 'L', 'ER0', 'AH0', 'N']","['AE', 'L', 'ER', 'AH', 'N']",PSS
+120,blemiss,short,6,,,simple,pseudo,,"['B', 'L', 'EH1', 'M', 'IH0', 'S']","['B', 'L', 'EH', 'M', 'IH', 'S']",PSS
+121,cisteel,short,6,,,simple,pseudo,,"['S', 'IH1', 'S', 'T', 'IY2', 'L']","['S', 'IH', 'S', 'T', 'IY', 'L']",PSS
+122,despitt,short,6,,,simple,pseudo,,"['D', 'EH1', 'S', 'P', 'IH0', 'T']","['D', 'EH', 'S', 'P', 'IH', 'T']",PSS
+123,gravite,short,6,,,simple,pseudo,,"['G', 'R', 'AE1', 'V', 'IH0', 'T']","['G', 'R', 'AE', 'V', 'IH', 'T']",PSS
+124,librare,short,6,,,simple,pseudo,,"['L', 'AY1', 'B', 'R', 'EY2', 'R']","['L', 'AY', 'B', 'R', 'EY', 'R']",PSS
+125,mysteel,short,6,,,simple,pseudo,,"['M', 'IH1', 'S', 'T', 'IY2', 'L']","['M', 'IH', 'S', 'T', 'IY', 'L']",PSS
+126,natcher,short,4,,,simple,pseudo,,"['N', 'AE1', 'CH', 'ER0']","['N', 'AE', 'CH', 'ER']",PSS
+127,patural,short,6,,,simple,pseudo,,"['P', 'AE1', 'CH', 'ER0', 'AH0', 'L']","['P', 'AE', 'CH', 'ER', 'AH', 'L']",PSS
+128,phalgam,short,6,,,simple,pseudo,,"['F', 'AE1', 'L', 'G', 'AH0', 'M']","['F', 'AE', 'L', 'G', 'AH', 'M']",PSS
+129,vilence,short,6,,,simple,pseudo,,"['V', 'AY1', 'L', 'AH0', 'N', 'S']","['V', 'AY', 'L', 'AH', 'N', 'S']",PSS
+130,welfary,short,6,,,simple,pseudo,,"['W', 'EH1', 'L', 'F', 'ER0', 'IY0']","['W', 'EH', 'L', 'F', 'ER', 'IY']",PSS
+131,bushrome,short,6,,,simple,pseudo,,"['B', 'UH1', 'SH', 'R', 'OW2', 'M']","['B', 'UH', 'SH', 'R', 'OW', 'M']",PSS
+132,creserve,short,6,,,simple,pseudo,,"['K', 'R', 'EH1', 'S', 'ER0', 'V']","['K', 'R', 'EH', 'S', 'ER', 'V']",PSS
+133,gargeous,short,6,,,simple,pseudo,,"['G', 'AA1', 'R', 'JH', 'AH0', 'S']","['G', 'AA', 'R', 'JH', 'AH', 'S']",PSS
+134,mountait,short,6,,,simple,pseudo,,"['M', 'AW1', 'N', 'T', 'IH0', 'T']","['M', 'AW', 'N', 'T', 'IH', 'T']",PSS
+135,paration,short,6,,,simple,pseudo,,"['P', 'ER0', 'EY1', 'SH', 'AH0', 'N']","['P', 'ER', 'EY', 'SH', 'AH', 'N']",PSS
+136,thoulder,short,5,,,simple,pseudo,,"['TH', 'OW1', 'L', 'D', 'ER0']","['TH', 'OW', 'L', 'D', 'ER']",PSS
+137,thousant,short,6,,,simple,pseudo,,"['TH', 'AW1', 'Z', 'AH0', 'N', 'T']","['TH', 'AW', 'Z', 'AH', 'N', 'T']",PSS
+138,champague,short,6,,,simple,pseudo,,"['CH', 'AE1', 'M', 'P', 'AH0', 'JH']","['CH', 'AE', 'M', 'P', 'AH', 'JH']",PSS
+139,deservoir,short,6,,,simple,pseudo,,"['D', 'EH1', 'Z', 'ER0', 'V', 'OY2']","['D', 'EH', 'Z', 'ER', 'V', 'OY']",PSS
+140,emergenge,short,6,,,simple,pseudo,,"['IH0', 'M', 'ER1', 'JH', 'IH0', 'NG']","['IH', 'M', 'ER', 'JH', 'IH', 'NG']",PSS
+141,furricane,short,6,,,simple,pseudo,,"['F', 'ER1', 'K', 'AH0', 'N', 'EY2']","['F', 'ER', 'K', 'AH', 'N', 'EY']",PSS
+142,acia,short,4,,,simple,pseudo,,"['EY1', 'S', 'IY0', 'AH0']","['EY', 'S', 'IY', 'AH']",PSS
+143,acin,short,4,,,simple,pseudo,,"['EY1', 'S', 'IH0', 'N']","['EY', 'S', 'IH', 'N']",PSS
+144,acip,short,4,,,simple,pseudo,,"['EY1', 'S', 'AH0', 'P']","['EY', 'S', 'AH', 'P']",PSS
+145,acit,short,4,,,simple,pseudo,,"['AE1', 'S', 'IH0', 'T']","['AE', 'S', 'IH', 'T']",PSS
+146,ajan,short,4,,,simple,pseudo,,"['EY1', 'JH', 'AH0', 'N']","['EY', 'JH', 'AH', 'N']",PSS
+147,alab,short,4,,,simple,pseudo,,"['AH0', 'L', 'AA1', 'B']","['AH', 'L', 'AA', 'B']",PSS
+148,alam,short,4,,,simple,pseudo,,"['AH0', 'L', 'AE1', 'M']","['AH', 'L', 'AE', 'M']",PSS
+149,alat,short,4,,,simple,pseudo,,"['AH0', 'L', 'AE1', 'T']","['AH', 'L', 'AE', 'T']",PSS
+150,alen,short,4,,,simple,pseudo,,"['EY1', 'L', 'AH0', 'N']","['EY', 'L', 'AH', 'N']",PSS
+151,alld,short,3,,,simple,pseudo,,"['AO1', 'L', 'D']","['AO', 'L', 'D']",PSS
+152,allk,short,3,,,simple,pseudo,,"['AO1', 'L', 'K']","['AO', 'L', 'K']",PSS
+153,anth,short,3,,,simple,pseudo,,"['AE1', 'N', 'TH']","['AE', 'N', 'TH']",PSS
+154,anth,short,3,,,simple,pseudo,,"['AE1', 'N', 'TH']","['AE', 'N', 'TH']",PSS
+155,aram,short,4,,,simple,pseudo,,"['EH1', 'R', 'AH0', 'M']","['EH', 'R', 'AH', 'M']",PSS
+156,arar,short,3,,,simple,pseudo,,"['ER0', 'AA1', 'R']","['ER', 'AA', 'R']",PSS
+157,arat,short,4,,,simple,pseudo,,"['AA0', 'R', 'AA1', 'T']","['AA', 'R', 'AA', 'T']",PSS
+158,arux,short,4,,,simple,pseudo,,"['AE1', 'R', 'AH0', 'K']","['AE', 'R', 'AH', 'K']",PSS
+159,arux,short,4,,,simple,pseudo,,"['AE1', 'R', 'AH0', 'K']","['AE', 'R', 'AH', 'K']",PSS
+160,asid,short,4,,,simple,pseudo,,"['AH0', 'S', 'IH1', 'D']","['AH', 'S', 'IH', 'D']",PSS
+161,asin,short,4,,,simple,pseudo,,"['EY1', 'S', 'IH0', 'N']","['EY', 'S', 'IH', 'N']",PSS
+162,asip,short,4,,,simple,pseudo,,"['AH0', 'S', 'IH1', 'P']","['AH', 'S', 'IH', 'P']",PSS
+163,bain,short,3,,,simple,pseudo,,"['B', 'EY1', 'N']","['B', 'EY', 'N']",PSS
+164,bain,short,3,,,simple,pseudo,,"['B', 'EY1', 'N']","['B', 'EY', 'N']",PSS
+165,baip,short,3,,,simple,pseudo,,"['B', 'AY1', 'P']","['B', 'AY', 'P']",PSS
+166,bart,short,4,,,simple,pseudo,,"['B', 'AA1', 'R', 'T']","['B', 'AA', 'R', 'T']",PSS
+167,beft,short,4,,,simple,pseudo,,"['B', 'EH1', 'F', 'T']","['B', 'EH', 'F', 'T']",PSS
+168,cran,short,4,,,simple,pseudo,,"['K', 'R', 'AE1', 'N']","['K', 'R', 'AE', 'N']",PSS
+169,crar,short,4,,,simple,pseudo,,"['K', 'R', 'AA1', 'R']","['K', 'R', 'AA', 'R']",PSS
+170,crar,short,4,,,simple,pseudo,,"['K', 'R', 'AA1', 'R']","['K', 'R', 'AA', 'R']",PSS
+171,crat,short,4,,,simple,pseudo,,"['K', 'R', 'AE1', 'T']","['K', 'R', 'AE', 'T']",PSS
+172,cray,short,3,,,simple,pseudo,,"['K', 'R', 'EY1']","['K', 'R', 'EY']",PSS
+173,dack,short,3,,,simple,pseudo,,"['D', 'AE1', 'K']","['D', 'AE', 'K']",PSS
+174,dack,short,3,,,simple,pseudo,,"['D', 'AE1', 'K']","['D', 'AE', 'K']",PSS
+175,daia,short,3,,,simple,pseudo,,"['D', 'EY1', 'AH0']","['D', 'EY', 'AH']",PSS
+176,dain,short,3,,,simple,pseudo,,"['D', 'EY1', 'N']","['D', 'EY', 'N']",PSS
+177,daip,short,3,,,simple,pseudo,,"['D', 'EY1', 'P']","['D', 'EY', 'P']",PSS
+178,daip,short,3,,,simple,pseudo,,"['D', 'EY1', 'P']","['D', 'EY', 'P']",PSS
+179,dall,short,3,,,simple,pseudo,,"['D', 'AO1', 'L']","['D', 'AO', 'L']",PSS
+180,duid,short,3,,,simple,pseudo,,"['D', 'UW1', 'D']","['D', 'UW', 'D']",PSS
+181,duid,short,3,,,simple,pseudo,,"['D', 'UW1', 'D']","['D', 'UW', 'D']",PSS
+182,duip,short,3,,,simple,pseudo,,"['D', 'UW1', 'P']","['D', 'UW', 'P']",PSS
+183,duip,short,3,,,simple,pseudo,,"['D', 'UW1', 'P']","['D', 'UW', 'P']",PSS
+184,foab,short,3,,,simple,pseudo,,"['F', 'OW1', 'B']","['F', 'OW', 'B']",PSS
+185,foay,short,3,,,simple,pseudo,,"['F', 'OW1', 'IY0']","['F', 'OW', 'IY']",PSS
+186,gack,short,3,,,simple,pseudo,,"['G', 'AE1', 'K']","['G', 'AE', 'K']",PSS
+187,gack,short,3,,,simple,pseudo,,"['G', 'AE1', 'K']","['G', 'AE', 'K']",PSS
+188,gaia,short,3,,,simple,pseudo,,"['G', 'AY1', 'AH0']","['G', 'AY', 'AH']",PSS
+189,gaia,short,3,,,simple,pseudo,,"['G', 'AY1', 'AH0']","['G', 'AY', 'AH']",PSS
+190,gaip,short,3,,,simple,pseudo,,"['G', 'EY1', 'P']","['G', 'EY', 'P']",PSS
+191,galk,short,3,,,simple,pseudo,,"['G', 'AO1', 'K']","['G', 'AO', 'K']",PSS
+192,gane,short,3,,,simple,pseudo,,"['G', 'AE1', 'N']","['G', 'AE', 'N']",PSS
+193,gane,short,3,,,simple,pseudo,,"['G', 'AE1', 'N']","['G', 'AE', 'N']",PSS
+194,gare,short,3,,,simple,pseudo,,"['G', 'EH1', 'R']","['G', 'EH', 'R']",PSS
+195,gare,short,3,,,simple,pseudo,,"['G', 'EH1', 'R']","['G', 'EH', 'R']",PSS
+196,garf,short,4,,,simple,pseudo,,"['G', 'AA1', 'R', 'F']","['G', 'AA', 'R', 'F']",PSS
+197,glab,short,4,,,simple,pseudo,,"['G', 'L', 'AE1', 'B']","['G', 'L', 'AE', 'B']",PSS
+198,glat,short,4,,,simple,pseudo,,"['G', 'L', 'AE1', 'T']","['G', 'L', 'AE', 'T']",PSS
+199,gloe,short,3,,,simple,pseudo,,"['G', 'L', 'OW1']","['G', 'L', 'OW']",PSS
+200,goab,short,3,,,simple,pseudo,,"['G', 'OW1', 'B']","['G', 'OW', 'B']",PSS
+201,haid,short,3,,,simple,pseudo,,"['HH', 'EY1', 'D']","['HH', 'EY', 'D']",PSS
+202,haly,short,4,,,simple,pseudo,,"['HH', 'EY1', 'L', 'IY0']","['HH', 'EY', 'L', 'IY']",PSS
+203,hane,short,3,,,simple,pseudo,,"['HH', 'EY1', 'N']","['HH', 'EY', 'N']",PSS
+204,hyma,short,4,,,simple,pseudo,,"['HH', 'AY1', 'M', 'AH0']","['HH', 'AY', 'M', 'AH']",PSS
+205,i'lk,short,3,,,simple,pseudo,,"['AY1', 'L', 'K']","['AY', 'L', 'K']",PSS
+206,kily,short,4,,,simple,pseudo,,"['K', 'IH1', 'L', 'IY0']","['K', 'IH', 'L', 'IY']",PSS
+207,lill,short,3,,,simple,pseudo,,"['L', 'IH1', 'L']","['L', 'IH', 'L']",PSS
+208,liti,short,4,,,simple,pseudo,,"['L', 'AY1', 'T', 'IY0']","['L', 'AY', 'T', 'IY']",PSS
+209,loar,short,3,,,simple,pseudo,,"['L', 'AO1', 'R']","['L', 'AO', 'R']",PSS
+210,migh,short,3,,,simple,pseudo,,"['M', 'AY1', 'G']","['M', 'AY', 'G']",PSS
+211,migh,short,3,,,simple,pseudo,,"['M', 'AY1', 'G']","['M', 'AY', 'G']",PSS
+212,nimn,short,3,,,simple,pseudo,,"['N', 'IH1', 'M']","['N', 'IH', 'M']",PSS
+213,nith,short,3,,,simple,pseudo,,"['N', 'IH1', 'TH']","['N', 'IH', 'TH']",PSS
+214,paip,short,3,,,simple,pseudo,,"['P', 'EY1', 'P']","['P', 'EY', 'P']",PSS
+215,pild,short,4,,,simple,pseudo,,"['P', 'IH1', 'L', 'D']","['P', 'IH', 'L', 'D']",PSS
+216,pild,short,4,,,simple,pseudo,,"['P', 'IH1', 'L', 'D']","['P', 'IH', 'L', 'D']",PSS
+217,pimb,short,3,,,simple,pseudo,,"['P', 'IH1', 'M']","['P', 'IH', 'M']",PSS
+218,quab,short,4,,,simple,pseudo,,"['K', 'W', 'AA1', 'B']","['K', 'W', 'AA', 'B']",PSS
+219,quan,short,4,,,simple,pseudo,,"['K', 'W', 'AO1', 'N']","['K', 'W', 'AO', 'N']",PSS
+220,quin,short,4,,,simple,pseudo,,"['K', 'W', 'IH1', 'N']","['K', 'W', 'IH', 'N']",PSS
+221,quma,short,4,,,simple,pseudo,,"['K', 'UW1', 'M', 'AH0']","['K', 'UW', 'M', 'AH']",PSS
+222,quma,short,4,,,simple,pseudo,,"['K', 'UW1', 'M', 'AH0']","['K', 'UW', 'M', 'AH']",PSS
+223,qumb,short,4,,,simple,pseudo,,"['K', 'M', 'AH1', 'B']","['K', 'M', 'AH', 'B']",PSS
+224,qumn,short,3,,,simple,pseudo,,"['K', 'AH1', 'M']","['K', 'AH', 'M']",PSS
+225,rale,short,3,,,simple,pseudo,,"['R', 'EY1', 'L']","['R', 'EY', 'L']",PSS
+226,ralk,short,3,,,simple,pseudo,,"['R', 'AO1', 'K']","['R', 'AO', 'K']",PSS
+227,rane,short,3,,,simple,pseudo,,"['R', 'EY1', 'N']","['R', 'EY', 'N']",PSS
+228,rane,short,3,,,simple,pseudo,,"['R', 'EY1', 'N']","['R', 'EY', 'N']",PSS
+229,seft,short,4,,,simple,pseudo,,"['S', 'EH1', 'F', 'T']","['S', 'EH', 'F', 'T']",PSS
+230,seft,short,4,,,simple,pseudo,,"['S', 'EH1', 'F', 'T']","['S', 'EH', 'F', 'T']",PSS
+231,wack,short,3,,,simple,pseudo,,"['W', 'AE1', 'K']","['W', 'AE', 'K']",PSS
+232,waia,short,3,,,simple,pseudo,,"['W', 'EY1', 'AH0']","['W', 'EY', 'AH']",PSS
+233,waly,short,4,,,simple,pseudo,,"['W', 'AO1', 'L', 'IY0']","['W', 'AO', 'L', 'IY']",PSS
+234,waly,short,4,,,simple,pseudo,,"['W', 'AO1', 'L', 'IY0']","['W', 'AO', 'L', 'IY']",PSS
+235,wigh,short,3,,,simple,pseudo,,"['W', 'AY1', 'G']","['W', 'AY', 'G']",PSS
+236,wigh,short,3,,,simple,pseudo,,"['W', 'AY1', 'G']","['W', 'AY', 'G']",PSS
+237,wima,short,4,,,simple,pseudo,,"['W', 'IY1', 'M', 'AH0']","['W', 'IY', 'M', 'AH']",PSS
+238,zeft,short,4,,,simple,pseudo,,"['Z', 'EH1', 'F', 'T']","['Z', 'EH', 'F', 'T']",PSS
+239,abont,short,5,,,simple,pseudo,,"['AH0', 'B', 'AA1', 'N', 'T']","['AH', 'B', 'AA', 'N', 'T']",PSS
+240,abosh,short,4,,,simple,pseudo,,"['AH0', 'B', 'AA1', 'SH']","['AH', 'B', 'AA', 'SH']",PSS
+241,allob,short,4,,,simple,pseudo,,"['AE1', 'L', 'AH0', 'B']","['AE', 'L', 'AH', 'B']",PSS
+242,banse,short,4,,,simple,pseudo,,"['B', 'AE1', 'N', 'S']","['B', 'AE', 'N', 'S']",PSS
+243,blace,short,4,,,simple,pseudo,,"['B', 'L', 'EY1', 'S']","['B', 'L', 'EY', 'S']",PSS
+244,blaid,short,4,,,simple,pseudo,,"['B', 'L', 'EY1', 'D']","['B', 'L', 'EY', 'D']",PSS
+245,boait,short,4,,,simple,pseudo,,"['B', 'OW0', 'EY1', 'T']","['B', 'OW', 'EY', 'T']",PSS
+246,bouse,short,3,,,simple,pseudo,,"['B', 'AW1', 'S']","['B', 'AW', 'S']",PSS
+247,brild,short,5,,,simple,pseudo,,"['B', 'R', 'IH1', 'L', 'D']","['B', 'R', 'IH', 'L', 'D']",PSS
+248,brose,short,4,,,simple,pseudo,,"['B', 'R', 'OW1', 'Z']","['B', 'R', 'OW', 'Z']",PSS
+249,bryst,short,5,,,simple,pseudo,,"['B', 'R', 'IH1', 'S', 'T']","['B', 'R', 'IH', 'S', 'T']",PSS
+250,clarl,short,5,,,simple,pseudo,,"['K', 'L', 'AA1', 'R', 'L']","['K', 'L', 'AA', 'R', 'L']",PSS
+251,clect,short,5,,,simple,pseudo,,"['K', 'L', 'EH1', 'K', 'T']","['K', 'L', 'EH', 'K', 'T']",PSS
+252,closs,short,4,,,simple,pseudo,,"['K', 'L', 'AO1', 'S']","['K', 'L', 'AO', 'S']",PSS
+253,cluse,short,4,,,simple,pseudo,,"['K', 'L', 'UW1', 'Z']","['K', 'L', 'UW', 'Z']",PSS
+254,creck,short,4,,,simple,pseudo,,"['K', 'R', 'EH1', 'K']","['K', 'R', 'EH', 'K']",PSS
+255,dinck,short,4,,,simple,pseudo,,"['D', 'IH1', 'NG', 'K']","['D', 'IH', 'NG', 'K']",PSS
+256,dirur,short,4,,,simple,pseudo,,"['D', 'IH1', 'R', 'UW0']","['D', 'IH', 'R', 'UW']",PSS
+257,dithe,short,3,,,simple,pseudo,,"['D', 'IH1', 'TH']","['D', 'IH', 'TH']",PSS
+258,donse,short,4,,,simple,pseudo,,"['D', 'AA1', 'N', 'S']","['D', 'AA', 'N', 'S']",PSS
+259,drace,short,4,,,simple,pseudo,,"['D', 'R', 'EY1', 'S']","['D', 'R', 'EY', 'S']",PSS
+260,drall,short,4,,,simple,pseudo,,"['D', 'R', 'AO1', 'L']","['D', 'R', 'AO', 'L']",PSS
+261,dreal,short,4,,,simple,pseudo,,"['D', 'R', 'IY1', 'L']","['D', 'R', 'IY', 'L']",PSS
+262,drean,short,4,,,simple,pseudo,,"['D', 'R', 'IY1', 'N']","['D', 'R', 'IY', 'N']",PSS
+263,edill,short,4,,,simple,pseudo,,"['EH1', 'D', 'AH0', 'L']","['EH', 'D', 'AH', 'L']",PSS
+264,flean,short,4,,,simple,pseudo,,"['F', 'L', 'IY1', 'N']","['F', 'L', 'IY', 'N']",PSS
+265,fonte,short,4,,,simple,pseudo,,"['F', 'AA1', 'N', 'T']","['F', 'AA', 'N', 'T']",PSS
+266,fourn,short,4,,,simple,pseudo,,"['F', 'AO1', 'R', 'N']","['F', 'AO', 'R', 'N']",PSS
+267,fryst,short,5,,,simple,pseudo,,"['F', 'R', 'IH1', 'S', 'T']","['F', 'R', 'IH', 'S', 'T']",PSS
+268,gryse,short,4,,,simple,pseudo,,"['G', 'R', 'AY1', 'S']","['G', 'R', 'AY', 'S']",PSS
+269,horue,short,4,,,simple,pseudo,,"['HH', 'AO1', 'R', 'UW0']","['HH', 'AO', 'R', 'UW']",PSS
+270,houff,short,3,,,simple,pseudo,,"['HH', 'OW1', 'F']","['HH', 'OW', 'F']",PSS
+271,issel,short,4,,,simple,pseudo,,"['IH1', 'S', 'AH0', 'L']","['IH', 'S', 'AH', 'L']",PSS
+272,knary,short,4,,,simple,pseudo,,"['N', 'EH1', 'R', 'IY0']","['N', 'EH', 'R', 'IY']",PSS
+273,knash,short,3,,,simple,pseudo,,"['N', 'AE1', 'SH']","['N', 'AE', 'SH']",PSS
+274,kngak,short,3,,,simple,pseudo,,"['N', 'AE1', 'K']","['N', 'AE', 'K']",PSS
+275,leeal,short,4,,,simple,pseudo,,"['L', 'IY1', 'AH0', 'L']","['L', 'IY', 'AH', 'L']",PSS
+276,leear,short,3,,,simple,pseudo,,"['L', 'IY1', 'R']","['L', 'IY', 'R']",PSS
+277,lepar,short,4,,,simple,pseudo,,"['L', 'EH1', 'P', 'ER0']","['L', 'EH', 'P', 'ER']",PSS
+278,liglt,short,6,,,simple,pseudo,,"['L', 'AY1', 'G', 'AH0', 'L', 'T']","['L', 'AY', 'G', 'AH', 'L', 'T']",PSS
+279,linck,short,4,,,simple,pseudo,,"['L', 'IH1', 'NG', 'K']","['L', 'IH', 'NG', 'K']",PSS
+280,lirce,short,3,,,simple,pseudo,,"['R', 'IH1', 'S']","['R', 'IH', 'S']",PSS
+281,lisce,short,3,,,simple,pseudo,,"['L', 'AY1', 'S']","['L', 'AY', 'S']",PSS
+282,luase,short,5,,,simple,pseudo,,"['L', 'UW0', 'AA1', 'S', 'IY0']","['L', 'UW', 'AA', 'S', 'IY']",PSS
+283,morit,short,5,,,simple,pseudo,,"['M', 'AO1', 'R', 'IH0', 'T']","['M', 'AO', 'R', 'IH', 'T']",PSS
+284,mourt,short,4,,,simple,pseudo,,"['M', 'AO1', 'R', 'T']","['M', 'AO', 'R', 'T']",PSS
+285,neerd,short,4,,,simple,pseudo,,"['N', 'IH1', 'R', 'D']","['N', 'IH', 'R', 'D']",PSS
+286,nenct,short,5,,,simple,pseudo,,"['N', 'EH1', 'NG', 'K', 'T']","['N', 'EH', 'NG', 'K', 'T']",PSS
+287,nevel,short,5,,,simple,pseudo,,"['N', 'EY0', 'V', 'EH1', 'L']","['N', 'EY', 'V', 'EH', 'L']",PSS
+288,ninel,short,5,,,simple,pseudo,,"['N', 'IH1', 'N', 'AH0', 'L']","['N', 'IH', 'N', 'AH', 'L']",PSS
+289,offee,short,3,,,simple,pseudo,,"['AH0', 'F', 'IY1']","['AH', 'F', 'IY']",PSS
+290,orark,short,5,,,simple,pseudo,,"['AO1', 'R', 'AA0', 'R', 'K']","['AO', 'R', 'AA', 'R', 'K']",PSS
+291,phean,short,3,,,simple,pseudo,,"['F', 'IY1', 'N']","['F', 'IY', 'N']",PSS
+292,plite,short,4,,,simple,pseudo,,"['P', 'L', 'AY1', 'T']","['P', 'L', 'AY', 'T']",PSS
+293,pring,short,4,,,simple,pseudo,,"['P', 'R', 'IH1', 'NG']","['P', 'R', 'IH', 'NG']",PSS
+294,prork,short,5,,,simple,pseudo,,"['P', 'R', 'AO1', 'R', 'K']","['P', 'R', 'AO', 'R', 'K']",PSS
+295,quean,short,4,,,simple,pseudo,,"['K', 'W', 'IY1', 'N']","['K', 'W', 'IY', 'N']",PSS
+296,quele,short,4,,,simple,pseudo,,"['K', 'W', 'IY1', 'L']","['K', 'W', 'IY', 'L']",PSS
+297,qusue,short,5,,,simple,pseudo,,"['K', 'Y', 'UW1', 'S', 'UW0']","['K', 'Y', 'UW', 'S', 'UW']",PSS
+298,qusum,short,5,,,simple,pseudo,,"['K', 'AH0', 'S', 'AH1', 'M']","['K', 'AH', 'S', 'AH', 'M']",PSS
+299,scote,short,4,,,simple,pseudo,,"['S', 'K', 'OW1', 'T']","['S', 'K', 'OW', 'T']",PSS
+300,seean,short,4,,,simple,pseudo,,"['S', 'IY1', 'AH0', 'N']","['S', 'IY', 'AH', 'N']",PSS
+301,seele,short,3,,,simple,pseudo,,"['S', 'IY1', 'L']","['S', 'IY', 'L']",PSS
+302,sevel,short,5,,,simple,pseudo,,"['S', 'EH1', 'V', 'AH0', 'L']","['S', 'EH', 'V', 'AH', 'L']",PSS
+303,shase,short,3,,,simple,pseudo,,"['SH', 'EY1', 'Z']","['SH', 'EY', 'Z']",PSS
+304,shrow,short,3,,,simple,pseudo,,"['SH', 'R', 'OW1']","['SH', 'R', 'OW']",PSS
+305,slaic,short,4,,,simple,pseudo,,"['S', 'L', 'EY1', 'K']","['S', 'L', 'EY', 'K']",PSS
+306,slail,short,3,,,simple,pseudo,,"['S', 'L', 'EY1']","['S', 'L', 'EY']",PSS
+307,slasp,short,5,,,simple,pseudo,,"['S', 'L', 'AE1', 'S', 'P']","['S', 'L', 'AE', 'S', 'P']",PSS
+308,sleak,short,4,,,simple,pseudo,,"['S', 'L', 'IY1', 'K']","['S', 'L', 'IY', 'K']",PSS
+309,sllur,short,4,,,simple,pseudo,,"['S', 'L', 'EH1', 'R']","['S', 'L', 'EH', 'R']",PSS
+310,slone,short,4,,,simple,pseudo,,"['S', 'L', 'OW1', 'N']","['S', 'L', 'OW', 'N']",PSS
+311,sluic,short,5,,,simple,pseudo,,"['S', 'L', 'UW1', 'IH0', 'K']","['S', 'L', 'UW', 'IH', 'K']",PSS
+312,smace,short,4,,,simple,pseudo,,"['S', 'M', 'EY1', 'S']","['S', 'M', 'EY', 'S']",PSS
+313,smait,short,4,,,simple,pseudo,,"['S', 'M', 'EY1', 'T']","['S', 'M', 'EY', 'T']",PSS
+314,smase,short,4,,,simple,pseudo,,"['S', 'M', 'EY1', 'Z']","['S', 'M', 'EY', 'Z']",PSS
+315,smast,short,5,,,simple,pseudo,,"['S', 'M', 'AE1', 'S', 'T']","['S', 'M', 'AE', 'S', 'T']",PSS
+316,smise,short,4,,,simple,pseudo,,"['S', 'M', 'IY1', 'S']","['S', 'M', 'IY', 'S']",PSS
+317,soint,short,4,,,simple,pseudo,,"['S', 'OY1', 'N', 'T']","['S', 'OY', 'N', 'T']",PSS
+318,spurl,short,4,,,simple,pseudo,,"['S', 'P', 'ER1', 'L']","['S', 'P', 'ER', 'L']",PSS
+319,stace,short,4,,,simple,pseudo,,"['S', 'T', 'EY1', 'S']","['S', 'T', 'EY', 'S']",PSS
+320,staib,short,4,,,simple,pseudo,,"['S', 'T', 'EY1', 'B']","['S', 'T', 'EY', 'B']",PSS
+321,staic,short,4,,,simple,pseudo,,"['S', 'T', 'AA1', 'K']","['S', 'T', 'AA', 'K']",PSS
+322,stonk,short,5,,,simple,pseudo,,"['S', 'T', 'AA1', 'NG', 'K']","['S', 'T', 'AA', 'NG', 'K']",PSS
+323,storn,short,5,,,simple,pseudo,,"['S', 'T', 'AO1', 'R', 'N']","['S', 'T', 'AO', 'R', 'N']",PSS
+324,stost,short,5,,,simple,pseudo,,"['S', 'T', 'AA1', 'S', 'T']","['S', 'T', 'AA', 'S', 'T']",PSS
+325,stull,short,4,,,simple,pseudo,,"['S', 'T', 'AH1', 'L']","['S', 'T', 'AH', 'L']",PSS
+326,stume,short,4,,,simple,pseudo,,"['S', 'T', 'UW1', 'M']","['S', 'T', 'UW', 'M']",PSS
+327,swack,short,4,,,simple,pseudo,,"['S', 'W', 'AO1', 'K']","['S', 'W', 'AO', 'K']",PSS
+328,threr,short,4,,,simple,pseudo,,"['TH', 'R', 'EH1', 'R']","['TH', 'R', 'EH', 'R']",PSS
+329,trall,short,4,,,simple,pseudo,,"['T', 'R', 'AO1', 'L']","['T', 'R', 'AO', 'L']",PSS
+330,trear,short,4,,,simple,pseudo,,"['T', 'R', 'EH1', 'R']","['T', 'R', 'EH', 'R']",PSS
+331,valum,short,5,,,simple,pseudo,,"['V', 'AE1', 'L', 'AH0', 'M']","['V', 'AE', 'L', 'AH', 'M']",PSS
+332,vance,short,4,,,simple,pseudo,,"['V', 'AE1', 'N', 'S']","['V', 'AE', 'N', 'S']",PSS
+333,vepak,short,5,,,simple,pseudo,,"['V', 'EH1', 'P', 'AH0', 'K']","['V', 'EH', 'P', 'AH', 'K']",PSS
+334,whild,short,4,,,simple,pseudo,,"['W', 'IH1', 'L', 'D']","['W', 'IH', 'L', 'D']",PSS
+335,whost,short,4,,,simple,pseudo,,"['HH', 'UW1', 'S', 'T']","['HH', 'UW', 'S', 'T']",PSS
+336,whrib,short,4,,,simple,pseudo,,"['W', 'IH1', 'R', 'B']","['W', 'IH', 'R', 'B']",PSS
+337,whrow,short,3,,,simple,pseudo,,"['W', 'AO1', 'R']","['W', 'AO', 'R']",PSS
+338,wirct,short,4,,,simple,pseudo,,"['W', 'ER1', 'K', 'T']","['W', 'ER', 'K', 'T']",PSS
+339,achoon,short,4,,,simple,pseudo,,"['AH0', 'SH', 'UW1', 'N']","['AH', 'SH', 'UW', 'N']",PSS
+340,acriel,short,6,,,simple,pseudo,,"['AE1', 'K', 'R', 'IY0', 'AH0', 'L']","['AE', 'K', 'R', 'IY', 'AH', 'L']",PSS
+341,acrket,short,5,,,simple,pseudo,,"['AE1', 'K', 'R', 'AH0', 'T']","['AE', 'K', 'R', 'AH', 'T']",PSS
+342,appene,short,4,,,simple,pseudo,,"['AH0', 'P', 'IY1', 'N']","['AH', 'P', 'IY', 'N']",PSS
+343,apphyr,short,3,,,simple,pseudo,,"['AE1', 'F', 'ER0']","['AE', 'F', 'ER']",PSS
+344,bullen,short,5,,,simple,pseudo,,"['B', 'UH1', 'L', 'AH0', 'N']","['B', 'UH', 'L', 'AH', 'N']",PSS
+345,bullew,short,5,,,simple,pseudo,,"['B', 'UH1', 'L', 'W', 'EH2']","['B', 'UH', 'L', 'W', 'EH']",PSS
+346,bullow,short,4,,,simple,pseudo,,"['B', 'UH1', 'L', 'OW0']","['B', 'UH', 'L', 'OW']",PSS
+347,buzzle,short,5,,,simple,pseudo,,"['B', 'AH1', 'Z', 'AH0', 'L']","['B', 'AH', 'Z', 'AH', 'L']",PSS
+348,cammon,short,5,,,simple,pseudo,,"['K', 'AE1', 'M', 'AH0', 'N']","['K', 'AE', 'M', 'AH', 'N']",PSS
+349,carson,short,6,,,simple,pseudo,,"['K', 'AA1', 'R', 'S', 'AH0', 'N']","['K', 'AA', 'R', 'S', 'AH', 'N']",PSS
+350,castem,short,6,,,simple,pseudo,,"['K', 'AE1', 'S', 'T', 'AH0', 'M']","['K', 'AE', 'S', 'T', 'AH', 'M']",PSS
+351,coddow,short,4,,,simple,pseudo,,"['K', 'AA1', 'D', 'OW0']","['K', 'AA', 'D', 'OW']",PSS
+352,codine,short,6,,,simple,pseudo,,"['K', 'OW0', 'D', 'IY1', 'N', 'IY0']","['K', 'OW', 'D', 'IY', 'N', 'IY']",PSS
+353,couise,short,4,,,simple,pseudo,,"['K', 'W', 'AY1', 'S']","['K', 'W', 'AY', 'S']",PSS
+354,cource,short,4,,,simple,pseudo,,"['K', 'AO1', 'R', 'S']","['K', 'AO', 'R', 'S']",PSS
+355,courch,short,4,,,simple,pseudo,,"['K', 'AO1', 'R', 'CH']","['K', 'AO', 'R', 'CH']",PSS
+356,courct,short,5,,,simple,pseudo,,"['K', 'AO1', 'R', 'K', 'T']","['K', 'AO', 'R', 'K', 'T']",PSS
+357,cracle,short,6,,,simple,pseudo,,"['K', 'R', 'AE1', 'K', 'AH0', 'L']","['K', 'R', 'AE', 'K', 'AH', 'L']",PSS
+358,crugal,short,6,,,simple,pseudo,,"['K', 'R', 'AH1', 'G', 'AH0', 'L']","['K', 'R', 'AH', 'G', 'AH', 'L']",PSS
+359,dicech,short,5,,,simple,pseudo,,"['D', 'AY1', 'S', 'EH2', 'K']","['D', 'AY', 'S', 'EH', 'K']",PSS
+360,dimbly,short,6,,,simple,pseudo,,"['D', 'IH1', 'M', 'B', 'L', 'IY0']","['D', 'IH', 'M', 'B', 'L', 'IY']",PSS
+361,dingol,short,6,,,simple,pseudo,,"['D', 'IH1', 'NG', 'G', 'AH0', 'L']","['D', 'IH', 'NG', 'G', 'AH', 'L']",PSS
+362,dittet,short,5,,,simple,pseudo,,"['D', 'IH0', 'T', 'IY1', 'T']","['D', 'IH', 'T', 'IY', 'T']",PSS
+363,divear,short,5,,,simple,pseudo,,"['D', 'IH0', 'V', 'IH1', 'R']","['D', 'IH', 'V', 'IH', 'R']",PSS
+364,diview,short,5,,,simple,pseudo,,"['D', 'IH1', 'V', 'IY0', 'UW0']","['D', 'IH', 'V', 'IY', 'UW']",PSS
+365,divile,short,5,,,simple,pseudo,,"['D', 'IH0', 'V', 'AY1', 'L']","['D', 'IH', 'V', 'AY', 'L']",PSS
+366,engide,short,5,,,simple,pseudo,,"['EH1', 'N', 'JH', 'AH0', 'D']","['EH', 'N', 'JH', 'AH', 'D']",PSS
+367,enopel,short,6,,,simple,pseudo,,"['IH0', 'N', 'AA1', 'P', 'AH0', 'L']","['IH', 'N', 'AA', 'P', 'AH', 'L']",PSS
+368,famble,short,6,,,simple,pseudo,,"['F', 'AE1', 'M', 'B', 'AH0', 'L']","['F', 'AE', 'M', 'B', 'AH', 'L']",PSS
+369,famiss,short,5,,,simple,pseudo,,"['F', 'AA1', 'M', 'IH0', 'S']","['F', 'AA', 'M', 'IH', 'S']",PSS
+370,fammol,short,5,,,simple,pseudo,,"['F', 'AE1', 'M', 'AH0', 'L']","['F', 'AE', 'M', 'AH', 'L']",PSS
+371,farile,short,5,,,simple,pseudo,,"['F', 'EH1', 'R', 'AH0', 'L']","['F', 'EH', 'R', 'AH', 'L']",PSS
+372,follet,short,5,,,simple,pseudo,,"['F', 'AA1', 'L', 'IH0', 'T']","['F', 'AA', 'L', 'IH', 'T']",PSS
+373,fommon,short,5,,,simple,pseudo,,"['F', 'AA1', 'M', 'AH0', 'N']","['F', 'AA', 'M', 'AH', 'N']",PSS
+374,fourct,short,5,,,simple,pseudo,,"['F', 'AO1', 'R', 'K', 'T']","['F', 'AO', 'R', 'K', 'T']",PSS
+375,fourut,short,5,,,simple,pseudo,,"['F', 'UH1', 'R', 'UW0', 'T']","['F', 'UH', 'R', 'UW', 'T']",PSS
+376,frangh,short,4,,,simple,pseudo,,"['F', 'R', 'AE1', 'NG']","['F', 'R', 'AE', 'NG']",PSS
+377,frcese,short,6,,,simple,pseudo,,"['F', 'R', 'IH0', 'S', 'IY1', 'S']","['F', 'R', 'IH', 'S', 'IY', 'S']",PSS
+378,friger,short,5,,,simple,pseudo,,"['F', 'R', 'AY1', 'G', 'ER0']","['F', 'R', 'AY', 'G', 'ER']",PSS
+379,frigin,short,6,,,simple,pseudo,,"['F', 'R', 'IH1', 'JH', 'IH0', 'N']","['F', 'R', 'IH', 'JH', 'IH', 'N']",PSS
+380,frithe,short,4,,,simple,pseudo,,"['F', 'R', 'IH1', 'DH']","['F', 'R', 'IH', 'DH']",PSS
+381,frithe,short,4,,,simple,pseudo,,"['F', 'R', 'IH1', 'DH']","['F', 'R', 'IH', 'DH']",PSS
+382,fritle,short,6,,,simple,pseudo,,"['F', 'R', 'IH1', 'T', 'AH0', 'L']","['F', 'R', 'IH', 'T', 'AH', 'L']",PSS
+383,friver,short,5,,,simple,pseudo,,"['F', 'R', 'AY1', 'V', 'ER0']","['F', 'R', 'AY', 'V', 'ER']",PSS
+384,frivon,short,6,,,simple,pseudo,,"['F', 'R', 'IH1', 'V', 'AH0', 'N']","['F', 'R', 'IH', 'V', 'AH', 'N']",PSS
+385,fruise,short,4,,,simple,pseudo,,"['F', 'R', 'UW1', 'Z']","['F', 'R', 'UW', 'Z']",PSS
+386,frurce,short,4,,,simple,pseudo,,"['F', 'R', 'UW1', 'S']","['F', 'R', 'UW', 'S']",PSS
+387,frurch,short,4,,,simple,pseudo,,"['F', 'R', 'ER1', 'K']","['F', 'R', 'ER', 'K']",PSS
+388,frurct,short,5,,,simple,pseudo,,"['F', 'R', 'AH1', 'K', 'T']","['F', 'R', 'AH', 'K', 'T']",PSS
+389,haphem,short,5,,,simple,pseudo,,"['HH', 'AE1', 'F', 'AH0', 'M']","['HH', 'AE', 'F', 'AH', 'M']",PSS
+390,harsow,short,5,,,simple,pseudo,,"['HH', 'AA1', 'R', 'S', 'OW0']","['HH', 'AA', 'R', 'S', 'OW']",PSS
+391,iouiel,short,4,,,simple,pseudo,,"['AY1', 'AH0', 'L', 'IY0']","['AY', 'AH', 'L', 'IY']",PSS
+392,iourut,short,5,,,simple,pseudo,,"['Y', 'UW1', 'R', 'AH0', 'T']","['Y', 'UW', 'R', 'AH', 'T']",PSS
+393,iovern,short,4,,,simple,pseudo,,"['AY1', 'V', 'ER0', 'N']","['AY', 'V', 'ER', 'N']",PSS
+394,jamble,short,6,,,simple,pseudo,,"['JH', 'AE1', 'M', 'B', 'AH0', 'L']","['JH', 'AE', 'M', 'B', 'AH', 'L']",PSS
+395,japhen,short,5,,,simple,pseudo,,"['JH', 'AE1', 'F', 'AH0', 'N']","['JH', 'AE', 'F', 'AH', 'N']",PSS
+396,jarget,short,6,,,simple,pseudo,,"['JH', 'AA1', 'R', 'JH', 'IH0', 'T']","['JH', 'AA', 'R', 'JH', 'IH', 'T']",PSS
+397,jarket,short,6,,,simple,pseudo,,"['JH', 'AA1', 'R', 'K', 'AH0', 'T']","['JH', 'AA', 'R', 'K', 'AH', 'T']",PSS
+398,kearce,short,3,,,simple,pseudo,,"['K', 'ER1', 'S']","['K', 'ER', 'S']",PSS
+399,kearse,short,3,,,simple,pseudo,,"['K', 'ER1', 'S']","['K', 'ER', 'S']",PSS
+400,kephen,short,5,,,simple,pseudo,,"['K', 'EH1', 'F', 'AH0', 'N']","['K', 'EH', 'F', 'AH', 'N']",PSS
+401,kerson,short,5,,,simple,pseudo,,"['K', 'ER1', 'S', 'AH0', 'N']","['K', 'ER', 'S', 'AH', 'N']",PSS
+402,licect,short,6,,,simple,pseudo,,"['L', 'AY1', 'S', 'IH0', 'K', 'T']","['L', 'AY', 'S', 'IH', 'K', 'T']",PSS
+403,licher,short,4,,,simple,pseudo,,"['L', 'IH1', 'K', 'ER0']","['L', 'IH', 'K', 'ER']",PSS
+404,limble,short,6,,,simple,pseudo,,"['L', 'IH1', 'M', 'B', 'AH0', 'L']","['L', 'IH', 'M', 'B', 'AH', 'L']",PSS
+405,lindle,short,6,,,simple,pseudo,,"['L', 'IH1', 'N', 'D', 'AH0', 'L']","['L', 'IH', 'N', 'D', 'AH', 'L']",PSS
+406,lindol,short,6,,,simple,pseudo,,"['L', 'IH1', 'N', 'D', 'AO2', 'L']","['L', 'IH', 'N', 'D', 'AO', 'L']",PSS
+407,lingin,short,6,,,simple,pseudo,,"['L', 'IH1', 'NG', 'G', 'IH0', 'N']","['L', 'IH', 'NG', 'G', 'IH', 'N']",PSS
+408,lirgal,short,5,,,simple,pseudo,,"['L', 'ER1', 'G', 'AH0', 'L']","['L', 'ER', 'G', 'AH', 'L']",PSS
+409,lithyr,short,4,,,simple,pseudo,,"['L', 'IH1', 'TH', 'ER0']","['L', 'IH', 'TH', 'ER']",PSS
+410,livend,short,6,,,simple,pseudo,,"['L', 'AY1', 'V', 'AH0', 'N', 'D']","['L', 'AY', 'V', 'AH', 'N', 'D']",PSS
+411,mample,short,6,,,simple,pseudo,,"['M', 'AE1', 'M', 'P', 'AH0', 'L']","['M', 'AE', 'M', 'P', 'AH', 'L']",PSS
+412,margar,short,5,,,simple,pseudo,,"['M', 'AA1', 'R', 'G', 'ER0']","['M', 'AA', 'R', 'G', 'ER']",PSS
+413,marget,short,6,,,simple,pseudo,,"['M', 'AA1', 'R', 'G', 'IH0', 'T']","['M', 'AA', 'R', 'G', 'IH', 'T']",PSS
+414,margon,short,6,,,simple,pseudo,,"['M', 'AA1', 'R', 'G', 'AH0', 'N']","['M', 'AA', 'R', 'G', 'AH', 'N']",PSS
+415,mimble,short,6,,,simple,pseudo,,"['M', 'IH1', 'M', 'B', 'AH0', 'L']","['M', 'IH', 'M', 'B', 'AH', 'L']",PSS
+416,mindow,short,5,,,simple,pseudo,,"['M', 'IH1', 'N', 'D', 'OW0']","['M', 'IH', 'N', 'D', 'OW']",PSS
+417,oriend,short,6,,,simple,pseudo,,"['AO1', 'R', 'IY0', 'AH0', 'N', 'D']","['AO', 'R', 'IY', 'AH', 'N', 'D']",PSS
+418,orithe,short,4,,,simple,pseudo,,"['AO1', 'R', 'IH0', 'TH']","['AO', 'R', 'IH', 'TH']",PSS
+419,oriver,short,5,,,simple,pseudo,,"['AO1', 'R', 'IH0', 'V', 'ER0']","['AO', 'R', 'IH', 'V', 'ER']",PSS
+420,orivol,short,6,,,simple,pseudo,,"['AO1', 'R', 'IY0', 'V', 'OW2', 'L']","['AO', 'R', 'IY', 'V', 'OW', 'L']",PSS
+421,orivon,short,6,,,simple,pseudo,,"['AO1', 'R', 'IH0', 'V', 'AA0', 'N']","['AO', 'R', 'IH', 'V', 'AA', 'N']",PSS
+422,peigle,short,5,,,simple,pseudo,,"['P', 'EY1', 'G', 'AH0', 'L']","['P', 'EY', 'G', 'AH', 'L']",PSS
+423,pepply,short,5,,,simple,pseudo,,"['P', 'EH1', 'P', 'L', 'IY0']","['P', 'EH', 'P', 'L', 'IY']",PSS
+424,perker,short,4,,,simple,pseudo,,"['P', 'ER1', 'K', 'ER0']","['P', 'ER', 'K', 'ER']",PSS
+425,pernel,short,5,,,simple,pseudo,,"['P', 'ER1', 'N', 'AH0', 'L']","['P', 'ER', 'N', 'AH', 'L']",PSS
+426,peveal,short,5,,,simple,pseudo,,"['P', 'AH0', 'V', 'IY1', 'L']","['P', 'AH', 'V', 'IY', 'L']",PSS
+427,pleane,short,4,,,simple,pseudo,,"['P', 'L', 'IY1', 'N']","['P', 'L', 'IY', 'N']",PSS
+428,puivon,short,6,,,simple,pseudo,,"['P', 'W', 'IH1', 'V', 'AH0', 'N']","['P', 'W', 'IH', 'V', 'AH', 'N']",PSS
+429,pullew,short,5,,,simple,pseudo,,"['P', 'UH1', 'L', 'W', 'EH0']","['P', 'UH', 'L', 'W', 'EH']",PSS
+430,puzzly,short,5,,,simple,pseudo,,"['P', 'AH1', 'Z', 'L', 'IY0']","['P', 'AH', 'Z', 'L', 'IY']",PSS
+431,quigol,short,6,,,simple,pseudo,,"['K', 'W', 'IH1', 'G', 'AH0', 'L']","['K', 'W', 'IH', 'G', 'AH', 'L']",PSS
+432,quivol,short,6,,,simple,pseudo,,"['K', 'W', 'IH1', 'V', 'AA0', 'L']","['K', 'W', 'IH', 'V', 'AA', 'L']",PSS
+433,quzzle,short,5,,,simple,pseudo,,"['K', 'AH1', 'Z', 'AH0', 'L']","['K', 'AH', 'Z', 'AH', 'L']",PSS
+434,ramily,short,6,,,simple,pseudo,,"['R', 'EY1', 'M', 'AH0', 'L', 'IY0']","['R', 'EY', 'M', 'AH', 'L', 'IY']",PSS
+435,rarker,short,5,,,simple,pseudo,,"['R', 'AA1', 'R', 'K', 'ER0']","['R', 'AA', 'R', 'K', 'ER']",PSS
+436,reanel,short,5,,,simple,pseudo,,"['R', 'IY1', 'N', 'AH0', 'L']","['R', 'IY', 'N', 'AH', 'L']",PSS
+437,reaner,short,4,,,simple,pseudo,,"['R', 'IY1', 'N', 'ER0']","['R', 'IY', 'N', 'ER']",PSS
+438,rearce,short,3,,,simple,pseudo,,"['R', 'IY1', 'S']","['R', 'IY', 'S']",PSS
+439,rearch,short,4,,,simple,pseudo,,"['R', 'IH1', 'R', 'CH']","['R', 'IH', 'R', 'CH']",PSS
+440,rettle,short,5,,,simple,pseudo,,"['R', 'EH1', 'T', 'AH0', 'L']","['R', 'EH', 'T', 'AH', 'L']",PSS
+441,revide,short,5,,,simple,pseudo,,"['R', 'IY0', 'V', 'AY1', 'D']","['R', 'IY', 'V', 'AY', 'D']",PSS
+442,schong,short,3,,,simple,pseudo,,"['SH', 'AO1', 'NG']","['SH', 'AO', 'NG']",PSS
+443,schoon,short,4,,,simple,pseudo,,"['S', 'K', 'UW1', 'N']","['S', 'K', 'UW', 'N']",PSS
+444,searce,short,3,,,simple,pseudo,,"['S', 'ER1', 'S']","['S', 'ER', 'S']",PSS
+445,sedide,short,5,,,simple,pseudo,,"['S', 'EH1', 'D', 'AY0', 'D']","['S', 'EH', 'D', 'AY', 'D']",PSS
+446,sirind,short,6,,,simple,pseudo,,"['S', 'IH1', 'R', 'IH0', 'N', 'D']","['S', 'IH', 'R', 'IH', 'N', 'D']",PSS
+447,sollow,short,4,,,simple,pseudo,,"['S', 'AA1', 'L', 'OW0']","['S', 'AA', 'L', 'OW']",PSS
+448,somine,short,6,,,simple,pseudo,,"['S', 'OW0', 'M', 'IY1', 'N', 'IY0']","['S', 'OW', 'M', 'IY', 'N', 'IY']",PSS
+449,souipt,short,4,,,simple,pseudo,,"['S', 'UW1', 'P', 'T']","['S', 'UW', 'P', 'T']",PSS
+450,sourch,short,4,,,simple,pseudo,,"['S', 'AO1', 'R', 'CH']","['S', 'AO', 'R', 'CH']",PSS
+451,sourse,short,4,,,simple,pseudo,,"['S', 'AO1', 'R', 'S']","['S', 'AO', 'R', 'S']",PSS
+452,systle,short,6,,,simple,pseudo,,"['S', 'IH1', 'S', 'T', 'AH0', 'L']","['S', 'IH', 'S', 'T', 'AH', 'L']",PSS
+453,systle,short,6,,,simple,pseudo,,"['S', 'IH1', 'S', 'T', 'AH0', 'L']","['S', 'IH', 'S', 'T', 'AH', 'L']",PSS
+454,systly,short,6,,,simple,pseudo,,"['S', 'IH1', 'S', 'T', 'L', 'IY0']","['S', 'IH', 'S', 'T', 'L', 'IY']",PSS
+455,tamble,short,6,,,simple,pseudo,,"['T', 'AE1', 'M', 'B', 'AH0', 'L']","['T', 'AE', 'M', 'B', 'AH', 'L']",PSS
+456,taphyr,short,5,,,simple,pseudo,,"['T', 'AE1', 'F', 'IH0', 'R']","['T', 'AE', 'F', 'IH', 'R']",PSS
+457,tapply,short,5,,,simple,pseudo,,"['T', 'AE1', 'P', 'L', 'IY0']","['T', 'AE', 'P', 'L', 'IY']",PSS
+458,targle,short,6,,,simple,pseudo,,"['T', 'AA1', 'R', 'G', 'AH0', 'L']","['T', 'AA', 'R', 'G', 'AH', 'L']",PSS
+459,targon,short,6,,,simple,pseudo,,"['T', 'AA1', 'R', 'G', 'AH0', 'N']","['T', 'AA', 'R', 'G', 'AH', 'N']",PSS
+460,tarket,short,6,,,simple,pseudo,,"['T', 'AA1', 'R', 'K', 'AH0', 'T']","['T', 'AA', 'R', 'K', 'AH', 'T']",PSS
+461,terker,short,4,,,simple,pseudo,,"['T', 'ER1', 'K', 'ER0']","['T', 'ER', 'K', 'ER']",PSS
+462,tethen,short,5,,,simple,pseudo,,"['T', 'EH1', 'TH', 'AH0', 'N']","['T', 'EH', 'TH', 'AH', 'N']",PSS
+463,tettle,short,5,,,simple,pseudo,,"['T', 'EH1', 'T', 'AH0', 'L']","['T', 'EH', 'T', 'AH', 'L']",PSS
+464,wicear,short,4,,,simple,pseudo,,"['W', 'IH1', 'S', 'ER0']","['W', 'IH', 'S', 'ER']",PSS
+465,wimiew,short,5,,,simple,pseudo,,"['W', 'IH1', 'M', 'IY0', 'W']","['W', 'IH', 'M', 'IY', 'W']",PSS
+466,wimper,short,5,,,simple,pseudo,,"['W', 'IH1', 'M', 'P', 'ER0']","['W', 'IH', 'M', 'P', 'ER']",PSS
+467,wingin,short,5,,,simple,pseudo,,"['W', 'IH1', 'NG', 'IH0', 'N']","['W', 'IH', 'NG', 'IH', 'N']",PSS
+468,wingle,short,6,,,simple,pseudo,,"['W', 'IH1', 'NG', 'G', 'AH0', 'L']","['W', 'IH', 'NG', 'G', 'AH', 'L']",PSS
+469,wirker,short,4,,,simple,pseudo,,"['W', 'ER1', 'K', 'ER0']","['W', 'ER', 'K', 'ER']",PSS
+470,wittle,short,5,,,simple,pseudo,,"['W', 'IH1', 'T', 'AH0', 'L']","['W', 'IH', 'T', 'AH', 'L']",PSS
+471,wracle,short,5,,,simple,pseudo,,"['R', 'AE1', 'K', 'AH0', 'L']","['R', 'AE', 'K', 'AH', 'L']",PSS
+472,wriend,short,4,,,simple,pseudo,,"['R', 'IY1', 'N', 'D']","['R', 'IY', 'N', 'D']",PSS
+473,wrigin,short,5,,,simple,pseudo,,"['R', 'IH1', 'JH', 'AH0', 'N']","['R', 'IH', 'JH', 'AH', 'N']",PSS
+474,wriver,short,4,,,simple,pseudo,,"['R', 'AY1', 'V', 'ER0']","['R', 'AY', 'V', 'ER']",PSS
+475,wrivol,short,5,,,simple,pseudo,,"['R', 'AY1', 'V', 'AH0', 'L']","['R', 'AY', 'V', 'AH', 'L']",PSS
+476,wrivow,short,4,,,simple,pseudo,,"['R', 'IH1', 'V', 'OW0']","['R', 'IH', 'V', 'OW']",PSS
+477,wruide,short,3,,,simple,pseudo,,"['R', 'UW1', 'D']","['R', 'UW', 'D']",PSS
+478,zevene,short,5,,,simple,pseudo,,"['Z', 'EH1', 'V', 'IY0', 'N']","['Z', 'EH', 'V', 'IY', 'N']",PSS
+479,acip,short,4,,,simple,pseudo,,"['EY1', 'S', 'AH0', 'P']","['EY', 'S', 'AH', 'P']",PSS
+480,anth,short,3,,,simple,pseudo,,"['AE1', 'N', 'TH']","['AE', 'N', 'TH']",PSS
+481,dack,short,3,,,simple,pseudo,,"['D', 'AE1', 'K']","['D', 'AE', 'K']",PSS
+482,dall,short,3,,,simple,pseudo,,"['D', 'AO1', 'L']","['D', 'AO', 'L']",PSS
+483,foay,short,3,,,simple,pseudo,,"['F', 'OW1', 'IY0']","['F', 'OW', 'IY']",PSS
+484,gloe,short,3,,,simple,pseudo,,"['G', 'L', 'OW1']","['G', 'L', 'OW']",PSS
+485,hane,short,3,,,simple,pseudo,,"['HH', 'EY1', 'N']","['HH', 'EY', 'N']",PSS
+486,loar,short,3,,,simple,pseudo,,"['L', 'AO1', 'R']","['L', 'AO', 'R']",PSS
+487,nith,short,3,,,simple,pseudo,,"['N', 'IH1', 'TH']","['N', 'IH', 'TH']",PSS
+488,pild,short,4,,,simple,pseudo,,"['P', 'IH1', 'L', 'D']","['P', 'IH', 'L', 'D']",PSS
+489,quab,short,4,,,simple,pseudo,,"['K', 'W', 'AA1', 'B']","['K', 'W', 'AA', 'B']",PSS
+490,ralk,short,3,,,simple,pseudo,,"['R', 'AO1', 'K']","['R', 'AO', 'K']",PSS
+491,seft,short,4,,,simple,pseudo,,"['S', 'EH1', 'F', 'T']","['S', 'EH', 'F', 'T']",PSS
+492,wigh,short,3,,,simple,pseudo,,"['W', 'AY1', 'G']","['W', 'AY', 'G']",PSS
+493,zeft,short,4,,,simple,pseudo,,"['Z', 'EH1', 'F', 'T']","['Z', 'EH', 'F', 'T']",PSS
+494,abosh,short,4,,,simple,pseudo,,"['AH0', 'B', 'AA1', 'SH']","['AH', 'B', 'AA', 'SH']",PSS
+495,blaid,short,4,,,simple,pseudo,,"['B', 'L', 'EY1', 'D']","['B', 'L', 'EY', 'D']",PSS
+496,brose,short,4,,,simple,pseudo,,"['B', 'R', 'OW1', 'Z']","['B', 'R', 'OW', 'Z']",PSS
+497,clect,short,5,,,simple,pseudo,,"['K', 'L', 'EH1', 'K', 'T']","['K', 'L', 'EH', 'K', 'T']",PSS
+498,flean,short,4,,,simple,pseudo,,"['F', 'L', 'IY1', 'N']","['F', 'L', 'IY', 'N']",PSS
+499,knash,short,3,,,simple,pseudo,,"['N', 'AE1', 'SH']","['N', 'AE', 'SH']",PSS
+500,lepar,short,4,,,simple,pseudo,,"['L', 'EH1', 'P', 'ER0']","['L', 'EH', 'P', 'ER']",PSS
+501,neerd,short,4,,,simple,pseudo,,"['N', 'IH1', 'R', 'D']","['N', 'IH', 'R', 'D']",PSS
+502,offee,short,3,,,simple,pseudo,,"['AH0', 'F', 'IY1']","['AH', 'F', 'IY']",PSS
+503,pring,short,4,,,simple,pseudo,,"['P', 'R', 'IH1', 'NG']","['P', 'R', 'IH', 'NG']",PSS
+504,sevel,short,5,,,simple,pseudo,,"['S', 'EH1', 'V', 'AH0', 'L']","['S', 'EH', 'V', 'AH', 'L']",PSS
+505,staib,short,4,,,simple,pseudo,,"['S', 'T', 'EY1', 'B']","['S', 'T', 'EY', 'B']",PSS
+506,stull,short,4,,,simple,pseudo,,"['S', 'T', 'AH1', 'L']","['S', 'T', 'AH', 'L']",PSS
+507,vance,short,4,,,simple,pseudo,,"['V', 'AE1', 'N', 'S']","['V', 'AE', 'N', 'S']",PSS
+508,whild,short,4,,,simple,pseudo,,"['W', 'IH1', 'L', 'D']","['W', 'IH', 'L', 'D']",PSS
+509,acriel,short,6,,,simple,pseudo,,"['AE1', 'K', 'R', 'IY0', 'AH0', 'L']","['AE', 'K', 'R', 'IY', 'AH', 'L']",PSS
+510,bullow,short,4,,,simple,pseudo,,"['B', 'UH1', 'L', 'OW0']","['B', 'UH', 'L', 'OW']",PSS
+511,buzzle,short,5,,,simple,pseudo,,"['B', 'AH1', 'Z', 'AH0', 'L']","['B', 'AH', 'Z', 'AH', 'L']",PSS
+512,courch,short,4,,,simple,pseudo,,"['K', 'AO1', 'R', 'CH']","['K', 'AO', 'R', 'CH']",PSS
+513,dimbly,short,6,,,simple,pseudo,,"['D', 'IH1', 'M', 'B', 'L', 'IY0']","['D', 'IH', 'M', 'B', 'L', 'IY']",PSS
+514,famble,short,6,,,simple,pseudo,,"['F', 'AE1', 'M', 'B', 'AH0', 'L']","['F', 'AE', 'M', 'B', 'AH', 'L']",PSS
+515,friver,short,5,,,simple,pseudo,,"['F', 'R', 'AY1', 'V', 'ER0']","['F', 'R', 'AY', 'V', 'ER']",PSS
+516,haphem,short,5,,,simple,pseudo,,"['HH', 'AE1', 'F', 'AH0', 'M']","['HH', 'AE', 'F', 'AH', 'M']",PSS
+517,jamble,short,6,,,simple,pseudo,,"['JH', 'AE1', 'M', 'B', 'AH0', 'L']","['JH', 'AE', 'M', 'B', 'AH', 'L']",PSS
+518,lindle,short,6,,,simple,pseudo,,"['L', 'IH1', 'N', 'D', 'AH0', 'L']","['L', 'IH', 'N', 'D', 'AH', 'L']",PSS
+519,mindow,short,5,,,simple,pseudo,,"['M', 'IH1', 'N', 'D', 'OW0']","['M', 'IH', 'N', 'D', 'OW']",PSS
+520,puzzly,short,5,,,simple,pseudo,,"['P', 'AH1', 'Z', 'L', 'IY0']","['P', 'AH', 'Z', 'L', 'IY']",PSS
+521,rettle,short,5,,,simple,pseudo,,"['R', 'EH1', 'T', 'AH0', 'L']","['R', 'EH', 'T', 'AH', 'L']",PSS
+522,searce,short,3,,,simple,pseudo,,"['S', 'ER1', 'S']","['S', 'ER', 'S']",PSS
+523,tarket,short,6,,,simple,pseudo,,"['T', 'AA1', 'R', 'K', 'AH0', 'T']","['T', 'AA', 'R', 'K', 'AH', 'T']",PSS

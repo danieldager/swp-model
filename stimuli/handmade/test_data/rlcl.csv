@@ -1,0 +1,230 @@
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+0,absorbing,3.16e-06,3.5,VERB,"['AH0', 'B', 'Z', 'AO1', 'R', 'B', 'IH0', 'NG']","['AH', 'B', 'Z', 'AO', 'R', 'B', 'IH', 'NG']",real,8,long
+1,adapting,3.16e-06,3.5,VERB,"['AH0', 'D', 'AE1', 'P', 'T', 'IH0', 'NG']","['AH', 'D', 'AE', 'P', 'T', 'IH', 'NG']",real,7,long
+2,allegation,3.16e-06,3.5,NOUN,"['AE2', 'L', 'AH0', 'G', 'EY1', 'SH', 'AH0', 'N']","['AE', 'L', 'AH', 'G', 'EY', 'SH', 'AH', 'N']",real,8,long
+3,alternating,3.16e-06,3.5,VERB,"['AO1', 'L', 'T', 'ER0', 'N', 'EY2', 'T', 'IH0', 'NG']","['AO', 'L', 'T', 'ER', 'N', 'EY', 'T', 'IH', 'NG']",real,9,long
+4,ancestry,3.16e-06,3.5,NOUN,"['AE1', 'N', 'S', 'EH0', 'S', 'T', 'R', 'IY0']","['AE', 'N', 'S', 'EH', 'S', 'T', 'R', 'IY']",real,8,long
+5,augmented,3.16e-06,3.5,VERB,"['AA0', 'G', 'M', 'EH1', 'N', 'T', 'AH0', 'D']","['AA', 'G', 'M', 'EH', 'N', 'T', 'AH', 'D']",real,8,long
+6,bartender,3.16e-06,3.5,NOUN,"['B', 'AA1', 'R', 'T', 'EH2', 'N', 'D', 'ER0']","['B', 'AA', 'R', 'T', 'EH', 'N', 'D', 'ER']",real,8,long
+7,bohemian,3.16e-06,3.5,ADJ,"['B', 'OW0', 'HH', 'IY1', 'M', 'IY0', 'AH0', 'N']","['B', 'OW', 'HH', 'IY', 'M', 'IY', 'AH', 'N']",real,8,long
+8,consciously,3.16e-06,3.5,ADV,"['K', 'AA1', 'N', 'SH', 'AH0', 'S', 'L', 'IY0']","['K', 'AA', 'N', 'SH', 'AH', 'S', 'L', 'IY']",real,8,long
+9,corpses,3.16e-06,3.5,NOUN,"['K', 'AO1', 'R', 'P', 'S', 'AH0', 'Z']","['K', 'AO', 'R', 'P', 'S', 'AH', 'Z']",real,7,long
+10,correlated,3.16e-06,3.5,VERB,"['K', 'AO1', 'R', 'AH0', 'L', 'EY2', 'T', 'AH0', 'D']","['K', 'AO', 'R', 'AH', 'L', 'EY', 'T', 'AH', 'D']",real,9,long
+11,correspond,3.16e-06,3.5,VERB,"['K', 'AO2', 'R', 'AH0', 'S', 'P', 'AA1', 'N', 'D']","['K', 'AO', 'R', 'AH', 'S', 'P', 'AA', 'N', 'D']",real,9,long
+12,decency,3.16e-06,3.5,NOUN,"['D', 'IY1', 'S', 'AH0', 'N', 'S', 'IY0']","['D', 'IY', 'S', 'AH', 'N', 'S', 'IY']",real,7,long
+13,destroyer,3.16e-06,3.5,NOUN,"['D', 'IH0', 'S', 'T', 'R', 'OY1', 'ER0']","['D', 'IH', 'S', 'T', 'R', 'OY', 'ER']",real,7,long
+14,doorstep,3.16e-06,3.5,NOUN,"['D', 'AO1', 'R', 'S', 'T', 'EH2', 'P']","['D', 'AO', 'R', 'S', 'T', 'EH', 'P']",real,7,long
+15,embarked,3.16e-06,3.5,VERB,"['EH0', 'M', 'B', 'AA1', 'R', 'K', 'T']","['EH', 'M', 'B', 'AA', 'R', 'K', 'T']",real,7,long
+16,garments,3.16e-06,3.5,NOUN,"['G', 'AA1', 'R', 'M', 'AH0', 'N', 'T', 'S']","['G', 'AA', 'R', 'M', 'AH', 'N', 'T', 'S']",real,8,long
+17,glamorous,3.16e-06,3.5,ADJ,"['G', 'L', 'AE1', 'M', 'ER0', 'AH0', 'S']","['G', 'L', 'AE', 'M', 'ER', 'AH', 'S']",real,7,long
+18,goldberg,3.16e-06,3.5,PROPN,"['G', 'OW1', 'L', 'D', 'B', 'ER0', 'G']","['G', 'OW', 'L', 'D', 'B', 'ER', 'G']",real,7,long
+19,homophobic,3.16e-06,3.5,ADJ,"['HH', 'OW2', 'M', 'AH0', 'F', 'OW1', 'B', 'IH0', 'K']","['HH', 'OW', 'M', 'AH', 'F', 'OW', 'B', 'IH', 'K']",real,9,long
+20,implants,3.16e-06,3.5,NOUN,"['IH1', 'M', 'P', 'L', 'AE2', 'N', 'T', 'S']","['IH', 'M', 'P', 'L', 'AE', 'N', 'T', 'S']",real,8,long
+21,jurassic,3.16e-06,3.5,PROPN,"['JH', 'UH0', 'R', 'AE1', 'S', 'IH0', 'K']","['JH', 'UH', 'R', 'AE', 'S', 'IH', 'K']",real,7,long
+22,liberia,3.16e-06,3.5,PROPN,"['L', 'AY0', 'B', 'IH1', 'R', 'IY0', 'AH0']","['L', 'AY', 'B', 'IH', 'R', 'IY', 'AH']",real,7,long
+23,locomotive,3.16e-06,3.5,NOUN,"['L', 'OW2', 'K', 'AH0', 'M', 'OW1', 'T', 'IH0', 'V']","['L', 'OW', 'K', 'AH', 'M', 'OW', 'T', 'IH', 'V']",real,9,long
+24,microscope,3.16e-06,3.5,NOUN,"['M', 'AY1', 'K', 'R', 'AH0', 'S', 'K', 'OW2', 'P']","['M', 'AY', 'K', 'R', 'AH', 'S', 'K', 'OW', 'P']",real,9,long
+25,multiply,3.16e-06,3.5,VERB,"['M', 'AH1', 'L', 'T', 'AH0', 'P', 'L', 'AY2']","['M', 'AH', 'L', 'T', 'AH', 'P', 'L', 'AY']",real,8,long
+26,narcotics,3.16e-06,3.5,NOUN,"['N', 'AA0', 'R', 'K', 'AA1', 'T', 'IH0', 'K', 'S']","['N', 'AA', 'R', 'K', 'AA', 'T', 'IH', 'K', 'S']",real,9,long
+27,obedience,3.16e-06,3.5,NOUN,"['OW0', 'B', 'IY1', 'D', 'IY0', 'AH0', 'N', 'S']","['OW', 'B', 'IY', 'D', 'IY', 'AH', 'N', 'S']",real,8,long
+28,parasites,3.16e-06,3.5,NOUN,"['P', 'EH1', 'R', 'AH0', 'S', 'AY2', 'T', 'S']","['P', 'EH', 'R', 'AH', 'S', 'AY', 'T', 'S']",real,8,long
+29,picturesque,3.16e-06,3.5,ADJ,"['P', 'IH1', 'K', 'CH', 'ER0', 'AH0', 'S', 'K']","['P', 'IH', 'K', 'CH', 'ER', 'AH', 'S', 'K']",real,8,long
+30,pilgrimage,3.16e-06,3.5,NOUN,"['P', 'IH1', 'L', 'G', 'R', 'AH0', 'M', 'AH0', 'JH']","['P', 'IH', 'L', 'G', 'R', 'AH', 'M', 'AH', 'JH']",real,9,long
+31,pivotal,3.16e-06,3.5,ADJ,"['P', 'IH1', 'V', 'AH0', 'T', 'AH0', 'L']","['P', 'IH', 'V', 'AH', 'T', 'AH', 'L']",real,7,long
+32,preventive,3.16e-06,3.5,ADJ,"['P', 'R', 'IH0', 'V', 'EH1', 'N', 'T', 'IH0', 'V']","['P', 'R', 'IH', 'V', 'EH', 'N', 'T', 'IH', 'V']",real,9,long
+33,raspberry,3.16e-06,3.5,NOUN,"['R', 'AE1', 'Z', 'B', 'EH2', 'R', 'IY0']","['R', 'AE', 'Z', 'B', 'EH', 'R', 'IY']",real,7,long
+34,reconcile,3.16e-06,3.5,VERB,"['R', 'EH1', 'K', 'AH0', 'N', 'S', 'AY2', 'L']","['R', 'EH', 'K', 'AH', 'N', 'S', 'AY', 'L']",real,8,long
+35,regression,3.16e-06,3.5,NOUN,"['R', 'AH0', 'G', 'R', 'EH1', 'SH', 'AH0', 'N']","['R', 'AH', 'G', 'R', 'EH', 'SH', 'AH', 'N']",real,8,long
+36,shortages,3.16e-06,3.5,NOUN,"['SH', 'AO1', 'R', 'T', 'AH0', 'JH', 'AH0', 'Z']","['SH', 'AO', 'R', 'T', 'AH', 'JH', 'AH', 'Z']",real,8,long
+37,synonymous,3.16e-06,3.5,ADJ,"['S', 'AH0', 'N', 'AA1', 'N', 'AH0', 'M', 'AH0', 'S']","['S', 'AH', 'N', 'AA', 'N', 'AH', 'M', 'AH', 'S']",real,9,long
+38,autograph,3.09e-06,3.49,PROPN,"['AO1', 'T', 'AH0', 'G', 'R', 'AE2', 'F']","['AO', 'T', 'AH', 'G', 'R', 'AE', 'F']",real,7,long
+39,automobiles,3.09e-06,3.49,NOUN,"['AO1', 'T', 'AH0', 'M', 'OW0', 'B', 'IY2', 'L', 'Z']","['AO', 'T', 'AH', 'M', 'OW', 'B', 'IY', 'L', 'Z']",real,9,long
+40,blasted,3.09e-06,3.49,VERB,"['B', 'L', 'AE1', 'S', 'T', 'AH0', 'D']","['B', 'L', 'AE', 'S', 'T', 'AH', 'D']",real,7,long
+41,botanical,3.09e-06,3.49,PROPN,"['B', 'AH0', 'T', 'AE1', 'N', 'IH0', 'K', 'AH0', 'L']","['B', 'AH', 'T', 'AE', 'N', 'IH', 'K', 'AH', 'L']",real,9,long
+42,clarified,3.09e-06,3.49,VERB,"['K', 'L', 'EH1', 'R', 'AH0', 'F', 'AY2', 'D']","['K', 'L', 'EH', 'R', 'AH', 'F', 'AY', 'D']",real,8,long
+43,coincide,3.09e-06,3.49,VERB,"['K', 'OW2', 'IH0', 'N', 'S', 'AY1', 'D']","['K', 'OW', 'IH', 'N', 'S', 'AY', 'D']",real,7,long
+44,comedians,3.09e-06,3.49,NOUN,"['K', 'AH0', 'M', 'IY1', 'D', 'IY0', 'AH0', 'N', 'Z']","['K', 'AH', 'M', 'IY', 'D', 'IY', 'AH', 'N', 'Z']",real,9,long
+45,commemorate,3.09e-06,3.49,VERB,"['K', 'AH0', 'M', 'EH1', 'M', 'ER0', 'EY2', 'T']","['K', 'AH', 'M', 'EH', 'M', 'ER', 'EY', 'T']",real,8,long
+46,concurrent,3.09e-06,3.49,ADJ,"['K', 'AH0', 'N', 'K', 'ER1', 'AH0', 'N', 'T']","['K', 'AH', 'N', 'K', 'ER', 'AH', 'N', 'T']",real,8,long
+47,corrupted,3.09e-06,3.49,VERB,"['K', 'ER0', 'AH1', 'P', 'T', 'IH0', 'D']","['K', 'ER', 'AH', 'P', 'T', 'IH', 'D']",real,7,long
+48,coventry,3.09e-06,3.49,PROPN,"['K', 'AH1', 'V', 'AH0', 'N', 'T', 'R', 'IY0']","['K', 'AH', 'V', 'AH', 'N', 'T', 'R', 'IY']",real,8,long
+49,crocodile,3.09e-06,3.49,NOUN,"['K', 'R', 'AA1', 'K', 'AH0', 'D', 'AY2', 'L']","['K', 'R', 'AA', 'K', 'AH', 'D', 'AY', 'L']",real,8,long
+50,disagreed,3.09e-06,3.49,VERB,"['D', 'IH0', 'S', 'AH0', 'G', 'R', 'IY1', 'D']","['D', 'IH', 'S', 'AH', 'G', 'R', 'IY', 'D']",real,8,long
+51,diverted,3.09e-06,3.49,VERB,"['D', 'AY0', 'V', 'ER1', 'T', 'IH0', 'D']","['D', 'AY', 'V', 'ER', 'T', 'IH', 'D']",real,7,long
+52,egyptians,3.09e-06,3.49,PROPN,"['IH0', 'JH', 'IH1', 'P', 'SH', 'AH0', 'N', 'Z']","['IH', 'JH', 'IH', 'P', 'SH', 'AH', 'N', 'Z']",real,8,long
+53,exhaustion,3.09e-06,3.49,NOUN,"['IH0', 'G', 'Z', 'AO1', 'S', 'CH', 'AH0', 'N']","['IH', 'G', 'Z', 'AO', 'S', 'CH', 'AH', 'N']",real,8,long
+54,famously,3.09e-06,3.49,ADV,"['F', 'EY1', 'M', 'AH0', 'S', 'L', 'IY0']","['F', 'EY', 'M', 'AH', 'S', 'L', 'IY']",real,7,long
+55,fisherman,3.09e-06,3.49,NOUN,"['F', 'IH1', 'SH', 'ER0', 'M', 'AE2', 'N']","['F', 'IH', 'SH', 'ER', 'M', 'AE', 'N']",real,7,long
+56,galactic,3.09e-06,3.49,ADJ,"['G', 'AH0', 'L', 'AE1', 'K', 'T', 'IH0', 'K']","['G', 'AH', 'L', 'AE', 'K', 'T', 'IH', 'K']",real,8,long
+57,gardener,3.09e-06,3.49,NOUN,"['G', 'AA1', 'R', 'D', 'AH0', 'N', 'ER0']","['G', 'AA', 'R', 'D', 'AH', 'N', 'ER']",real,7,long
+58,grassroots,3.09e-06,3.49,PROPN,"['G', 'R', 'AE1', 'S', 'R', 'UW1', 'T', 'S']","['G', 'R', 'AE', 'S', 'R', 'UW', 'T', 'S']",real,8,long
+59,habitats,3.09e-06,3.49,NOUN,"['HH', 'AE1', 'B', 'AH0', 'T', 'AE2', 'T', 'S']","['HH', 'AE', 'B', 'AH', 'T', 'AE', 'T', 'S']",real,8,long
+60,hereditary,3.09e-06,3.49,ADJ,"['HH', 'ER0', 'EH1', 'D', 'AH0', 'T', 'EH2', 'R', 'IY0']","['HH', 'ER', 'EH', 'D', 'AH', 'T', 'EH', 'R', 'IY']",real,9,long
+61,homestead,3.09e-06,3.49,NOUN,"['HH', 'OW1', 'M', 'S', 'T', 'EH2', 'D']","['HH', 'OW', 'M', 'S', 'T', 'EH', 'D']",real,7,long
+62,horribly,3.09e-06,3.49,ADV,"['HH', 'AO1', 'R', 'AH0', 'B', 'L', 'IY0']","['HH', 'AO', 'R', 'AH', 'B', 'L', 'IY']",real,7,long
+63,horsepower,3.09e-06,3.49,PROPN,"['HH', 'AO1', 'R', 'S', 'P', 'AW2', 'ER0']","['HH', 'AO', 'R', 'S', 'P', 'AW', 'ER']",real,7,long
+64,insurers,3.09e-06,3.49,NOUN,"['IH0', 'N', 'SH', 'UH1', 'R', 'ER0', 'Z']","['IH', 'N', 'SH', 'UH', 'R', 'ER', 'Z']",real,7,long
+65,interchange,3.09e-06,3.49,VERB,"['IH1', 'N', 'T', 'ER0', 'CH', 'EY2', 'N', 'JH']","['IH', 'N', 'T', 'ER', 'CH', 'EY', 'N', 'JH']",real,8,long
+66,mindful,3.09e-06,3.49,ADJ,"['M', 'AY1', 'N', 'D', 'F', 'AH0', 'L']","['M', 'AY', 'N', 'D', 'F', 'AH', 'L']",real,7,long
+67,nautical,3.09e-06,3.49,ADJ,"['N', 'AO1', 'T', 'AH0', 'K', 'AH0', 'L']","['N', 'AO', 'T', 'AH', 'K', 'AH', 'L']",real,7,long
+68,noteworthy,3.09e-06,3.49,ADJ,"['N', 'OW1', 'T', 'W', 'ER2', 'DH', 'IY0']","['N', 'OW', 'T', 'W', 'ER', 'DH', 'IY']",real,7,long
+69,primaries,3.09e-06,3.49,NOUN,"['P', 'R', 'AY1', 'M', 'EH2', 'R', 'IY0', 'Z']","['P', 'R', 'AY', 'M', 'EH', 'R', 'IY', 'Z']",real,8,long
+70,refinery,3.09e-06,3.49,NOUN,"['R', 'IH0', 'F', 'AY1', 'N', 'ER0', 'IY0']","['R', 'IH', 'F', 'AY', 'N', 'ER', 'IY']",real,7,long
+71,reopened,3.09e-06,3.49,VERB,"['R', 'IY0', 'OW1', 'P', 'AH0', 'N', 'D']","['R', 'IY', 'OW', 'P', 'AH', 'N', 'D']",real,7,long
+72,startups,3.09e-06,3.49,NOUN,"['S', 'T', 'AA1', 'R', 'T', 'AH2', 'P', 'S']","['S', 'T', 'AA', 'R', 'T', 'AH', 'P', 'S']",real,8,long
+73,suspicions,3.09e-06,3.49,NOUN,"['S', 'AH0', 'S', 'P', 'IH1', 'SH', 'AH0', 'N', 'Z']","['S', 'AH', 'S', 'P', 'IH', 'SH', 'AH', 'N', 'Z']",real,9,long
+74,traveller,3.09e-06,3.49,NOUN,"['T', 'R', 'AE1', 'V', 'AH0', 'L', 'ER0']","['T', 'R', 'AE', 'V', 'AH', 'L', 'ER']",real,7,long
+75,anthology,3.02e-06,3.48,NOUN,"['AE0', 'N', 'TH', 'AA1', 'L', 'AH0', 'JH', 'IY0']","['AE', 'N', 'TH', 'AA', 'L', 'AH', 'JH', 'IY']",real,8,long
+76,blockbuster,3.02e-06,3.48,NOUN,"['B', 'L', 'AA1', 'K', 'B', 'AH2', 'S', 'T', 'ER0']","['B', 'L', 'AA', 'K', 'B', 'AH', 'S', 'T', 'ER']",real,9,long
+77,blueprint,3.02e-06,3.48,NOUN,"['B', 'L', 'UW1', 'P', 'R', 'IH2', 'N', 'T']","['B', 'L', 'UW', 'P', 'R', 'IH', 'N', 'T']",real,8,long
+78,unequal,2e-06,3.3,ADJ,"['AH0', 'N', 'IY1', 'K', 'W', 'AH0', 'L']","['AH', 'N', 'IY', 'K', 'W', 'AH', 'L']",real,7,long
+79,unresolved,2e-06,3.3,ADJ,"['AH0', 'N', 'R', 'IH0', 'Z', 'AA1', 'L', 'V', 'D']","['AH', 'N', 'R', 'IH', 'Z', 'AA', 'L', 'V', 'D']",real,9,long
+80,vacated,2e-06,3.3,VERB,"['V', 'EY0', 'K', 'EY1', 'T', 'AH0', 'D']","['V', 'EY', 'K', 'EY', 'T', 'AH', 'D']",real,7,long
+81,venetian,2e-06,3.3,ADJ,"['V', 'AH0', 'N', 'IY1', 'SH', 'AH0', 'N']","['V', 'AH', 'N', 'IY', 'SH', 'AH', 'N']",real,7,long
+82,adversary,1.95e-06,3.29,NOUN,"['AE1', 'D', 'V', 'ER0', 'S', 'EH2', 'R', 'IY0']","['AE', 'D', 'V', 'ER', 'S', 'EH', 'R', 'IY']",real,8,long
+83,bargains,1.95e-06,3.29,NOUN,"['B', 'AA1', 'R', 'G', 'AH0', 'N', 'Z']","['B', 'AA', 'R', 'G', 'AH', 'N', 'Z']",real,7,long
+84,believable,1.95e-06,3.29,ADJ,"['B', 'AH0', 'L', 'IY1', 'V', 'AH0', 'B', 'AH0', 'L']","['B', 'AH', 'L', 'IY', 'V', 'AH', 'B', 'AH', 'L']",real,9,long
+85,bloodshed,1.95e-06,3.29,VERB,"['B', 'L', 'AH1', 'D', 'SH', 'EH2', 'D']","['B', 'L', 'AH', 'D', 'SH', 'EH', 'D']",real,7,long
+86,complexion,1.95e-06,3.29,NOUN,"['K', 'AH0', 'M', 'P', 'EH1', 'K', 'SH', 'AH0', 'N']","['K', 'AH', 'M', 'P', 'EH', 'K', 'SH', 'AH', 'N']",real,9,long
+87,compulsive,1.95e-06,3.29,ADJ,"['K', 'AH0', 'M', 'P', 'AH1', 'L', 'S', 'IH0', 'V']","['K', 'AH', 'M', 'P', 'AH', 'L', 'S', 'IH', 'V']",real,9,long
+88,consular,1.95e-06,3.29,ADJ,"['K', 'AA1', 'N', 'S', 'AH0', 'L', 'ER0']","['K', 'AA', 'N', 'S', 'AH', 'L', 'ER']",real,7,long
+89,dangling,1.95e-06,3.29,VERB,"['D', 'AE1', 'NG', 'G', 'AH0', 'L', 'IH0', 'NG']","['D', 'AE', 'NG', 'G', 'AH', 'L', 'IH', 'NG']",real,8,long
+90,daredevil,1.95e-06,3.29,NOUN,"['D', 'EH1', 'R', 'D', 'EH2', 'V', 'AH0', 'L']","['D', 'EH', 'R', 'D', 'EH', 'V', 'AH', 'L']",real,8,long
+91,dishwasher,1.95e-06,3.29,NOUN,"['D', 'IH1', 'SH', 'W', 'AA2', 'SH', 'ER0']","['D', 'IH', 'SH', 'W', 'AA', 'SH', 'ER']",real,7,long
+92,extortion,1.95e-06,3.29,NOUN,"['IH0', 'K', 'S', 'T', 'AO1', 'R', 'SH', 'AH0', 'N']","['IH', 'K', 'S', 'T', 'AO', 'R', 'SH', 'AH', 'N']",real,9,long
+93,footprints,1.95e-06,3.29,NOUN,"['F', 'UH1', 'T', 'P', 'R', 'IH2', 'N', 'T', 'S']","['F', 'UH', 'T', 'P', 'R', 'IH', 'N', 'T', 'S']",real,9,long
+94,generously,1.95e-06,3.29,ADV,"['JH', 'EH1', 'N', 'ER0', 'AH0', 'S', 'L', 'IY0']","['JH', 'EH', 'N', 'ER', 'AH', 'S', 'L', 'IY']",real,8,long
+95,housekeeper,1.95e-06,3.29,NOUN,"['HH', 'AW1', 'S', 'K', 'IY2', 'P', 'ER0']","['HH', 'AW', 'S', 'K', 'IY', 'P', 'ER']",real,7,long
+96,infusion,1.95e-06,3.29,NOUN,"['IH0', 'N', 'F', 'Y', 'UW1', 'ZH', 'AH0', 'N']","['IH', 'N', 'F', 'Y', 'UW', 'ZH', 'AH', 'N']",real,8,long
+97,markedly,1.95e-06,3.29,ADV,"['M', 'AA1', 'R', 'K', 'AH0', 'D', 'L', 'IY0']","['M', 'AA', 'R', 'K', 'AH', 'D', 'L', 'IY']",real,8,long
+98,mediator,1.95e-06,3.29,NOUN,"['M', 'IY1', 'D', 'IY0', 'EY2', 'T', 'ER0']","['M', 'IY', 'D', 'IY', 'EY', 'T', 'ER']",real,7,long
+99,sequential,1.95e-06,3.29,ADJ,"['S', 'AH0', 'K', 'W', 'EH1', 'N', 'CH', 'AH0', 'L']","['S', 'AH', 'K', 'W', 'EH', 'N', 'CH', 'AH', 'L']",real,9,long
+100,sudanese,1.95e-06,3.29,ADJ,"['S', 'UW2', 'D', 'AH0', 'N', 'IY1', 'Z']","['S', 'UW', 'D', 'AH', 'N', 'IY', 'Z']",real,7,long
+101,sunscreen,1.95e-06,3.29,VERB,"['S', 'AH0', 'N', 'S', 'K', 'R', 'IY1', 'N']","['S', 'AH', 'N', 'S', 'K', 'R', 'IY', 'N']",real,8,long
+102,unionist,1.95e-06,3.29,NOUN,"['Y', 'UW1', 'N', 'Y', 'AH0', 'N', 'AH0', 'S', 'T']","['Y', 'UW', 'N', 'Y', 'AH', 'N', 'AH', 'S', 'T']",real,9,long
+103,amplitude,1.91e-06,3.28,NOUN,"['AE1', 'M', 'P', 'L', 'AH0', 'T', 'UW2', 'D']","['AE', 'M', 'P', 'L', 'AH', 'T', 'UW', 'D']",real,8,long
+104,archival,1.91e-06,3.28,ADJ,"['AA0', 'R', 'K', 'AY1', 'V', 'AH0', 'L']","['AA', 'R', 'K', 'AY', 'V', 'AH', 'L']",real,7,long
+105,barbarian,1.91e-06,3.28,ADJ,"['B', 'AA0', 'R', 'B', 'EH1', 'R', 'IY0', 'AH0', 'N']","['B', 'AA', 'R', 'B', 'EH', 'R', 'IY', 'AH', 'N']",real,9,long
+106,constraint,1.91e-06,3.28,NOUN,"['K', 'AH0', 'N', 'S', 'T', 'R', 'EY1', 'N', 'T']","['K', 'AH', 'N', 'S', 'T', 'R', 'EY', 'N', 'T']",real,9,long
+107,decimal,1.91e-06,3.28,ADJ,"['D', 'EH1', 'S', 'AH0', 'M', 'AH0', 'L']","['D', 'EH', 'S', 'AH', 'M', 'AH', 'L']",real,7,long
+108,defunct,1.91e-06,3.28,ADJ,"['D', 'IH0', 'F', 'AH1', 'NG', 'K', 'T']","['D', 'IH', 'F', 'AH', 'NG', 'K', 'T']",real,7,long
+109,dignified,1.91e-06,3.28,ADJ,"['D', 'IH1', 'G', 'N', 'AH0', 'F', 'AY2', 'D']","['D', 'IH', 'G', 'N', 'AH', 'F', 'AY', 'D']",real,8,long
+110,grotesque,1.91e-06,3.28,ADJ,"['G', 'R', 'OW0', 'T', 'EH1', 'S', 'K']","['G', 'R', 'OW', 'T', 'EH', 'S', 'K']",real,7,long
+111,polymers,1.91e-06,3.28,NOUN,"['P', 'AA1', 'L', 'IH0', 'M', 'ER0', 'Z']","['P', 'AA', 'L', 'IH', 'M', 'ER', 'Z']",real,7,long
+112,proverbs,1.91e-06,3.28,NOUN,"['P', 'R', 'AA1', 'V', 'ER0', 'B', 'Z']","['P', 'R', 'AA', 'V', 'ER', 'B', 'Z']",real,7,long
+113,quadrant,1.91e-06,3.28,NOUN,"['K', 'W', 'AA1', 'D', 'R', 'AH0', 'N', 'T']","['K', 'W', 'AA', 'D', 'R', 'AH', 'N', 'T']",real,8,long
+114,recital,1.91e-06,3.28,NOUN,"['R', 'AH0', 'S', 'AY1', 'T', 'AH0', 'L']","['R', 'AH', 'S', 'AY', 'T', 'AH', 'L']",real,7,long
+115,scandalous,1.91e-06,3.28,ADJ,"['S', 'K', 'AE1', 'N', 'D', 'AH0', 'L', 'AH0', 'S']","['S', 'K', 'AE', 'N', 'D', 'AH', 'L', 'AH', 'S']",real,9,long
+116,specialize,1.91e-06,3.28,VERB,"['S', 'P', 'EH1', 'SH', 'AH0', 'L', 'AY2', 'Z']","['S', 'P', 'EH', 'SH', 'AH', 'L', 'AY', 'Z']",real,8,long
+117,swimsuit,1.91e-06,3.28,PROPN,"['S', 'W', 'IH1', 'M', 'S', 'UW2', 'T']","['S', 'W', 'IH', 'M', 'S', 'UW', 'T']",real,7,long
+118,topography,1.91e-06,3.28,NOUN,"['T', 'AH0', 'P', 'AA1', 'G', 'R', 'AH0', 'F', 'IY0']","['T', 'AH', 'P', 'AA', 'G', 'R', 'AH', 'F', 'IY']",real,9,long
+119,withhold,1.91e-06,3.28,VERB,"['W', 'IH0', 'TH', 'HH', 'OW1', 'L', 'D']","['W', 'IH', 'TH', 'HH', 'OW', 'L', 'D']",real,7,long
+120,yellowstone,1.91e-06,3.28,PROPN,"['Y', 'EH1', 'L', 'OW0', 'S', 'T', 'OW2', 'N']","['Y', 'EH', 'L', 'OW', 'S', 'T', 'OW', 'N']",real,8,long
+121,clinicians,1.86e-06,3.27,NOUN,"['K', 'L', 'IH0', 'N', 'IH1', 'SH', 'AH0', 'N', 'Z']","['K', 'L', 'IH', 'N', 'IH', 'SH', 'AH', 'N', 'Z']",real,9,long
+122,disclosures,1.86e-06,3.27,NOUN,"['D', 'IH0', 'S', 'K', 'L', 'OW1', 'ZH', 'ER0', 'Z']","['D', 'IH', 'S', 'K', 'L', 'OW', 'ZH', 'ER', 'Z']",real,9,long
+123,faithfully,1.86e-06,3.27,ADV,"['F', 'EY1', 'TH', 'F', 'AH0', 'L', 'IY0']","['F', 'EY', 'TH', 'F', 'AH', 'L', 'IY']",real,7,long
+124,hinduism,1.86e-06,3.27,NOUN,"['HH', 'IH1', 'N', 'JH', 'UW0', 'IH2', 'Z', 'AH0', 'M']","['HH', 'IH', 'N', 'JH', 'UW', 'IH', 'Z', 'AH', 'M']",real,9,long
+125,merciful,1.86e-06,3.27,ADJ,"['M', 'ER1', 'S', 'IH0', 'F', 'AH0', 'L']","['M', 'ER', 'S', 'IH', 'F', 'AH', 'L']",real,7,long
+126,monologue,1.86e-06,3.27,NOUN,"['M', 'AA1', 'N', 'AH0', 'L', 'AO2', 'G']","['M', 'AA', 'N', 'AH', 'L', 'AO', 'G']",real,7,long
+127,monoxide,1.86e-06,3.27,NOUN,"['M', 'AH0', 'N', 'AA1', 'K', 'S', 'AY0', 'D']","['M', 'AH', 'N', 'AA', 'K', 'S', 'AY', 'D']",real,8,long
+128,nonlinear,1.86e-06,3.27,ADJ,"['N', 'AA0', 'N', 'L', 'IH1', 'N', 'IY2', 'ER0']","['N', 'AA', 'N', 'L', 'IH', 'N', 'IY', 'ER']",real,8,long
+129,parasitic,1.86e-06,3.27,ADJ,"['P', 'EH2', 'R', 'AH0', 'S', 'IH1', 'T', 'IH0', 'K']","['P', 'EH', 'R', 'AH', 'S', 'IH', 'T', 'IH', 'K']",real,9,long
+130,pendulum,1.86e-06,3.27,NOUN,"['P', 'EH1', 'N', 'JH', 'AH0', 'L', 'AH0', 'M']","['P', 'EH', 'N', 'JH', 'AH', 'L', 'AH', 'M']",real,8,long
+131,potency,1.86e-06,3.27,NOUN,"['P', 'OW1', 'T', 'AH0', 'N', 'S', 'IY0']","['P', 'OW', 'T', 'AH', 'N', 'S', 'IY']",real,7,long
+132,precarious,1.86e-06,3.27,ADJ,"['P', 'R', 'IY0', 'K', 'EH1', 'R', 'IY0', 'AH0', 'S']","['P', 'R', 'IY', 'K', 'EH', 'R', 'IY', 'AH', 'S']",real,9,long
+133,pretext,1.86e-06,3.27,NOUN,"['P', 'R', 'IY1', 'T', 'EH2', 'K', 'S', 'T']","['P', 'R', 'IY', 'T', 'EH', 'K', 'S', 'T']",real,8,long
+134,proclaim,1.86e-06,3.27,VERB,"['P', 'R', 'OW0', 'K', 'L', 'EY1', 'M']","['P', 'R', 'OW', 'K', 'L', 'EY', 'M']",real,7,long
+135,reassurance,1.86e-06,3.27,NOUN,"['R', 'IY2', 'AH0', 'SH', 'UH1', 'R', 'AH0', 'N', 'S']","['R', 'IY', 'AH', 'SH', 'UH', 'R', 'AH', 'N', 'S']",real,9,long
+136,sedentary,1.38e-06,3.14,ADJ,"['S', 'EH1', 'D', 'AH0', 'N', 'T', 'EH2', 'R', 'IY0']","['S', 'EH', 'D', 'AH', 'N', 'T', 'EH', 'R', 'IY']",real,9,long
+137,someplace,1.38e-06,3.14,NOUN,"['S', 'AH1', 'M', 'P', 'L', 'EY2', 'S']","['S', 'AH', 'M', 'P', 'L', 'EY', 'S']",real,7,long
+138,starlight,1.38e-06,3.14,NOUN,"['S', 'T', 'AA1', 'R', 'L', 'AY2', 'T']","['S', 'T', 'AA', 'R', 'L', 'AY', 'T']",real,7,long
+139,steadfast,1.38e-06,3.14,ADJ,"['S', 'T', 'EH1', 'D', 'F', 'AE2', 'S', 'T']","['S', 'T', 'EH', 'D', 'F', 'AE', 'S', 'T']",real,8,long
+140,stomping,1.38e-06,3.14,VERB,"['S', 'T', 'AA1', 'M', 'P', 'IH0', 'NG']","['S', 'T', 'AA', 'M', 'P', 'IH', 'NG']",real,7,long
+141,stroking,1.38e-06,3.14,VERB,"['S', 'T', 'R', 'OW1', 'K', 'IH0', 'NG']","['S', 'T', 'R', 'OW', 'K', 'IH', 'NG']",real,7,long
+142,stylistic,1.38e-06,3.14,ADJ,"['S', 'T', 'AY0', 'L', 'IH1', 'S', 'T', 'IH0', 'K']","['S', 'T', 'AY', 'L', 'IH', 'S', 'T', 'IH', 'K']",real,9,long
+143,superpowers,1.38e-06,3.14,NOUN,"['S', 'UW2', 'P', 'ER0', 'P', 'AW1', 'ER0', 'Z']","['S', 'UW', 'P', 'ER', 'P', 'AW', 'ER', 'Z']",real,8,long
+144,syrians,1.38e-06,3.14,PROPN,"['S', 'IH1', 'R', 'IY0', 'AH0', 'N', 'Z']","['S', 'IH', 'R', 'IY', 'AH', 'N', 'Z']",real,7,long
+145,trampoline,1.38e-06,3.14,NOUN,"['T', 'R', 'AE2', 'M', 'P', 'AH0', 'L', 'IY1', 'N']","['T', 'R', 'AE', 'M', 'P', 'AH', 'L', 'IY', 'N']",real,9,long
+146,allotment,1.35e-06,3.13,NOUN,"['AH0', 'L', 'AA1', 'T', 'M', 'AH0', 'N', 'T']","['AH', 'L', 'AA', 'T', 'M', 'AH', 'N', 'T']",real,8,long
+147,cynicism,1.35e-06,3.13,NOUN,"['S', 'IH1', 'N', 'IH0', 'S', 'IH2', 'Z', 'AH0', 'M']","['S', 'IH', 'N', 'IH', 'S', 'IH', 'Z', 'AH', 'M']",real,9,long
+148,duality,1.35e-06,3.13,NOUN,"['D', 'UW0', 'AE1', 'L', 'AH0', 'T', 'IY0']","['D', 'UW', 'AE', 'L', 'AH', 'T', 'IY']",real,7,long
+149,duplex,1.35e-06,3.13,NOUN,"['D', 'UW1', 'P', 'L', 'EH2', 'K', 'S']","['D', 'UW', 'P', 'L', 'EH', 'K', 'S']",real,7,long
+150,hegemony,1.35e-06,3.13,NOUN,"['HH', 'IY0', 'JH', 'EH1', 'M', 'AH0', 'N', 'IY0']","['HH', 'IY', 'JH', 'EH', 'M', 'AH', 'N', 'IY']",real,8,long
+151,parentheses,1.35e-06,3.13,NOUN,"['P', 'ER0', 'EH1', 'N', 'TH', 'AH0', 'S', 'IY2', 'Z']","['P', 'ER', 'EH', 'N', 'TH', 'AH', 'S', 'IY', 'Z']",real,9,long
+152,peroxide,1.35e-06,3.13,NOUN,"['P', 'ER0', 'AA1', 'K', 'S', 'AY2', 'D']","['P', 'ER', 'AA', 'K', 'S', 'AY', 'D']",real,7,long
+153,upheaval,1.35e-06,3.13,NOUN,"['AH0', 'P', 'HH', 'IY1', 'V', 'AH0', 'L']","['AH', 'P', 'HH', 'IY', 'V', 'AH', 'L']",real,7,long
+154,bangladeshi,1.32e-06,3.12,PROPN,"['B', 'AE1', 'NG', 'L', 'AH0', 'D', 'EH2', 'SH', 'IY0']","['B', 'AE', 'NG', 'L', 'AH', 'D', 'EH', 'SH', 'IY']",real,9,long
+155,confluence,1.32e-06,3.12,NOUN,"['K', 'AA1', 'N', 'F', 'L', 'UW0', 'AH0', 'N', 'S']","['K', 'AA', 'N', 'F', 'L', 'UW', 'AH', 'N', 'S']",real,9,long
+156,deodorant,1.32e-06,3.12,NOUN,"['D', 'IY0', 'OW1', 'D', 'ER0', 'AH0', 'N', 'T']","['D', 'IY', 'OW', 'D', 'ER', 'AH', 'N', 'T']",real,8,long
+157,neonatal,1.32e-06,3.12,ADJ,"['N', 'IY2', 'OW0', 'N', 'EY1', 'T', 'AH0', 'L']","['N', 'IY', 'OW', 'N', 'EY', 'T', 'AH', 'L']",real,8,long
+158,patriarchy,1.32e-06,3.12,NOUN,"['P', 'EY1', 'T', 'R', 'IY0', 'AA2', 'R', 'K', 'IY0']","['P', 'EY', 'T', 'R', 'IY', 'AA', 'R', 'K', 'IY']",real,9,long
+159,readership,1.32e-06,3.12,NOUN,"['R', 'IY1', 'D', 'ER0', 'SH', 'IH2', 'P']","['R', 'IY', 'D', 'ER', 'SH', 'IH', 'P']",real,7,long
+160,schematic,1.32e-06,3.12,ADJ,"['S', 'K', 'IH0', 'M', 'AE1', 'T', 'IH0', 'K']","['S', 'K', 'IH', 'M', 'AE', 'T', 'IH', 'K']",real,8,long
+161,scoreless,1.32e-06,3.12,VERB,"['S', 'K', 'AO1', 'R', 'L', 'AH0', 'S']","['S', 'K', 'AO', 'R', 'L', 'AH', 'S']",real,7,long
+162,theologians,1.32e-06,3.12,NOUN,"['TH', 'IY2', 'AH0', 'L', 'OW1', 'JH', 'AH0', 'N', 'Z']","['TH', 'IY', 'AH', 'L', 'OW', 'JH', 'AH', 'N', 'Z']",real,9,long
+163,unharmed,1.32e-06,3.12,ADJ,"['AH0', 'N', 'HH', 'AA1', 'R', 'M', 'D']","['AH', 'N', 'HH', 'AA', 'R', 'M', 'D']",real,7,long
+164,untimely,1.32e-06,3.12,ADJ,"['AH0', 'N', 'T', 'AY1', 'M', 'L', 'IY0']","['AH', 'N', 'T', 'AY', 'M', 'L', 'IY']",real,7,long
+165,wondrous,1.32e-06,3.12,ADJ,"['W', 'AH1', 'N', 'D', 'R', 'AH0', 'S']","['W', 'AH', 'N', 'D', 'R', 'AH', 'S']",real,7,long
+166,hologram,1.29e-06,3.11,PROPN,"['HH', 'AA1', 'L', 'AH0', 'G', 'R', 'AE2', 'M']","['HH', 'AA', 'L', 'AH', 'G', 'R', 'AE', 'M']",real,8,long
+167,milligrams,1.29e-06,3.11,NOUN,"['M', 'IH1', 'L', 'AH0', 'G', 'R', 'AE2', 'M', 'Z']","['M', 'IH', 'L', 'AH', 'G', 'R', 'AE', 'M', 'Z']",real,9,long
+168,scapegoat,1.29e-06,3.11,NOUN,"['S', 'K', 'EY1', 'P', 'G', 'OW2', 'T']","['S', 'K', 'EY', 'P', 'G', 'OW', 'T']",real,7,long
+169,somerville,1e-06,3.0,PROPN,"['S', 'AH1', 'M', 'ER0', 'V', 'IH2', 'L']","['S', 'AH', 'M', 'ER', 'V', 'IH', 'L']",real,7,long
+170,superfluous,1e-06,3.0,ADJ,"['S', 'UW1', 'P', 'ER0', 'F', 'L', 'W', 'AH2', 'S']","['S', 'UW', 'P', 'ER', 'F', 'L', 'W', 'AH', 'S']",real,9,long
+171,telemetry,1e-06,3.0,NOUN,"['T', 'AH0', 'L', 'EH1', 'M', 'AH0', 'T', 'R', 'IY0']","['T', 'AH', 'L', 'EH', 'M', 'AH', 'T', 'R', 'IY']",real,9,long
+172,unisex,1e-06,3.0,NOUN,"['Y', 'UW1', 'N', 'IH0', 'S', 'EH2', 'K', 'S']","['Y', 'UW', 'N', 'IH', 'S', 'EH', 'K', 'S']",real,8,long
+173,westside,1e-06,3.0,NOUN,"['W', 'EH1', 'S', 'T', 'S', 'AY1', 'D']","['W', 'EH', 'S', 'T', 'S', 'AY', 'D']",real,7,long
+174,agonizing,9.77e-07,2.99,VERB,"['AE1', 'G', 'AH0', 'N', 'AY0', 'Z', 'IH0', 'NG']","['AE', 'G', 'AH', 'N', 'AY', 'Z', 'IH', 'NG']",real,8,long
+175,aristocrat,9.77e-07,2.99,NOUN,"['ER0', 'IH1', 'S', 'T', 'AH0', 'K', 'R', 'AE2', 'T']","['ER', 'IH', 'S', 'T', 'AH', 'K', 'R', 'AE', 'T']",real,9,long
+176,camaraderie,9.77e-07,2.99,NOUN,"['K', 'AA2', 'M', 'ER0', 'AA1', 'D', 'ER0', 'IY0']","['K', 'AA', 'M', 'ER', 'AA', 'D', 'ER', 'IY']",real,8,long
+177,deterrence,9.77e-07,2.99,NOUN,"['D', 'IH0', 'T', 'ER1', 'AH0', 'N', 'S']","['D', 'IH', 'T', 'ER', 'AH', 'N', 'S']",real,7,long
+178,juggernaut,9.77e-07,2.99,NOUN,"['JH', 'AH1', 'G', 'ER0', 'N', 'AO2', 'T']","['JH', 'AH', 'G', 'ER', 'N', 'AO', 'T']",real,7,long
+179,lackluster,9.77e-07,2.99,ADJ,"['L', 'AE1', 'K', 'L', 'AH2', 'S', 'T', 'ER0']","['L', 'AE', 'K', 'L', 'AH', 'S', 'T', 'ER']",real,8,long
+180,manicure,9.77e-07,2.99,NOUN,"['M', 'AE1', 'N', 'IH0', 'K', 'Y', 'ER0']","['M', 'AE', 'N', 'IH', 'K', 'Y', 'ER']",real,7,long
+181,narcissist,9.77e-07,2.99,NOUN,"['N', 'AA1', 'R', 'S', 'IH0', 'S', 'IH0', 'S', 'T']","['N', 'AA', 'R', 'S', 'IH', 'S', 'IH', 'S', 'T']",real,9,long
+182,baritone,9.55e-07,2.98,NOUN,"['B', 'EH1', 'R', 'AH0', 'T', 'OW2', 'N']","['B', 'EH', 'R', 'AH', 'T', 'OW', 'N']",real,7,long
+183,caloric,9.55e-07,2.98,ADJ,"['K', 'AH0', 'L', 'AO1', 'R', 'IH0', 'K']","['K', 'AH', 'L', 'AO', 'R', 'IH', 'K']",real,7,long
+184,hypothermia,9.55e-07,2.98,VERB,"['HH', 'AY2', 'P', 'AH0', 'TH', 'ER1', 'M', 'IY0', 'AH0']","['HH', 'AY', 'P', 'AH', 'TH', 'ER', 'M', 'IY', 'AH']",real,9,long
+185,raspberries,9.55e-07,2.98,NOUN,"['R', 'AE1', 'Z', 'B', 'EH2', 'R', 'IY0', 'Z']","['R', 'AE', 'Z', 'B', 'EH', 'R', 'IY', 'Z']",real,8,long
+186,subculture,9.55e-07,2.98,NOUN,"['S', 'AH1', 'B', 'K', 'AH2', 'L', 'CH', 'ER0']","['S', 'AH', 'B', 'K', 'AH', 'L', 'CH', 'ER']",real,8,long
+187,thoroughbred,9.55e-07,2.98,ADJ,"['TH', 'ER1', 'OW0', 'B', 'R', 'EH1', 'D']","['TH', 'ER', 'OW', 'B', 'R', 'EH', 'D']",real,7,long
+188,vindictive,9.55e-07,2.98,ADJ,"['V', 'IH0', 'N', 'D', 'IH1', 'K', 'T', 'IH0', 'V']","['V', 'IH', 'N', 'D', 'IH', 'K', 'T', 'IH', 'V']",real,9,long
+189,abhorrent,9.33e-07,2.97,ADJ,"['AE0', 'B', 'HH', 'AO1', 'R', 'AH0', 'N', 'T']","['AE', 'B', 'HH', 'AO', 'R', 'AH', 'N', 'T']",real,8,long
+190,anaerobic,9.33e-07,2.97,ADJ,"['AE2', 'N', 'ER0', 'OW1', 'B', 'IH0', 'K']","['AE', 'N', 'ER', 'OW', 'B', 'IH', 'K']",real,7,long
+191,coconuts,7.94e-07,2.9,NOUN,"['K', 'OW1', 'K', 'AH0', 'N', 'AH2', 'T', 'S']","['K', 'OW', 'K', 'AH', 'N', 'AH', 'T', 'S']",real,8,long
+192,destruct,7.94e-07,2.9,VERB,"['D', 'IH0', 'S', 'T', 'R', 'AH1', 'K', 'T']","['D', 'IH', 'S', 'T', 'R', 'AH', 'K', 'T']",real,8,long
+193,disengage,7.94e-07,2.9,VERB,"['D', 'IH0', 'S', 'IH0', 'N', 'G', 'EY1', 'JH']","['D', 'IH', 'S', 'IH', 'N', 'G', 'EY', 'JH']",real,8,long
+194,epicenter,7.94e-07,2.9,NOUN,"['EH1', 'P', 'AH0', 'S', 'EH2', 'N', 'T', 'ER0']","['EH', 'P', 'AH', 'S', 'EH', 'N', 'T', 'ER']",real,8,long
+195,grapevine,7.94e-07,2.9,NOUN,"['G', 'R', 'EY1', 'P', 'V', 'AY2', 'N']","['G', 'R', 'EY', 'P', 'V', 'AY', 'N']",real,7,long
+196,oscillations,7.94e-07,2.9,NOUN,"['AA2', 'S', 'AH0', 'L', 'EY1', 'SH', 'AH0', 'N', 'Z']","['AA', 'S', 'AH', 'L', 'EY', 'SH', 'AH', 'N', 'Z']",real,9,long
+197,patrolled,7.94e-07,2.9,VERB,"['P', 'AH0', 'T', 'R', 'OW1', 'L', 'D']","['P', 'AH', 'T', 'R', 'OW', 'L', 'D']",real,7,long
+198,platelet,7.94e-07,2.9,PROPN,"['P', 'L', 'EY1', 'T', 'L', 'AH0', 'T']","['P', 'L', 'EY', 'T', 'L', 'AH', 'T']",real,7,long
+199,polynesian,7.94e-07,2.9,ADJ,"['P', 'AA2', 'L', 'IH0', 'N', 'IY1', 'ZH', 'AH0', 'N']","['P', 'AA', 'L', 'IH', 'N', 'IY', 'ZH', 'AH', 'N']",real,9,long
+200,psychopathic,7.94e-07,2.9,ADJ,"['S', 'AY2', 'K', 'AH0', 'P', 'AE1', 'TH', 'IH0', 'K']","['S', 'AY', 'K', 'AH', 'P', 'AE', 'TH', 'IH', 'K']",real,9,long
+201,sculptural,7.94e-07,2.9,ADJ,"['S', 'K', 'AH1', 'L', 'P', 'CH', 'ER0', 'AH0', 'L']","['S', 'K', 'AH', 'L', 'P', 'CH', 'ER', 'AH', 'L']",real,9,long
+202,torrential,7.94e-07,2.9,ADJ,"['T', 'AO0', 'R', 'EH1', 'N', 'CH', 'AH0', 'L']","['T', 'AO', 'R', 'EH', 'N', 'CH', 'AH', 'L']",real,8,long
+203,tunneling,7.94e-07,2.9,VERB,"['T', 'AH1', 'N', 'AH0', 'L', 'IH0', 'NG']","['T', 'AH', 'N', 'AH', 'L', 'IH', 'NG']",real,7,long
+204,virtuoso,7.94e-07,2.9,NOUN,"['V', 'ER0', 'CH', 'UW0', 'OW1', 'S', 'OW0']","['V', 'ER', 'CH', 'UW', 'OW', 'S', 'OW']",real,7,long
+205,woodbury,7.94e-07,2.9,PROPN,"['W', 'UH1', 'D', 'B', 'EH2', 'R', 'IY0']","['W', 'UH', 'D', 'B', 'EH', 'R', 'IY']",real,7,long
+206,assailants,7.76e-07,2.89,NOUN,"['AH0', 'S', 'EY1', 'L', 'AH0', 'N', 'T', 'S']","['AH', 'S', 'EY', 'L', 'AH', 'N', 'T', 'S']",real,8,long
+207,bearable,7.76e-07,2.89,ADJ,"['B', 'EH1', 'R', 'AH0', 'B', 'AH0', 'L']","['B', 'EH', 'R', 'AH', 'B', 'AH', 'L']",real,7,long
+208,biosphere,7.76e-07,2.89,ADV,"['B', 'AY1', 'OW0', 'S', 'F', 'IH2', 'R']","['B', 'AY', 'OW', 'S', 'F', 'IH', 'R']",real,7,long
+209,cheekbones,7.76e-07,2.89,NOUN,"['CH', 'IY1', 'K', 'B', 'OW2', 'N', 'Z']","['CH', 'IY', 'K', 'B', 'OW', 'N', 'Z']",real,7,long
+210,culpable,7.76e-07,2.89,ADJ,"['K', 'AH1', 'L', 'P', 'AH0', 'B', 'AH0', 'L']","['K', 'AH', 'L', 'P', 'AH', 'B', 'AH', 'L']",real,8,long
+211,doolittle,7.76e-07,2.89,PROPN,"['D', 'UW1', 'L', 'IH2', 'T', 'AH0', 'L']","['D', 'UW', 'L', 'IH', 'T', 'AH', 'L']",real,7,long
+212,immaterial,7.76e-07,2.89,ADJ,"['IH2', 'M', 'AH0', 'T', 'IH1', 'R', 'IY0', 'AH0', 'L']","['IH', 'M', 'AH', 'T', 'IH', 'R', 'IY', 'AH', 'L']",real,9,long
+213,shrinkage,7.76e-07,2.89,NOUN,"['SH', 'R', 'IH1', 'NG', 'K', 'IH0', 'JH']","['SH', 'R', 'IH', 'NG', 'K', 'IH', 'JH']",real,7,long
+214,socialite,7.76e-07,2.89,NOUN,"['S', 'OW1', 'SH', 'AH0', 'L', 'AY2', 'T']","['S', 'OW', 'SH', 'AH', 'L', 'AY', 'T']",real,7,long
+215,archetypal,7.59e-07,2.88,ADJ,"['AA1', 'R', 'K', 'T', 'AY1', 'P', 'AH0', 'L']","['AA', 'R', 'K', 'T', 'AY', 'P', 'AH', 'L']",real,8,long
+216,asymmetry,7.59e-07,2.88,NOUN,"['EY2', 'S', 'IH1', 'M', 'AH0', 'T', 'R', 'IY0']","['EY', 'S', 'IH', 'M', 'AH', 'T', 'R', 'IY']",real,8,long
+217,bombardier,7.59e-07,2.88,NOUN,"['B', 'AA2', 'M', 'B', 'ER0', 'D', 'IH1', 'R']","['B', 'AA', 'M', 'B', 'ER', 'D', 'IH', 'R']",real,8,long
+218,bulldozer,7.59e-07,2.88,NOUN,"['B', 'UH1', 'L', 'D', 'OW2', 'Z', 'ER0']","['B', 'UH', 'L', 'D', 'OW', 'Z', 'ER']",real,7,long
+219,draconian,7.59e-07,2.88,ADJ,"['D', 'R', 'EY0', 'K', 'OW1', 'N', 'IY0', 'AH0', 'N']","['D', 'R', 'EY', 'K', 'OW', 'N', 'IY', 'AH', 'N']",real,9,long
+220,norwegians,7.59e-07,2.88,PROPN,"['N', 'AO0', 'R', 'W', 'IY1', 'JH', 'AH0', 'N', 'Z']","['N', 'AO', 'R', 'W', 'IY', 'JH', 'AH', 'N', 'Z']",real,9,long
+221,telepathy,7.59e-07,2.88,PROPN,"['T', 'AH0', 'L', 'EH1', 'P', 'AH0', 'TH', 'IY0']","['T', 'AH', 'L', 'EH', 'P', 'AH', 'TH', 'IY']",real,8,long
+222,virulent,7.59e-07,2.88,ADJ,"['V', 'IH1', 'R', 'AH0', 'L', 'AH0', 'N', 'T']","['V', 'IH', 'R', 'AH', 'L', 'AH', 'N', 'T']",real,8,long
+223,womanhood,7.59e-07,2.88,NOUN,"['W', 'UH1', 'M', 'AH0', 'N', 'HH', 'UH2', 'D']","['W', 'UH', 'M', 'AH', 'N', 'HH', 'UH', 'D']",real,8,long
+224,climactic,7.41e-07,2.87,ADJ,"['K', 'L', 'AY0', 'M', 'AE1', 'K', 'T', 'IH0', 'K']","['K', 'L', 'AY', 'M', 'AE', 'K', 'T', 'IH', 'K']",real,9,long
+225,daydreaming,7.41e-07,2.87,VERB,"['D', 'EY1', 'D', 'R', 'IY2', 'M', 'IH0', 'NG']","['D', 'EY', 'D', 'R', 'IY', 'M', 'IH', 'NG']",real,8,long
+226,diabetics,7.41e-07,2.87,NOUN,"['D', 'AY2', 'AH0', 'B', 'EH1', 'T', 'IH0', 'K', 'S']","['D', 'AY', 'AH', 'B', 'EH', 'T', 'IH', 'K', 'S']",real,9,long
+227,discarding,7.41e-07,2.87,VERB,"['D', 'IH0', 'S', 'K', 'AA1', 'R', 'D', 'IH0', 'NG']","['D', 'IH', 'S', 'K', 'AA', 'R', 'D', 'IH', 'NG']",real,9,long
+228,discloses,7.41e-07,2.87,VERB,"['D', 'IH0', 'S', 'K', 'L', 'OW1', 'Z', 'IH0', 'Z']","['D', 'IH', 'S', 'K', 'L', 'OW', 'Z', 'IH', 'Z']",real,9,long

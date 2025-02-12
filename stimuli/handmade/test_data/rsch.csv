@@ -1,0 +1,110 @@
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+0,their,0.00214,6.33,PRON,"['DH', 'EH1', 'R']","['DH', 'EH', 'R']",real,3,short
+1,its,0.00138,6.14,PRON,"['IH1', 'T', 'S']","['IH', 'T', 'S']",real,3,short
+2,into,0.00129,6.11,ADP,"['IH0', 'N', 'T', 'UW1']","['IH', 'N', 'T', 'UW']",real,4,short
+3,because,0.00107,6.03,SCONJ,"['B', 'IH0', 'K', 'AO1', 'Z']","['B', 'IH', 'K', 'AO', 'Z']",real,5,short
+4,really,0.000933,5.97,ADV,"['R', 'IH1', 'L', 'IY0']","['R', 'IH', 'L', 'IY']",real,4,short
+5,being,0.000891,5.95,AUX,"['B', 'IY1', 'IH0', 'NG']","['B', 'IY', 'IH', 'NG']",real,4,short
+6,going,0.000871,5.94,VERB,"['G', 'OW1', 'IH0', 'NG']","['G', 'OW', 'IH', 'NG']",real,4,short
+7,always,0.000575,5.76,ADV,"['AO1', 'L', 'W', 'EY2', 'Z']","['AO', 'L', 'W', 'EY', 'Z']",real,5,short
+8,another,0.00055,5.74,PRON,"['AH0', 'N', 'AH1', 'DH', 'ER0']","['AH', 'N', 'AH', 'DH', 'ER']",real,5,short
+9,things,0.00055,5.74,NOUN,"['TH', 'IH1', 'NG', 'Z']","['TH', 'IH', 'NG', 'Z']",real,4,short
+10,without,0.00049,5.69,ADP,"['W', 'IH0', 'TH', 'AW1', 'T']","['W', 'IH', 'TH', 'AW', 'T']",real,5,short
+11,doing,0.000398,5.6,VERB,"['D', 'UW1', 'IH0', 'NG']","['D', 'UW', 'IH', 'NG']",real,4,short
+12,called,0.000389,5.59,VERB,"['K', 'AO1', 'L', 'D']","['K', 'AO', 'L', 'D']",real,4,short
+13,having,0.000389,5.59,VERB,"['HH', 'AE1', 'V', 'IH0', 'NG']","['HH', 'AE', 'V', 'IH', 'NG']",real,5,short
+14,however,0.00038,5.58,ADV,"['HH', 'AW2', 'EH1', 'V', 'ER0']","['HH', 'AW', 'EH', 'V', 'ER']",real,5,short
+15,getting,0.000372,5.57,VERB,"['G', 'EH1', 'T', 'IH0', 'NG']","['G', 'EH', 'T', 'IH', 'NG']",real,5,short
+16,nothing,0.000355,5.55,PRON,"['N', 'AH1', 'TH', 'IH0', 'NG']","['N', 'AH', 'TH', 'IH', 'NG']",real,5,short
+17,later,0.000309,5.49,ADV,"['L', 'EY1', 'T', 'ER0']","['L', 'EY', 'T', 'ER']",real,4,short
+18,maybe,0.000282,5.45,ADV,"['M', 'EY1', 'B', 'IY0']","['M', 'EY', 'B', 'IY']",real,4,short
+19,within,0.000275,5.44,ADP,"['W', 'IH0', 'DH', 'IH1', 'N']","['W', 'IH', 'DH', 'IH', 'N']",real,5,short
+20,social,0.000263,5.42,ADJ,"['S', 'OW1', 'SH', 'AH0', 'L']","['S', 'OW', 'SH', 'AH', 'L']",real,5,short
+21,become,0.000251,5.4,VERB,"['B', 'IH0', 'K', 'AH1', 'M']","['B', 'IH', 'K', 'AH', 'M']",real,5,short
+22,known,0.000245,5.39,VERB,"['N', 'OW1', 'N']","['N', 'OW', 'N']",real,3,short
+23,research,0.000245,5.39,NOUN,"['R', 'IY0', 'S', 'ER1', 'CH']","['R', 'IY', 'S', 'ER', 'CH']",real,5,short
+24,awesome,8.32e-05,4.92,ADJ,"['AA1', 'S', 'AH0', 'M']","['AA', 'S', 'AH', 'M']",real,4,short
+25,marriage,8.13e-05,4.91,NOUN,"['M', 'EH1', 'R', 'IH0', 'JH']","['M', 'EH', 'R', 'IH', 'JH']",real,5,short
+26,greater,7.94e-05,4.9,ADJ,"['G', 'R', 'EY1', 'T', 'ER0']","['G', 'R', 'EY', 'T', 'ER']",real,5,short
+27,overall,7.94e-05,4.9,ADJ,"['OW1', 'V', 'ER0', 'AO2', 'L']","['OW', 'V', 'ER', 'AO', 'L']",real,5,short
+28,highly,7.76e-05,4.89,ADV,"['HH', 'AY1', 'L', 'IY0']","['HH', 'AY', 'L', 'IY']",real,4,short
+29,teacher,7.59e-05,4.88,NOUN,"['T', 'IY1', 'CH', 'ER0']","['T', 'IY', 'CH', 'ER']",real,4,short
+30,truly,7.41e-05,4.87,ADV,"['T', 'R', 'UW1', 'L', 'IY0']","['T', 'R', 'UW', 'L', 'IY']",real,5,short
+31,agreed,6.92e-05,4.84,VERB,"['AH0', 'G', 'R', 'IY1', 'D']","['AH', 'G', 'R', 'IY', 'D']",real,5,short
+32,southern,6.92e-05,4.84,ADJ,"['S', 'AH1', 'DH', 'ER0', 'N']","['S', 'AH', 'DH', 'ER', 'N']",real,5,short
+33,fourth,6.76e-05,4.83,ADJ,"['F', 'AO1', 'R', 'TH']","['F', 'AO', 'R', 'TH']",real,4,short
+34,realize,6.76e-05,4.83,VERB,"['R', 'IY1', 'L', 'AY2', 'Z']","['R', 'IY', 'L', 'AY', 'Z']",real,5,short
+35,surface,6.76e-05,4.83,NOUN,"['S', 'ER1', 'F', 'AH0', 'S']","['S', 'ER', 'F', 'AH', 'S']",real,5,short
+36,wedding,6.76e-05,4.83,NOUN,"['W', 'EH1', 'D', 'IH0', 'NG']","['W', 'EH', 'D', 'IH', 'NG']",real,5,short
+37,healthy,6.31e-05,4.8,ADJ,"['HH', 'EH1', 'L', 'TH', 'IY0']","['HH', 'EH', 'L', 'TH', 'IY']",real,5,short
+38,indeed,6.17e-05,4.79,ADV,"['IH0', 'N', 'D', 'IY1', 'D']","['IH', 'N', 'D', 'IY', 'D']",real,5,short
+39,eastern,6.03e-05,4.78,ADJ,"['IY1', 'S', 'T', 'ER0', 'N']","['IY', 'S', 'T', 'ER', 'N']",real,5,short
+40,fifth,6.03e-05,4.78,ADJ,"['F', 'IH1', 'F', 'TH']","['F', 'IH', 'F', 'TH']",real,4,short
+41,birthday,5.75e-05,4.76,NOUN,"['B', 'ER1', 'TH', 'D', 'EY2']","['B', 'ER', 'TH', 'D', 'EY']",real,5,short
+42,forever,5.5e-05,4.74,ADV,"['F', 'ER0', 'EH1', 'V', 'ER0']","['F', 'ER', 'EH', 'V', 'ER']",real,5,short
+43,lovely,5.5e-05,4.74,ADJ,"['L', 'AH1', 'V', 'L', 'IY0']","['L', 'AH', 'V', 'L', 'IY']",real,5,short
+44,failure,5.25e-05,4.72,NOUN,"['F', 'EY1', 'L', 'Y', 'ER0']","['F', 'EY', 'L', 'Y', 'ER']",real,5,short
+45,turning,5.13e-05,4.71,VERB,"['T', 'ER1', 'N', 'IH0', 'NG']","['T', 'ER', 'N', 'IH', 'NG']",real,5,short
+46,update,4.9e-05,4.69,VERB,"['AH0', 'P', 'D', 'EY1', 'T']","['AH', 'P', 'D', 'EY', 'T']",real,5,short
+47,affairs,4.68e-05,4.67,NOUN,"['AH0', 'F', 'EH1', 'R', 'Z']","['AH', 'F', 'EH', 'R', 'Z']",real,5,short
+48,fishing,2.95e-05,4.47,NOUN,"['F', 'IH1', 'SH', 'IH0', 'NG']","['F', 'IH', 'SH', 'IH', 'NG']",real,5,short
+49,gotten,2.95e-05,4.47,VERB,"['G', 'AA1', 'T', 'AH0', 'N']","['G', 'AA', 'T', 'AH', 'N']",real,5,short
+50,railway,2.88e-05,4.46,NOUN,"['R', 'EY1', 'L', 'W', 'EY2']","['R', 'EY', 'L', 'W', 'EY']",real,5,short
+51,beating,2.69e-05,4.43,VERB,"['B', 'IY1', 'T', 'IH0', 'NG']","['B', 'IY', 'T', 'IH', 'NG']",real,5,short
+52,alright,2.63e-05,4.42,INTJ,"['AO2', 'L', 'R', 'AY1', 'T']","['AO', 'L', 'R', 'AY', 'T']",real,5,short
+53,behalf,2.63e-05,4.42,NOUN,"['B', 'IH0', 'HH', 'AE1', 'F']","['B', 'IH', 'HH', 'AE', 'F']",real,5,short
+54,nervous,2.63e-05,4.42,ADJ,"['N', 'ER1', 'V', 'AH0', 'S']","['N', 'ER', 'V', 'AH', 'S']",real,5,short
+55,rarely,2.63e-05,4.42,ADV,"['R', 'EH1', 'R', 'L', 'IY0']","['R', 'EH', 'R', 'L', 'IY']",real,5,short
+56,sexy,2.63e-05,4.42,ADJ,"['S', 'EH1', 'K', 'S', 'IY0']","['S', 'EH', 'K', 'S', 'IY']",real,5,short
+57,whoever,2.63e-05,4.42,PRON,"['HH', 'UW0', 'EH1', 'V', 'ER0']","['HH', 'UW', 'EH', 'V', 'ER']",real,5,short
+58,whereas,2.57e-05,4.41,SCONJ,"['W', 'EH0', 'R', 'AE1', 'Z']","['W', 'EH', 'R', 'AE', 'Z']",real,5,short
+59,insane,2.51e-05,4.4,ADJ,"['IH0', 'N', 'S', 'EY1', 'N']","['IH', 'N', 'S', 'EY', 'N']",real,5,short
+60,thrown,2.51e-05,4.4,VERB,"['TH', 'R', 'OW1', 'N']","['TH', 'R', 'OW', 'N']",real,4,short
+61,abroad,2.45e-05,4.39,ADV,"['AH0', 'B', 'R', 'AO1', 'D']","['AH', 'B', 'R', 'AO', 'D']",real,5,short
+62,assigned,2.45e-05,4.39,VERB,"['AH0', 'S', 'AY1', 'N', 'D']","['AH', 'S', 'AY', 'N', 'D']",real,5,short
+63,fallen,2.45e-05,4.39,VERB,"['F', 'AA1', 'L', 'AH0', 'N']","['F', 'AA', 'L', 'AH', 'N']",real,5,short
+64,makeup,2.45e-05,4.39,NOUN,"['M', 'EY1', 'K', 'AH2', 'P']","['M', 'EY', 'K', 'AH', 'P']",real,5,short
+65,asleep,2.29e-05,4.36,ADJ,"['AH0', 'S', 'L', 'IY1', 'P']","['AH', 'S', 'L', 'IY', 'P']",real,5,short
+66,begun,2.29e-05,4.36,VERB,"['B', 'IH0', 'G', 'AH1', 'N']","['B', 'IH', 'G', 'AH', 'N']",real,5,short
+67,outcome,2.24e-05,4.35,VERB,"['AW1', 'T', 'K', 'AH2', 'M']","['AW', 'T', 'K', 'AH', 'M']",real,5,short
+68,wooden,2.14e-05,4.33,ADJ,"['W', 'UH1', 'D', 'AH0', 'N']","['W', 'UH', 'D', 'AH', 'N']",real,5,short
+69,footage,2.04e-05,4.31,NOUN,"['F', 'UH1', 'T', 'IH0', 'JH']","['F', 'UH', 'T', 'IH', 'JH']",real,5,short
+70,goodbye,2e-05,4.3,NOUN,"['G', 'UH2', 'D', 'B', 'AY1']","['G', 'UH', 'D', 'B', 'AY']",real,5,short
+71,carrier,1.95e-05,4.29,NOUN,"['K', 'AE1', 'R', 'IY0', 'ER0']","['K', 'AE', 'R', 'IY', 'ER']",real,5,short
+72,turkish,1.91e-05,4.28,ADJ,"['T', 'ER1', 'K', 'IH0', 'SH']","['T', 'ER', 'K', 'IH', 'SH']",real,5,short
+73,gathered,1.86e-05,4.27,VERB,"['G', 'AE1', 'DH', 'ER0', 'D']","['G', 'AE', 'DH', 'ER', 'D']",real,5,short
+74,passage,1.86e-05,4.27,NOUN,"['P', 'AE1', 'S', 'AH0', 'JH']","['P', 'AE', 'S', 'AH', 'JH']",real,5,short
+75,announce,1.82e-05,4.26,VERB,"['AH0', 'N', 'AW1', 'N', 'S']","['AH', 'N', 'AW', 'N', 'S']",real,5,short
+76,offense,1.82e-05,4.26,NOUN,"['AH0', 'F', 'EH1', 'N', 'S']","['AH', 'F', 'EH', 'N', 'S']",real,5,short
+77,emperor,1.78e-05,4.25,NOUN,"['EH1', 'M', 'P', 'ER0', 'ER0']","['EH', 'M', 'P', 'ER', 'ER']",real,5,short
+78,forgive,1.78e-05,4.25,VERB,"['F', 'ER0', 'G', 'IH1', 'V']","['F', 'ER', 'G', 'IH', 'V']",real,5,short
+79,outdoor,1.7e-05,4.23,NOUN,"['AW1', 'T', 'D', 'AO2', 'R']","['AW', 'T', 'D', 'AO', 'R']",real,5,short
+80,outfit,1.66e-05,4.22,NOUN,"['AW1', 'T', 'F', 'IH2', 'T']","['AW', 'T', 'F', 'IH', 'T']",real,5,short
+81,safely,1.66e-05,4.22,ADV,"['S', 'EY1', 'F', 'L', 'IY0']","['S', 'EY', 'F', 'L', 'IY']",real,5,short
+82,highlight,1.62e-05,4.21,VERB,"['HH', 'AY1', 'L', 'AY2', 'T']","['HH', 'AY', 'L', 'AY', 'T']",real,5,short
+83,stole,1.62e-05,4.21,VERB,"['S', 'T', 'OW1', 'L']","['S', 'T', 'OW', 'L']",real,4,short
+84,dealt,1.58e-05,4.2,VERB,"['D', 'EH1', 'L', 'T']","['D', 'EH', 'L', 'T']",real,4,short
+85,filmed,1.15e-05,4.06,VERB,"['F', 'IH1', 'L', 'M', 'D']","['F', 'IH', 'L', 'M', 'D']",real,5,short
+86,fried,1.15e-05,4.06,VERB,"['F', 'R', 'AY1', 'D']","['F', 'R', 'AY', 'D']",real,4,short
+87,halfway,1.15e-05,4.06,ADV,"['HH', 'AE1', 'F', 'W', 'EY1']","['HH', 'AE', 'F', 'W', 'EY']",real,5,short
+88,happier,1.15e-05,4.06,ADJ,"['HH', 'AE1', 'P', 'IY0', 'ER0']","['HH', 'AE', 'P', 'IY', 'ER']",real,5,short
+89,someday,1.12e-05,4.05,NOUN,"['S', 'AH1', 'M', 'D', 'EY2']","['S', 'AH', 'M', 'D', 'EY']",real,5,short
+90,aging,1.1e-05,4.04,VERB,"['EY1', 'JH', 'IH0', 'NG']","['EY', 'JH', 'IH', 'NG']",real,4,short
+91,airline,1.1e-05,4.04,NOUN,"['EH1', 'R', 'L', 'AY2', 'N']","['EH', 'R', 'L', 'AY', 'N']",real,5,short
+92,blows,1.1e-05,4.04,VERB,"['B', 'L', 'OW1', 'Z']","['B', 'L', 'OW', 'Z']",real,4,short
+93,renewed,1.1e-05,4.04,VERB,"['R', 'IH0', 'N', 'UW1', 'D']","['R', 'IH', 'N', 'UW', 'D']",real,5,short
+94,thermal,1.1e-05,4.04,ADJ,"['TH', 'ER1', 'M', 'AH0', 'L']","['TH', 'ER', 'M', 'AH', 'L']",real,5,short
+95,diving,1.05e-05,4.02,VERB,"['D', 'AY1', 'V', 'IH0', 'NG']","['D', 'AY', 'V', 'IH', 'NG']",real,5,short
+96,innings,1.05e-05,4.02,VERB,"['IH1', 'N', 'IH0', 'NG', 'Z']","['IH', 'N', 'IH', 'NG', 'Z']",real,5,short
+97,keeper,1.05e-05,4.02,NOUN,"['K', 'IY1', 'P', 'ER0']","['K', 'IY', 'P', 'ER']",real,4,short
+98,liar,1.05e-05,4.02,NOUN,"['L', 'AY1', 'ER0']","['L', 'AY', 'ER']",real,3,short
+99,utterly,1.05e-05,4.02,ADV,"['AH1', 'T', 'ER0', 'L', 'IY0']","['AH', 'T', 'ER', 'L', 'IY']",real,5,short
+100,workout,1.05e-05,4.02,NOUN,"['W', 'ER1', 'K', 'AW2', 'T']","['W', 'ER', 'K', 'AW', 'T']",real,5,short
+101,goddess,1.02e-05,4.01,NOUN,"['G', 'AA1', 'D', 'AH0', 'S']","['G', 'AA', 'D', 'AH', 'S']",real,5,short
+102,liquor,1.02e-05,4.01,NOUN,"['L', 'IH1', 'K', 'ER0']","['L', 'IH', 'K', 'ER']",real,4,short
+103,wolves,1.02e-05,4.01,NOUN,"['W', 'UH1', 'L', 'V', 'Z']","['W', 'UH', 'L', 'V', 'Z']",real,5,short
+104,lottery,1e-05,4.0,NOUN,"['L', 'AA1', 'T', 'ER0', 'IY0']","['L', 'AA', 'T', 'ER', 'IY']",real,5,short
+105,outlet,1e-05,4.0,NOUN,"['AW1', 'T', 'L', 'EH2', 'T']","['AW', 'T', 'L', 'EH', 'T']",real,5,short
+106,screwed,1e-05,4.0,VERB,"['S', 'K', 'R', 'UW1', 'D']","['S', 'K', 'R', 'UW', 'D']",real,5,short
+107,surveys,1e-05,4.0,NOUN,"['S', 'ER1', 'V', 'EY2', 'Z']","['S', 'ER', 'V', 'EY', 'Z']",real,5,short
+108,wished,1e-05,4.0,VERB,"['W', 'IH1', 'SH', 'T']","['W', 'IH', 'SH', 'T']",real,4,short

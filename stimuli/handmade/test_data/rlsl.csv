@@ -1,0 +1,126 @@
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+0,albuquerque,3.16e-06,3.5,PROPN,"['AE1', 'L', 'B', 'AH0', 'K', 'ER0', 'K', 'IY0']","['AE', 'L', 'B', 'AH', 'K', 'ER', 'K', 'IY']",real,8,long
+1,barbados,3.16e-06,3.5,PROPN,"['B', 'AA0', 'R', 'B', 'EY1', 'D', 'OW0', 'S']","['B', 'AA', 'R', 'B', 'EY', 'D', 'OW', 'S']",real,8,long
+2,broccoli,3.16e-06,3.5,VERB,"['B', 'R', 'AA1', 'K', 'AH0', 'L', 'IY0']","['B', 'R', 'AA', 'K', 'AH', 'L', 'IY']",real,7,long
+3,honolulu,3.16e-06,3.5,PROPN,"['HH', 'AA2', 'N', 'AH0', 'L', 'UW1', 'L', 'UW0']","['HH', 'AA', 'N', 'AH', 'L', 'UW', 'L', 'UW']",real,8,long
+4,pulmonary,3.16e-06,3.5,ADJ,"['P', 'UH1', 'L', 'M', 'AH0', 'N', 'EH2', 'R', 'IY0']","['P', 'UH', 'L', 'M', 'AH', 'N', 'EH', 'R', 'IY']",real,9,long
+5,resilient,3.16e-06,3.5,ADJ,"['R', 'IH0', 'Z', 'IH1', 'L', 'Y', 'AH0', 'N', 'T']","['R', 'IH', 'Z', 'IH', 'L', 'Y', 'AH', 'N', 'T']",real,9,long
+6,crocodile,3.09e-06,3.49,NOUN,"['K', 'R', 'AA1', 'K', 'AH0', 'D', 'AY2', 'L']","['K', 'R', 'AA', 'K', 'AH', 'D', 'AY', 'L']",real,8,long
+7,pragmatic,3.09e-06,3.49,ADJ,"['P', 'R', 'AE0', 'G', 'M', 'AE1', 'T', 'IH0', 'K']","['P', 'R', 'AE', 'G', 'M', 'AE', 'T', 'IH', 'K']",real,9,long
+8,quentin,3.09e-06,3.49,PROPN,"['K', 'W', 'EH1', 'N', 'T', 'IH0', 'N']","['K', 'W', 'EH', 'N', 'T', 'IH', 'N']",real,7,long
+9,avalanche,3.02e-06,3.48,NOUN,"['AE1', 'V', 'AH0', 'L', 'AE2', 'N', 'CH']","['AE', 'V', 'AH', 'L', 'AE', 'N', 'CH']",real,7,long
+10,azerbaijan,3.02e-06,3.48,PROPN,"['AA2', 'Z', 'ER0', 'B', 'AY0', 'JH', 'AA1', 'N']","['AA', 'Z', 'ER', 'B', 'AY', 'JH', 'AA', 'N']",real,8,long
+11,cadillac,3.02e-06,3.48,PROPN,"['K', 'AE1', 'D', 'AH0', 'L', 'AE2', 'K']","['K', 'AE', 'D', 'AH', 'L', 'AE', 'K']",real,7,long
+12,caramel,3.02e-06,3.48,PROPN,"['K', 'EH1', 'R', 'AH0', 'M', 'AH0', 'L']","['K', 'EH', 'R', 'AH', 'M', 'AH', 'L']",real,7,long
+13,ecstasy,3.02e-06,3.48,NOUN,"['EH1', 'K', 'S', 'T', 'AH0', 'S', 'IY0']","['EH', 'K', 'S', 'T', 'AH', 'S', 'IY']",real,7,long
+14,jeremiah,3.02e-06,3.48,PROPN,"['JH', 'EH2', 'R', 'AH0', 'M', 'AY1', 'AH0']","['JH', 'EH', 'R', 'AH', 'M', 'AY', 'AH']",real,7,long
+15,placebo,3.02e-06,3.48,NOUN,"['P', 'L', 'AH0', 'S', 'IY1', 'B', 'OW0']","['P', 'L', 'AH', 'S', 'IY', 'B', 'OW']",real,7,long
+16,anomaly,2.95e-06,3.47,NOUN,"['AH0', 'N', 'AA1', 'M', 'AH0', 'L', 'IY0']","['AH', 'N', 'AA', 'M', 'AH', 'L', 'IY']",real,7,long
+17,sheridan,2.95e-06,3.47,PROPN,"['SH', 'EH1', 'R', 'IH0', 'D', 'AH0', 'N']","['SH', 'EH', 'R', 'IH', 'D', 'AH', 'N']",real,7,long
+18,vortex,2.95e-06,3.47,NOUN,"['V', 'AO1', 'R', 'T', 'EH0', 'K', 'S']","['V', 'AO', 'R', 'T', 'EH', 'K', 'S']",real,7,long
+19,burgundy,2.88e-06,3.46,NOUN,"['B', 'ER1', 'G', 'AH0', 'N', 'D', 'IY0']","['B', 'ER', 'G', 'AH', 'N', 'D', 'IY']",real,7,long
+20,kendrick,2.88e-06,3.46,PROPN,"['K', 'EH1', 'N', 'D', 'R', 'IH0', 'K']","['K', 'EH', 'N', 'D', 'R', 'IH', 'K']",real,7,long
+21,leukemia,2.88e-06,3.46,NOUN,"['L', 'UW0', 'K', 'IY1', 'M', 'IY0', 'AH0']","['L', 'UW', 'K', 'IY', 'M', 'IY', 'AH']",real,7,long
+22,avocado,2.82e-06,3.45,NOUN,"['AE2', 'V', 'AH0', 'K', 'AA1', 'D', 'OW0']","['AE', 'V', 'AH', 'K', 'AA', 'D', 'OW']",real,7,long
+23,blatant,2.82e-06,3.45,ADJ,"['B', 'L', 'EY1', 'T', 'AH0', 'N', 'T']","['B', 'L', 'EY', 'T', 'AH', 'N', 'T']",real,7,long
+24,diaspora,2.82e-06,3.45,PROPN,"['D', 'AY0', 'AE1', 'S', 'P', 'ER0', 'AH0']","['D', 'AY', 'AE', 'S', 'P', 'ER', 'AH']",real,7,long
+25,pasadena,2.82e-06,3.45,PROPN,"['P', 'AE2', 'S', 'AH0', 'D', 'IY1', 'N', 'ER0']","['P', 'AE', 'S', 'AH', 'D', 'IY', 'N', 'ER']",real,8,long
+26,scarlett,2.82e-06,3.45,PROPN,"['S', 'K', 'AA1', 'R', 'L', 'IH0', 'T']","['S', 'K', 'AA', 'R', 'L', 'IH', 'T']",real,7,long
+27,synagogue,2.82e-06,3.45,NOUN,"['S', 'IH1', 'N', 'AH0', 'G', 'AO2', 'G']","['S', 'IH', 'N', 'AH', 'G', 'AO', 'G']",real,7,long
+28,episcopal,2.75e-06,3.44,PROPN,"['IH0', 'P', 'IH1', 'S', 'K', 'AH0', 'P', 'AH0', 'L']","['IH', 'P', 'IH', 'S', 'K', 'AH', 'P', 'AH', 'L']",real,9,long
+29,lavender,2.75e-06,3.44,VERB,"['L', 'AE1', 'V', 'AH0', 'N', 'D', 'ER0']","['L', 'AE', 'V', 'AH', 'N', 'D', 'ER']",real,7,long
+30,nicaragua,2.75e-06,3.44,PROPN,"['N', 'IH2', 'K', 'ER0', 'AA1', 'G', 'W', 'AH0']","['N', 'IH', 'K', 'ER', 'AA', 'G', 'W', 'AH']",real,8,long
+31,torpedo,2.75e-06,3.44,NOUN,"['T', 'AO0', 'R', 'P', 'IY1', 'D', 'OW2']","['T', 'AO', 'R', 'P', 'IY', 'D', 'OW']",real,7,long
+32,hallelujah,2e-06,3.3,PROPN,"['HH', 'AE2', 'L', 'AH0', 'L', 'UW1', 'Y', 'AH0']","['HH', 'AE', 'L', 'AH', 'L', 'UW', 'Y', 'AH']",real,8,long
+33,labrador,2e-06,3.3,PROPN,"['L', 'AE1', 'B', 'R', 'AH0', 'D', 'AO2', 'R']","['L', 'AE', 'B', 'R', 'AH', 'D', 'AO', 'R']",real,8,long
+34,margarita,2e-06,3.3,NOUN,"['M', 'AA2', 'R', 'G', 'ER0', 'IY1', 'T', 'AH0']","['M', 'AA', 'R', 'G', 'ER', 'IY', 'T', 'AH']",real,8,long
+35,celsius,1.95e-06,3.29,NOUN,"['S', 'EH1', 'L', 'S', 'IY0', 'AH0', 'S']","['S', 'EH', 'L', 'S', 'IY', 'AH', 'S']",real,7,long
+36,costello,1.95e-06,3.29,PROPN,"['K', 'AO2', 'S', 'T', 'EH1', 'L', 'OW0']","['K', 'AO', 'S', 'T', 'EH', 'L', 'OW']",real,7,long
+37,eradicate,1.95e-06,3.29,VERB,"['IH0', 'R', 'AE1', 'D', 'AH0', 'K', 'EY2', 'T']","['IH', 'R', 'AE', 'D', 'AH', 'K', 'EY', 'T']",real,8,long
+38,mahogany,1.95e-06,3.29,NOUN,"['M', 'AH0', 'HH', 'AA1', 'G', 'AH0', 'N', 'IY0']","['M', 'AH', 'HH', 'AA', 'G', 'AH', 'N', 'IY']",real,8,long
+39,mozambique,1.95e-06,3.29,PROPN,"['M', 'OW2', 'Z', 'AE0', 'M', 'B', 'IY1', 'K']","['M', 'OW', 'Z', 'AE', 'M', 'B', 'IY', 'K']",real,8,long
+40,sporadic,1.95e-06,3.29,ADJ,"['S', 'P', 'ER0', 'AE1', 'D', 'IH0', 'K']","['S', 'P', 'ER', 'AE', 'D', 'IH', 'K']",real,7,long
+41,tempest,1.95e-06,3.29,PROPN,"['T', 'EH1', 'M', 'P', 'AH0', 'S', 'T']","['T', 'EH', 'M', 'P', 'AH', 'S', 'T']",real,7,long
+42,trenton,1.95e-06,3.29,PROPN,"['T', 'R', 'EH1', 'N', 'T', 'AH0', 'N']","['T', 'R', 'EH', 'N', 'T', 'AH', 'N']",real,7,long
+43,tripoli,1.95e-06,3.29,PROPN,"['T', 'R', 'IH1', 'P', 'AH0', 'L', 'IY0']","['T', 'R', 'IH', 'P', 'AH', 'L', 'IY']",real,7,long
+44,zeppelin,1.95e-06,3.29,PROPN,"['Z', 'EH1', 'P', 'IH0', 'L', 'IH0', 'N']","['Z', 'EH', 'P', 'IH', 'L', 'IH', 'N']",real,7,long
+45,adamant,1.91e-06,3.28,ADJ,"['AE1', 'D', 'AH0', 'M', 'AH0', 'N', 'T']","['AE', 'D', 'AH', 'M', 'AH', 'N', 'T']",real,7,long
+46,badminton,1.91e-06,3.28,PROPN,"['B', 'AE1', 'D', 'M', 'IH2', 'N', 'T', 'AH0', 'N']","['B', 'AE', 'D', 'M', 'IH', 'N', 'T', 'AH', 'N']",real,9,long
+47,epitome,1.91e-06,3.28,NOUN,"['IH0', 'P', 'IH1', 'T', 'AH0', 'M', 'IY0']","['IH', 'P', 'IH', 'T', 'AH', 'M', 'IY']",real,7,long
+48,yosemite,1.91e-06,3.28,PROPN,"['Y', 'OW0', 'S', 'EH1', 'M', 'IH0', 'T', 'IY0']","['Y', 'OW', 'S', 'EH', 'M', 'IH', 'T', 'IY']",real,8,long
+49,cornelius,1.86e-06,3.27,PROPN,"['K', 'AO0', 'R', 'N', 'IY1', 'L', 'Y', 'AH0', 'S']","['K', 'AO', 'R', 'N', 'IY', 'L', 'Y', 'AH', 'S']",real,9,long
+50,hezbollah,1.86e-06,3.27,PROPN,"['HH', 'EH0', 'Z', 'B', 'AA1', 'L', 'AH0']","['HH', 'EH', 'Z', 'B', 'AA', 'L', 'AH']",real,7,long
+51,hiroshima,1.86e-06,3.27,PROPN,"['HH', 'IH2', 'R', 'OW0', 'SH', 'IY1', 'M', 'AH0']","['HH', 'IH', 'R', 'OW', 'SH', 'IY', 'M', 'AH']",real,8,long
+52,impetus,1.86e-06,3.27,NOUN,"['IH1', 'M', 'P', 'AH0', 'T', 'AH0', 'S']","['IH', 'M', 'P', 'AH', 'T', 'AH', 'S']",real,7,long
+53,mutiny,1.86e-06,3.27,NOUN,"['M', 'Y', 'UW1', 'T', 'AH0', 'N', 'IY0']","['M', 'Y', 'UW', 'T', 'AH', 'N', 'IY']",real,7,long
+54,poignant,1.86e-06,3.27,ADJ,"['P', 'OY1', 'N', 'Y', 'AH0', 'N', 'T']","['P', 'OY', 'N', 'Y', 'AH', 'N', 'T']",real,7,long
+55,socrates,1.86e-06,3.27,NOUN,"['S', 'AA1', 'K', 'R', 'AH0', 'T', 'IY2', 'Z']","['S', 'AA', 'K', 'R', 'AH', 'T', 'IY', 'Z']",real,8,long
+56,vanderbilt,1.86e-06,3.27,PROPN,"['V', 'AE1', 'N', 'D', 'ER0', 'B', 'IH0', 'L', 'T']","['V', 'AE', 'N', 'D', 'ER', 'B', 'IH', 'L', 'T']",real,9,long
+57,guillotine,1e-06,3.0,NOUN,"['G', 'IH1', 'L', 'AH0', 'T', 'IY2', 'N']","['G', 'IH', 'L', 'AH', 'T', 'IY', 'N']",real,7,long
+58,lombard,1e-06,3.0,PROPN,"['L', 'AA1', 'M', 'B', 'AA0', 'R', 'D']","['L', 'AA', 'M', 'B', 'AA', 'R', 'D']",real,7,long
+59,molasses,1e-06,3.0,VERB,"['M', 'AH0', 'L', 'AE1', 'S', 'AH0', 'Z']","['M', 'AH', 'L', 'AE', 'S', 'AH', 'Z']",real,7,long
+60,nefarious,1e-06,3.0,ADJ,"['N', 'AH0', 'F', 'EH1', 'R', 'IY0', 'AH0', 'S']","['N', 'AH', 'F', 'EH', 'R', 'IY', 'AH', 'S']",real,8,long
+61,travesty,1e-06,3.0,PROPN,"['T', 'R', 'AE1', 'V', 'AH0', 'S', 'T', 'IY0']","['T', 'R', 'AE', 'V', 'AH', 'S', 'T', 'IY']",real,8,long
+62,adrenal,9.77e-07,2.99,PROPN,"['AH0', 'D', 'R', 'IY1', 'N', 'AH0', 'L']","['AH', 'D', 'R', 'IY', 'N', 'AH', 'L']",real,7,long
+63,amulet,9.77e-07,2.99,NOUN,"['AE1', 'M', 'Y', 'AH0', 'L', 'AH0', 'T']","['AE', 'M', 'Y', 'AH', 'L', 'AH', 'T']",real,7,long
+64,ephemeral,9.77e-07,2.99,ADJ,"['IH0', 'F', 'EH1', 'M', 'ER0', 'AH0', 'L']","['IH', 'F', 'EH', 'M', 'ER', 'AH', 'L']",real,7,long
+65,fluctuate,9.77e-07,2.99,VERB,"['F', 'L', 'AH1', 'K', 'CH', 'AH0', 'W', 'EY2', 'T']","['F', 'L', 'AH', 'K', 'CH', 'AH', 'W', 'EY', 'T']",real,9,long
+66,gingrich,9.77e-07,2.99,PROPN,"['G', 'IH1', 'NG', 'G', 'R', 'IH0', 'CH']","['G', 'IH', 'NG', 'G', 'R', 'IH', 'CH']",real,7,long
+67,kalamazoo,9.77e-07,2.99,PROPN,"['K', 'AE2', 'L', 'AH0', 'M', 'AH0', 'Z', 'UW1']","['K', 'AE', 'L', 'AH', 'M', 'AH', 'Z', 'UW']",real,8,long
+68,apricot,9.55e-07,2.98,PROPN,"['EY1', 'P', 'R', 'AH0', 'K', 'AA2', 'T']","['EY', 'P', 'R', 'AH', 'K', 'AA', 'T']",real,7,long
+69,chardonnay,9.55e-07,2.98,NOUN,"['CH', 'AA0', 'R', 'D', 'AA1', 'N', 'EY0']","['CH', 'AA', 'R', 'D', 'AA', 'N', 'EY']",real,7,long
+70,maserati,9.55e-07,2.98,PROPN,"['M', 'AE2', 'S', 'EH0', 'R', 'AA1', 'T', 'IY0']","['M', 'AE', 'S', 'EH', 'R', 'AA', 'T', 'IY']",real,8,long
+71,nagasaki,9.55e-07,2.98,PROPN,"['N', 'AA2', 'G', 'AA0', 'S', 'AA1', 'K', 'IY0']","['N', 'AA', 'G', 'AA', 'S', 'AA', 'K', 'IY']",real,8,long
+72,nordstrom,9.55e-07,2.98,PROPN,"['N', 'AO1', 'R', 'D', 'S', 'T', 'R', 'AH0', 'M']","['N', 'AO', 'R', 'D', 'S', 'T', 'R', 'AH', 'M']",real,9,long
+73,pretzel,9.55e-07,2.98,PROPN,"['P', 'R', 'EH1', 'T', 'Z', 'AH0', 'L']","['P', 'R', 'EH', 'T', 'Z', 'AH', 'L']",real,7,long
+74,abercrombie,9.33e-07,2.97,PROPN,"['AE2', 'B', 'ER0', 'K', 'R', 'AA1', 'M', 'B', 'IY0']","['AE', 'B', 'ER', 'K', 'R', 'AA', 'M', 'B', 'IY']",real,9,long
+75,anaconda,9.33e-07,2.97,NOUN,"['AE2', 'N', 'AH0', 'K', 'AA1', 'N', 'D', 'AH0']","['AE', 'N', 'AH', 'K', 'AA', 'N', 'D', 'AH']",real,8,long
+76,behemoth,9.33e-07,2.97,NOUN,"['B', 'AH0', 'HH', 'IY1', 'M', 'AH0', 'TH']","['B', 'AH', 'HH', 'IY', 'M', 'AH', 'TH']",real,7,long
+77,bolshevik,9.33e-07,2.97,ADJ,"['B', 'OW1', 'L', 'SH', 'AH0', 'V', 'IH2', 'K']","['B', 'OW', 'L', 'SH', 'AH', 'V', 'IH', 'K']",real,8,long
+78,camelot,9.33e-07,2.97,PROPN,"['K', 'AE1', 'M', 'AH0', 'L', 'AA2', 'T']","['K', 'AE', 'M', 'AH', 'L', 'AA', 'T']",real,7,long
+79,cataract,9.33e-07,2.97,NOUN,"['K', 'AE1', 'T', 'ER0', 'AE0', 'K', 'T', 'S']","['K', 'AE', 'T', 'ER', 'AE', 'K', 'T', 'S']",real,8,long
+80,mannequin,1.15e-06,3.06,NOUN,"['M', 'AE1', 'N', 'AH0', 'K', 'IH0', 'N']","['M', 'AE', 'N', 'AH', 'K', 'IH', 'N']",real,7,long
+81,pensacola,1.15e-06,3.06,PROPN,"['P', 'EH2', 'N', 'S', 'AH0', 'K', 'OW1', 'L', 'AH0']","['P', 'EH', 'N', 'S', 'AH', 'K', 'OW', 'L', 'AH']",real,9,long
+82,requiem,1.15e-06,3.06,NOUN,"['R', 'EH1', 'K', 'W', 'IY0', 'AH0', 'M']","['R', 'EH', 'K', 'W', 'IY', 'AH', 'M']",real,7,long
+83,tabernacle,1.15e-06,3.06,NOUN,"['T', 'AE1', 'B', 'ER0', 'N', 'AE2', 'K', 'AH0', 'L']","['T', 'AE', 'B', 'ER', 'N', 'AE', 'K', 'AH', 'L']",real,9,long
+84,bonanza,1.12e-06,3.05,NOUN,"['B', 'AH0', 'N', 'AE1', 'N', 'Z', 'AH0']","['B', 'AH', 'N', 'AE', 'N', 'Z', 'AH']",real,7,long
+85,cannibal,1.12e-06,3.05,NOUN,"['K', 'AE1', 'N', 'AH0', 'B', 'AH0', 'L']","['K', 'AE', 'N', 'AH', 'B', 'AH', 'L']",real,7,long
+86,fiduciary,1.12e-06,3.05,ADJ,"['F', 'AH0', 'D', 'UW1', 'SH', 'IY0', 'EH2', 'R', 'IY0']","['F', 'AH', 'D', 'UW', 'SH', 'IY', 'EH', 'R', 'IY']",real,9,long
+87,plankton,1.12e-06,3.05,NOUN,"['P', 'L', 'AE1', 'NG', 'K', 'T', 'AH0', 'N']","['P', 'L', 'AE', 'NG', 'K', 'T', 'AH', 'N']",real,8,long
+88,wesleyan,1.12e-06,3.05,PROPN,"['W', 'EH1', 'Z', 'L', 'IY0', 'AH0', 'N']","['W', 'EH', 'Z', 'L', 'IY', 'AH', 'N']",real,7,long
+89,yokohama,1.12e-06,3.05,PROPN,"['Y', 'OW2', 'K', 'AH0', 'HH', 'AA1', 'M', 'AH0']","['Y', 'OW', 'K', 'AH', 'HH', 'AA', 'M', 'AH']",real,8,long
+90,penicillin,1.1e-06,3.04,NOUN,"['P', 'EH2', 'N', 'AH0', 'S', 'IH1', 'L', 'AH0', 'N']","['P', 'EH', 'N', 'AH', 'S', 'IH', 'L', 'AH', 'N']",real,9,long
+91,tarantino,1.1e-06,3.04,NOUN,"['T', 'AA0', 'R', 'AA0', 'N', 'T', 'IY1', 'N', 'OW0']","['T', 'AA', 'R', 'AA', 'N', 'T', 'IY', 'N', 'OW']",real,9,long
+92,winthrop,1.1e-06,3.04,PROPN,"['W', 'IH1', 'N', 'TH', 'R', 'AH0', 'P']","['W', 'IH', 'N', 'TH', 'R', 'AH', 'P']",real,7,long
+93,confetti,1.07e-06,3.03,NOUN,"['K', 'AH0', 'N', 'F', 'EH1', 'T', 'IY0']","['K', 'AH', 'N', 'F', 'EH', 'T', 'IY']",real,7,long
+94,siegfried,1.07e-06,3.03,PROPN,"['S', 'IY1', 'G', 'F', 'R', 'IY2', 'D']","['S', 'IY', 'G', 'F', 'R', 'IY', 'D']",real,7,long
+95,agnostic,1.05e-06,3.02,ADJ,"['AE0', 'G', 'N', 'AA1', 'S', 'T', 'IH0', 'K']","['AE', 'G', 'N', 'AA', 'S', 'T', 'IH', 'K']",real,8,long
+96,magenta,1.05e-06,3.02,ADJ,"['M', 'AH0', 'JH', 'EH1', 'N', 'T', 'AH0']","['M', 'AH', 'JH', 'EH', 'N', 'T', 'AH']",real,7,long
+97,marlboro,1.05e-06,3.02,PROPN,"['M', 'AA1', 'R', 'L', 'B', 'ER0', 'OW0']","['M', 'AA', 'R', 'L', 'B', 'ER', 'OW']",real,7,long
+98,molotov,1.05e-06,3.02,PROPN,"['M', 'AO1', 'L', 'AH0', 'T', 'AA2', 'F']","['M', 'AO', 'L', 'AH', 'T', 'AA', 'F']",real,7,long
+99,piccadilly,1.05e-06,3.02,PROPN,"['P', 'IH1', 'K', 'AH0', 'D', 'IH2', 'L', 'IY0']","['P', 'IH', 'K', 'AH', 'D', 'IH', 'L', 'IY']",real,8,long
+100,trafalgar,1.05e-06,3.02,PROPN,"['T', 'R', 'AH0', 'F', 'AE1', 'L', 'G', 'ER0']","['T', 'R', 'AH', 'F', 'AE', 'L', 'G', 'ER']",real,8,long
+101,umbilical,1.05e-06,3.02,ADJ,"['AH0', 'M', 'B', 'IH1', 'L', 'IH0', 'K', 'AH0', 'L']","['AH', 'M', 'B', 'IH', 'L', 'IH', 'K', 'AH', 'L']",real,9,long
+102,amethyst,1.02e-06,3.01,NOUN,"['AE1', 'M', 'IH0', 'TH', 'IH0', 'S', 'T']","['AE', 'M', 'IH', 'TH', 'IH', 'S', 'T']",real,7,long
+103,catapult,1.02e-06,3.01,VERB,"['K', 'AE1', 'T', 'AH0', 'P', 'AH2', 'L', 'T']","['K', 'AE', 'T', 'AH', 'P', 'AH', 'L', 'T']",real,8,long
+104,heineken,1.02e-06,3.01,PROPN,"['HH', 'AY1', 'N', 'AH0', 'K', 'AH0', 'N']","['HH', 'AY', 'N', 'AH', 'K', 'AH', 'N']",real,7,long
+105,rhapsody,1.02e-06,3.01,NOUN,"['R', 'AE1', 'P', 'S', 'AH0', 'D', 'IY0']","['R', 'AE', 'P', 'S', 'AH', 'D', 'IY']",real,7,long
+106,ukulele,1.02e-06,3.01,PROPN,"['Y', 'UW2', 'K', 'AH0', 'L', 'EY1', 'L', 'IY0']","['Y', 'UW', 'K', 'AH', 'L', 'EY', 'L', 'IY']",real,8,long
+107,uranus,1.02e-06,3.01,PROPN,"['Y', 'UW1', 'R', 'AH0', 'N', 'AH0', 'S']","['Y', 'UW', 'R', 'AH', 'N', 'AH', 'S']",real,7,long
+108,conundrum,1e-06,3.0,NOUN,"['K', 'AH0', 'N', 'AH1', 'N', 'D', 'R', 'AH0', 'M']","['K', 'AH', 'N', 'AH', 'N', 'D', 'R', 'AH', 'M']",real,9,long
+109,budweiser,7.94e-07,2.9,PROPN,"['B', 'AH1', 'D', 'W', 'AY0', 'Z', 'ER0']","['B', 'AH', 'D', 'W', 'AY', 'Z', 'ER']",real,7,long
+110,innuendo,7.94e-07,2.9,NOUN,"['IH0', 'N', 'Y', 'UW0', 'EH1', 'N', 'D', 'OW0']","['IH', 'N', 'Y', 'UW', 'EH', 'N', 'D', 'OW']",real,8,long
+111,javelin,7.94e-07,2.9,NOUN,"['JH', 'AE1', 'V', 'AH0', 'L', 'AH0', 'N']","['JH', 'AE', 'V', 'AH', 'L', 'AH', 'N']",real,7,long
+112,klingon,7.94e-07,2.9,VERB,"['K', 'L', 'IH1', 'NG', 'G', 'AH0', 'N']","['K', 'L', 'IH', 'NG', 'G', 'AH', 'N']",real,7,long
+113,lavatory,7.94e-07,2.9,NOUN,"['L', 'AE1', 'V', 'AH0', 'T', 'AO2', 'R', 'IY0']","['L', 'AE', 'V', 'AH', 'T', 'AO', 'R', 'IY']",real,8,long
+114,pringle,7.94e-07,2.9,PROPN,"['P', 'R', 'IH1', 'NG', 'G', 'AH0', 'L']","['P', 'R', 'IH', 'NG', 'G', 'AH', 'L']",real,7,long
+115,reprimand,7.94e-07,2.9,VERB,"['R', 'EH1', 'P', 'R', 'AH0', 'M', 'AE2', 'N', 'D']","['R', 'EH', 'P', 'R', 'AH', 'M', 'AE', 'N', 'D']",real,9,long
+116,cilantro,7.76e-07,2.89,NOUN,"['S', 'IH0', 'L', 'AE1', 'N', 'T', 'R', 'OW0']","['S', 'IH', 'L', 'AE', 'N', 'T', 'R', 'OW']",real,8,long
+117,ebenezer,7.76e-07,2.89,PROPN,"['EH2', 'B', 'IH0', 'N', 'IY1', 'Z', 'ER0']","['EH', 'B', 'IH', 'N', 'IY', 'Z', 'ER']",real,7,long
+118,euphrates,7.76e-07,2.89,X,"['Y', 'UW0', 'F', 'R', 'EY1', 'T', 'IY0', 'Z']","['Y', 'UW', 'F', 'R', 'EY', 'T', 'IY', 'Z']",real,8,long
+119,venison,7.76e-07,2.89,NOUN,"['V', 'EH1', 'N', 'AH0', 'S', 'AH0', 'N']","['V', 'EH', 'N', 'AH', 'S', 'AH', 'N']",real,7,long
+120,epsilon,7.59e-07,2.88,NOUN,"['EH1', 'P', 'S', 'AH0', 'L', 'AA2', 'N']","['EH', 'P', 'S', 'AH', 'L', 'AA', 'N']",real,7,long
+121,kubrick,7.59e-07,2.88,PROPN,"['K', 'Y', 'UW1', 'B', 'R', 'IH2', 'K']","['K', 'Y', 'UW', 'B', 'R', 'IH', 'K']",real,7,long
+122,porcupine,7.59e-07,2.88,NOUN,"['P', 'AO1', 'R', 'K', 'Y', 'AH0', 'P', 'AY2', 'N']","['P', 'AO', 'R', 'K', 'Y', 'AH', 'P', 'AY', 'N']",real,9,long
+123,thesaurus,7.59e-07,2.88,NOUN,"['TH', 'AH0', 'S', 'AO1', 'R', 'AH0', 'S']","['TH', 'AH', 'S', 'AO', 'R', 'AH', 'S']",real,7,long
+124,cappuccino,7.41e-07,2.87,NOUN,"['K', 'AE2', 'P', 'UW2', 'CH', 'IY1', 'N', 'OW0']","['K', 'AE', 'P', 'UW', 'CH', 'IY', 'N', 'OW']",real,8,long

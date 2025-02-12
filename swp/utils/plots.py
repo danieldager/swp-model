@@ -1,4 +1,5 @@
 import math
+import math
 import pathlib
 import warnings
 
@@ -120,6 +121,8 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-40)
+    plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-40)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
     filtered_labels = []
@@ -133,8 +136,13 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         title="Lexicality & Morphology",
         fontsize=22,
         title_fontsize=22,
+        fontsize=22,
+        title_fontsize=22,
         ncol=2,
     )
+    plt.setp(leg.get_title(), multialignment="left")
+    set_edge_ticks(ax, tick_fontsize=22)
+    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)
     plt.setp(leg.get_title(), multialignment="left")
     set_edge_ticks(ax, tick_fontsize=22)
     plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)
@@ -183,6 +191,7 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     plot_df = pd.DataFrame(data_by_lexicality)
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
+    ax = sns.lineplot(
         x="Position",
         y="Error Rate",
         hue="Lexicality",
@@ -193,7 +202,10 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
     plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
+    plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
+    plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
+    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
@@ -216,6 +228,7 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
+    ax = sns.lineplot(
         data=grouped_df,
         x="Sonority",
         y="Edit Distance",
@@ -226,7 +239,10 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
+    plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
+    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=0, y_decimal_places=2)
     set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=0, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()

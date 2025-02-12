@@ -1,0 +1,148 @@
+,Word,Size,Length,Frequency,Zipf Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No Stress,Condition
+0,decycle,long,7,,,complex,pseudo,,"['D', 'IH0', 'S', 'AY1', 'K', 'AH0', 'L']","['D', 'IH', 'S', 'AY', 'K', 'AH', 'L']",PLC
+1,devably,long,7,,,complex,pseudo,,"['D', 'EH1', 'V', 'AH0', 'B', 'L', 'IY0']","['D', 'EH', 'V', 'AH', 'B', 'L', 'IY']",PLC
+2,enspect,long,7,,,complex,pseudo,,"['IH0', 'N', 'S', 'P', 'EH1', 'K', 'T']","['IH', 'N', 'S', 'P', 'EH', 'K', 'T']",PLC
+3,rearful,long,7,,,complex,pseudo,,"['R', 'IY0', 'AO1', 'F', 'S', 'AH0', 'L']","['R', 'IY', 'AO', 'F', 'S', 'AH', 'L']",PLC
+4,remoral,long,7,,,complex,pseudo,,"['R', 'IY0', 'M', 'AO1', 'R', 'AH0', 'L']","['R', 'IY', 'M', 'AO', 'R', 'AH', 'L']",PLC
+5,renstop,long,7,,,complex,pseudo,,"['R', 'EH1', 'N', 'S', 'T', 'AA2', 'P']","['R', 'EH', 'N', 'S', 'T', 'AA', 'P']",PLC
+6,senstop,long,7,,,complex,pseudo,,"['S', 'EH1', 'N', 'S', 'T', 'AA2', 'P']","['S', 'EH', 'N', 'S', 'T', 'AA', 'P']",PLC
+7,tenstop,long,7,,,complex,pseudo,,"['T', 'EH1', 'N', 'S', 'T', 'AH0', 'P']","['T', 'EH', 'N', 'S', 'T', 'AH', 'P']",PLC
+8,dishaven,long,8,,,complex,pseudo,,"['D', 'IH0', 'S', 'HH', 'EY1', 'V', 'AH0', 'N']","['D', 'IH', 'S', 'HH', 'EY', 'V', 'AH', 'N']",PLC
+9,dishonal,long,8,,,complex,pseudo,,"['D', 'IH1', 'S', 'HH', 'AH0', 'N', 'AH0', 'L']","['D', 'IH', 'S', 'HH', 'AH', 'N', 'AH', 'L']",PLC
+10,egoistep,long,7,,,complex,pseudo,,"['EH1', 'G', 'AH0', 'S', 'T', 'EY2', 'P']","['EH', 'G', 'AH', 'S', 'T', 'EY', 'P']",PLC
+11,entanize,long,7,,,complex,pseudo,,"['EH1', 'N', 'T', 'AH0', 'N', 'AY2', 'Z']","['EH', 'N', 'T', 'AH', 'N', 'AY', 'Z']",PLC
+12,impolder,long,7,,,complex,pseudo,,"['IH0', 'M', 'P', 'OW1', 'L', 'D', 'ER0']","['IH', 'M', 'P', 'OW', 'L', 'D', 'ER']",PLC
+13,overstic,long,7,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'S', 'T', 'IH2', 'K']","['OW', 'V', 'ER', 'S', 'T', 'IH', 'K']",PLC
+14,reimporm,long,7,,,complex,pseudo,,"['R', 'AY1', 'M', 'P', 'AO2', 'R', 'M']","['R', 'AY', 'M', 'P', 'AO', 'R', 'M']",PLC
+15,reustful,long,7,,,complex,pseudo,,"['R', 'OY1', 'S', 'T', 'F', 'AH0', 'L']","['R', 'OY', 'S', 'T', 'F', 'AH', 'L']",PLC
+16,sprictep,long,8,,,complex,pseudo,,"['S', 'P', 'R', 'IH1', 'K', 'T', 'EH2', 'P']","['S', 'P', 'R', 'IH', 'K', 'T', 'EH', 'P']",PLC
+17,spricter,long,7,,,complex,pseudo,,"['S', 'P', 'R', 'IH1', 'K', 'T', 'ER0']","['S', 'P', 'R', 'IH', 'K', 'T', 'ER']",PLC
+18,sprindly,long,8,,,complex,pseudo,,"['S', 'P', 'R', 'IH1', 'N', 'D', 'L', 'IY0']","['S', 'P', 'R', 'IH', 'N', 'D', 'L', 'IY']",PLC
+19,sprintep,long,8,,,complex,pseudo,,"['S', 'P', 'R', 'IH1', 'N', 'T', 'AH0', 'P']","['S', 'P', 'R', 'IH', 'N', 'T', 'AH', 'P']",PLC
+20,strictep,long,8,,,complex,pseudo,,"['S', 'T', 'R', 'IH1', 'K', 'T', 'P', 'IY0']","['S', 'T', 'R', 'IH', 'K', 'T', 'P', 'IY']",PLC
+21,strindly,long,8,,,complex,pseudo,,"['S', 'T', 'R', 'IH1', 'N', 'D', 'L', 'IY0']","['S', 'T', 'R', 'IH', 'N', 'D', 'L', 'IY']",PLC
+22,strintep,long,8,,,complex,pseudo,,"['S', 'T', 'R', 'IH1', 'N', 'T', 'AH0', 'P']","['S', 'T', 'R', 'IH', 'N', 'T', 'AH', 'P']",PLC
+23,strinter,long,7,,,complex,pseudo,,"['S', 'T', 'R', 'IH1', 'N', 'T', 'ER0']","['S', 'T', 'R', 'IH', 'N', 'T', 'ER']",PLC
+24,teasonal,long,7,,,complex,pseudo,,"['T', 'IY1', 'Z', 'AH0', 'N', 'AH0', 'L']","['T', 'IY', 'Z', 'AH', 'N', 'AH', 'L']",PLC
+25,trusable,long,8,,,complex,pseudo,,"['T', 'R', 'UW1', 'Z', 'AH0', 'B', 'AH0', 'L']","['T', 'R', 'UW', 'Z', 'AH', 'B', 'AH', 'L']",PLC
+26,trustler,long,7,,,complex,pseudo,,"['T', 'R', 'AH1', 'S', 'T', 'ER0', 'L']","['T', 'R', 'AH', 'S', 'T', 'ER', 'L']",PLC
+27,uninfort,long,8,,,complex,pseudo,,"['Y', 'UW1', 'N', 'IH0', 'F', 'AO2', 'R', 'T']","['Y', 'UW', 'N', 'IH', 'F', 'AO', 'R', 'T']",PLC
+28,unkintep,long,9,,,complex,pseudo,,"['AH0', 'N', 'K', 'IH1', 'N', 'T', 'P', 'IH0', 'NG']","['AH', 'N', 'K', 'IH', 'N', 'T', 'P', 'IH', 'NG']",PLC
+29,unkinter,long,7,,,complex,pseudo,,"['AH2', 'N', 'K', 'IH1', 'N', 'T', 'ER0']","['AH', 'N', 'K', 'IH', 'N', 'T', 'ER']",PLC
+30,unshonal,long,7,,,complex,pseudo,,"['AH0', 'N', 'SH', 'AA1', 'N', 'AH0', 'L']","['AH', 'N', 'SH', 'AA', 'N', 'AH', 'L']",PLC
+31,unwistep,long,8,,,complex,pseudo,,"['AH0', 'N', 'W', 'IH1', 'S', 'T', 'EH0', 'P']","['AH', 'N', 'W', 'IH', 'S', 'T', 'EH', 'P']",PLC
+32,unwister,long,7,,,complex,pseudo,,"['AH0', 'N', 'W', 'IH1', 'S', 'T', 'ER0']","['AH', 'N', 'W', 'IH', 'S', 'T', 'ER']",PLC
+33,unwistic,long,8,,,complex,pseudo,,"['AH0', 'N', 'W', 'IH1', 'S', 'T', 'IH0', 'K']","['AH', 'N', 'W', 'IH', 'S', 'T', 'IH', 'K']",PLC
+34,upholite,long,7,,,complex,pseudo,,"['AH0', 'P', 'HH', 'OW1', 'L', 'AY2', 'T']","['AH', 'P', 'HH', 'OW', 'L', 'AY', 'T']",PLC
+35,womangle,long,8,,,complex,pseudo,,"['W', 'UH1', 'M', 'AH0', 'N', 'G', 'AH0', 'L']","['W', 'UH', 'M', 'AH', 'N', 'G', 'AH', 'L']",PLC
+36,wrestful,long,7,,,complex,pseudo,,"['R', 'EH1', 'S', 'T', 'F', 'AH0', 'L']","['R', 'EH', 'S', 'T', 'F', 'AH', 'L']",PLC
+37,clearally,long,7,,,complex,pseudo,,"['K', 'L', 'IH1', 'R', 'AH0', 'L', 'IY0']","['K', 'L', 'IH', 'R', 'AH', 'L', 'IY']",PLC
+38,cleartile,long,7,,,complex,pseudo,,"['K', 'L', 'IH1', 'R', 'T', 'AY2', 'L']","['K', 'L', 'IH', 'R', 'T', 'AY', 'L']",PLC
+39,deodeness,long,9,,,complex,pseudo,,"['D', 'IY1', 'D', 'AH0', 'N', 'IH2', 'S', 'AH0', 'Z']","['D', 'IY', 'D', 'AH', 'N', 'IH', 'S', 'AH', 'Z']",PLC
+40,deodenest,long,8,,,complex,pseudo,,"['D', 'IY1', 'D', 'AH0', 'N', 'AH0', 'S', 'T']","['D', 'IY', 'D', 'AH', 'N', 'AH', 'S', 'T']",PLC
+41,deodorism,long,9,,,complex,pseudo,,"['D', 'IY1', 'AH0', 'D', 'R', 'IH2', 'Z', 'AH0', 'M']","['D', 'IY', 'AH', 'D', 'R', 'IH', 'Z', 'AH', 'M']",PLC
+42,deodorist,long,8,,,complex,pseudo,,"['D', 'IY1', 'AH0', 'D', 'ER0', 'IH0', 'S', 'T']","['D', 'IY', 'AH', 'D', 'ER', 'IH', 'S', 'T']",PLC
+43,deoutsell,long,9,,,complex,pseudo,,"['D', 'EH1', 'T', 'W', 'AH0', 'S', 'T', 'AH0', 'L']","['D', 'EH', 'T', 'W', 'AH', 'S', 'T', 'AH', 'L']",PLC
+44,discreact,long,8,,,complex,pseudo,,"['D', 'IH0', 'S', 'K', 'R', 'IY1', 'K', 'T']","['D', 'IH', 'S', 'K', 'R', 'IY', 'K', 'T']",PLC
+45,discreate,long,7,,,complex,pseudo,,"['D', 'IH0', 'S', 'K', 'R', 'IY1', 'T']","['D', 'IH', 'S', 'K', 'R', 'IY', 'T']",PLC
+46,dishfully,long,7,,,complex,pseudo,,"['D', 'IH1', 'F', 'SH', 'AH0', 'L', 'IY0']","['D', 'IH', 'F', 'SH', 'AH', 'L', 'IY']",PLC
+47,disreport,long,8,,,complex,pseudo,,"['D', 'IH0', 'S', 'R', 'EH1', 'P', 'ER0', 'T']","['D', 'IH', 'S', 'R', 'EH', 'P', 'ER', 'T']",PLC
+48,distfully,long,8,,,complex,pseudo,,"['D', 'IH1', 'S', 'T', 'F', 'AH0', 'L', 'IY0']","['D', 'IH', 'S', 'T', 'F', 'AH', 'L', 'IY']",PLC
+49,formaline,long,8,,,complex,pseudo,,"['F', 'AO1', 'R', 'M', 'AH0', 'L', 'AY2', 'N']","['F', 'AO', 'R', 'M', 'AH', 'L', 'AY', 'N']",PLC
+50,immerlity,long,7,,,complex,pseudo,,"['IH1', 'M', 'ER0', 'L', 'AH0', 'T', 'IY0']","['IH', 'M', 'ER', 'L', 'AH', 'T', 'IY']",PLC
+51,immersold,long,7,,,complex,pseudo,,"['IH1', 'M', 'ER0', 'S', 'AA2', 'L', 'D']","['IH', 'M', 'ER', 'S', 'AA', 'L', 'D']",PLC
+52,inferline,long,7,,,complex,pseudo,,"['IH1', 'N', 'F', 'ER0', 'L', 'AY2', 'N']","['IH', 'N', 'F', 'ER', 'L', 'AY', 'N']",PLC
+53,inferlity,long,7,,,complex,pseudo,,"['IH1', 'N', 'F', 'ER0', 'L', 'AY2', 'T']","['IH', 'N', 'F', 'ER', 'L', 'AY', 'T']",PLC
+54,inferpass,long,7,,,complex,pseudo,,"['IH1', 'N', 'F', 'ER0', 'P', 'AE2', 'S']","['IH', 'N', 'F', 'ER', 'P', 'AE', 'S']",PLC
+55,infersion,long,7,,,complex,pseudo,,"['IH0', 'N', 'F', 'ER1', 'SH', 'AH0', 'N']","['IH', 'N', 'F', 'ER', 'SH', 'AH', 'N']",PLC
+56,infersold,long,8,,,complex,pseudo,,"['IH0', 'N', 'F', 'ER1', 'S', 'AH0', 'L', 'D']","['IH', 'N', 'F', 'ER', 'S', 'AH', 'L', 'D']",PLC
+57,miscreact,long,8,,,complex,pseudo,,"['M', 'IH0', 'S', 'K', 'R', 'IY1', 'K', 'T']","['M', 'IH', 'S', 'K', 'R', 'IY', 'K', 'T']",PLC
+58,misembark,long,7,,,complex,pseudo,,"['M', 'IH0', 'S', 'M', 'AA1', 'K', 'ER0']","['M', 'IH', 'S', 'M', 'AA', 'K', 'ER']",PLC
+59,misembody,long,9,,,complex,pseudo,,"['M', 'IH0', 'S', 'AH0', 'M', 'B', 'EY1', 'D', 'IY0']","['M', 'IH', 'S', 'AH', 'M', 'B', 'EY', 'D', 'IY']",PLC
+60,mishfully,long,7,,,complex,pseudo,,"['M', 'IH1', 'SH', 'F', 'AH0', 'L', 'IY0']","['M', 'IH', 'SH', 'F', 'AH', 'L', 'IY']",PLC
+61,mistfully,long,8,,,complex,pseudo,,"['M', 'IH1', 'S', 'T', 'F', 'AH0', 'L', 'IY0']","['M', 'IH', 'S', 'T', 'F', 'AH', 'L', 'IY']",PLC
+62,normaline,long,8,,,complex,pseudo,,"['N', 'AO1', 'R', 'M', 'AH0', 'L', 'IY2', 'N']","['N', 'AO', 'R', 'M', 'AH', 'L', 'IY', 'N']",PLC
+63,overility,long,8,,,complex,pseudo,,"['OW2', 'V', 'ER0', 'IH0', 'L', 'IH1', 'T', 'IY0']","['OW', 'V', 'ER', 'IH', 'L', 'IH', 'T', 'IY']",PLC
+64,overilize,long,8,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'L', 'AY2', 'Z', 'IH0', 'Z']","['OW', 'V', 'ER', 'L', 'AY', 'Z', 'IH', 'Z']",PLC
+65,overredit,long,8,,,complex,pseudo,,"['OW1', 'V', 'ER0', 'R', 'IY2', 'T', 'IH0', 'D']","['OW', 'V', 'ER', 'R', 'IY', 'T', 'IH', 'D']",PLC
+66,pitlessly,long,8,,,complex,pseudo,,"['P', 'IH1', 'T', 'L', 'AH0', 'S', 'L', 'IY0']","['P', 'IH', 'T', 'L', 'AH', 'S', 'L', 'IY']",PLC
+67,procreach,long,8,,,complex,pseudo,,"['P', 'R', 'OW1', 'K', 'R', 'IY0', 'AE2', 'K']","['P', 'R', 'OW', 'K', 'R', 'IY', 'AE', 'K']",PLC
+68,procreact,long,8,,,complex,pseudo,,"['P', 'R', 'OW2', 'K', 'R', 'IY1', 'K', 'T']","['P', 'R', 'OW', 'K', 'R', 'IY', 'K', 'T']",PLC
+69,procredit,long,9,,,complex,pseudo,,"['P', 'R', 'OW0', 'K', 'R', 'EH1', 'D', 'AH0', 'T']","['P', 'R', 'OW', 'K', 'R', 'EH', 'D', 'AH', 'T']",PLC
+70,redefully,long,8,,,complex,pseudo,,"['R', 'EH1', 'D', 'AH0', 'F', 'AH0', 'L', 'IY0']","['R', 'EH', 'D', 'AH', 'F', 'AH', 'L', 'IY']",PLC
+71,rederline,long,7,,,complex,pseudo,,"['R', 'EH1', 'D', 'ER0', 'L', 'AY2', 'N']","['R', 'EH', 'D', 'ER', 'L', 'AY', 'N']",PLC
+72,rederlity,long,8,,,complex,pseudo,,"['R', 'EH1', 'D', 'ER0', 'AH0', 'L', 'T', 'IY0']","['R', 'EH', 'D', 'ER', 'AH', 'L', 'T', 'IY']",PLC
+73,rederlize,long,7,,,complex,pseudo,,"['R', 'EH1', 'D', 'ER0', 'L', 'AY2', 'Z']","['R', 'EH', 'D', 'ER', 'L', 'AY', 'Z']",PLC
+74,rederpass,long,8,,,complex,pseudo,,"['R', 'IY0', 'D', 'R', 'AE1', 'P', 'AH0', 'S']","['R', 'IY', 'D', 'R', 'AE', 'P', 'AH', 'S']",PLC
+75,redersion,long,7,,,complex,pseudo,,"['R', 'IY0', 'D', 'ER1', 'ZH', 'AH0', 'N']","['R', 'IY', 'D', 'ER', 'ZH', 'AH', 'N']",PLC
+76,redersold,long,8,,,complex,pseudo,,"['R', 'IY0', 'D', 'ER0', 'S', 'AA1', 'L', 'D']","['R', 'IY', 'D', 'ER', 'S', 'AA', 'L', 'D']",PLC
+77,redertile,long,7,,,complex,pseudo,,"['R', 'EH1', 'D', 'ER0', 'T', 'AY2', 'L']","['R', 'EH', 'D', 'ER', 'T', 'AY', 'L']",PLC
+78,reinstake,long,8,,,complex,pseudo,,"['R', 'IY2', 'IH0', 'N', 'S', 'T', 'EY1', 'K']","['R', 'IY', 'IH', 'N', 'S', 'T', 'EY', 'K']",PLC
+79,reirdness,long,7,,,complex,pseudo,,"['R', 'IY0', 'R', 'EH1', 'N', 'D', 'Z']","['R', 'IY', 'R', 'EH', 'N', 'D', 'Z']",PLC
+80,remindful,long,9,,,complex,pseudo,,"['R', 'IY0', 'M', 'IH1', 'N', 'D', 'F', 'AH0', 'L']","['R', 'IY', 'M', 'IH', 'N', 'D', 'F', 'AH', 'L']",PLC
+81,remistate,long,8,,,complex,pseudo,,"['R', 'EH1', 'M', 'AH0', 'S', 'T', 'EY2', 'T']","['R', 'EH', 'M', 'AH', 'S', 'T', 'EY', 'T']",PLC
+82,reodeness,long,9,,,complex,pseudo,,"['R', 'IY1', 'AH0', 'D', 'IY2', 'N', 'S', 'AH0', 'Z']","['R', 'IY', 'AH', 'D', 'IY', 'N', 'S', 'AH', 'Z']",PLC
+83,reodenest,long,9,,,complex,pseudo,,"['R', 'IY2', 'OW0', 'D', 'EH1', 'N', 'AH0', 'S', 'T']","['R', 'IY', 'OW', 'D', 'EH', 'N', 'AH', 'S', 'T']",PLC
+84,reodorize,long,8,,,complex,pseudo,,"['R', 'IY2', 'AH0', 'D', 'AO1', 'R', 'AY2', 'Z']","['R', 'IY', 'AH', 'D', 'AO', 'R', 'AY', 'Z']",PLC
+85,steriline,long,8,,,complex,pseudo,,"['S', 'T', 'EH1', 'R', 'AH0', 'L', 'AY2', 'N']","['S', 'T', 'EH', 'R', 'AH', 'L', 'AY', 'N']",PLC
+86,sterreact,long,8,,,complex,pseudo,,"['S', 'T', 'EH1', 'R', 'IY0', 'AE2', 'K', 'T']","['S', 'T', 'EH', 'R', 'IY', 'AE', 'K', 'T']",PLC
+87,sterreate,long,7,,,complex,pseudo,,"['S', 'T', 'EH1', 'R', 'IY0', 'AH0', 'T']","['S', 'T', 'EH', 'R', 'IY', 'AH', 'T']",PLC
+88,sterredit,long,8,,,complex,pseudo,,"['S', 'T', 'EH1', 'R', 'AH0', 'D', 'IH0', 'T']","['S', 'T', 'EH', 'R', 'AH', 'D', 'IH', 'T']",PLC
+89,tattooism,long,9,,,complex,pseudo,,"['T', 'AE1', 'T', 'AH0', 'W', 'IH2', 'Z', 'AH0', 'M']","['T', 'AE', 'T', 'AH', 'W', 'IH', 'Z', 'AH', 'M']",PLC
+90,tensenest,long,9,,,complex,pseudo,,"['T', 'EH1', 'N', 'S', 'AH0', 'N', 'AH0', 'S', 'T']","['T', 'EH', 'N', 'S', 'AH', 'N', 'AH', 'S', 'T']",PLC
+91,tuneflate,long,7,,,complex,pseudo,,"['T', 'UW1', 'N', 'F', 'L', 'EY2', 'T']","['T', 'UW', 'N', 'F', 'L', 'EY', 'T']",PLC
+92,undeflate,long,8,,,complex,pseudo,,"['AH1', 'N', 'D', 'AH0', 'F', 'L', 'EY2', 'T']","['AH', 'N', 'D', 'AH', 'F', 'L', 'EY', 'T']",PLC
+93,undefully,long,9,,,complex,pseudo,,"['AH2', 'N', 'D', 'AH0', 'F', 'Y', 'AH0', 'L', 'IY0']","['AH', 'N', 'D', 'AH', 'F', 'Y', 'AH', 'L', 'IY']",PLC
+94,underlity,long,8,,,complex,pseudo,,"['AH1', 'N', 'D', 'ER0', 'L', 'AY2', 'T', 'IY0']","['AH', 'N', 'D', 'ER', 'L', 'AY', 'T', 'IY']",PLC
+95,undersion,long,8,,,complex,pseudo,,"['AH1', 'N', 'D', 'ER0', 'S', 'IY0', 'AH0', 'N']","['AH', 'N', 'D', 'ER', 'S', 'IY', 'AH', 'N']",PLC
+96,undertile,long,7,,,complex,pseudo,,"['AH1', 'N', 'D', 'ER0', 'T', 'AY2', 'L']","['AH', 'N', 'D', 'ER', 'T', 'AY', 'L']",PLC
+97,unearally,long,7,,,complex,pseudo,,"['Y', 'UW1', 'N', 'ER0', 'AH0', 'L', 'IY0']","['Y', 'UW', 'N', 'ER', 'AH', 'L', 'IY']",PLC
+98,unearance,long,7,,,complex,pseudo,,"['Y', 'UW1', 'N', 'ER0', 'AH0', 'N', 'S']","['Y', 'UW', 'N', 'ER', 'AH', 'N', 'S']",PLC
+99,uniforist,long,9,,,complex,pseudo,,"['Y', 'UW1', 'N', 'AH0', 'F', 'AO2', 'R', 'S', 'T']","['Y', 'UW', 'N', 'AH', 'F', 'AO', 'R', 'S', 'T']",PLC
+100,uniforize,long,9,,,complex,pseudo,,"['Y', 'UW1', 'N', 'AH0', 'F', 'AO2', 'R', 'AY2', 'Z']","['Y', 'UW', 'N', 'AH', 'F', 'AO', 'R', 'AY', 'Z']",PLC
+101,unmistake,long,8,,,complex,pseudo,,"['AH1', 'N', 'M', 'IH0', 'S', 'T', 'EY2', 'K']","['AH', 'N', 'M', 'IH', 'S', 'T', 'EY', 'K']",PLC
+102,unmistate,long,8,,,complex,pseudo,,"['AH0', 'N', 'M', 'IH1', 'S', 'T', 'AH0', 'T']","['AH', 'N', 'M', 'IH', 'S', 'T', 'AH', 'T']",PLC
+103,vulgarist,long,8,,,complex,pseudo,,"['V', 'AH1', 'L', 'G', 'ER0', 'IH0', 'S', 'T']","['V', 'AH', 'L', 'G', 'ER', 'IH', 'S', 'T']",PLC
+104,vulgarize,long,7,,,complex,pseudo,,"['V', 'AH1', 'L', 'G', 'ER0', 'AY2', 'Z']","['V', 'AH', 'L', 'G', 'ER', 'AY', 'Z']",PLC
+105,wakeflate,long,7,,,complex,pseudo,,"['W', 'EY1', 'K', 'F', 'L', 'EY2', 'T']","['W', 'EY', 'K', 'F', 'L', 'EY', 'T']",PLC
+106,weimbural,long,7,,,complex,pseudo,,"['W', 'AY1', 'M', 'B', 'ER0', 'AH0', 'L']","['W', 'AY', 'M', 'B', 'ER', 'AH', 'L']",PLC
+107,weinforce,long,7,,,complex,pseudo,,"['W', 'AY1', 'N', 'F', 'AO2', 'R', 'S']","['W', 'AY', 'N', 'F', 'AO', 'R', 'S']",PLC
+108,weinstake,long,7,,,complex,pseudo,,"['W', 'AY1', 'N', 'S', 'T', 'EY2', 'K']","['W', 'AY', 'N', 'S', 'T', 'EY', 'K']",PLC
+109,weinstate,long,7,,,complex,pseudo,,"['W', 'AY1', 'N', 'S', 'T', 'EY2', 'T']","['W', 'AY', 'N', 'S', 'T', 'EY', 'T']",PLC
+110,weirdnest,long,9,,,complex,pseudo,,"['W', 'ER1', 'D', 'AH0', 'N', 'S', 'T', 'AH0', 'T']","['W', 'ER', 'D', 'AH', 'N', 'S', 'T', 'AH', 'T']",PLC
+111,wiscreact,long,8,,,complex,pseudo,,"['W', 'IH1', 'S', 'K', 'R', 'IY2', 'K', 'T']","['W', 'IH', 'S', 'K', 'R', 'IY', 'K', 'T']",PLC
+112,wiscreate,long,7,,,complex,pseudo,,"['W', 'IH1', 'S', 'K', 'R', 'IY2', 'T']","['W', 'IH', 'S', 'K', 'R', 'IY', 'T']",PLC
+113,wisembark,long,9,,,complex,pseudo,,"['W', 'IH1', 'Z', 'AH0', 'M', 'B', 'AA2', 'R', 'K']","['W', 'IH', 'Z', 'AH', 'M', 'B', 'AA', 'R', 'K']",PLC
+114,wisembody,long,7,,,complex,pseudo,,"['W', 'AY1', 'Z', 'M', 'AH0', 'D', 'IY0']","['W', 'AY', 'Z', 'M', 'AH', 'D', 'IY']",PLC
+115,wisreport,long,9,,,complex,pseudo,,"['W', 'IH1', 'S', 'R', 'IH0', 'P', 'AO2', 'R', 'T']","['W', 'IH', 'S', 'R', 'IH', 'P', 'AO', 'R', 'T']",PLC
+116,witifully,long,8,,,complex,pseudo,,"['W', 'IH1', 'T', 'AH0', 'F', 'AH0', 'L', 'IY0']","['W', 'IH', 'T', 'AH', 'F', 'AH', 'L', 'IY']",PLC
+117,woodority,long,7,,,complex,pseudo,,"['W', 'UH1', 'D', 'ER0', 'AY2', 'IH0', 'T']","['W', 'UH', 'D', 'ER', 'AY', 'IH', 'T']",PLC
+118,woodormly,long,8,,,complex,pseudo,,"['W', 'UH1', 'D', 'ER0', 'M', 'AH0', 'L', 'IY0']","['W', 'UH', 'D', 'ER', 'M', 'AH', 'L', 'IY']",PLC
+119,decycle,long,7,,,complex,pseudo,,"['D', 'IH0', 'S', 'AY1', 'K', 'AH0', 'L']","['D', 'IH', 'S', 'AY', 'K', 'AH', 'L']",PLC
+120,enspect,long,7,,,complex,pseudo,,"['IH0', 'N', 'S', 'P', 'EH1', 'K', 'T']","['IH', 'N', 'S', 'P', 'EH', 'K', 'T']",PLC
+121,rearful,long,7,,,complex,pseudo,,"['R', 'IY0', 'AO1', 'F', 'S', 'AH0', 'L']","['R', 'IY', 'AO', 'F', 'S', 'AH', 'L']",PLC
+122,remoral,long,7,,,complex,pseudo,,"['R', 'IY0', 'M', 'AO1', 'R', 'AH0', 'L']","['R', 'IY', 'M', 'AO', 'R', 'AH', 'L']",PLC
+123,senstop,long,7,,,complex,pseudo,,"['S', 'EH1', 'N', 'S', 'T', 'AA2', 'P']","['S', 'EH', 'N', 'S', 'T', 'AA', 'P']",PLC
+124,dishaven,long,8,,,complex,pseudo,,"['D', 'IH0', 'S', 'HH', 'EY1', 'V', 'AH0', 'N']","['D', 'IH', 'S', 'HH', 'EY', 'V', 'AH', 'N']",PLC
+125,dishonal,long,8,,,complex,pseudo,,"['D', 'IH1', 'S', 'HH', 'AH0', 'N', 'AH0', 'L']","['D', 'IH', 'S', 'HH', 'AH', 'N', 'AH', 'L']",PLC
+126,entanize,long,7,,,complex,pseudo,,"['EH1', 'N', 'T', 'AH0', 'N', 'AY2', 'Z']","['EH', 'N', 'T', 'AH', 'N', 'AY', 'Z']",PLC
+127,sprindly,long,8,,,complex,pseudo,,"['S', 'P', 'R', 'IH1', 'N', 'D', 'L', 'IY0']","['S', 'P', 'R', 'IH', 'N', 'D', 'L', 'IY']",PLC
+128,teasonal,long,7,,,complex,pseudo,,"['T', 'IY1', 'Z', 'AH0', 'N', 'AH0', 'L']","['T', 'IY', 'Z', 'AH', 'N', 'AH', 'L']",PLC
+129,uninfort,long,8,,,complex,pseudo,,"['Y', 'UW1', 'N', 'IH0', 'F', 'AO2', 'R', 'T']","['Y', 'UW', 'N', 'IH', 'F', 'AO', 'R', 'T']",PLC
+130,upholite,long,7,,,complex,pseudo,,"['AH0', 'P', 'HH', 'OW1', 'L', 'AY2', 'T']","['AH', 'P', 'HH', 'OW', 'L', 'AY', 'T']",PLC
+131,wrestful,long,7,,,complex,pseudo,,"['R', 'EH1', 'S', 'T', 'F', 'AH0', 'L']","['R', 'EH', 'S', 'T', 'F', 'AH', 'L']",PLC
+132,clearally,long,7,,,complex,pseudo,,"['K', 'L', 'IH1', 'R', 'AH0', 'L', 'IY0']","['K', 'L', 'IH', 'R', 'AH', 'L', 'IY']",PLC
+133,deodorism,long,9,,,complex,pseudo,,"['D', 'IY1', 'AH0', 'D', 'R', 'IH2', 'Z', 'AH0', 'M']","['D', 'IY', 'AH', 'D', 'R', 'IH', 'Z', 'AH', 'M']",PLC
+134,discreate,long,7,,,complex,pseudo,,"['D', 'IH0', 'S', 'K', 'R', 'IY1', 'T']","['D', 'IH', 'S', 'K', 'R', 'IY', 'T']",PLC
+135,misembark,long,7,,,complex,pseudo,,"['M', 'IH0', 'S', 'M', 'AA1', 'K', 'ER0']","['M', 'IH', 'S', 'M', 'AA', 'K', 'ER']",PLC
+136,mishfully,long,7,,,complex,pseudo,,"['M', 'IH1', 'SH', 'F', 'AH0', 'L', 'IY0']","['M', 'IH', 'SH', 'F', 'AH', 'L', 'IY']",PLC
+137,overility,long,8,,,complex,pseudo,,"['OW2', 'V', 'ER0', 'IH0', 'L', 'IH1', 'T', 'IY0']","['OW', 'V', 'ER', 'IH', 'L', 'IH', 'T', 'IY']",PLC
+138,procreact,long,8,,,complex,pseudo,,"['P', 'R', 'OW2', 'K', 'R', 'IY1', 'K', 'T']","['P', 'R', 'OW', 'K', 'R', 'IY', 'K', 'T']",PLC
+139,redersion,long,7,,,complex,pseudo,,"['R', 'IY0', 'D', 'ER1', 'ZH', 'AH0', 'N']","['R', 'IY', 'D', 'ER', 'ZH', 'AH', 'N']",PLC
+140,remindful,long,9,,,complex,pseudo,,"['R', 'IY0', 'M', 'IH1', 'N', 'D', 'F', 'AH0', 'L']","['R', 'IY', 'M', 'IH', 'N', 'D', 'F', 'AH', 'L']",PLC
+141,tensenest,long,9,,,complex,pseudo,,"['T', 'EH1', 'N', 'S', 'AH0', 'N', 'AH0', 'S', 'T']","['T', 'EH', 'N', 'S', 'AH', 'N', 'AH', 'S', 'T']",PLC
+142,weinforce,long,7,,,complex,pseudo,,"['W', 'AY1', 'N', 'F', 'AO2', 'R', 'S']","['W', 'AY', 'N', 'F', 'AO', 'R', 'S']",PLC
+143,witifully,long,8,,,complex,pseudo,,"['W', 'IH1', 'T', 'AH0', 'F', 'AH0', 'L', 'IY0']","['W', 'IH', 'T', 'AH', 'F', 'AH', 'L', 'IY']",PLC
+144,befuel,long,7,,,complex,pseudo,,"['B', 'EH1', 'F', 'Y', 'UW0', 'AH0', 'L']","['B', 'EH', 'F', 'Y', 'UW', 'AH', 'L']",PLC
+145,exporm,long,7,,,complex,pseudo,,"['EH1', 'K', 'S', 'P', 'AO2', 'R', 'M']","['EH', 'K', 'S', 'P', 'AO', 'R', 'M']",PLC
+146,befuel,long,7,,,complex,pseudo,,"['B', 'EH1', 'F', 'Y', 'UW0', 'AH0', 'L']","['B', 'EH', 'F', 'Y', 'UW', 'AH', 'L']",PLC

@@ -1,0 +1,185 @@
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+0,important,0.000275,5.44,ADJ,"['IH0', 'M', 'P', 'AO1', 'R', 'T', 'AH0', 'N', 'T']","['IH', 'M', 'P', 'AO', 'R', 'T', 'AH', 'N', 'T']",real,9,long
+1,control,0.000251,5.4,NOUN,"['K', 'AH0', 'N', 'T', 'R', 'OW1', 'L']","['K', 'AH', 'N', 'T', 'R', 'OW', 'L']",real,7,long
+2,problem,0.000251,5.4,NOUN,"['P', 'R', 'AA1', 'B', 'L', 'AH0', 'M']","['P', 'R', 'AA', 'B', 'L', 'AH', 'M']",real,7,long
+3,remember,0.00024,5.38,VERB,"['R', 'IH0', 'M', 'EH1', 'M', 'B', 'ER0']","['R', 'IH', 'M', 'EH', 'M', 'B', 'ER']",real,7,long
+4,possible,0.000229,5.36,ADJ,"['P', 'AA1', 'S', 'AH0', 'B', 'AH0', 'L']","['P', 'AA', 'S', 'AH', 'B', 'AH', 'L']",real,7,long
+5,question,0.000224,5.35,NOUN,"['K', 'W', 'EH1', 'S', 'CH', 'AH0', 'N']","['K', 'W', 'EH', 'S', 'CH', 'AH', 'N']",real,7,long
+6,program,0.000186,5.27,NOUN,"['P', 'R', 'OW1', 'G', 'R', 'AE2', 'M']","['P', 'R', 'OW', 'G', 'R', 'AE', 'M']",real,7,long
+7,america,0.000166,5.22,PROPN,"['AH0', 'M', 'EH1', 'R', 'AH0', 'K', 'AH0']","['AH', 'M', 'EH', 'R', 'AH', 'K', 'AH']",real,7,long
+8,project,0.000166,5.22,NOUN,"['P', 'R', 'AA1', 'JH', 'EH0', 'K', 'T']","['P', 'R', 'AA', 'JH', 'EH', 'K', 'T']",real,7,long
+9,especially,0.000162,5.21,ADV,"['AH0', 'S', 'P', 'EH1', 'SH', 'L', 'IY0']","['AH', 'S', 'P', 'EH', 'SH', 'L', 'IY']",real,7,long
+10,position,0.000162,5.21,NOUN,"['P', 'AH0', 'Z', 'IH1', 'SH', 'AH0', 'N']","['P', 'AH', 'Z', 'IH', 'SH', 'AH', 'N']",real,7,long
+11,present,0.000151,5.18,VERB,"['P', 'R', 'EH1', 'Z', 'AH0', 'N', 'T']","['P', 'R', 'EH', 'Z', 'AH', 'N', 'T']",real,7,long
+12,interest,0.000148,5.17,NOUN,"['IH1', 'N', 'T', 'R', 'AH0', 'S', 'T']","['IH', 'N', 'T', 'R', 'AH', 'S', 'T']",real,7,long
+13,attention,0.000129,5.11,NOUN,"['AH0', 'T', 'EH1', 'N', 'SH', 'AH0', 'N']","['AH', 'T', 'EH', 'N', 'SH', 'AH', 'N']",real,7,long
+14,character,0.000129,5.11,NOUN,"['K', 'EH1', 'R', 'IH0', 'K', 'T', 'ER0']","['K', 'EH', 'R', 'IH', 'K', 'T', 'ER']",real,7,long
+15,complete,0.000126,5.1,VERB,"['K', 'AH0', 'M', 'P', 'L', 'IY1', 'T']","['K', 'AH', 'M', 'P', 'L', 'IY', 'T']",real,7,long
+16,language,0.000126,5.1,NOUN,"['L', 'AE1', 'NG', 'G', 'W', 'AH0', 'JH']","['L', 'AE', 'NG', 'G', 'W', 'AH', 'JH']",real,7,long
+17,november,0.000126,5.1,PROPN,"['N', 'OW0', 'V', 'EH1', 'M', 'B', 'ER0']","['N', 'OW', 'V', 'EH', 'M', 'B', 'ER']",real,7,long
+18,article,0.000123,5.09,NOUN,"['AA1', 'R', 'T', 'AH0', 'K', 'AH0', 'L']","['AA', 'R', 'T', 'AH', 'K', 'AH', 'L']",real,7,long
+19,washington,0.00012,5.08,PROPN,"['W', 'AA1', 'SH', 'IH0', 'NG', 'T', 'AH0', 'N']","['W', 'AA', 'SH', 'IH', 'NG', 'T', 'AH', 'N']",real,8,long
+20,hospital,0.000117,5.07,NOUN,"['HH', 'AA1', 'S', 'P', 'IH2', 'T', 'AH0', 'L']","['HH', 'AA', 'S', 'P', 'IH', 'T', 'AH', 'L']",real,8,long
+21,australia,0.000115,5.06,PROPN,"['AO0', 'S', 'T', 'R', 'EY1', 'L', 'Y', 'AH0']","['AO', 'S', 'T', 'R', 'EY', 'L', 'Y', 'AH']",real,8,long
+22,district,0.00011,5.04,NOUN,"['D', 'IH1', 'S', 'T', 'R', 'IH0', 'K', 'T']","['D', 'IH', 'S', 'T', 'R', 'IH', 'K', 'T']",real,8,long
+23,respect,0.000107,5.03,NOUN,"['R', 'IH0', 'S', 'P', 'EH1', 'K', 'T']","['R', 'IH', 'S', 'P', 'EH', 'K', 'T']",real,7,long
+24,standard,0.000107,5.03,ADJ,"['S', 'T', 'AE1', 'N', 'D', 'ER0', 'D']","['S', 'T', 'AE', 'N', 'D', 'ER', 'D']",real,7,long
+25,capital,0.000102,5.01,NOUN,"['K', 'AE1', 'P', 'AH0', 'T', 'AH0', 'L']","['K', 'AE', 'P', 'AH', 'T', 'AH', 'L']",real,7,long
+26,expect,0.000102,5.01,VERB,"['IH0', 'K', 'S', 'P', 'EH1', 'K', 'T']","['IH', 'K', 'S', 'P', 'EH', 'K', 'T']",real,7,long
+27,content,0.0001,5.0,NOUN,"['K', 'AA1', 'N', 'T', 'EH0', 'N', 'T']","['K', 'AA', 'N', 'T', 'EH', 'N', 'T']",real,7,long
+28,husband,0.0001,5.0,NOUN,"['HH', 'AH1', 'Z', 'B', 'AH0', 'N', 'D']","['HH', 'AH', 'Z', 'B', 'AH', 'N', 'D']",real,7,long
+29,consider,9.77e-05,4.99,VERB,"['K', 'AH0', 'N', 'S', 'IH1', 'D', 'ER0']","['K', 'AH', 'N', 'S', 'IH', 'D', 'ER']",real,7,long
+30,contact,9.77e-05,4.99,NOUN,"['K', 'AA1', 'N', 'T', 'AE2', 'K', 'T']","['K', 'AA', 'N', 'T', 'AE', 'K', 'T']",real,7,long
+31,positive,9.77e-05,4.99,ADJ,"['P', 'AA1', 'Z', 'AH0', 'T', 'IH0', 'V']","['P', 'AA', 'Z', 'AH', 'T', 'IH', 'V']",real,7,long
+32,subject,9.12e-05,4.96,NOUN,"['S', 'AH1', 'B', 'JH', 'IH0', 'K', 'T']","['S', 'AH', 'B', 'JH', 'IH', 'K', 'T']",real,7,long
+33,opportunity,8.91e-05,4.95,NOUN,"['AA2', 'P', 'ER0', 'T', 'UW1', 'N', 'AH0', 'T', 'IY0']","['AA', 'P', 'ER', 'T', 'UW', 'N', 'AH', 'T', 'IY']",real,9,long
+34,product,8.91e-05,4.95,NOUN,"['P', 'R', 'AA1', 'D', 'AH0', 'K', 'T']","['P', 'R', 'AA', 'D', 'AH', 'K', 'T']",real,7,long
+35,regular,8.91e-05,4.95,ADJ,"['R', 'EH1', 'G', 'Y', 'AH0', 'L', 'ER0']","['R', 'EH', 'G', 'Y', 'AH', 'L', 'ER']",real,7,long
+36,secretary,8.91e-05,4.95,NOUN,"['S', 'EH1', 'K', 'R', 'AH0', 'T', 'EH2', 'R', 'IY0']","['S', 'EH', 'K', 'R', 'AH', 'T', 'EH', 'R', 'IY']",real,9,long
+37,contract,8.71e-05,4.94,NOUN,"['K', 'AA1', 'N', 'T', 'R', 'AE2', 'K', 'T']","['K', 'AA', 'N', 'T', 'R', 'AE', 'K', 'T']",real,8,long
+38,opinion,8.71e-05,4.94,NOUN,"['AH0', 'P', 'IH1', 'N', 'Y', 'AH0', 'N']","['AH', 'P', 'IH', 'N', 'Y', 'AH', 'N']",real,7,long
+39,protect,8.32e-05,4.92,VERB,"['P', 'R', 'AH0', 'T', 'EH1', 'K', 'T']","['P', 'R', 'AH', 'T', 'EH', 'K', 'T']",real,7,long
+40,necessary,8.13e-05,4.91,ADJ,"['N', 'EH1', 'S', 'AH0', 'S', 'EH2', 'R', 'IY0']","['N', 'EH', 'S', 'AH', 'S', 'EH', 'R', 'IY']",real,8,long
+41,congress,7.94e-05,4.9,PROPN,"['K', 'AA1', 'NG', 'G', 'R', 'AH0', 'S']","['K', 'AA', 'NG', 'G', 'R', 'AH', 'S']",real,7,long
+42,explain,7.76e-05,4.89,VERB,"['IH0', 'K', 'S', 'P', 'L', 'EY1', 'N']","['IH', 'K', 'S', 'P', 'L', 'EY', 'N']",real,7,long
+43,economy,7.41e-05,4.87,NOUN,"['IH0', 'K', 'AA1', 'N', 'AH0', 'M', 'IY0']","['IH', 'K', 'AA', 'N', 'AH', 'M', 'IY']",real,7,long
+44,complex,7.24e-05,4.86,ADJ,"['K', 'AA1', 'M', 'P', 'L', 'EH0', 'K', 'S']","['K', 'AA', 'M', 'P', 'L', 'EH', 'K', 'S']",real,8,long
+45,condition,7.24e-05,4.86,NOUN,"['K', 'AH0', 'N', 'D', 'IH1', 'SH', 'AH0', 'N']","['K', 'AH', 'N', 'D', 'IH', 'SH', 'AH', 'N']",real,8,long
+46,library,7.24e-05,4.86,NOUN,"['L', 'AY1', 'B', 'R', 'EH2', 'R', 'IY0']","['L', 'AY', 'B', 'R', 'EH', 'R', 'IY']",real,7,long
+47,distance,7.08e-05,4.85,NOUN,"['D', 'IH1', 'S', 'T', 'AH0', 'N', 'S']","['D', 'IH', 'S', 'T', 'AH', 'N', 'S']",real,7,long
+48,benefit,6.61e-05,4.82,VERB,"['B', 'EH1', 'N', 'AH0', 'F', 'IH0', 'T']","['B', 'EH', 'N', 'AH', 'F', 'IH', 'T']",real,7,long
+49,institute,6.31e-05,4.8,PROPN,"['IH1', 'N', 'S', 'T', 'AH0', 'T', 'UW2', 'T']","['IH', 'N', 'S', 'T', 'AH', 'T', 'UW', 'T']",real,8,long
+50,strength,6.31e-05,4.8,NOUN,"['S', 'T', 'R', 'EH1', 'NG', 'K', 'TH']","['S', 'T', 'R', 'EH', 'NG', 'K', 'TH']",real,7,long
+51,prevent,6.17e-05,4.79,VERB,"['P', 'R', 'IH0', 'V', 'EH1', 'N', 'T']","['P', 'R', 'IH', 'V', 'EH', 'N', 'T']",real,7,long
+52,function,6.03e-05,4.78,NOUN,"['F', 'AH1', 'NG', 'K', 'SH', 'AH0', 'N']","['F', 'AH', 'NG', 'K', 'SH', 'AH', 'N']",real,7,long
+53,influence,6.03e-05,4.78,NOUN,"['IH1', 'N', 'F', 'L', 'UW0', 'AH0', 'N', 'S']","['IH', 'N', 'F', 'L', 'UW', 'AH', 'N', 'S']",real,8,long
+54,concept,5.89e-05,4.77,NOUN,"['K', 'AA1', 'N', 'S', 'EH0', 'P', 'T']","['K', 'AA', 'N', 'S', 'EH', 'P', 'T']",real,7,long
+55,request,5.75e-05,4.76,VERB,"['R', 'IH0', 'K', 'W', 'EH1', 'S', 'T']","['R', 'IH', 'K', 'W', 'EH', 'S', 'T']",real,7,long
+56,vehicle,5.75e-05,4.76,NOUN,"['V', 'IY1', 'HH', 'IH0', 'K', 'AH0', 'L']","['V', 'IY', 'HH', 'IH', 'K', 'AH', 'L']",real,7,long
+57,mexico,5.62e-05,4.75,PROPN,"['M', 'EH1', 'K', 'S', 'AH0', 'K', 'OW2']","['M', 'EH', 'K', 'S', 'AH', 'K', 'OW']",real,7,long
+58,suggest,5.62e-05,4.75,VERB,"['S', 'AH0', 'G', 'JH', 'EH1', 'S', 'T']","['S', 'AH', 'G', 'JH', 'EH', 'S', 'T']",real,7,long
+59,appreciate,5.5e-05,4.74,VERB,"['AH0', 'P', 'R', 'IY1', 'SH', 'IY0', 'EY2', 'T']","['AH', 'P', 'R', 'IY', 'SH', 'IY', 'EY', 'T']",real,8,long
+60,magazine,5.5e-05,4.74,NOUN,"['M', 'AE1', 'G', 'AH0', 'Z', 'IY2', 'N']","['M', 'AE', 'G', 'AH', 'Z', 'IY', 'N']",real,7,long
+61,parliament,5.5e-05,4.74,NOUN,"['P', 'AA1', 'R', 'L', 'AH0', 'M', 'AH0', 'N', 'T']","['P', 'AA', 'R', 'L', 'AH', 'M', 'AH', 'N', 'T']",real,9,long
+62,religion,5.5e-05,4.74,NOUN,"['R', 'IH0', 'L', 'IH1', 'JH', 'AH0', 'N']","['R', 'IH', 'L', 'IH', 'JH', 'AH', 'N']",real,7,long
+63,strategy,5.5e-05,4.74,NOUN,"['S', 'T', 'R', 'AE1', 'T', 'AH0', 'JH', 'IY0']","['S', 'T', 'R', 'AE', 'T', 'AH', 'JH', 'IY']",real,8,long
+64,presence,5.37e-05,4.73,NOUN,"['P', 'R', 'EH1', 'Z', 'AH0', 'N', 'S']","['P', 'R', 'EH', 'Z', 'AH', 'N', 'S']",real,7,long
+65,entirely,5.25e-05,4.72,ADV,"['IH0', 'N', 'T', 'AY1', 'ER0', 'L', 'IY0']","['IH', 'N', 'T', 'AY', 'ER', 'L', 'IY']",real,7,long
+66,festival,5.25e-05,4.72,NOUN,"['F', 'EH1', 'S', 'T', 'AH0', 'V', 'AH0', 'L']","['F', 'EH', 'S', 'T', 'AH', 'V', 'AH', 'L']",real,8,long
+67,accident,5.13e-05,4.71,NOUN,"['AE1', 'K', 'S', 'AH0', 'D', 'AH0', 'N', 'T']","['AE', 'K', 'S', 'AH', 'D', 'AH', 'N', 'T']",real,8,long
+68,capacity,5.13e-05,4.71,NOUN,"['K', 'AH0', 'P', 'AE1', 'S', 'AH0', 'T', 'IY0']","['K', 'AH', 'P', 'AE', 'S', 'AH', 'T', 'IY']",real,8,long
+69,hundred,5.13e-05,4.71,NUM,"['HH', 'AH1', 'N', 'D', 'R', 'AH0', 'D']","['HH', 'AH', 'N', 'D', 'R', 'AH', 'D']",real,7,long
+70,museum,5.13e-05,4.71,NOUN,"['M', 'Y', 'UW0', 'Z', 'IY1', 'AH0', 'M']","['M', 'Y', 'UW', 'Z', 'IY', 'AH', 'M']",real,7,long
+71,domestic,4.9e-05,4.69,ADJ,"['D', 'AH0', 'M', 'EH1', 'S', 'T', 'IH0', 'K']","['D', 'AH', 'M', 'EH', 'S', 'T', 'IH', 'K']",real,8,long
+72,exercise,4.79e-05,4.68,VERB,"['EH1', 'K', 'S', 'ER0', 'S', 'AY2', 'Z']","['EH', 'K', 'S', 'ER', 'S', 'AY', 'Z']",real,7,long
+73,restaurant,4.79e-05,4.68,NOUN,"['R', 'EH1', 'S', 'T', 'ER0', 'AA2', 'N', 'T']","['R', 'EH', 'S', 'T', 'ER', 'AA', 'N', 'T']",real,8,long
+74,candidate,4.57e-05,4.66,NOUN,"['K', 'AE1', 'N', 'D', 'AH0', 'D', 'EY0', 'T']","['K', 'AE', 'N', 'D', 'AH', 'D', 'EY', 'T']",real,8,long
+75,conflict,4.37e-05,4.64,NOUN,"['K', 'AA1', 'N', 'F', 'L', 'IH0', 'K', 'T']","['K', 'AA', 'N', 'F', 'L', 'IH', 'K', 'T']",real,8,long
+76,determine,4.27e-05,4.63,VERB,"['D', 'AH0', 'T', 'ER1', 'M', 'AH0', 'N']","['D', 'AH', 'T', 'ER', 'M', 'AH', 'N']",real,7,long
+77,stadium,4.27e-05,4.63,NOUN,"['S', 'T', 'EY1', 'D', 'IY0', 'AH0', 'M']","['S', 'T', 'EY', 'D', 'IY', 'AH', 'M']",real,7,long
+78,champion,4.17e-05,4.62,NOUN,"['CH', 'AE1', 'M', 'P', 'IY0', 'AH0', 'N']","['CH', 'AE', 'M', 'P', 'IY', 'AH', 'N']",real,7,long
+79,struggle,4.17e-05,4.62,VERB,"['S', 'T', 'R', 'AH1', 'G', 'AH0', 'L']","['S', 'T', 'R', 'AH', 'G', 'AH', 'L']",real,7,long
+80,usual,4.17e-05,4.62,ADJ,"['Y', 'UW1', 'ZH', 'AH0', 'W', 'AH0', 'L']","['Y', 'UW', 'ZH', 'AH', 'W', 'AH', 'L']",real,7,long
+81,alcohol,4.07e-05,4.61,NOUN,"['AE1', 'L', 'K', 'AH0', 'HH', 'AA2', 'L']","['AE', 'L', 'K', 'AH', 'HH', 'AA', 'L']",real,7,long
+82,relevant,4.07e-05,4.61,ADJ,"['R', 'EH1', 'L', 'AH0', 'V', 'AH0', 'N', 'T']","['R', 'EH', 'L', 'AH', 'V', 'AH', 'N', 'T']",real,8,long
+83,extreme,3.98e-05,4.6,ADJ,"['IH0', 'K', 'S', 'T', 'R', 'IY1', 'M']","['IH', 'K', 'S', 'T', 'R', 'IY', 'M']",real,7,long
+84,facility,3.98e-05,4.6,NOUN,"['F', 'AH0', 'S', 'IH1', 'L', 'IH0', 'T', 'IY0']","['F', 'AH', 'S', 'IH', 'L', 'IH', 'T', 'IY']",real,8,long
+85,instance,3.89e-05,4.59,NOUN,"['IH1', 'N', 'S', 'T', 'AH0', 'N', 'S']","['IH', 'N', 'S', 'T', 'AH', 'N', 'S']",real,7,long
+86,register,3.89e-05,4.59,VERB,"['R', 'EH1', 'JH', 'IH0', 'S', 'T', 'ER0']","['R', 'EH', 'JH', 'IH', 'S', 'T', 'ER']",real,7,long
+87,sentence,3.8e-05,4.58,NOUN,"['S', 'EH1', 'N', 'T', 'AH0', 'N', 'S']","['S', 'EH', 'N', 'T', 'AH', 'N', 'S']",real,7,long
+88,academy,3.72e-05,4.57,NOUN,"['AH0', 'K', 'AE1', 'D', 'AH0', 'M', 'IY0']","['AH', 'K', 'AE', 'D', 'AH', 'M', 'IY']",real,7,long
+89,category,3.72e-05,4.57,NOUN,"['K', 'AE1', 'T', 'AH0', 'G', 'AO2', 'R', 'IY0']","['K', 'AE', 'T', 'AH', 'G', 'AO', 'R', 'IY']",real,8,long
+90,clinton,3.72e-05,4.57,PROPN,"['K', 'L', 'IH1', 'N', 'T', 'AH0', 'N']","['K', 'L', 'IH', 'N', 'T', 'AH', 'N']",real,7,long
+91,permanent,3.72e-05,4.57,ADJ,"['P', 'ER1', 'M', 'AH0', 'N', 'AH0', 'N', 'T']","['P', 'ER', 'M', 'AH', 'N', 'AH', 'N', 'T']",real,8,long
+92,excuse,3.63e-05,4.56,VERB,"['IH0', 'K', 'S', 'K', 'Y', 'UW1', 'S']","['IH', 'K', 'S', 'K', 'Y', 'UW', 'S']",real,7,long
+93,pregnant,3.63e-05,4.56,ADJ,"['P', 'R', 'EH1', 'G', 'N', 'AH0', 'N', 'T']","['P', 'R', 'EH', 'G', 'N', 'AH', 'N', 'T']",real,8,long
+94,tournament,3.63e-05,4.56,NOUN,"['T', 'UH1', 'R', 'N', 'AH0', 'M', 'AH0', 'N', 'T']","['T', 'UH', 'R', 'N', 'AH', 'M', 'AH', 'N', 'T']",real,9,long
+95,brilliant,3.55e-05,4.55,ADJ,"['B', 'R', 'IH1', 'L', 'Y', 'AH0', 'N', 'T']","['B', 'R', 'IH', 'L', 'Y', 'AH', 'N', 'T']",real,8,long
+96,deputy,3.55e-05,4.55,NOUN,"['D', 'EH1', 'P', 'Y', 'AH0', 'T', 'IY0']","['D', 'EH', 'P', 'Y', 'AH', 'T', 'IY']",real,7,long
+97,constant,3.47e-05,4.54,ADJ,"['K', 'AA1', 'N', 'S', 'T', 'AH0', 'N', 'T']","['K', 'AA', 'N', 'S', 'T', 'AH', 'N', 'T']",real,8,long
+98,incident,3.47e-05,4.54,NOUN,"['IH1', 'N', 'S', 'AH0', 'D', 'AH0', 'N', 'T']","['IH', 'N', 'S', 'AH', 'D', 'AH', 'N', 'T']",real,8,long
+99,michigan,3.47e-05,4.54,PROPN,"['M', 'IH1', 'SH', 'IH0', 'G', 'AH0', 'N']","['M', 'IH', 'SH', 'IH', 'G', 'AH', 'N']",real,7,long
+100,anniversary,3.39e-05,4.53,NOUN,"['AE2', 'N', 'AH0', 'V', 'ER1', 'S', 'ER0', 'IY0']","['AE', 'N', 'AH', 'V', 'ER', 'S', 'ER', 'IY']",real,8,long
+101,respond,3.39e-05,4.53,VERB,"['R', 'IH0', 'S', 'P', 'AA1', 'N', 'D']","['R', 'IH', 'S', 'P', 'AA', 'N', 'D']",real,7,long
+102,ultimate,3.39e-05,4.53,ADJ,"['AH1', 'L', 'T', 'AH0', 'M', 'AH0', 'T']","['AH', 'L', 'T', 'AH', 'M', 'AH', 'T']",real,7,long
+103,conduct,3.31e-05,4.52,VERB,"['K', 'AA1', 'N', 'D', 'AH0', 'K', 'T']","['K', 'AA', 'N', 'D', 'AH', 'K', 'T']",real,7,long
+104,fantasy,3.31e-05,4.52,NOUN,"['F', 'AE1', 'N', 'T', 'AH0', 'S', 'IY0']","['F', 'AE', 'N', 'T', 'AH', 'S', 'IY']",real,7,long
+105,immediate,3.31e-05,4.52,ADJ,"['IH0', 'M', 'IY1', 'D', 'IY0', 'AH0', 'T']","['IH', 'M', 'IY', 'D', 'IY', 'AH', 'T']",real,7,long
+106,principal,3.31e-05,4.52,NOUN,"['P', 'R', 'IH1', 'N', 'S', 'AH0', 'P', 'AH0', 'L']","['P', 'R', 'IH', 'N', 'S', 'AH', 'P', 'AH', 'L']",real,9,long
+107,recognize,3.31e-05,4.52,VERB,"['R', 'EH1', 'K', 'AH0', 'G', 'N', 'AY2', 'Z']","['R', 'EH', 'K', 'AH', 'G', 'N', 'AY', 'Z']",real,8,long
+108,suspect,3.24e-05,4.51,VERB,"['S', 'AH1', 'S', 'P', 'EH2', 'K', 'T']","['S', 'AH', 'S', 'P', 'EH', 'K', 'T']",real,7,long
+109,document,3.16e-05,4.5,NOUN,"['D', 'AA1', 'K', 'Y', 'AH0', 'M', 'AH0', 'N', 'T']","['D', 'AA', 'K', 'Y', 'AH', 'M', 'AH', 'N', 'T']",real,9,long
+110,olympic,3.09e-05,4.49,ADJ,"['OW0', 'L', 'IH1', 'M', 'P', 'IH0', 'K']","['OW', 'L', 'IH', 'M', 'P', 'IH', 'K']",real,7,long
+111,province,2.95e-05,4.47,NOUN,"['P', 'R', 'AA1', 'V', 'AH0', 'N', 'S']","['P', 'R', 'AA', 'V', 'AH', 'N', 'S']",real,7,long
+112,colorado,2.88e-05,4.46,PROPN,"['K', 'AA2', 'L', 'ER0', 'AA1', 'D', 'OW0']","['K', 'AA', 'L', 'ER', 'AA', 'D', 'OW']",real,7,long
+113,contrast,2.88e-05,4.46,NOUN,"['K', 'AA1', 'N', 'T', 'R', 'AE0', 'S', 'T']","['K', 'AA', 'N', 'T', 'R', 'AE', 'S', 'T']",real,8,long
+114,element,2.88e-05,4.46,NOUN,"['EH1', 'L', 'AH0', 'M', 'AH0', 'N', 'T']","['EH', 'L', 'AH', 'M', 'AH', 'N', 'T']",real,7,long
+115,establish,2.88e-05,4.46,VERB,"['IH0', 'S', 'T', 'AE1', 'B', 'L', 'IH0', 'SH']","['IH', 'S', 'T', 'AE', 'B', 'L', 'IH', 'SH']",real,8,long
+116,violent,2.88e-05,4.46,ADJ,"['V', 'AY1', 'AH0', 'L', 'AH0', 'N', 'T']","['V', 'AY', 'AH', 'L', 'AH', 'N', 'T']",real,7,long
+117,curious,2.82e-05,4.45,ADJ,"['K', 'Y', 'UH1', 'R', 'IY0', 'AH0', 'S']","['K', 'Y', 'UH', 'R', 'IY', 'AH', 'S']",real,7,long
+118,innocent,2.82e-05,4.45,ADJ,"['IH1', 'N', 'AH0', 'S', 'AH0', 'N', 'T']","['IH', 'N', 'AH', 'S', 'AH', 'N', 'T']",real,7,long
+119,concrete,2.75e-05,4.44,NOUN,"['K', 'AH0', 'N', 'K', 'R', 'IY1', 'T']","['K', 'AH', 'N', 'K', 'R', 'IY', 'T']",real,7,long
+120,guarantee,2.75e-05,4.44,VERB,"['G', 'EH2', 'R', 'AH0', 'N', 'T', 'IY1']","['G', 'EH', 'R', 'AH', 'N', 'T', 'IY']",real,7,long
+121,lieutenant,2.75e-05,4.44,NOUN,"['L', 'UW0', 'T', 'EH1', 'N', 'AH0', 'N', 'T']","['L', 'UW', 'T', 'EH', 'N', 'AH', 'N', 'T']",real,8,long
+122,ceremony,2.63e-05,4.42,NOUN,"['S', 'EH1', 'R', 'AH0', 'M', 'OW2', 'N', 'IY0']","['S', 'EH', 'R', 'AH', 'M', 'OW', 'N', 'IY']",real,8,long
+123,efficient,2.63e-05,4.42,ADJ,"['IH0', 'F', 'IH1', 'SH', 'AH0', 'N', 'T']","['IH', 'F', 'IH', 'SH', 'AH', 'N', 'T']",real,7,long
+124,houston,2.63e-05,4.42,PROPN,"['HH', 'Y', 'UW1', 'S', 'T', 'AH0', 'N']","['HH', 'Y', 'UW', 'S', 'T', 'AH', 'N']",real,7,long
+125,ordinary,2.63e-05,4.42,ADJ,"['AO1', 'R', 'D', 'AH0', 'N', 'EH2', 'R', 'IY0']","['AO', 'R', 'D', 'AH', 'N', 'EH', 'R', 'IY']",real,8,long
+126,crystal,2.51e-05,4.4,NOUN,"['K', 'R', 'IH1', 'S', 'T', 'AH0', 'L']","['K', 'R', 'IH', 'S', 'T', 'AH', 'L']",real,7,long
+127,disaster,2.45e-05,4.39,NOUN,"['D', 'IH0', 'Z', 'AE1', 'S', 'T', 'ER0']","['D', 'IH', 'Z', 'AE', 'S', 'T', 'ER']",real,7,long
+128,arizona,2.4e-05,4.38,PROPN,"['EH2', 'R', 'IH0', 'Z', 'OW1', 'N', 'AH0']","['EH', 'R', 'IH', 'Z', 'OW', 'N', 'AH']",real,7,long
+129,funeral,2.34e-05,4.37,NOUN,"['F', 'Y', 'UW1', 'N', 'ER0', 'AH0', 'L']","['F', 'Y', 'UW', 'N', 'ER', 'AH', 'L']",real,7,long
+130,genuine,2.34e-05,4.37,ADJ,"['JH', 'EH1', 'N', 'Y', 'AH0', 'W', 'AH0', 'N']","['JH', 'EH', 'N', 'Y', 'AH', 'W', 'AH', 'N']",real,8,long
+131,consent,2.29e-05,4.36,NOUN,"['K', 'AH0', 'N', 'S', 'EH1', 'N', 'T']","['K', 'AH', 'N', 'S', 'EH', 'N', 'T']",real,7,long
+132,wisconsin,2.29e-05,4.36,PROPN,"['W', 'IH0', 'S', 'K', 'AA1', 'N', 'S', 'AH0', 'N']","['W', 'IH', 'S', 'K', 'AA', 'N', 'S', 'AH', 'N']",real,9,long
+133,expand,2.24e-05,4.35,VERB,"['IH0', 'K', 'S', 'P', 'AE1', 'N', 'D']","['IH', 'K', 'S', 'P', 'AE', 'N', 'D']",real,7,long
+134,singapore,2.24e-05,4.35,PROPN,"['S', 'IH1', 'NG', 'AH0', 'P', 'AO2', 'R']","['S', 'IH', 'NG', 'AH', 'P', 'AO', 'R']",real,7,long
+135,extend,2.19e-05,4.34,VERB,"['IH0', 'K', 'S', 'T', 'EH1', 'N', 'D']","['IH', 'K', 'S', 'T', 'EH', 'N', 'D']",real,7,long
+136,instant,2.19e-05,4.34,NOUN,"['IH1', 'N', 'S', 'T', 'AH0', 'N', 'T']","['IH', 'N', 'S', 'T', 'AH', 'N', 'T']",real,7,long
+137,principle,2.19e-05,4.34,NOUN,"['P', 'R', 'IH1', 'N', 'S', 'AH0', 'P', 'AH0', 'L']","['P', 'R', 'IH', 'N', 'S', 'AH', 'P', 'AH', 'L']",real,9,long
+138,satellite,2.14e-05,4.33,NOUN,"['S', 'AE1', 'T', 'AH0', 'L', 'AY2', 'T']","['S', 'AE', 'T', 'AH', 'L', 'AY', 'T']",real,7,long
+139,apparent,2.09e-05,4.32,ADJ,"['AH0', 'P', 'EH1', 'R', 'AH0', 'N', 'T']","['AH', 'P', 'EH', 'R', 'AH', 'N', 'T']",real,7,long
+140,faculty,2.09e-05,4.32,NOUN,"['F', 'AE1', 'K', 'AH0', 'L', 'T', 'IY0']","['F', 'AE', 'K', 'AH', 'L', 'T', 'IY']",real,7,long
+141,manual,2.09e-05,4.32,ADJ,"['M', 'AE1', 'N', 'Y', 'UW0', 'AH0', 'L']","['M', 'AE', 'N', 'Y', 'UW', 'AH', 'L']",real,7,long
+142,arsenal,2.04e-05,4.31,ADJ,"['AA1', 'R', 'S', 'AH0', 'N', 'AH0', 'L']","['AA', 'R', 'S', 'AH', 'N', 'AH', 'L']",real,7,long
+143,hamilton,2.04e-05,4.31,PROPN,"['HH', 'AE1', 'M', 'AH0', 'L', 'T', 'AH0', 'N']","['HH', 'AE', 'M', 'AH', 'L', 'T', 'AH', 'N']",real,8,long
+144,minnesota,2.04e-05,4.31,PROPN,"['M', 'IH2', 'N', 'IH0', 'S', 'OW1', 'T', 'AH0']","['M', 'IH', 'N', 'IH', 'S', 'OW', 'T', 'AH']",real,8,long
+145,vietnam,2.04e-05,4.31,PROPN,"['V', 'IY0', 'EH2', 'T', 'N', 'AA1', 'M']","['V', 'IY', 'EH', 'T', 'N', 'AA', 'M']",real,7,long
+146,calendar,2e-05,4.3,NOUN,"['K', 'AE1', 'L', 'AH0', 'N', 'D', 'ER0']","['K', 'AE', 'L', 'AH', 'N', 'D', 'ER']",real,7,long
+147,kentucky,2e-05,4.3,PROPN,"['K', 'AH0', 'N', 'T', 'AH1', 'K', 'IY0']","['K', 'AH', 'N', 'T', 'AH', 'K', 'IY']",real,7,long
+148,petition,2e-05,4.3,NOUN,"['P', 'AH0', 'T', 'IH1', 'SH', 'AH0', 'N']","['P', 'AH', 'T', 'IH', 'SH', 'AH', 'N']",real,7,long
+149,distinct,1.95e-05,4.29,ADJ,"['D', 'IH0', 'S', 'T', 'IH1', 'NG', 'K', 'T']","['D', 'IH', 'S', 'T', 'IH', 'NG', 'K', 'T']",real,8,long
+150,estimate,1.95e-05,4.29,VERB,"['EH1', 'S', 'T', 'AH0', 'M', 'AH0', 'T']","['EH', 'S', 'T', 'AH', 'M', 'AH', 'T']",real,7,long
+151,franchise,1.95e-05,4.29,NOUN,"['F', 'R', 'AE1', 'N', 'CH', 'AY2', 'Z']","['F', 'R', 'AE', 'N', 'CH', 'AY', 'Z']",real,7,long
+152,sacrifice,1.95e-05,4.29,NOUN,"['S', 'AE1', 'K', 'R', 'AH0', 'F', 'AY2', 'S']","['S', 'AE', 'K', 'R', 'AH', 'F', 'AY', 'S']",real,8,long
+153,edinburgh,1.91e-05,4.28,PROPN,"['EH1', 'D', 'AH0', 'N', 'B', 'ER0', 'OW0']","['EH', 'D', 'AH', 'N', 'B', 'ER', 'OW']",real,7,long
+154,galaxy,1.91e-05,4.28,NOUN,"['G', 'AE1', 'L', 'AH0', 'K', 'S', 'IY0']","['G', 'AE', 'L', 'AH', 'K', 'S', 'IY']",real,7,long
+155,volunteer,1.91e-05,4.28,NOUN,"['V', 'AA2', 'L', 'AH0', 'N', 'T', 'IH1', 'R']","['V', 'AA', 'L', 'AH', 'N', 'T', 'IH', 'R']",real,8,long
+156,dispute,1.86e-05,4.27,VERB,"['D', 'IH0', 'S', 'P', 'Y', 'UW1', 'T']","['D', 'IH', 'S', 'P', 'Y', 'UW', 'T']",real,7,long
+157,hilarious,1.86e-05,4.27,ADJ,"['HH', 'IH0', 'L', 'EH1', 'R', 'IY0', 'AH0', 'S']","['HH', 'IH', 'L', 'EH', 'R', 'IY', 'AH', 'S']",real,8,long
+158,oklahoma,1.86e-05,4.27,PROPN,"['OW2', 'K', 'L', 'AH0', 'HH', 'OW1', 'M', 'AH0']","['OW', 'K', 'L', 'AH', 'HH', 'OW', 'M', 'AH']",real,8,long
+159,alabama,1.82e-05,4.26,PROPN,"['AE2', 'L', 'AH0', 'B', 'AE1', 'M', 'AH0']","['AE', 'L', 'AH', 'B', 'AE', 'M', 'AH']",real,7,long
+160,convince,1.82e-05,4.26,VERB,"['K', 'AH0', 'N', 'V', 'IH1', 'N', 'S']","['K', 'AH', 'N', 'V', 'IH', 'N', 'S']",real,7,long
+161,mutual,1.82e-05,4.26,ADJ,"['M', 'Y', 'UW1', 'CH', 'AH0', 'W', 'AH0', 'L']","['M', 'Y', 'UW', 'CH', 'AH', 'W', 'AH', 'L']",real,8,long
+162,brooklyn,1.78e-05,4.25,PROPN,"['B', 'R', 'UH1', 'K', 'L', 'AH0', 'N']","['B', 'R', 'UH', 'K', 'L', 'AH', 'N']",real,7,long
+163,indonesia,1.78e-05,4.25,PROPN,"['IH2', 'N', 'D', 'OW0', 'N', 'IY1', 'ZH', 'AH0']","['IH', 'N', 'D', 'OW', 'N', 'IY', 'ZH', 'AH']",real,8,long
+164,oxygen,1.78e-05,4.25,NOUN,"['AA1', 'K', 'S', 'AH0', 'JH', 'AH0', 'N']","['AA', 'K', 'S', 'AH', 'JH', 'AH', 'N']",real,7,long
+165,tribute,1.78e-05,4.25,NOUN,"['T', 'R', 'IH1', 'B', 'Y', 'UW0', 'T']","['T', 'R', 'IH', 'B', 'Y', 'UW', 'T']",real,7,long
+166,barcelona,1.7e-05,4.23,PROPN,"['B', 'AA2', 'R', 'S', 'IH0', 'L', 'OW1', 'N', 'AH0']","['B', 'AA', 'R', 'S', 'IH', 'L', 'OW', 'N', 'AH']",real,9,long
+167,casual,1.7e-05,4.23,ADJ,"['K', 'AE1', 'ZH', 'AH0', 'W', 'AH0', 'L']","['K', 'AE', 'ZH', 'AH', 'W', 'AH', 'L']",real,7,long
+168,coalition,1.7e-05,4.23,NOUN,"['K', 'OW2', 'AH0', 'L', 'IH1', 'SH', 'AH0', 'N']","['K', 'OW', 'AH', 'L', 'IH', 'SH', 'AH', 'N']",real,8,long
+169,complain,1.7e-05,4.23,VERB,"['K', 'AH0', 'M', 'P', 'L', 'EY1', 'N']","['K', 'AH', 'M', 'P', 'L', 'EY', 'N']",real,7,long
+170,expense,1.7e-05,4.23,NOUN,"['IH0', 'K', 'S', 'P', 'EH1', 'N', 'S']","['IH', 'K', 'S', 'P', 'EH', 'N', 'S']",real,7,long
+171,margaret,1.7e-05,4.23,PROPN,"['M', 'AA1', 'R', 'G', 'ER0', 'IH0', 'T']","['M', 'AA', 'R', 'G', 'ER', 'IH', 'T']",real,7,long
+172,syndrome,1.7e-05,4.23,NOUN,"['S', 'IH1', 'N', 'D', 'R', 'OW2', 'M']","['S', 'IH', 'N', 'D', 'R', 'OW', 'M']",real,7,long
+173,argentina,1.66e-05,4.22,PROPN,"['AA2', 'R', 'JH', 'AH0', 'N', 'T', 'IY1', 'N', 'AH0']","['AA', 'R', 'JH', 'AH', 'N', 'T', 'IY', 'N', 'AH']",real,9,long
+174,baltimore,1.66e-05,4.22,PROPN,"['B', 'AO1', 'L', 'T', 'AH0', 'M', 'AO2', 'R']","['B', 'AO', 'L', 'T', 'AH', 'M', 'AO', 'R']",real,8,long
+175,portrait,1.66e-05,4.22,NOUN,"['P', 'AO1', 'R', 'T', 'R', 'AH0', 'T']","['P', 'AO', 'R', 'T', 'R', 'AH', 'T']",real,7,long
+176,advocate,1.62e-05,4.21,VERB,"['AE1', 'D', 'V', 'AH0', 'K', 'AH0', 'T']","['AE', 'D', 'V', 'AH', 'K', 'AH', 'T']",real,7,long
+177,ontario,1.62e-05,4.21,PROPN,"['AA0', 'N', 'T', 'EH1', 'R', 'IY0', 'OW0']","['AA', 'N', 'T', 'EH', 'R', 'IY', 'OW']",real,7,long
+178,orleans,1.62e-05,4.21,PROPN,"['AO1', 'R', 'L', 'IY0', 'AH0', 'N', 'Z']","['AO', 'R', 'L', 'IY', 'AH', 'N', 'Z']",real,7,long
+179,vulnerable,1.62e-05,4.21,ADJ,"['V', 'AH1', 'L', 'N', 'ER0', 'AH0', 'B', 'AH0', 'L']","['V', 'AH', 'L', 'N', 'ER', 'AH', 'B', 'AH', 'L']",real,9,long
+180,implement,1.58e-05,4.2,VERB,"['IH1', 'M', 'P', 'L', 'AH0', 'M', 'AH0', 'N', 'T']","['IH', 'M', 'P', 'L', 'AH', 'M', 'AH', 'N', 'T']",real,9,long
+181,jerusalem,1.58e-05,4.2,PROPN,"['JH', 'ER0', 'UW1', 'S', 'AH0', 'L', 'AH0', 'M']","['JH', 'ER', 'UW', 'S', 'AH', 'L', 'AH', 'M']",real,8,long
+182,marijuana,1.58e-05,4.2,NOUN,"['M', 'EH2', 'R', 'AH0', 'W', 'AA1', 'N', 'AH0']","['M', 'EH', 'R', 'AH', 'W', 'AA', 'N', 'AH']",real,8,long
+183,privilege,1.58e-05,4.2,NOUN,"['P', 'R', 'IH1', 'V', 'L', 'AH0', 'JH']","['P', 'R', 'IH', 'V', 'L', 'AH', 'JH']",real,7,long
