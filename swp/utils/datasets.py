@@ -512,11 +512,14 @@ def get_epoch_numpy(
     return indices
 
 
-def get_epoch(fold_id: int, force_recreate: bool = False) -> pd.DataFrame:
+def get_epoch(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved training fold `fold_id` epoch dataframe if epoch ids exist, create them otherwise.
 
     Use `force_recreate` to recreate training set and folds from scratch"""
-    array_epoch_path = get_folds_dir() / f"epoch_fold_{fold_id}.npy"
+    array_epoch_path = (
+        get_folds_dir()
+        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}.npy"
+    )
     train_fold = get_train_fold(fold_id, force_recreate)
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)

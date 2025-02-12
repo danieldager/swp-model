@@ -81,7 +81,9 @@ def set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2)
         ax.axhline(y, color="gray", linewidth=0.5, linestyle="--")
 
 
-def new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2):
+def new_set_edge_ticks(
+    ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2, bins: bool = False
+):
     # Force the figure to render so we get the final limits.
     plt.draw()
     # Retrieve current x- and y-axis limits.
@@ -93,11 +95,15 @@ def new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_place
     x_max = int(round(x_max))
 
     # Set x-axis ticks to exactly the minimum and maximum values.
-    ax.set_xticks([x_min, x_max])
-    ax.set_xticklabels(
-        [f"{x_min:.{x_decimal_places}f}", f"{x_max:.{x_decimal_places}f}"],
-        fontsize=tick_fontsize,
-    )
+    if bins:
+        ax.set_xticks(list(range(x_min, x_max + 1)))
+        ax.set_xticklabels([" " for _ in range(x_min, x_max + 1)])
+    else:
+        ax.set_xticks([x_min, x_max])
+        ax.set_xticklabels(
+            [f"{x_min:.{x_decimal_places}f}", f"{x_max:.{x_decimal_places}f}"],
+            fontsize=tick_fontsize,
+        )
 
     # For the y-axis, lower limit will be set a bit below zero for clarity.
     n_digits = y_decimal_places - int(np.floor(np.log10(abs(y_max)))) - 1
@@ -406,12 +412,14 @@ def plot_position_errors_bins(
         # markersize=8,
         linewidth=3,
     )
-    ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
+    ax.set_xlabel(" ", fontsize=24, labelpad=-10)
     ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
     ax.legend(
         title="Lexicality", fontsize=24, title_fontsize=24, bbox_to_anchor=(1.05, 1)
     )
-    new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
+    new_set_edge_ticks(
+        ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2, bins=True
+    )
     plt.savefig(
         dir / f"{checkpoint}~posb_errors_{num_bins}_bins.png",
         dpi=300,

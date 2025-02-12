@@ -61,7 +61,6 @@ def base_slurm_file_generator(
     n_cpus: int,
     python_script: str,
     script_options: str,
-    array_arg: str | None = None,
 ) -> pathlib.Path:
     r"""
     Generate a `{job_name}.slurm` file that allow `python_script` execution with `script_options` options.
@@ -82,8 +81,8 @@ def base_slurm_file_generator(
     #!/bin/bash
     #SBATCH --job-name={job_name}
     #SBATCH {partition_str}
-    #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_{'%j' if array_arg is None else '%A_%a'}.out
-    #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_{'%j' if array_arg is None else '%A_%a'}.err
+    #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_%j.out
+    #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_%j.err
     #SBATCH --time={timestr}
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
@@ -91,7 +90,6 @@ def base_slurm_file_generator(
     #SBATCH --cpus-per-task={n_cpus}
     {f'#SBATCH --gres=gpu:{n_gpus}' if partition not in {'prepost', 'visu', 'archive', 'compil'} else ""}
     {f'#SBATCH --qos={qos}' if qos is not None else ""}
-    {f'#SBATCH --array={array_arg}' if array_arg is not None else ""}
 
     module purge
     conda deactivate

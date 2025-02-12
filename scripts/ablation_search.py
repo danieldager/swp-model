@@ -149,10 +149,23 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
         for x in log_grid:
             ax.axhline(x, linestyle="--", color="k", alpha=0.1)
             ax.axvline(x, linestyle="--", color="k", alpha=0.1)
+        ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
+    else:
+        lin_grid = [i * 1e-1 for i in range(11)]
+        ticks = [str(i * 10) for i in range(11)]
+        ax.set_xticklabels(ticks)
+        ax.set_yticklabels(ticks)
+
+        ax.grid(True)
+        for x in lin_grid:
+            ax.axhline(x, linestyle="--", color="k", alpha=0.1)
+            ax.axvline(x, linestyle="--", color="k", alpha=0.1)
+        ax.plot([-0.05, 1], [-0.05, 1], color="grey", linestyle="--", linewidth=1)
 
     # Draw a diagonal reference line
-    ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
-    ax.get_legend().remove()
+    legend = ax.get_legend()
+    if legend is not None:
+        legend.remove()
     plt.savefig(model_dir / f"{filename}_scatter.png", dpi=300)
 
     # Create a legend figure
@@ -175,6 +188,9 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
         subset = results_df[results_df["layer_name"] == layer]
         ax.hist(subset["distance"], bins=common_bins, color=color)
         ax.grid(True)
+        xabs_max = abs(max(ax.get_xlim(), key=abs))
+        ax.set_xlim(ymin=-xabs_max, ymax=xabs_max)
+
     xlabel = fig.supxlabel("Distance from Diagonal", fontsize=24)
     xlabel.set_position((0.54, 0.05))
     axes[0].set_ylabel("# of Neurons", fontsize=24, labelpad=10)
