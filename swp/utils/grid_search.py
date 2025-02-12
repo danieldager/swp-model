@@ -102,7 +102,7 @@ def grid_search_aggregate():
     aggregated = None
     log_path = get_train_dir()
     for file in log_path.glob("*.csv"):
-        log_df = pd.read_csv(file, index_col=0)
+        log_df = pd.read_csv(file)
         if aggregated is None:
             aggregated = log_df
         else:

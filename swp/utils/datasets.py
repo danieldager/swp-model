@@ -277,7 +277,7 @@ def get_test_data() -> pd.DataFrame:
     if csv_test_path.exists():
         dataframe = pd.read_csv(
             csv_test_path,
-            index_col=0,
+            # index_col=0,
             converters={
                 "Word": str,
                 "Phonemes": literal_eval,
@@ -286,6 +286,7 @@ def get_test_data() -> pd.DataFrame:
         )
     else:
         raise FileNotFoundError("User does not have the evaluation dataset.")
+
     return dataframe
 
 

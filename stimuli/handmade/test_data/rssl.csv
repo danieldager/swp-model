@@ -97,13 +97,13 @@
 95,lint,9.77e-07,2.99,NOUN,"['L', 'IH1', 'N', 'T']","['L', 'IH', 'N', 'T']",real,4,short
 96,loon,9.77e-07,2.99,NOUN,"['L', 'UW1', 'N']","['L', 'UW', 'N']",real,3,short
 97,manger,9.77e-07,2.99,NOUN,"['M', 'EY1', 'N', 'JH', 'ER0']","['M', 'EY', 'N', 'JH', 'ER']",real,5,short
-98,1.05e-06,3.02,VERB,"['D', 'AE1', 'Z', 'AH0', 'L']","['D', 'AE', 'Z', 'AH', 'L']",real,5,short,
-117,1.02e-06,3.01,NOUN,"['AH0', 'K', 'EY1', 'SH', 'AH0']","['AH', 'K', 'EY', 'SH', 'AH']",real,5,short,
-136,1e-06,3.0,PROPN,"['AE1', 'P', 'N', 'IY0', 'AH0']","['AE', 'P', 'N', 'IY', 'AH']",real,5,short,
-155,7.76e-07,2.89,VERB,"['K', 'W', 'EH1', 'N', 'CH']","['K', 'W', 'EH', 'N', 'CH']",real,5,short,
-158,7.41e-07,2.87,NOUN,"['B', 'IH1', 'M', 'B', 'OW0']","['B', 'IH', 'M', 'B', 'OW']",real,5,short,
-164,8.51e-07,2.93,VERB,"['G', 'AH1', 'L', 'P']","['G', 'AH', 'L', 'P']",real,4,short,
-175,8.32e-07,2.92,PROPN,"['EY0', 'AO1', 'R', 'T', 'AH0']","['EY', 'AO', 'R', 'T', 'AH']",real,5,short,
-191,8.13e-07,2.91,VERB,"['AH0', 'K', 'R', 'UW1']","['AH', 'K', 'R', 'UW']",real,4,short,
+98,dazzle,1.05e-06,3.02,VERB,"['D', 'AE1', 'Z', 'AH0', 'L']","['D', 'AE', 'Z', 'AH', 'L']",real,5,short
+117,acacia,1.02e-06,3.01,NOUN,"['AH0', 'K', 'EY1', 'SH', 'AH0']","['AH', 'K', 'EY', 'SH', 'AH']",real,5,short
+136,apnea,1e-06,3.0,PROPN,"['AE1', 'P', 'N', 'IY0', 'AH0']","['AE', 'P', 'N', 'IY', 'AH']",real,5,short
+155,quench,7.76e-07,2.89,VERB,"['K', 'W', 'EH1', 'N', 'CH']","['K', 'W', 'EH', 'N', 'CH']",real,5,short
+158,bimbo,7.41e-07,2.87,NOUN,"['B', 'IH1', 'M', 'B', 'OW0']","['B', 'IH', 'M', 'B', 'OW']",real,5,short
+164,gulp,8.51e-07,2.93,VERB,"['G', 'AH1', 'L', 'P']","['G', 'AH', 'L', 'P']",real,4,short
+175,aorta,8.32e-07,2.92,PROPN,"['EY0', 'AO1', 'R', 'T', 'AH0']","['EY', 'AO', 'R', 'T', 'AH']",real,5,short
+191,accrue,8.13e-07,2.91,VERB,"['AH0', 'K', 'R', 'UW1']","['AH', 'K', 'R', 'UW']",real,4,short
 136,subaru,1.82e-06,3.26,PROPN,"['S', 'UW1', 'B', 'ER0', 'UW0']","['S', 'UW', 'B', 'ER', 'UW']",real,5,short
 137,urdu,1.82e-06,3.26,PROPN,"['ER0', 'D', 'UW1']","['ER', 'D', 'UW']",real,3,short
