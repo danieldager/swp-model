@@ -28,9 +28,11 @@ from swp.utils.datasets import (
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_figures_dir, get_test_dir, get_weights_dir
 from swp.utils.plots import (
+    mutliplot_position_smoothened_errors,
     plot_category_errors,
     plot_length_errors,
     plot_position_errors,
+    plot_position_errors_bins,
     plot_sonority_errors,
     regression_plots,
 )
@@ -194,11 +196,13 @@ if __name__ == "__main__":
             # train_results = enrich_for_plotting(train_results, include_stress)
 
             plot_length_errors(test_results, checkpoint, figures_dir)
-            plot_position_errors(test_results, checkpoint, figures_dir)
-            plot_sonority_errors(ssp_results, checkpoint, figures_dir)
-            plot_category_errors(test_results, checkpoint, figures_dir)
-            regression_plots(test_results, checkpoint, figures_dir, 1)
-            regression_plots(test_results, checkpoint, figures_dir, 2)
+            # plot_position_errors(test_results, checkpoint, figures_dir)
+            mutliplot_position_smoothened_errors(test_results, checkpoint, figures_dir)
+            plot_position_errors_bins(test_results, checkpoint, figures_dir, num_bins=5)
+            # plot_sonority_errors(ssp_results, checkpoint, figures_dir)
+            # plot_category_errors(test_results, checkpoint, figures_dir)
+            # regression_plots(test_results, checkpoint, figures_dir, 1)
+            # regression_plots(test_results, checkpoint, figures_dir, 2)
             # regression_plots(train_results, checkpoint, figures_dir, 3)
 
         if args.verbose:

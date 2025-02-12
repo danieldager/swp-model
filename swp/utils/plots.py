@@ -134,7 +134,7 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
 
     """
     data = df.copy()
-    data = data[data["Sequence Length"] != 10]
+    print(data[data["Lexicality"] == "real"].head(30))
     grouped_df = (
         data.groupby(
             [
@@ -147,6 +147,7 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         .mean()
         .reset_index()
     )
+    print(grouped_df[grouped_df["Lexicality"] == "real"].head(30))
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
         data=grouped_df,
@@ -159,7 +160,7 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         linewidth=3,
     )
     plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-40)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
     filtered_labels = []
@@ -176,8 +177,16 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         ncol=2,
     )
     plt.setp(leg.get_title(), multialignment="left")
-    set_edge_ticks(ax, tick_fontsize=22)
-    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)
+    ax.set_xticks([3, 4, 5, 6, 7, 8, 9])
+    ax.set_xticklabels(["3", "", "", "", "", "", "9"], fontsize=22)
+    y_ticks = ax.get_yticks()
+    y_tick_labels = ["0" if tick == 0 else "" for tick in y_ticks]
+    y_tick_labels[-1] = f"{y_ticks[-1]:.2f}"
+    ax.set_yticklabels(y_tick_labels, fontsize=22)
+    ymin, _ = ax.get_ylim()
+    ax.set_ylim(ymin, y_ticks[-1])
+    ax.grid(True)
+    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -234,8 +243,8 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
     plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
-    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)  # , bbox_inches="tight")
+    # set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
+    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -333,7 +342,7 @@ def mutliplot_position_smoothened_errors(df, checkpoint: str, dir: pathlib.Path)
             bbox_to_anchor=(1.05, 1),
         )
         new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)
+    plt.savefig(dir / f"{checkpoint}~posm_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -403,7 +412,11 @@ def plot_position_errors_bins(
         title="Lexicality", fontsize=24, title_fontsize=24, bbox_to_anchor=(1.05, 1)
     )
     new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(dir / f"{checkpoint}~pos_errors_{num_bins}_bins.png", dpi=300)
+    plt.savefig(
+        dir / f"{checkpoint}~posb_errors_{num_bins}_bins.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
     plt.close()
 
 
@@ -653,9 +666,7 @@ def regression_plots(
     )
     ax2.tick_params(axis="both", labelsize=16)
     filename = f"{checkpoint}~cmatrix{plot_num}.png"
-    fig2.savefig(
-        str((filepath / filename).absolute()), dpi=300
-    )  # , bbox_inches="tight")
+    fig2.savefig(str((filepath / filename).absolute()), dpi=300, bbox_inches="tight")
     plt.close(fig2)
 
 
