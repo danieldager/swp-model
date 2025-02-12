@@ -3,9 +3,7 @@ import os
 import sys
 import warnings
 from ast import literal_eval
-from ast import literal_eval
 
-import pandas as pd
 import pandas as pd
 import torch
 
@@ -27,22 +25,13 @@ from swp.utils.datasets import (
     get_train_data,
     get_valid_fold,
 )
-from swp.utils.datasets import (
-    enrich_for_plotting,
-    get_test_data,
-    get_train_data,
-    get_valid_fold,
-)
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_figures_dir, get_test_dir, get_weights_dir
-from swp.utils.paths import get_figures_dir, get_test_dir, get_weights_dir
 from swp.utils.plots import (
-    plot_category_errors,
     plot_category_errors,
     plot_length_errors,
     plot_position_errors,
     plot_sonority_errors,
-    regression_plots,
     regression_plots,
 )
 from swp.utils.setup import backend_setup, seed_everything, set_device
@@ -134,32 +123,7 @@ if __name__ == "__main__":
                 verbose=args.verbose,
             )
             test_results.to_csv(model_dir / f"{checkpoint}.csv")
-        # if the results datasets already exist, skip testing
-        if not (model_dir / f"{checkpoint}.csv").exists():
-            test_df = get_test_data()
-            test_loader = get_phoneme_testloader(batch_size, include_stress)
-            test_results, _ = test(
-                model=model,
-                device=device,
-                test_df=test_df,
-                test_loader=test_loader,
-                include_stress=include_stress,
-                verbose=args.verbose,
-            )
-            test_results.to_csv(model_dir / f"{checkpoint}.csv")
 
-        if not (model_dir / f"{checkpoint}~ssp.csv").exists():
-            ssp_df = get_sonority_dataset(include_stress=include_stress)
-            ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
-            ssp_results, _ = test(
-                model=model,
-                device=device,
-                test_df=ssp_df,
-                test_loader=ssp_loader,
-                include_stress=include_stress,
-                verbose=args.verbose,
-            )
-            ssp_results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
         if not (model_dir / f"{checkpoint}~ssp.csv").exists():
             ssp_df = get_sonority_dataset(include_stress=include_stress)
             ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
@@ -221,22 +185,6 @@ if __name__ == "__main__":
             #     model_dir / f"{checkpoint}~train.csv", index_col=0, converters=converters
             # )
 
-            converters = {
-                "Phonemes": literal_eval,
-                "No Stress": literal_eval,
-                "Prediction": literal_eval,
-            }
-
-            test_results = pd.read_csv(
-                model_dir / f"{checkpoint}.csv", index_col=0, converters=converters
-            )
-            ssp_results = pd.read_csv(
-                model_dir / f"{checkpoint}~ssp.csv", index_col=0, converters=converters
-            )
-            # train_results = pd.read_csv(
-            #     model_dir / f"{checkpoint}~train.csv", index_col=0, converters=converters
-            # )
-
             test_results = enrich_for_plotting(test_results, include_stress)
             ssp_results = enrich_for_plotting(ssp_results, include_stress)
             # train_results = enrich_for_plotting(train_results, include_stress)
@@ -244,9 +192,6 @@ if __name__ == "__main__":
             figures_dir = get_figures_dir() / f"{args.model_name}~{args.train_name}"
             figures_dir.mkdir(exist_ok=True)
             # train_results = enrich_for_plotting(train_results, include_stress)
-
-            figures_dir = get_figures_dir() / f"{args.model_name}~{args.train_name}"
-            figures_dir.mkdir(exist_ok=True)
 
             plot_length_errors(test_results, checkpoint, figures_dir)
             plot_position_errors(test_results, checkpoint, figures_dir)

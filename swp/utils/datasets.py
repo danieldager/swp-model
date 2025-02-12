@@ -286,9 +286,6 @@ def get_test_data() -> pd.DataFrame:
         )
     else:
         raise FileNotFoundError("User does not have the evaluation dataset.")
-
-        raise FileNotFoundError("User does not have the evaluation dataset.")
-
     return dataframe
 
 

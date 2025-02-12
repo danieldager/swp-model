@@ -1,5 +1,3 @@
-import math
-import math
 import pathlib
 import warnings
 
@@ -13,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.ticker import FuncFormatter
+from scipy.interpolate import pchip_interpolate
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
@@ -83,6 +81,47 @@ def set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2)
         ax.axhline(y, color="gray", linewidth=0.5, linestyle="--")
 
 
+def new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2):
+    # Force the figure to render so we get the final limits.
+    plt.draw()
+    # Retrieve current x- and y-axis limits.
+    x_min, x_max = ax.get_xlim()
+    y_min, y_max = ax.get_ylim()
+
+    # round x limits
+    x_min = int(round(x_min))
+    x_max = int(round(x_max))
+
+    # Set x-axis ticks to exactly the minimum and maximum values.
+    ax.set_xticks([x_min, x_max])
+    ax.set_xticklabels(
+        [f"{x_min:.{x_decimal_places}f}", f"{x_max:.{x_decimal_places}f}"],
+        fontsize=tick_fontsize,
+    )
+
+    # For the y-axis, lower limit will be set a bit below zero for clarity.
+    n_digits = y_decimal_places - int(np.floor(np.log10(abs(y_max)))) - 1
+    rounded = 5 * np.ceil(y_max * 10**n_digits / 5) / 10**n_digits
+    # rounded = np.ceil(y_max, n_digits)
+    tick = f"{rounded:.{n_digits}f}"
+    if tick[-1] == "0":
+        tick = tick[:-1]
+    ax.set_yticks([0, rounded])
+    ax.set_yticklabels(["0", tick], fontsize=tick_fontsize)
+    new_y_min = -y_max / 21
+    ax.set_ylim(new_y_min, rounded)
+
+    # use linspace to get a range of values between the min and max
+    x_lines = np.linspace(x_min, x_max, 6)
+    y_lines = np.linspace(0, rounded, 6)
+
+    # Draw grid lines
+    for x in x_lines:
+        ax.axvline(x, color="gray", linewidth=0.5, linestyle="--")
+    for y in y_lines:
+        ax.axhline(y, color="gray", linewidth=0.5, linestyle="--")
+
+
 # Function to plot Edit Distance by Length
 def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
     """Plot average edit distance by sequence length.
@@ -121,8 +160,6 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-40)
-    plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-40)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
     filtered_labels = []
@@ -136,13 +173,8 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         title="Lexicality & Morphology",
         fontsize=22,
         title_fontsize=22,
-        fontsize=22,
-        title_fontsize=22,
         ncol=2,
     )
-    plt.setp(leg.get_title(), multialignment="left")
-    set_edge_ticks(ax, tick_fontsize=22)
-    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)
     plt.setp(leg.get_title(), multialignment="left")
     set_edge_ticks(ax, tick_fontsize=22)
     plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300)
@@ -191,7 +223,6 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     plot_df = pd.DataFrame(data_by_lexicality)
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
-    ax = sns.lineplot(
         x="Position",
         y="Error Rate",
         hue="Lexicality",
@@ -202,12 +233,177 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
     plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
-    plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
-    plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
     set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)  # , bbox_inches="tight")
+    plt.close()
+
+
+def mutliplot_position_smoothened_errors(df, checkpoint: str, dir: pathlib.Path):
+    """Plot smoothened average edit distance by relative position within each sequence.
+    Also does a subplot for every length.
+
+    Parameters:
+        df (pd.DataFrame): Data containing 'Lexicality', 'Sequence Length',
+            and 'Error Indices'.
+        ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
+            If None, a new figure and axes are created.
+
+    """
+    data_by_lexicality = []
+    # Iterate through rows grouped by Lexicality
+    num_points = 100
+    x = np.linspace(0, 1, num_points, endpoint=True)
+    for lexicality, group_df in df.groupby("Lexicality"):
+        y = np.zeros(num_points)
+        for length, length_df in group_df.groupby("Sequence Length"):
+            errors = {index / (length - 1): 0 for index in range(length)}
+            for _, row in length_df.iterrows():
+                length = row["Sequence Length"]
+
+                # Count total occurrences and errors by normalized position
+
+                for index in row["Error Indices"]:
+                    normalized = (index - 1) / (length - 1)
+                    errors[normalized] = errors.get(normalized, 0) + 1
+            indices = np.array([index for index in errors])
+            rates = np.array([error / len(length_df) for error in errors.values()])
+            curr_y = pchip_interpolate(xi=indices, yi=rates, x=x)
+            data_by_lexicality.extend(
+                [
+                    {
+                        "Position": x[i],
+                        "Error Rate": curr_y[i],
+                        "Lexicality": lexicality,
+                        "Length": length,
+                        "Smooth": "smooth",
+                    }
+                    for i in range(len(y))
+                ]
+            )
+            data_by_lexicality.extend(
+                [
+                    {
+                        "Position": indices[i],
+                        "Error Rate": rates[i],
+                        "Lexicality": lexicality,
+                        "Length": length,
+                        "Smooth": "raw",
+                    }
+                    for i in range(length)
+                ]
+            )
+            y += len(length_df) * curr_y
+            print(lexicality, length, ":", len(length_df))
+        y /= len(group_df)
+
+        # Create data entries for the current lexicality
+        data_by_lexicality.extend(
+            [
+                {
+                    "Position": x[i],
+                    "Error Rate": y[i],
+                    "Lexicality": lexicality,
+                    "Length": "all",
+                    "Smooth": "smooth",
+                }
+                for i in range(len(y))
+            ]
+        )
+    plot_df = pd.DataFrame(data_by_lexicality)
+    f, axs = plt.subplots(8, figsize=(11, 48))
+    for i, (length, plot_subdf) in enumerate(plot_df.groupby("Length")):
+        ax = sns.lineplot(
+            x="Position",
+            y="Error Rate",
+            hue="Lexicality",
+            style="Smooth",
+            data=plot_subdf,
+            # marker="o",
+            markersize=8,
+            linewidth=3,
+            ax=axs[i],
+        )
+        ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
+        ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
+        ax.legend(
+            title=f"Lexicality {length}",
+            fontsize=24,
+            title_fontsize=24,
+            bbox_to_anchor=(1.05, 1),
+        )
+        new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
+    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300)
+    plt.close()
+
+
+def plot_position_errors_bins(
+    df, checkpoint: str, dir: pathlib.Path, num_bins=3, improve_normalize: bool = True
+):
+    """Plot binned average edit distance by relative position within each sequence.
+    Setting `improve_normalize` to True does so that a word can contribut at most once
+    to a bin, and contribute if at least one errors should be attributed to that bin.
+
+    Parameters:
+        df (pd.DataFrame): Data containing 'Lexicality', 'Sequence Length',
+            and 'Error Indices'.
+        ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
+            If None, a new figure and axes are created.
+
+    """
+    data_by_lexicality = []
+    for lexicality, group_df in df.groupby("Lexicality"):
+        bins = {i / num_bins: 0 for i in range(num_bins)}
+        for _, row in group_df.iterrows():
+            length = row["Sequence Length"]
+
+            # Count total occurrences and errors by normalized position
+            added = set()
+            for index in row["Error Indices"]:
+                normalized = (index - 1) / (length - 1)
+                for i in range(num_bins):
+                    if normalized == 1.0:
+                        curr_bin = (num_bins - 1) / num_bins
+                        break
+                    elif i / num_bins <= normalized:
+                        curr_bin = i / num_bins
+                    else:
+                        break
+                if improve_normalize:
+                    if curr_bin not in added:
+                        bins[curr_bin] += 1
+                        added.add(curr_bin)
+                else:
+                    bins[curr_bin] += 1
+        # Create data entries for the current lexicality
+        data_by_lexicality.extend(
+            [
+                {
+                    "Position": curr_bin,
+                    "Error Rate": bins[curr_bin] / len(group_df),
+                    "Lexicality": lexicality,
+                }
+                for curr_bin in bins
+            ]
+        )
+    plot_df = pd.DataFrame(data_by_lexicality)
+    plt.figure(figsize=(11, 6))
+    ax = sns.barplot(
+        x="Position",
+        y="Error Rate",
+        hue="Lexicality",
+        data=plot_df,
+        # marker="o",
+        # markersize=8,
+        linewidth=3,
+    )
+    ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
+    ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
+    ax.legend(
+        title="Lexicality", fontsize=24, title_fontsize=24, bbox_to_anchor=(1.05, 1)
+    )
+    new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
+    plt.savefig(dir / f"{checkpoint}~pos_errors_{num_bins}_bins.png", dpi=300)
     plt.close()
 
 
@@ -228,7 +424,6 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
-    ax = sns.lineplot(
         data=grouped_df,
         x="Sonority",
         y="Edit Distance",
@@ -239,10 +434,7 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
     )
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
-    plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
-    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=0, y_decimal_places=2)
     set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=0, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300)  # , bbox_inches="tight")
     plt.close()
@@ -437,7 +629,7 @@ def regression_plots(
     ]
     ax.set_xticklabels(new_xticklabels, fontsize=22)
     filename = f"{checkpoint}~fimport{plot_num}.png"
-    fig1.savefig(filepath / filename, dpi=300, bbox_inches="tight")
+    fig1.savefig(str((filepath / filename).absolute()), dpi=300, bbox_inches="tight")
     plt.close(fig1)
 
     # --- Correlation Matrix Plot ---
@@ -461,7 +653,9 @@ def regression_plots(
     )
     ax2.tick_params(axis="both", labelsize=16)
     filename = f"{checkpoint}~cmatrix{plot_num}.png"
-    fig2.savefig(filepath / filename, dpi=300)  # , bbox_inches="tight")
+    fig2.savefig(
+        str((filepath / filename).absolute()), dpi=300
+    )  # , bbox_inches="tight")
     plt.close(fig2)
 
 
