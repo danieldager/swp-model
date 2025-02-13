@@ -20,8 +20,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-from scipy.interpolate import make_interp_spline
-from scipy.ndimage import gaussian_filter1d
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -32,7 +30,6 @@ from swp.test.repetition import test
 from swp.utils.datasets import (
     classify_error_positions,
     enrich_for_plotting,
-    get_ablation_train_data,
     get_test_data,
 )
 from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
@@ -90,7 +87,9 @@ def calc_accuracy(df, error_condition, total_condition):
     return 1 - errors / total
 
 
-def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scale=True):
+def scatter_plot(
+    results_df, x, y, xlabel, ylabel, filename, model_dir, log_scale=False
+):
     """
     Produce and save a scatter plot for the specified x and y columns.
 
@@ -131,36 +130,32 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
     )
     ax.set_xlabel(xlabel, fontsize=24, labelpad=10)
     ax.set_ylabel(ylabel, fontsize=24)
+    ax.grid(True)
 
     if log_scale:
         ax.set_xscale("symlog", linthresh=0.001)
         ax.set_yscale("symlog", linthresh=0.001)
         ax.set_xlim(-1e-4, 1)
         ax.set_ylim(-1e-4, 1)
-
         ticks = ["0", "0.1", "1", "10", "100"]
-        ax.set_xticklabels(ticks)
-        ax.set_yticklabels(ticks)
-
-        ax.grid(True)
         log_grid = [i * 1e-4 for i in [0, 2.5, 5, 7.5]] + [
             i * 10 ** -(3 - j) for j in range(0, 4) for i in range(1, 10)
         ]
         for x in log_grid:
             ax.axhline(x, linestyle="--", color="k", alpha=0.1)
             ax.axvline(x, linestyle="--", color="k", alpha=0.1)
-        ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
     else:
+        ax.set_xlim(-0.05, 1.05)
+        ax.set_ylim(-0.05, 1.05)
         lin_grid = [i * 1e-1 for i in range(11)]
-        ticks = [str(i * 10) for i in range(11)]
-        ax.set_xticklabels(ticks)
-        ax.set_yticklabels(ticks)
-
-        ax.grid(True)
+        ticks = ["0", "0", "20", "40", "60", "80", "100"]
         for x in lin_grid:
             ax.axhline(x, linestyle="--", color="k", alpha=0.1)
             ax.axvline(x, linestyle="--", color="k", alpha=0.1)
-        ax.plot([-0.05, 1], [-0.05, 1], color="grey", linestyle="--", linewidth=1)
+
+    ax.plot([-0.001, 1], [-0.001, 1], color="grey", linestyle="--", linewidth=1)
+    ax.set_xticklabels(ticks)
+    ax.set_yticklabels(ticks)
 
     # Draw a diagonal reference line
     legend = ax.get_legend()
@@ -189,7 +184,7 @@ def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scal
         ax.hist(subset["distance"], bins=common_bins, color=color)
         ax.grid(True)
         xabs_max = abs(max(ax.get_xlim(), key=abs))
-        ax.set_xlim(ymin=-xabs_max, ymax=xabs_max)
+        ax.set_xlim(xmin=-xabs_max, xmax=xabs_max)
 
     xlabel = fig.supxlabel("Distance from Diagonal", fontsize=24)
     xlabel.set_position((0.54, 0.05))

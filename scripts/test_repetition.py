@@ -139,36 +139,6 @@ if __name__ == "__main__":
             )
             ssp_results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
 
-        # if not (model_dir / f"{checkpoint}~train.csv").exists():
-        #     train_df = get_train_data()
-        #     train_df = get_valid_fold(fold_id=0)  ### HARDCODE ###
-        #     train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-        #     train_results, train_error = test(
-        #         model=model,
-        #         device=device,
-        #         test_df=train_df,
-        #         test_loader=train_loader,
-        #         include_stress=include_stress,
-        #         verbose=args.verbose,
-        #     )
-        #     train_results.to_csv(model_dir / f"{checkpoint}~train.csv")
-        # if not (model_dir / f"{checkpoint}~train.csv").exists():
-        #     train_df = get_train_data()
-        #     train_df = get_valid_fold(fold_id=0)  ### HARDCODE ###
-        #     train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-        #     train_results, train_error = test(
-        #         model=model,
-        #         device=device,
-        #         test_df=train_df,
-        #         test_loader=train_loader,
-        #         include_stress=include_stress,
-        #         verbose=args.verbose,
-        #     )
-        #     train_results.to_csv(model_dir / f"{checkpoint}~train.csv")
-
-        #     print(f"Train error: {train_error}")
-        #     print(f"Train error: {train_error}")
-
         if args.plot:
 
             converters = {
@@ -183,27 +153,19 @@ if __name__ == "__main__":
             ssp_results = pd.read_csv(
                 model_dir / f"{checkpoint}~ssp.csv", index_col=0, converters=converters
             )
-            # train_results = pd.read_csv(
-            #     model_dir / f"{checkpoint}~train.csv", index_col=0, converters=converters
-            # )
 
             test_results = enrich_for_plotting(test_results, include_stress)
             ssp_results = enrich_for_plotting(ssp_results, include_stress)
-            # train_results = enrich_for_plotting(train_results, include_stress)
-
             figures_dir = get_figures_dir() / f"{args.model_name}~{args.train_name}"
             figures_dir.mkdir(exist_ok=True)
-            # train_results = enrich_for_plotting(train_results, include_stress)
 
             plot_length_errors(test_results, checkpoint, figures_dir)
-            # plot_position_errors(test_results, checkpoint, figures_dir)
             mutliplot_position_smoothened_errors(test_results, checkpoint, figures_dir)
-            plot_position_errors_bins(test_results, checkpoint, figures_dir, num_bins=5)
-            # plot_sonority_errors(ssp_results, checkpoint, figures_dir)
+            plot_position_errors_bins(test_results, checkpoint, figures_dir, num_bins=3)
+            plot_sonority_errors(ssp_results, checkpoint, figures_dir)
             # plot_category_errors(test_results, checkpoint, figures_dir)
-            # regression_plots(test_results, checkpoint, figures_dir, 1)
-            # regression_plots(test_results, checkpoint, figures_dir, 2)
-            # regression_plots(train_results, checkpoint, figures_dir, 3)
+            regression_plots(test_results, checkpoint, figures_dir, 1)
+            regression_plots(test_results, checkpoint, figures_dir, 2)
 
         if args.verbose:
             print("-" * 60)

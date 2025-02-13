@@ -46,42 +46,7 @@ def training_curves(train_losses: list, valid_losses: list, model: str, n_epochs
     plt.close()
 
 
-def set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2):
-    # Force the figure to render so we get the final limits.
-    plt.draw()
-    # Retrieve current x- and y-axis limits.
-    x_min, x_max = ax.get_xlim()
-    y_min, y_max = ax.get_ylim()
-
-    # round x limits
-    x_min = int(round(x_min))
-    x_max = int(round(x_max))
-
-    # Set x-axis ticks to exactly the minimum and maximum values.
-    ax.set_xticks([x_min, x_max])
-    ax.set_xticklabels(
-        [f"{x_min:.{x_decimal_places}f}", f"{x_max:.{x_decimal_places}f}"],
-        fontsize=tick_fontsize,
-    )
-
-    # For the y-axis, lower limit will be set a bit below zero for clarity.
-    new_y_min = -0.05 * y_max  # Adjust the factor as needed.
-    ax.set_ylim(new_y_min, y_max)
-    ax.set_yticks([0, y_max])
-    ax.set_yticklabels(["0", f"{y_max:.{y_decimal_places}f}"], fontsize=tick_fontsize)
-
-    # use linspace to get a range of values between the min and max
-    x_lines = np.linspace(x_min, x_max, 6)
-    y_lines = np.linspace(new_y_min, y_max, 6)
-
-    # Draw grid lines
-    for x in x_lines:
-        ax.axvline(x, color="gray", linewidth=0.5, linestyle="--")
-    for y in y_lines:
-        ax.axhline(y, color="gray", linewidth=0.5, linestyle="--")
-
-
-def new_set_edge_ticks(
+def set_edge_ticks(
     ax, tick_fontsize=22, x_decimal_places=2, y_decimal_places=2, bins: bool = False
 ):
     # Force the figure to render so we get the final limits.
@@ -140,7 +105,6 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
 
     """
     data = df.copy()
-    print(data[data["Lexicality"] == "real"].head(30))
     grouped_df = (
         data.groupby(
             [
@@ -153,7 +117,6 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         .mean()
         .reset_index()
     )
-    print(grouped_df[grouped_df["Lexicality"] == "real"].head(30))
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
         data=grouped_df,
@@ -249,7 +212,6 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
     plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
     plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
-    # set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 
@@ -347,8 +309,8 @@ def mutliplot_position_smoothened_errors(df, checkpoint: str, dir: pathlib.Path)
             title_fontsize=24,
             bbox_to_anchor=(1.05, 1),
         )
-        new_set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(dir / f"{checkpoint}~posm_errors.png", dpi=300, bbox_inches="tight")
+        set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
+    plt.savefig(dir / f"{checkpoint}~pos_errors_len.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -417,11 +379,11 @@ def plot_position_errors_bins(
     ax.legend(
         title="Lexicality", fontsize=24, title_fontsize=24, bbox_to_anchor=(1.05, 1)
     )
-    new_set_edge_ticks(
+    set_edge_ticks(
         ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2, bins=True
     )
     plt.savefig(
-        dir / f"{checkpoint}~posb_errors_{num_bins}_bins.png",
+        dir / f"{checkpoint}~pos_errors_{num_bins}_bins.png",
         dpi=300,
         bbox_inches="tight",
     )
@@ -456,8 +418,16 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
-    set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=0, y_decimal_places=2)
-    plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300)  # , bbox_inches="tight")
+    ax.set_xticks([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])
+    ax.set_xticklabels(["-5", "", "", "", "", "", "", "", "", "", "5"], fontsize=22)
+    y_ticks = ax.get_yticks()
+    y_tick_labels = ["0" if tick == 0 else "" for tick in y_ticks]
+    y_tick_labels[-1] = f"{y_ticks[-1]:.2f}"
+    ax.set_yticklabels(y_tick_labels, fontsize=22)
+    ymin, _ = ax.get_ylim()
+    ax.set_ylim(ymin, y_ticks[-1])
+    ax.grid(True)
+    plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
