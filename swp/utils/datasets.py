@@ -353,26 +353,6 @@ def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
     return dataframe
 
 
-def get_ablation_train_data(force_recreate: bool = False) -> pd.DataFrame:
-    r"""Get saved ablation training dataset if it exists, create it otherwise.
-
-    Use `force_recreate` to recreate the training set from scratch"""
-    csv_train_path = get_dataframe_dir() / "ablation_train.csv"
-    if csv_train_path.exists() and not force_recreate:
-        dataframe = pd.read_csv(
-            csv_train_path,
-            index_col=0,
-            converters={
-                "Word": str,
-                "Phonemes": literal_eval,
-                "No Stress": literal_eval,
-            },
-        )
-    else:
-        dataframe = create_train_data()
-    return dataframe
-
-
 def create_folds(
     train_data: pd.DataFrame,
     num_folds: int = 5,

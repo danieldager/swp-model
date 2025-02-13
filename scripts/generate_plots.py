@@ -1,23 +1,23 @@
+import argparse
 import os
 import sys
-import argparse
-import pandas as pd
 from ast import literal_eval
+
+import pandas as pd
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
 from swp.utils.datasets import enrich_for_plotting
-from swp.utils.paths import get_test_dir, get_figures_dir
-from swp.utils.plots import (
-    regression_plots,
+from swp.utils.paths import get_figures_dir, get_test_dir
+from swp.viz.test import (
+    plot_category_errors,
     plot_length_errors,
     plot_position_errors,
     plot_sonority_errors,
-    plot_category_errors,
+    regression_plots,
 )
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
