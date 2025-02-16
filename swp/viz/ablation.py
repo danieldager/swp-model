@@ -12,7 +12,9 @@ warnings.filterwarnings(
 sns.set_palette("colorblind")
 
 
-def scatter_plot(results_df, x, y, xlabel, ylabel, filename, model_dir, log_scale=True):
+def scatter_plot(
+    results_df, x, y, xlabel, ylabel, filename, model_dir, log_scale=False
+):
     """
     Produce and save a scatter plot for the specified x and y columns.
 

@@ -82,7 +82,7 @@ def get_train_dir() -> pathlib.Path:
 
 
 def get_test_dir() -> pathlib.Path:
-    test_dir = get_gridsearch_dir() / "test"
+    test_dir = get_results_dir() / "test"
     test_dir.mkdir(parents=True, exist_ok=True)
     return test_dir
 

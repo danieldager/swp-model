@@ -39,7 +39,9 @@ def regression_plots(
     """
     # Copy the DataFrame and adjust Zipf Frequency for 'pseudo' lexicality.
     df = df.copy()
-    df.loc[df["Lexicality"] == "pseudo", "Zipf Frequency"] = 0
+
+    if plot_num == 2:
+        df = df[df["Lexicality"] == "real"]
 
     # Define features
     categorical_features = (

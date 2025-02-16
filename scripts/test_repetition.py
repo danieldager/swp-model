@@ -80,13 +80,13 @@ if __name__ == "__main__":
         help="Generate plots",
     )
     parser.add_argument(
-        "--abblate_layer",
+        "--ablate_layer",
         type=str,
         default=None,
         help="Layer name to ablate",
     )
     parser.add_argument(
-        "--abblate_neuron",
+        "--ablate_neuron",
         type=int,
         default=None,
         help="Neuron index to ablate",
@@ -129,9 +129,9 @@ if __name__ == "__main__":
             device=device,
         )
 
-        if args.abblate_layer is not None and args.abblate_neuron is not None:
-            layer_name = args.abblate_layer
-            neuron_idx = args.abblate_neuron
+        if args.ablate_layer is not None and args.ablate_neuron is not None:
+            layer_name = args.ablate_layer
+            neuron_idx = args.ablate_neuron
             layers = {
                 "encoder": model.encoder.recurrent,
                 "decoder": model.decoder.recurrent,
@@ -146,9 +146,9 @@ if __name__ == "__main__":
                 / f"{layer_name}_{neuron_idx}"
             )
             model_dir.mkdir(exist_ok=True, parents=True)
-        elif args.abblate_layer is not None or args.abblate_neuron is not None:
+        elif args.ablate_layer is not None or args.ablate_neuron is not None:
             raise ValueError(
-                "abblate_layer and abblate_neuron have to be passed together to run abblation"
+                "ablate_layer and ablate_neuron have to be passed together to run ablation"
             )
 
         # if the results datasets already exist, skip testing
@@ -213,10 +213,11 @@ if __name__ == "__main__":
             figures_dir.mkdir(exist_ok=True)
 
             plot_length_errors(test_results, checkpoint, figures_dir)
+            plot_sonority_errors(ssp_results, checkpoint, figures_dir)
             plot_position_smoothened_errors(test_results, checkpoint, figures_dir)
             plot_position_errors_bins(test_results, checkpoint, figures_dir, num_bins=3)
-            plot_sonority_errors(ssp_results, checkpoint, figures_dir)
-            # plot_category_errors(test_results, checkpoint, figures_dir)
+
+            plot_category_errors(test_results, checkpoint, figures_dir)
             regression_plots(test_results, checkpoint, figures_dir, 1)
             regression_plots(test_results, checkpoint, figures_dir, 2)
 
