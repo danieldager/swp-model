@@ -38,6 +38,8 @@ class PhonemeEncoder(nn.Module):
         `recurrent` : recurrent subnetwork
     """
 
+    # TODO add unroll doc
+
     def __init__(
         self,
         vocab_size: int,
@@ -54,12 +56,40 @@ class PhonemeEncoder(nn.Module):
         self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
         self.recurrent: nn.RNNBase
         self.dropout = nn.Dropout(self.droprate)
+        self.unrolling = False
 
     def forward(self, inp: torch.Tensor):
+        if self.unrolling:
+            out = self.unrolled_forward(inp)
+        else:
+            out = self.chained_forward(inp)
+        return out
+
+    def chained_forward(self, inp: torch.Tensor):
         embedded = self.embedding(inp)
         dropped = self.dropout(embedded)
         _, hidden = self.recurrent(dropped)
         return hidden
+
+    def unrolled_forward(self, inp: torch.Tensor):
+        embedded = self.embedding(inp)
+        dropped = self.dropout(embedded)
+        hidden = None
+        for i in range(dropped.shape[-2]):
+            rec_input = dropped[..., i : i + 1, :]
+            if hidden is None:
+                _, hidden = self.recurrent(rec_input)
+            else:
+                _, hidden = self.recurrent(rec_input, hidden)
+        if hidden is None:
+            raise ValueError("Time dimension is of length 0")
+        return hidden
+
+    def to_unroll(self):
+        self.unrolling = True
+
+    def to_chain(self):
+        self.unrolling = False
 
 
 class EncoderRNN(PhonemeEncoder):
@@ -172,6 +202,12 @@ class VisualEncoder(nn.Module):
         image_preds = cnn_outs["output"]
         hidden = self.to_hidden(cnn_outs["neural_code"])
         return image_preds, hidden
+
+    def to_unroll(self):
+        pass
+
+    def to_chain(self):
+        pass
 
 
 class CorNetEncoder(VisualEncoder):
