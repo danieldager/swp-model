@@ -53,6 +53,12 @@ if __name__ == "__main__":
         help="Checkpoint to load",
     )
     parser.add_argument(
+        "--mode",
+        type=str,
+        default=None,
+        help="Activation analysis algorithm",
+    )
+    parser.add_argument(
         "--include_stress",
         action="store_true",
         help="Include stress in phonemes",
@@ -110,7 +116,7 @@ if __name__ == "__main__":
         traj_results = None
         if not (model_dir / f"trajectories_{checkpoint}.csv").exists():
             if model is None:
-                model = get_model(args.model_name)
+                model = get_model(model_name)
             load_weights(
                 model=model,
                 model_name=model_name,
@@ -137,9 +143,7 @@ if __name__ == "__main__":
 
         if args.plot:
 
-            figures_dir = (
-                get_figures_dir() / f"{args.model_name}~{args.train_name}" / f"{parts}"
-            )
+            figures_dir = get_figures_dir() / f"{model_name}~{train_name}" / f"{parts}"
             figures_dir.mkdir(exist_ok=True, parents=True)
 
             if traj_results is None:
