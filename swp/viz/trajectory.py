@@ -5,9 +5,7 @@ import pandas as pd
 import seaborn as sns
 
 
-def plot_trajectories(
-    trajectory_df: pd.DataFrame, checkpoint: str, dir: pathlib.Path, mode: str
-):
+def plot_trajectories(trajectory_df: pd.DataFrame, dir: pathlib.Path, filename: str):
     color_dict = {
         lexicality: sns.color_palette("colorblind")[i]  # type: ignore
         for i, lexicality in enumerate(trajectory_df["Lexicality"].unique())
@@ -27,12 +25,12 @@ def plot_trajectories(
             alpha=0.2,
         )
         # add scatter plot
-    plt.savefig(dir / f"{mode}_{checkpoint}_traj.png", dpi=300)
+    plt.savefig(dir / filename, dpi=300)
     plt.close()
 
 
 def sns_plot_trajectories(
-    trajectory_df: pd.DataFrame, checkpoint: str, dir: pathlib.Path, mode: str
+    trajectory_df: pd.DataFrame, dir: pathlib.Path, filename: str
 ):
     trajectory_data = []
     for i, row in trajectory_df.iterrows():
@@ -75,7 +73,7 @@ def sns_plot_trajectories(
         units="Trajectory ID",
         estimator=None,  # type: ignore
     )
-    plt.savefig(dir / f"sns_{mode}_{checkpoint}_traj.png", dpi=300)
+    plt.savefig(dir / filename, dpi=300)
     plt.close()
 
 

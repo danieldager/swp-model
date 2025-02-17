@@ -93,8 +93,10 @@ if __name__ == "__main__":
     include_stress = args.include_stress
     mode = args.mode
     include_cell = args.include_cell
+    cell_str = "c" if include_cell else "h"
     parts = args.include_parts
     include_start = args.include_start
+    start_str = "s" if include_start else "n"
 
     seed_everything()
     backend_setup()
@@ -114,7 +116,8 @@ if __name__ == "__main__":
 
     for checkpoint in checkpoints:
         traj_results = None
-        if not (model_dir / f"trajectories_{checkpoint}.csv").exists():
+        csv_name = f"trajectories_{checkpoint}_{parts}_{mode}_{cell_str}{start_str}.csv"
+        if not (model_dir / csv_name).exists():
             if model is None:
                 model = get_model(model_name)
             load_weights(
@@ -139,12 +142,12 @@ if __name__ == "__main__":
                 include_start=include_start,
                 parts=parts,
             )
-            traj_results.to_csv(model_dir / f"trajectories_{checkpoint}.csv")
+            traj_results.to_csv(model_dir / csv_name)
 
         if args.plot:
 
-            figures_dir = get_figures_dir() / f"{model_name}~{train_name}" / f"{parts}"
-            figures_dir.mkdir(exist_ok=True, parents=True)
+            figures_dir = get_figures_dir() / f"{model_name}~{train_name}"
+            figures_dir.mkdir(exist_ok=True)
 
             if traj_results is None:
                 converters = {
@@ -155,9 +158,21 @@ if __name__ == "__main__":
                 }
 
                 traj_results = pd.read_csv(
-                    model_dir / f"{checkpoint}.csv", index_col=0, converters=converters
+                    model_dir / csv_name,
+                    index_col=0,
+                    converters=converters,
                 )
 
-            plot_trajectories(traj_results, checkpoint, figures_dir, mode)
+            image_name = f"{mode}_{checkpoint}_{parts}_{cell_str}{start_str}_traj.png"
 
-            sns_plot_trajectories(traj_results, checkpoint, figures_dir, mode)
+            plot_trajectories(
+                traj_results,
+                figures_dir,
+                filename=image_name,
+            )
+
+            sns_plot_trajectories(
+                traj_results,
+                figures_dir,
+                filename=f"sns_{image_name}",
+            )
