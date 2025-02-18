@@ -183,6 +183,8 @@ class Unimodel(nn.Module):
         `start_tensor` : tensor passed to the decoder at the beginning of decoding
     """
 
+    # TODO add unroll doc
+
     def __init__(
         self,
         encoder: PhonemeEncoder | VisualEncoder,
@@ -229,6 +231,12 @@ class Unimodel(nn.Module):
         if isinstance(self.encoder, PhonemeEncoder):
             self.decoder.embedding = self.encoder.embedding
 
+    def to_unroll(self):
+        self.encoder.to_unroll()
+
+    def to_chain(self):
+        self.encoder.to_chain()
+
 
 class Bimodel(nn.Module):
     r"""A Module interfacing both auditory and visual encoders with a vocal decoder.
@@ -251,6 +259,8 @@ class Bimodel(nn.Module):
         `mode` : current mode of execution of the model
         `start_tensor` : tensor passed to the decoder at the beginning of decoding
     """
+
+    # TODO add unroll doc
 
     def __init__(
         self,
@@ -307,3 +317,9 @@ class Bimodel(nn.Module):
 
     def to_visual(self):
         self.mode = "visual"
+
+    def to_unroll(self):
+        self.audit_encoder.to_unroll()
+
+    def to_chain(self):
+        self.audit_encoder.to_chain()

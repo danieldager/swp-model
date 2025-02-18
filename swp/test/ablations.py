@@ -48,7 +48,7 @@ def ablate_lstm_neuron(layer, neuron_idx, num_neurons):
 
 
 def ablate(
-    model: Unimodel | Bimodel,
+    model: Unimodel,
     device: str | torch.device,
     test_df: pd.DataFrame,
     test_loader: DataLoader,
