@@ -41,7 +41,7 @@ def scatter_plot(
     results_df[y] = 1 - results_df[y]
     results_df["distance"] = (results_df[y] - results_df[x]) / np.sqrt(2)
 
-    # Plot the scatter points
+    ### Scatter plot
     sns.scatterplot(
         data=results_df,
         x=x,
@@ -89,7 +89,7 @@ def scatter_plot(
     legend = ax.get_legend()
     if legend is not None:
         legend.remove()
-    plt.savefig(model_dir / f"{filename}_scatter.png", dpi=300)
+    plt.savefig(model_dir / f"scatter_{filename}.png", dpi=300)
 
     # Create a legend figure
     ax.legend(title="Layer")
@@ -98,11 +98,12 @@ def scatter_plot(
     figLegend.legend(handles, labels, loc="center", title="Layer")
     figLegend.canvas.draw()
     plt.axis("off")
-    figLegend.savefig(model_dir / "legend.png", dpi=300, bbox_inches="tight")
+    # figLegend.savefig(model_dir / "scatter_legend.png", dpi=300, bbox_inches="tight")
 
     plt.close(fig)
     plt.close(figLegend)
 
+    ### Histogram
     common_bins = np.linspace(
         results_df["distance"].min(), results_df["distance"].max(), 21
     )
@@ -113,10 +114,11 @@ def scatter_plot(
         ax.grid(True)
         xabs_max = abs(max(ax.get_xlim(), key=abs))
         ax.set_xlim(xmin=-xabs_max, xmax=xabs_max)
+        ax.axvline(0, color="grey", linestyle="--", linewidth=2)
 
     xlabel = fig.supxlabel("Distance from Diagonal", fontsize=24)
     xlabel.set_position((0.54, 0.05))
     axes[0].set_ylabel("# of Neurons", fontsize=24, labelpad=10)
     plt.tight_layout()
-    plt.savefig(model_dir / f"{filename}_histos.png", dpi=300)
+    plt.savefig(model_dir / f"histo_{filename}.png", dpi=300)
     plt.close()

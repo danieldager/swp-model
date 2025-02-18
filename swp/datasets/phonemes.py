@@ -1,3 +1,4 @@
+from ast import literal_eval
 from typing import Any
 
 import numpy as np
@@ -13,6 +14,7 @@ from ..utils.datasets import (
     get_train_fold,
     get_valid_fold,
 )
+from ..utils.paths import get_dataframe_dir
 
 
 class PhonemeTrainDataset(Dataset):
@@ -193,82 +195,98 @@ def get_phoneme_testloader(
 
 
 def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
-    # TODO Daniel docstring, save dataset to file !!! create vs get
+    stress = "sw" if include_stress else "sn"
 
-    vowels = [
-        "AH0",
-        "OY0",
-        "AA0",
-        "AY0",
-        "ER0",
-        "AO0",
-        "UW0",
-        "IH0",
-        "EH0",
-        "UH0",
-        "IY0",
-        "EY0",
-        "OW0",
-        "AE0",
-        "AW0",
-    ]
+    # check if the sonority_dataset.csv exists
+    if (get_dataframe_dir() / f"sonority_dataset_{stress}.csv").exists():
+        converters = {
+            "Word": str,
+            "Phonemes": literal_eval,
+            "No Stress": literal_eval,
+        }
+        return pd.read_csv(
+            get_dataframe_dir() / f"sonority_dataset_{stress}.csv",
+            index_col=0,
+            converters=converters,
+        )
 
-    if not include_stress:
-        vowels = [vowel[:-1] for vowel in vowels]
+    else:
 
-    plosives = ["P", "T", "K", "B", "D", "G"]
-    fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
-    affricates = ["CH", "JH"]
-    nasals = ["M", "N", "NG"]
-    liquids = ["L", "R"]
-    glides = ["W", "Y"]
+        vowels = [
+            "AH0",
+            "OY0",
+            "AA0",
+            "AY0",
+            "ER0",
+            "AO0",
+            "UW0",
+            "IH0",
+            "EH0",
+            "UH0",
+            "IY0",
+            "EY0",
+            "OW0",
+            "AE0",
+            "AW0",
+        ]
 
-    consonants = plosives + fricatives + affricates + nasals + liquids + glides
+        if not include_stress:
+            vowels = [vowel[:-1] for vowel in vowels]
 
-    def get_sonority(c):
-        if c in plosives:
-            return 0
-        elif c in fricatives:
-            return 1
-        elif c in affricates:
-            return 2
-        elif c in nasals:
-            return 3
-        elif c in liquids:
-            return 4
-        elif c in glides:
-            return 5
-        else:
-            raise ValueError(
-                f"Phoneme {c} was not recognized in any of the consonant classes"
-            )
+        plosives = ["P", "T", "K", "B", "D", "G"]
+        fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
+        affricates = ["CH", "JH"]
+        nasals = ["M", "N", "NG"]
+        liquids = ["L", "R"]
+        glides = ["W", "Y"]
 
-    def get_sonority_score(c1, c2):
-        return get_sonority(c2) - get_sonority(c1)
+        consonants = plosives + fricatives + affricates + nasals + liquids + glides
 
-    ccv = {}
-    vcc = {}
-    for c1 in consonants:
-        for c2 in consonants:
-            if c1 != c2:
-                score = get_sonority_score(c1, c2)
-                for v in vowels:
-                    ccv[(c1, c2, v)] = score
-                    vcc[(v, c1, c2)] = score
+        def get_sonority(c):
+            if c in plosives:
+                return 0
+            elif c in fricatives:
+                return 1
+            elif c in affricates:
+                return 2
+            elif c in nasals:
+                return 3
+            elif c in liquids:
+                return 4
+            elif c in glides:
+                return 5
+            else:
+                raise ValueError(
+                    f"Phoneme {c} was not recognized in any of the consonant classes"
+                )
 
-    # create test dataframe for sonority plotting
-    ccv_df = pd.DataFrame(
-        # [(repr(list(phonemes)), score) for phonemes, score in ccv.items()],
-        [(list(phonemes), score) for phonemes, score in ccv.items()],
-        columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
-    )
-    vcc_df = pd.DataFrame(
-        # [(repr(list(phonemes)), score) for phonemes, score in vcc.items()],
-        [(list(phonemes), score) for phonemes, score in vcc.items()],
-        columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
-    )
-    ccv_df["Type"] = "CCV"
-    vcc_df["Type"] = "VCC"
-    sonority_dataset = pd.concat([ccv_df, vcc_df])
+        def get_sonority_score(c1, c2):
+            return get_sonority(c2) - get_sonority(c1)
 
-    return sonority_dataset
+        ccv = {}
+        vcc = {}
+        for c1 in consonants:
+            for c2 in consonants:
+                if c1 != c2:
+                    score = get_sonority_score(c1, c2)
+                    for v in vowels:
+                        ccv[(c1, c2, v)] = score
+                        vcc[(v, c1, c2)] = -score
+
+        # create test dataframe for sonority plotting
+        ccv_df = pd.DataFrame(
+            # [(repr(list(phonemes)), score) for phonemes, score in ccv.items()],
+            [(list(phonemes), score) for phonemes, score in ccv.items()],
+            columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
+        )
+        vcc_df = pd.DataFrame(
+            # [(repr(list(phonemes)), score) for phonemes, score in vcc.items()],
+            [(list(phonemes), score) for phonemes, score in vcc.items()],
+            columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
+        )
+        ccv_df["Type"] = "CCV"
+        vcc_df["Type"] = "VCC"
+        sonority_dataset = pd.concat([ccv_df, vcc_df])
+        sonority_dataset.to_csv(get_dataframe_dir() / f"sonority_dataset_{stress}.csv")
+
+        return sonority_dataset

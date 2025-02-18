@@ -67,7 +67,7 @@ def ablate(
 
         for neuron_idx in range(num_neurons):
             print(
-                f"Ablating neuron {neuron_idx+1}/{num_neurons} in {layer_name}",
+                f"Ablating neuron {neuron_idx+1}/{num_neurons} in {layer_name}    ",
                 end="\r",
             )
             ablate_lstm_neuron(layer, neuron_idx, num_neurons)

@@ -16,7 +16,7 @@ from swp.datasets.phonemes import get_phoneme_testloader
 from swp.test.ablations import ablate
 from swp.utils.datasets import get_test_data
 from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
-from swp.utils.paths import get_ablations_dir
+from swp.utils.paths import get_figures_dir, get_test_dir
 from swp.utils.setup import seed_everything
 from swp.viz.ablation import scatter_plot
 
@@ -60,6 +60,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Print verbose output",
     )
+    parser.add_argument(
+        "--retest",
+        action="store_true",
+        help="Re-run ablation search",
+    )
 
     args = parser.parse_args()
     model_name = args.model_name
@@ -89,12 +94,16 @@ if __name__ == "__main__":
     )
 
     # Set up directories
-    ablations_dir = get_ablations_dir()
-    model_dir = ablations_dir / f"{model_name}~{train_name}~{checkpoint}"
-    model_dir.mkdir(exist_ok=True, parents=True)
+    results_dir = get_test_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+    figures_dir = (
+        get_figures_dir() / f"{model_name}~{train_name}" / f"{checkpoint}" / "ablation"
+    )
+    results_dir.mkdir(exist_ok=True, parents=True)
+    figures_dir.mkdir(exist_ok=True, parents=True)
 
     # Check if results_df already exists
-    if not (model_dir / "ablation_results.csv").exists():
+    file_path = results_dir / "ablation.csv"
+    if args.retest or not file_path.exists():
         results_df = ablate(
             model=model,
             device=device,
@@ -102,9 +111,9 @@ if __name__ == "__main__":
             test_loader=test_loader,
             include_stress=False,
         )
-        results_df.to_csv(model_dir / "ablation_results.csv", index=False)
+        results_df.to_csv(file_path, index=False)
 
-    results_df = pd.read_csv(model_dir / "ablation_results.csv")
+    results_df = pd.read_csv(file_path)
     print("\nLowest accuracies:")
     for condition in [
         "real_accuracy",
@@ -133,7 +142,7 @@ if __name__ == "__main__":
         "Real (Lexical)",
         "Pseudo (Sublexical)",
         "lex",
-        model_dir,
+        figures_dir,
     )
 
     scatter_plot(
@@ -143,7 +152,7 @@ if __name__ == "__main__":
         "Low Frequency",
         "High Frequency",
         "frq",
-        model_dir,
+        figures_dir,
     )
 
     scatter_plot(
@@ -153,7 +162,7 @@ if __name__ == "__main__":
         "Morphologically Simple",
         "Morphologically Complex",
         "mor",
-        model_dir,
+        figures_dir,
     )
 
     scatter_plot(
@@ -163,7 +172,7 @@ if __name__ == "__main__":
         "Primacy (First Half)",
         "Recency (Second Half)",
         "pos",
-        model_dir,
+        figures_dir,
     )
 
     scatter_plot(
@@ -173,5 +182,5 @@ if __name__ == "__main__":
         "Short Words",
         "Long Words",
         "len",
-        model_dir,
+        figures_dir,
     )

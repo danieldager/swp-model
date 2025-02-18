@@ -13,7 +13,7 @@ import seaborn as sns
 sns.set_palette("colorblind")
 
 
-def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
+def plot_length_errors(df, dir: pathlib.Path):
     """Plot average edit distance by sequence length.
 
     Parameters:
@@ -43,6 +43,7 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
         marker="o",
         markersize=8,
         linewidth=3,
+        palette={"real": "red", "pseudo": "blue"},
     )
     plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
@@ -71,5 +72,5 @@ def plot_length_errors(df, checkpoint: str, dir: pathlib.Path):
     ymin, _ = ax.get_ylim()
     ax.set_ylim(ymin, y_ticks[-1])
     ax.grid(True)
-    plt.savefig(dir / f"{checkpoint}~len_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / f"errors_len.png", dpi=300, bbox_inches="tight")
     plt.close()

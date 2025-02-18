@@ -19,7 +19,7 @@ sns.set_palette("colorblind")
 
 
 # Function to plot Average Edit Distance by Position
-def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
+def plot_position_errors(df, dir: pathlib.Path):
     """Plot average edit distance by relative position within each sequence.
 
     Parameters:
@@ -67,18 +67,17 @@ def plot_position_errors(df, checkpoint: str, dir: pathlib.Path):
         marker="o",
         markersize=8,
         linewidth=3,
+        palette={"real": "red", "pseudo": "blue"},
     )
     plt.xlabel("Relative Position", fontsize=24, labelpad=-10)
     plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
     # set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(dir / f"{checkpoint}~pos_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / f"pos_errors.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def plot_position_smoothened_errors(
-    df, checkpoint: str, dir: pathlib.Path, multi: bool = False
-):
+def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
     """Plot smoothened average edit distance by relative position within each sequence.
     Also does a subplot for every length.
 
@@ -162,6 +161,7 @@ def plot_position_smoothened_errors(
                 markersize=8,
                 linewidth=3,
                 ax=axs[i],
+                palette={"real": "red", "pseudo": "blue"},
             )
             ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
             ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
@@ -182,18 +182,21 @@ def plot_position_smoothened_errors(
             data=plot_df,
             markersize=8,
             linewidth=3,
+            palette={"real": "red", "pseudo": "blue"},
         )
         ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
         ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
-        ax.legend(
-            title=f"Lexicality",
-            fontsize=24,
-            title_fontsize=24,
-            bbox_to_anchor=(1.05, 1),
-        )
+        # ax.legend(
+        #     title=f"Lexicality",
+        #     fontsize=24,
+        #     title_fontsize=24,
+        #     bbox_to_anchor=(1.05, 1),
+        # )
+        # get rid of legend
+        ax.get_legend().remove()
         set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     plt.savefig(
-        dir / f"{checkpoint}~pos_errors{'_len' if multi else ''}.png",
+        dir / f"errors_pos{'_len' if multi else ''}.png",
         dpi=300,
         bbox_inches="tight",
     )
@@ -201,7 +204,7 @@ def plot_position_smoothened_errors(
 
 
 def plot_position_errors_bins(
-    df, checkpoint: str, dir: pathlib.Path, num_bins=3, improve_normalize: bool = True
+    df, dir: pathlib.Path, num_bins=3, improve_normalize: bool = True
 ):
     """Plot binned average edit distance by relative position within each sequence.
     Setting `improve_normalize` to True does so that a word can contribut at most once
@@ -257,6 +260,7 @@ def plot_position_errors_bins(
         hue="Lexicality",
         data=plot_df,
         linewidth=3,
+        palette={"real": "red", "pseudo": "blue"},
     )
     ax.set_xlabel(" ", fontsize=24, labelpad=-10)
     ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
@@ -267,7 +271,7 @@ def plot_position_errors_bins(
         ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2, bins=True
     )
     plt.savefig(
-        dir / f"{checkpoint}~pos_errors_{num_bins}_bins.png",
+        dir / f"errors_pos_{num_bins}b.png",
         dpi=300,
         bbox_inches="tight",
     )

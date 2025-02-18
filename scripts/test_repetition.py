@@ -75,9 +75,9 @@ if __name__ == "__main__":
         help="Print verbose output",
     )
     parser.add_argument(
-        "--plot",
+        "--retest",
         action="store_true",
-        help="Generate plots",
+        help="Regenerate test results",
     )
     parser.add_argument(
         "--ablate_layer",
@@ -108,9 +108,6 @@ if __name__ == "__main__":
     backend_setup()
     device = set_device()
 
-    test_dir = get_test_dir()
-    model_dir = test_dir / f"{model_name}~{train_name}"
-    model_dir.mkdir(exist_ok=True, parents=True)
     weights_dir = get_weights_dir() / model_name / train_name
 
     if checkpoint is None:
@@ -119,6 +116,11 @@ if __name__ == "__main__":
         checkpoints = [checkpoint]
 
     for checkpoint in checkpoints:
+
+        results_dir = get_test_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+        figures_dir = (
+            get_figures_dir() / f"{model_name}~{train_name}" / f"{checkpoint}" / "test"
+        )
 
         model = get_model(args.model_name)
         load_weights(
@@ -139,20 +141,23 @@ if __name__ == "__main__":
             layer = layers[layer_name]
             num_neurons = layer.hidden_size
             ablate_lstm_neuron(layer, neuron_idx, num_neurons)
-            ablations_dir = get_ablations_dir()
-            model_dir = (
-                ablations_dir
-                / f"{model_name}~{train_name}~{checkpoint}"
-                / f"{layer_name}_{neuron_idx}"
-            )
-            model_dir.mkdir(exist_ok=True, parents=True)
+            results_dir = results_dir / f"{layer_name}_{neuron_idx}"
+            figures_dir = figures_dir / f"{layer_name}_{neuron_idx}"
+
         elif args.ablate_layer is not None or args.ablate_neuron is not None:
             raise ValueError(
                 "ablate_layer and ablate_neuron have to be passed together to run ablation"
             )
 
+        else:
+            results_dir = results_dir / "control"
+            figures_dir = figures_dir / "control"
+
+        results_dir.mkdir(exist_ok=True, parents=True)
+        figures_dir.mkdir(exist_ok=True, parents=True)
+
         # if the results datasets already exist, skip testing
-        if not (model_dir / f"{checkpoint}.csv").exists():
+        if args.retest or not (results_dir / "fdd.csv").exists():
             test_df = get_test_data()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
             test_results, _ = test(
@@ -163,9 +168,9 @@ if __name__ == "__main__":
                 include_stress=include_stress,
                 verbose=args.verbose,
             )
-            test_results.to_csv(model_dir / f"{checkpoint}.csv")
+            test_results.to_csv(results_dir / "fdd.csv")
 
-        if not (model_dir / f"{checkpoint}~ssp.csv").exists():
+        if args.retest or not (results_dir / f"ssp.csv").exists():
             ssp_df = get_sonority_dataset(include_stress=include_stress)
             ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
             ssp_results, _ = test(
@@ -176,9 +181,11 @@ if __name__ == "__main__":
                 include_stress=include_stress,
                 verbose=args.verbose,
             )
-            ssp_results.to_csv(model_dir / f"{checkpoint}~ssp.csv")
+            ssp_results.to_csv(results_dir / f"ssp.csv")
 
-        if args.test_train and not (model_dir / f"{checkpoint}~train.csv").exists():
+        if args.test_train and (
+            args.retest or not (results_dir / f"train.csv").exists()
+        ):
             train_df = get_train_data()
             train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
             train_results, train_error = test(
@@ -189,37 +196,35 @@ if __name__ == "__main__":
                 include_stress=include_stress,
                 verbose=args.verbose,
             )
-            train_results.to_csv(model_dir / f"{checkpoint}~train.csv")
-            # train_results = enrich_for_plotting(train_results, include_stress)
+            train_results.to_csv(results_dir / f"train.csv")
+            train_results = enrich_for_plotting(train_results, include_stress)
 
-        if args.plot:
+        # if args.plot:
 
-            converters = {
-                "Phonemes": literal_eval,
-                "No Stress": literal_eval,
-                "Prediction": literal_eval,
-            }
+        converters = {
+            "Phonemes": literal_eval,
+            "No Stress": literal_eval,
+            "Prediction": literal_eval,
+        }
 
-            test_results = pd.read_csv(
-                model_dir / f"{checkpoint}.csv", index_col=0, converters=converters
-            )
-            ssp_results = pd.read_csv(
-                model_dir / f"{checkpoint}~ssp.csv", index_col=0, converters=converters
-            )
+        test_results = pd.read_csv(
+            results_dir / "fdd.csv", index_col=0, converters=converters
+        )
+        ssp_results = pd.read_csv(
+            results_dir / "ssp.csv", index_col=0, converters=converters
+        )
 
-            test_results = enrich_for_plotting(test_results, include_stress)
-            ssp_results = enrich_for_plotting(ssp_results, include_stress)
-            figures_dir = get_figures_dir() / f"{args.model_name}~{args.train_name}"
-            figures_dir.mkdir(exist_ok=True)
+        test_results = enrich_for_plotting(test_results, include_stress)
+        ssp_results = enrich_for_plotting(ssp_results, include_stress)
 
-            plot_length_errors(test_results, checkpoint, figures_dir)
-            plot_sonority_errors(ssp_results, checkpoint, figures_dir)
-            plot_position_smoothened_errors(test_results, checkpoint, figures_dir)
-            plot_position_errors_bins(test_results, checkpoint, figures_dir, num_bins=3)
+        plot_length_errors(test_results, figures_dir)
+        plot_sonority_errors(ssp_results, figures_dir)
+        plot_position_smoothened_errors(test_results, figures_dir)
+        plot_position_errors_bins(test_results, figures_dir, num_bins=3)
 
-            plot_category_errors(test_results, checkpoint, figures_dir)
-            regression_plots(test_results, checkpoint, figures_dir, 1)
-            regression_plots(test_results, checkpoint, figures_dir, 2)
+        plot_category_errors(test_results, figures_dir)
+        regression_plots(test_results, figures_dir, 1)
+        regression_plots(test_results, figures_dir, 2)
 
         if args.verbose:
             print("-" * 60)

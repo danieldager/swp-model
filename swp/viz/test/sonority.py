@@ -13,7 +13,7 @@ import seaborn as sns
 sns.set_palette("colorblind")
 
 
-def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
+def plot_sonority_errors(df, dir: pathlib.Path):
     """Plot average edit distance grouped by sonority.
 
     Parameters:
@@ -39,16 +39,19 @@ def plot_sonority_errors(df, checkpoint: str, dir: pathlib.Path):
         linewidth=3,
     )
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-5)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
     ax.set_xticks([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])
     ax.set_xticklabels(["-5", "", "", "", "", "", "", "", "", "", "5"], fontsize=22)
-    y_ticks = ax.get_yticks()
-    y_tick_labels = ["0" if tick == 0 else "" for tick in y_ticks]
-    y_tick_labels[-1] = f"{y_ticks[-1]:.2f}"
-    ax.set_yticklabels(y_tick_labels, fontsize=22)
-    ymin, _ = ax.get_ylim()
-    ax.set_ylim(ymin, y_ticks[-1])
+    # y_ticks = ax.get_yticks()
+    # print(y_ticks)
+    # y_tick_labels = ["0" if tick == 0 else "" for tick in y_ticks]
+    # y_tick_labels[-1] = f"{y_ticks[-1]:.2f}"
+    # ax.set_xticklabels(["0", "0.5", "1", "1.5", "2", "2.5", "3"], fontsize=22)
+    ax.set_yticks([0, 0.5, 1, 1.5, 2])
+    ax.set_yticklabels(["0", "", "", "", "2"], fontsize=22)
+    # ymin, _ = ax.get_ylim()
+    ax.set_ylim(0, 2)
     ax.grid(True)
-    plt.savefig(dir / f"{checkpoint}~son_errors.png", dpi=300, bbox_inches="tight")
+    plt.savefig(dir / "errors_son.png", dpi=300, bbox_inches="tight")
     plt.close()
