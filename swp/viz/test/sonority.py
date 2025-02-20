@@ -1,6 +1,8 @@
 import pathlib
 import warnings
 
+import numpy as np
+
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
@@ -43,15 +45,31 @@ def plot_sonority_errors(df, dir: pathlib.Path):
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
     ax.set_xticks([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])
     ax.set_xticklabels(["-5", "", "", "", "", "", "", "", "", "", "5"], fontsize=22)
-    # y_ticks = ax.get_yticks()
-    # print(y_ticks)
-    # y_tick_labels = ["0" if tick == 0 else "" for tick in y_ticks]
-    # y_tick_labels[-1] = f"{y_ticks[-1]:.2f}"
-    # ax.set_xticklabels(["0", "0.5", "1", "1.5", "2", "2.5", "3"], fontsize=22)
-    ax.set_yticks([0, 0.5, 1, 1.5, 2])
-    ax.set_yticklabels(["0", "", "", "", "2"], fontsize=22)
-    # ymin, _ = ax.get_ylim()
-    ax.set_ylim(0, 2)
+    # _, ymax = ax.get_ylim()
+    # ticks = [0, 0.5, 1, 1.5, 2]
+    # labels = ["0", "", "", "", "2"]
+    # if ymax >= 2.5:
+    #     ticks.append(2.5)
+    #     labels[-1] = ""
+    #     labels.append("2.5")
+    #     ylim = 2.5
+    # else:
+    #     ylim = 2
+
+    # Manually adjust y-axis ticks
+    yticks = ax.get_yticks()
+    y_min, y_max = 0, yticks[-1]
+    new_ticks = np.linspace(y_min, y_max, 7)
+    ax.set_yticks(new_ticks)
+
+    # Manually set the tick labels
+    tick_labels = ["" for _ in new_ticks]
+    tick_labels[0] = "0"
+    tick_labels[-1] = f"{new_ticks[-1]:.2f}"
+    while tick_labels[-1][-1] in {"0", "."}:
+        tick_labels[-1] = tick_labels[-1][:-1]
+    ax.set_yticklabels(tick_labels, fontsize=22)
+
     ax.grid(True)
     plt.savefig(dir / "errors_son.png", dpi=300, bbox_inches="tight")
     plt.close()

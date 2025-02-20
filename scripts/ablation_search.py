@@ -18,7 +18,7 @@ from swp.utils.datasets import get_test_data
 from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
 from swp.utils.paths import get_figures_dir, get_test_dir
 from swp.utils.setup import seed_everything
-from swp.viz.ablation import scatter_plot
+from swp.viz.ablation import fi_scatter, scatter_plot
 
 warnings.filterwarnings(
     "ignore",
@@ -102,18 +102,23 @@ if __name__ == "__main__":
     figures_dir.mkdir(exist_ok=True, parents=True)
 
     # Check if results_df already exists
-    file_path = results_dir / "ablation.csv"
-    if args.retest or not file_path.exists():
-        results_df = ablate(
-            model=model,
+    fi_path = results_dir / "fi.csv"
+    results_path = results_dir / "ablation.csv"
+    if args.retest or not (fi_path.exists() and results_path.exists()):
+        fi_df, results_df = ablate(
+            model=model,  # type: ignore
             device=device,
             test_df=test_data,
             test_loader=test_loader,
             include_stress=False,
         )
-        results_df.to_csv(file_path, index=False)
+        fi_df.to_csv(fi_path, index=False)
+        results_df.to_csv(results_path, index=False)
 
-    results_df = pd.read_csv(file_path)
+    fi_df = pd.read_csv(fi_path)
+    fi_scatter(fi_df, figures_dir)
+
+    results_df = pd.read_csv(results_path)
     print("\nLowest accuracies:")
     for condition in [
         "real_accuracy",
@@ -169,8 +174,8 @@ if __name__ == "__main__":
         results_df,
         "primacy_accuracy",
         "recency_accuracy",
-        "Primacy (First Half)",
-        "Recency (Second Half)",
+        "Initial Position",
+        "Final Position",
         "pos",
         figures_dir,
     )

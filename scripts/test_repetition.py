@@ -30,6 +30,7 @@ from swp.utils.paths import (
 from swp.utils.setup import backend_setup, seed_everything, set_device
 from swp.viz.test import (
     plot_category_errors,
+    plot_frequency_errors,
     plot_length_errors,
     plot_position_errors,
     plot_position_errors_bins,
@@ -218,13 +219,14 @@ if __name__ == "__main__":
         ssp_results = enrich_for_plotting(ssp_results, include_stress)
 
         plot_length_errors(test_results, figures_dir)
+        plot_frequency_errors(test_results, figures_dir)
         plot_sonority_errors(ssp_results, figures_dir)
         plot_position_smoothened_errors(test_results, figures_dir)
         plot_position_errors_bins(test_results, figures_dir, num_bins=3)
 
         plot_category_errors(test_results, figures_dir)
-        regression_plots(test_results, figures_dir, 1)
-        regression_plots(test_results, figures_dir, 2)
+        regression_plots(test_results, figures_dir, "real")
+        regression_plots(test_results, figures_dir, "both")
 
         if args.verbose:
             print("-" * 60)

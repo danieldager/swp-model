@@ -11,6 +11,7 @@ from ..utils.datasets import (
     get_epoch_numpy,
     get_phoneme_to_id,
     get_test_data,
+    get_train_data,
     get_train_fold,
     get_valid_fold,
 )
@@ -275,18 +276,27 @@ def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
 
         # create test dataframe for sonority plotting
         ccv_df = pd.DataFrame(
-            # [(repr(list(phonemes)), score) for phonemes, score in ccv.items()],
             [(list(phonemes), score) for phonemes, score in ccv.items()],
             columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
         )
         vcc_df = pd.DataFrame(
-            # [(repr(list(phonemes)), score) for phonemes, score in vcc.items()],
             [(list(phonemes), score) for phonemes, score in vcc.items()],
             columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
         )
         ccv_df["Type"] = "CCV"
         vcc_df["Type"] = "VCC"
         sonority_dataset = pd.concat([ccv_df, vcc_df])
+
+        # TODO: make it work for include_stress=True
+        # remove the phonemes that are in the training set
+        train_df = get_train_data()
+        train_3 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 3]
+        train3_set = set()
+        for phonemes in train_3["No Stress"]:
+            train3_set.add(tuple(phonemes))  # only tuples are hashable
+        filtered_sonority_dataset = sonority_dataset[
+            sonority_dataset["No Stress"].apply(lambda x: tuple(x) not in train3_set)
+        ]
         sonority_dataset.to_csv(get_dataframe_dir() / f"sonority_dataset_{stress}.csv")
 
-        return sonority_dataset
+        return filtered_sonority_dataset

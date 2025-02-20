@@ -44,12 +44,12 @@ def plot_category_errors(df, dir: pathlib.Path):
         # order=order,
         data=melted,
     )
-    plt.xlabel("Error Condition", fontsize=14, labelpad=10)
-    plt.ylabel("Average Error Count", fontsize=14, labelpad=10)
+    plt.xlabel("Condition", fontsize=22, labelpad=10)
+    plt.ylabel("Average Error Count", fontsize=22, labelpad=10)
     # plt.xticks(range(len(order)), short_order)
-    plt.legend(title="Condition", fontsize=12, title_fontsize=13)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.legend(title="Error Type", fontsize=16, title_fontsize=18)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
     plt.grid(True)
-    plt.savefig(dir / f"errors_con.png", dpi=300)  # , bbox_inches="tight")
+    plt.savefig(dir / f"errors_con.png", dpi=300, bbox_inches="tight")
     plt.close()

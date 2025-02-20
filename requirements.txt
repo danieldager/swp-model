@@ -13,3 +13,4 @@ morphemes>=1.2.0
 levenshtein>=0.26.1
 eng_to_ipa>=0.0.2
 nltk>=3.9.1
+statsmodels>=0.14.4

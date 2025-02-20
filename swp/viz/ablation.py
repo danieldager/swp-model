@@ -1,7 +1,9 @@
 import warnings
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 warnings.filterwarnings(
@@ -12,8 +14,41 @@ warnings.filterwarnings(
 sns.set_palette("colorblind")
 
 
+def fi_scatter(fi_df: pd.DataFrame, model_dir: Path):
+    plt.rcParams.update({"font.size": 18})
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    sns.scatterplot(
+        data=fi_df,
+        x="fi_len",
+        y="fi_frq",
+        hue="layer_name",
+        palette={"encoder": "blue", "decoder": "red"},
+        alpha=0.9,
+        s=50,
+    )
+    ax.set_xlabel("Length", fontsize=24, labelpad=10)
+    ax.set_ylabel("Frequency", fontsize=24)
+    ax.grid(True)
+
+    legend = ax.get_legend()
+    if legend is not None:
+        legend.remove()
+    plt.tight_layout()
+    plt.savefig(model_dir / f"scatter_fi.png", dpi=300)
+    plt.close(fig)
+
+
 def scatter_plot(
-    results_df, x, y, xlabel, ylabel, filename, model_dir, log_scale=False
+    results_df: pd.DataFrame,
+    x,
+    y,
+    xlabel,
+    ylabel,
+    filename,
+    model_dir,
+    log_scale=False,
 ):
     """
     Produce and save a scatter plot for the specified x and y columns.
@@ -48,7 +83,6 @@ def scatter_plot(
         y=y,
         hue="layer_name",
         palette={"encoder": "blue", "decoder": "red"},
-        # edgecolor="black",
         alpha=0.9,
         s=50,
         ax=ax,

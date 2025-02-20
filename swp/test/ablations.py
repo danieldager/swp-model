@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.datasets import classify_error_positions, enrich_for_plotting
-from ..utils.metrics import calc_accuracy
+from ..utils.metrics import calc_accuracy, calc_importance
 from .repetition import test
 
 
@@ -53,10 +53,11 @@ def ablate(
     test_df: pd.DataFrame,
     test_loader: DataLoader,
     include_stress: bool,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     # TODO docstring
     # Loop over layers and neurons for ablation.
     ablation_results = []
+    fi_results = []
     layers = [
         ("encoder", model.encoder.recurrent),
         ("decoder", model.decoder.recurrent),
@@ -81,6 +82,17 @@ def ablate(
             restore_lstm_weights(layer, original_weights)
             df = enrich_for_plotting(df, include_stress)
             df = classify_error_positions(df)
+
+            _, fi_len, fi_frq, fi_mor = calc_importance(df, mode="real")
+            fi_results.append(
+                {
+                    "neuron_idx": neuron_idx,
+                    "layer_name": layer_name,
+                    "fi_len": fi_len,
+                    "fi_frq": fi_frq,
+                    "fi_mor": fi_mor,
+                }
+            )
 
             # Compute accuracy values
             real_accuracy = calc_accuracy(
@@ -159,5 +171,7 @@ def ablate(
             )
 
     # Save results.
+    fi_df = pd.DataFrame(fi_results)
     results_df = pd.DataFrame(ablation_results)
-    return results_df
+
+    return fi_df, results_df
