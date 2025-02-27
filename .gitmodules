@@ -1,3 +1,6 @@
 [submodule "CORnet"]
 	path = CORnet
 	url = https://github.com/dicarlolab/CORnet
+[submodule "ipa-dict"]
+	path = ipa-dict
+	url = https://github.com/open-dict-data/ipa-dict

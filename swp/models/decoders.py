@@ -67,6 +67,19 @@ class PhonemeDecoder(nn.Module):
         hidden_state: Any,
         target: torch.Tensor,
     ) -> torch.Tensor:
+        if self.training:
+            return self.training_forward(
+                inp=inp, hidden_state=hidden_state, target=target
+            )
+        else:
+            return self.eval_forward(inp=inp, hidden_state=hidden_state, target=target)
+
+    def training_forward(
+        self,
+        inp: torch.Tensor,
+        hidden_state: Any,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
         length = target.size(1)
         logits = []
 
@@ -87,7 +100,7 @@ class PhonemeDecoder(nn.Module):
             else:
                 # probs = F.softmax(phoneme_pred, dim=2)
                 # curr = probs @ self.embedding.weight
-                curr = self.embedding(phoneme_pred.argmax(dim=2))
+                curr = self.embedding(phoneme_pred.argmax(dim=-1))
                 curr = self.dropout(curr)
 
             # Forward pass
@@ -99,6 +112,15 @@ class PhonemeDecoder(nn.Module):
 
         output = torch.cat(logits, dim=1)
         return output
+
+    def eval_forward(
+        self,
+        inp: torch.Tensor,
+        hidden_state: Any,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
+        # TODO Daniel
+        pass
 
 
 class DecoderLSTM(PhonemeDecoder):

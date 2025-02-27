@@ -81,3 +81,64 @@ def sns_plot_trajectories(
 # (lexicality (blue vs. red), freq (hue of blue), morph complex (square vs. circles, or continuous vs dashed line)
 # and length (will be seen by the length of the trajectory, or you could use the size of the markers to highlight the total length).
 # keep the rest of the trajectory with alpha=0.2, or grey, we need to try.
+
+
+def better_plot_trajectories(
+    trajectory_df: pd.DataFrame, dir: pathlib.Path, filename: str
+):
+    color_dict = {
+        lexicality: sns.color_palette("colorblind")[i]  # type: ignore
+        for i, lexicality in enumerate(trajectory_df["Lexicality"].unique())
+    }
+    style_dict = {
+        "complex": "D",
+        "simple": "o",
+    }
+    middles = {}
+    types = {}
+    lasts = {}
+    for i, row in trajectory_df.iterrows():
+        x_coords, y_coords = row["Trajectory"]
+
+        plt.plot(x_coords, y_coords, color="grey", alpha=0.1, zorder=0)
+        last = len(x_coords) - 1
+        for j in range(len(x_coords)):
+            if j == last:
+                curr = lasts.setdefault(j, [])
+                type_curr = types.setdefault((row["Morphology"], row["Lexicality"]), [])
+                type_curr.append((x_coords[j], y_coords[j]))
+            else:
+                curr = middles.setdefault(j, [])
+            curr.append((x_coords[j], y_coords[j]))
+    for index, coords in middles.items():
+        x_coords, y_coords = zip(*coords)
+        plt.scatter(
+            x=x_coords,
+            y=y_coords,
+            marker=f"${index}$",  # type: ignore
+            zorder=1,
+            color="black",
+            alpha=0.2,
+        )
+    for (morph, lex), coords in types.items():
+        x_coords, y_coords = zip(*coords)
+        plt.scatter(
+            x=x_coords,
+            y=y_coords,
+            s=100,
+            marker=style_dict[morph],  # type: ignore
+            color=color_dict[lex],
+            zorder=2,
+        )
+    for index, coords in lasts.items():
+        x_coords, y_coords = zip(*coords)
+        plt.scatter(
+            x=x_coords,
+            y=y_coords,
+            marker=f"${index}$",  # type: ignore
+            color="black",
+            zorder=3,
+            alpha=0.5,
+        )
+    plt.savefig(dir / filename, dpi=300)
+    plt.close()
