@@ -20,7 +20,7 @@ from swp.datasets.phonemes import get_phoneme_trainloader
 from swp.models.autoencoder import Unimodel
 from swp.models.decoders import DecoderLSTM, DecoderRNN
 from swp.models.encoders import EncoderLSTM, EncoderRNN
-from swp.models.losses import AuditoryXENT
+from swp.models.losses import AuditoryXENT, FirstErrorXENT
 from swp.train.repetition import train
 from swp.utils.datasets import get_phoneme_to_id
 from swp.utils.models import get_model, get_model_name, get_train_args, get_train_name
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=100,
+        default=30,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dropout",
         type=float,
-        default=0.4,
+        default=0.0,
         help="Dropout rate for encoders and decoders",
     )
     parser.add_argument(
@@ -170,7 +170,8 @@ if __name__ == "__main__":
         batch_size=batch_size,
         include_stress=include_stress,
     )
-    criterion = AuditoryXENT()
+    # criterion = AuditoryXENT()
+    criterion = FirstErrorXENT()
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
     phoneme_to_id = get_phoneme_to_id(include_stress)
 

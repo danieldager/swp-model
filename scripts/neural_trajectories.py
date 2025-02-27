@@ -59,6 +59,12 @@ if __name__ == "__main__":
         help="Activation analysis algorithm",
     )
     parser.add_argument(
+        "--layers",
+        type=str,
+        default="all",
+        help="Layers of the model to include for analysis",
+    )
+    parser.add_argument(
         "--include_stress",
         action="store_true",
         help="Include stress in phonemes",
@@ -74,12 +80,6 @@ if __name__ == "__main__":
         help="Use cell states for trajectories as well",
     )
     parser.add_argument(
-        "--include_parts",
-        type=str,
-        default="all",
-        help="Parts of the model to include for analysis",
-    )
-    parser.add_argument(
         "--include_start",
         action="store_true",
         help="Add zero position at the beginning of the trajectories",
@@ -92,9 +92,9 @@ if __name__ == "__main__":
     checkpoint = args.checkpoint
     include_stress = args.include_stress
     mode = args.mode
+    layers = args.layers
     include_cell = args.include_cell
     cell_str = "c" if include_cell else "h"
-    parts = args.include_parts
     include_start = args.include_start
     start_str = "s" if include_start else "n"
 
@@ -116,7 +116,9 @@ if __name__ == "__main__":
 
     for checkpoint in checkpoints:
         traj_results = None
-        csv_name = f"trajectories_{checkpoint}_{parts}_{mode}_{cell_str}{start_str}.csv"
+        csv_name = (
+            f"trajectories_{checkpoint}_{layers}_{mode}_{cell_str}{start_str}.csv"
+        )
         if not (model_dir / csv_name).exists():
             if model is None:
                 model = get_model(model_name)
@@ -140,7 +142,7 @@ if __name__ == "__main__":
                 mode=mode,
                 include_cell=include_cell,
                 include_start=include_start,
-                parts=parts,
+                layers=layers,
             )
             traj_results.to_csv(model_dir / csv_name)
 
@@ -163,7 +165,7 @@ if __name__ == "__main__":
                     converters=converters,
                 )
 
-            image_name = f"{mode}_{checkpoint}_{parts}_{cell_str}{start_str}_traj.png"
+            image_name = f"{mode}_{checkpoint}_{layers}_{cell_str}{start_str}_traj.png"
 
             plot_trajectories(
                 traj_results,

@@ -8,6 +8,7 @@ warnings.filterwarnings(
 )
 
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
 sns.set_palette("colorblind")
@@ -46,7 +47,7 @@ def plot_length_errors(df, dir: pathlib.Path):
         palette={"real": "red", "pseudo": "blue"},
     )
     plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-5)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
     filtered_labels = []
@@ -65,12 +66,21 @@ def plot_length_errors(df, dir: pathlib.Path):
     plt.setp(leg.get_title(), multialignment="left")
     ax.set_xticks([3, 4, 5, 6, 7, 8, 9])
     ax.set_xticklabels(["3", "", "", "", "", "", "9"], fontsize=22)
-    y_ticks = ax.get_yticks()
-    y_tick_labels = ["0" if tick == 0 else "" for tick in y_ticks]
-    y_tick_labels[-1] = f"{y_ticks[-1]:.2f}"
-    ax.set_yticklabels(y_tick_labels, fontsize=22)
-    ymin, _ = ax.get_ylim()
-    ax.set_ylim(ymin, y_ticks[-1])
+
+    # Manually adjust y-axis ticks
+    yticks = ax.get_yticks()
+    y_min, y_max = 0, yticks[-1]
+    new_ticks = np.linspace(y_min, y_max, 7)
+    ax.set_yticks(new_ticks)
+
+    # Manually set the tick labels
+    tick_labels = ["" for _ in new_ticks]
+    tick_labels[0] = "0"
+    tick_labels[-1] = f"{new_ticks[-1]:.2f}"
+    while tick_labels[-1][-1] in {"0", "."}:
+        tick_labels[-1] = tick_labels[-1][:-1]
+    ax.set_yticklabels(tick_labels, fontsize=22)
+
     ax.grid(True)
     plt.savefig(dir / f"errors_len.png", dpi=300, bbox_inches="tight")
     plt.close()

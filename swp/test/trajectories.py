@@ -60,16 +60,16 @@ def create_LSTM_hook(
 def hook_model(
     model: Unimodel | Bimodel,
     hook: Callable[[nn.Module, Any, Any], Any],
-    parts: str,
+    layers: str,
 ) -> list[RemovableHandle]:
-    parts = parts.lower()
-    if parts not in {"all", "encoder", "decoder"}:
-        raise ValueError(f"Parts {parts} not recognized as model parts")
+    layers = layers.lower()
+    if layers not in {"all", "encoder", "decoder"}:
+        raise ValueError(f"{layers} not recognized as a layer of the model")
     handles = []
-    if parts in {"all", "encoder"}:
+    if layers in {"all", "encoder"}:
         enc_handle = model.encoder.recurrent.register_forward_hook(hook)
         handles.append(enc_handle)
-    if parts in {"all", "decoder"}:
+    if layers in {"all", "decoder"}:
         dec_handle = model.decoder.recurrent.register_forward_hook(hook)
         handles.append(dec_handle)
     return handles
@@ -83,7 +83,7 @@ def trajectories(
     mode: str,
     include_cell: bool,
     include_start: bool = True,
-    parts: str = "all",
+    layers: str = "all",
 ):
     buffer = BufferDict({"activiations": [], "is_batched": False})
     if include_cell:
@@ -91,7 +91,7 @@ def trajectories(
     model.to(device)
     model.eval()
     hook = create_LSTM_hook(buffer, include_cell=include_cell)
-    handles = hook_model(model, hook, parts=parts)
+    handles = hook_model(model, hook, layers=layers)
     concat_act: np.ndarray | None = None
     length_to_split = []
     with torch.no_grad():

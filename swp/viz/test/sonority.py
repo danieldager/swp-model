@@ -41,20 +41,10 @@ def plot_sonority_errors(df, dir: pathlib.Path):
         linewidth=3,
     )
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-5)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
     ax.set_xticks([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])
     ax.set_xticklabels(["-5", "", "", "", "", "", "", "", "", "", "5"], fontsize=22)
-    # _, ymax = ax.get_ylim()
-    # ticks = [0, 0.5, 1, 1.5, 2]
-    # labels = ["0", "", "", "", "2"]
-    # if ymax >= 2.5:
-    #     ticks.append(2.5)
-    #     labels[-1] = ""
-    #     labels.append("2.5")
-    #     ylim = 2.5
-    # else:
-    #     ylim = 2
 
     # Manually adjust y-axis ticks
     yticks = ax.get_yticks()

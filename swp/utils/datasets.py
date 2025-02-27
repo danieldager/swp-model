@@ -440,7 +440,7 @@ def get_valid_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
 def create_epoch(
     fold_id: int | None,
     train_data: pd.DataFrame,
-    epoch_size: int = 100000000,
+    epoch_size: int = 10**6,
     generator: np.random.Generator | None = None,
 ) -> np.ndarray:
     r"""Samples `epoch_size` samples from the training split `train_data`.

@@ -55,9 +55,9 @@ def regression_plots(
     raw_feature_names = pipeline.named_steps["preprocessor"].get_feature_names_out()
     mapping = {
         "Length": "Len.",
-        "Zipf Frequency": "Frq.",
-        "Morphology": "Mor.",
         "Lexicality": "Lex.",
+        "Morphology": "Mor.",
+        "Zipf Frequency": "Frq.",
     }
     mapped_feature_names = [
         next((v for k, v in mapping.items() if k in fn), fn) for fn in raw_feature_names
