@@ -83,6 +83,7 @@ def trajectories(
     mode: str,
     include_cell: bool,
     include_start: bool = True,
+    take_last: bool = False,
     layers: str = "all",
 ):
     buffer = BufferDict({"activiations": [], "is_batched": False})
@@ -112,12 +113,18 @@ def trajectories(
                 to_cat = []
                 to_split = []
                 for i in range(current_acts.shape[0]):
-                    to_cat.append(current_acts[i])
-                    to_split.append(current_acts.shape[1])
+                    curr = current_acts[i]
+                    if take_last:
+                        curr = curr[-1:]
+                    to_cat.append(curr)
+                    to_split.append(curr.shape[0])
                 to_stack = np.concatenate(to_cat, axis=0)
             else:
-                to_stack = current_acts
-                to_split = [len(current_acts)]
+                curr = current_acts
+                if take_last:
+                    curr = curr[-1:]
+                to_stack = curr
+                to_split = [curr.shape[0]]
             if concat_act is None:
                 concat_act = to_stack
             else:
