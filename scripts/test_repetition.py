@@ -17,6 +17,7 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
+from swp.models.metrics import classic_errors, free_gen_errors
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
 from swp.utils.datasets import enrich_for_plotting, get_test_data, get_train_data
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     checkpoint = args.checkpoint
     include_stress = args.include_stress
+    error_meter = free_gen_errors
 
     seed_everything()
     backend_setup()
@@ -132,6 +134,8 @@ if __name__ == "__main__":
             device=device,
         )
 
+        ### ABLATIONS ###
+
         if args.ablate_layer is not None and args.ablate_neuron is not None:
             layer_name = args.ablate_layer
             neuron_idx = args.ablate_neuron
@@ -157,7 +161,8 @@ if __name__ == "__main__":
         results_dir.mkdir(exist_ok=True, parents=True)
         figures_dir.mkdir(exist_ok=True, parents=True)
 
-        # if the results datasets already exist, skip testing
+        ### TESTING ###
+
         if args.retest or not (results_dir / "fdd.csv").exists():
             test_df = get_test_data()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
@@ -167,6 +172,7 @@ if __name__ == "__main__":
                 test_df=test_df,
                 test_loader=test_loader,
                 include_stress=include_stress,
+                error_meter=error_meter,
                 verbose=args.verbose,
             )
             test_results.to_csv(results_dir / "fdd.csv")
@@ -180,6 +186,7 @@ if __name__ == "__main__":
                 test_df=ssp_df,
                 test_loader=ssp_loader,
                 include_stress=include_stress,
+                error_meter=error_meter,
                 verbose=args.verbose,
             )
             ssp_results.to_csv(results_dir / f"ssp.csv")
@@ -195,12 +202,13 @@ if __name__ == "__main__":
                 test_df=train_df,
                 test_loader=train_loader,
                 include_stress=include_stress,
+                error_meter=error_meter,
                 verbose=args.verbose,
             )
             train_results.to_csv(results_dir / f"train.csv")
             train_results = enrich_for_plotting(train_results, include_stress)
 
-        # if args.plot:
+        ### PLOTTING ###
 
         converters = {
             "Phonemes": literal_eval,

@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -12,6 +14,7 @@ def test(
     test_df: pd.DataFrame,
     test_loader: DataLoader,
     include_stress: bool,
+    error_meter: Callable[[torch.Tensor, torch.Tensor], int],
     verbose: bool = False,
 ) -> tuple[pd.DataFrame, float]:
     r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
@@ -41,8 +44,7 @@ def test(
             preds = torch.argmax(output[0], dim=-1)
 
             # Error computation
-            mask = target != phoneme_to_id["<PAD>"]
-            test_error += torch.any((preds != target) * mask, dim=1).sum().item()
+            test_error += error_meter(preds, target)
 
             # Save predictions
             batch_size = target.shape[0]

@@ -4,6 +4,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 
+from ..utils.datasets import get_phoneme_to_id
+
 
 class PhonemeDecoder(nn.Module):
     r"""Parent class for phoneme encoders.
@@ -42,6 +44,8 @@ class PhonemeDecoder(nn.Module):
         num_layers: int,
         dropout: float,
         tf_ratio: float,
+        # eos_idx: int,
+        # pad_idx: int,
         generator: torch.Generator | None = None,
     ):
         super().__init__()
@@ -50,6 +54,8 @@ class PhonemeDecoder(nn.Module):
         self.num_layers = num_layers
         self.droprate = dropout
         self.tf_ratio = tf_ratio
+        self.eos_idx = get_phoneme_to_id()["<EOS>"]
+        self.pad_idx = get_phoneme_to_id()["<PAD>"]
 
         self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
         self.dropout = nn.Dropout(self.droprate)
@@ -63,31 +69,21 @@ class PhonemeDecoder(nn.Module):
 
     def forward(
         self,
-        inp: torch.Tensor,
+        start_tokens: torch.Tensor,
         hidden_state: Any,
         target: torch.Tensor,
     ) -> torch.Tensor:
-        if self.training:
-            return self.training_forward(
-                inp=inp, hidden_state=hidden_state, target=target
-            )
-        else:
-            return self.eval_forward(inp=inp, hidden_state=hidden_state, target=target)
 
-    def training_forward(
-        self,
-        inp: torch.Tensor,
-        hidden_state: Any,
-        target: torch.Tensor,
-    ) -> torch.Tensor:
-        length = target.size(1)
         logits = []
+        length = target.size(1)
+        if not self.training:
+            length = length + 10
 
         for i in range(length):
 
-            # Start token
+            # Start tokens
             if i == 0:
-                curr = self.embedding(inp)
+                curr = self.embedding(start_tokens)
 
             # Teacher forcing
             elif self.training and (
@@ -111,16 +107,21 @@ class PhonemeDecoder(nn.Module):
             logits.append(phoneme_pred)
 
         output = torch.cat(logits, dim=1)
-        return output
 
-    def eval_forward(
-        self,
-        inp: torch.Tensor,
-        hidden_state: Any,
-        target: torch.Tensor,
-    ) -> torch.Tensor:
-        # TODO Daniel
-        pass
+        # Turn all tokens after first <EOS> into <PAD>
+        if not self.training:
+            preds = output.argmax(dim=-1)
+            eos_mask = preds == self.eos_idx
+            first_eos = eos_mask.argmax(dim=1, keepdim=True)
+            mask = torch.arange(preds.shape[-1], device=preds.device)
+            if len(preds.shape) > 1:
+                mask = mask.unsqueeze(0)
+            mask = mask > first_eos
+            pad_one_hot = torch.zeros(self.vocab_size, device=preds.device)
+            pad_one_hot[self.pad_idx] = 1
+            output[mask] = pad_one_hot
+
+        return output
 
 
 class DecoderLSTM(PhonemeDecoder):
