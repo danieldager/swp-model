@@ -13,7 +13,9 @@ logger = logging.getLogger()
 
 
 def create_and_queue_datagen(
-    vocab_size: int = 50000, epoch_size: int = 1000000, num_folds: int = 5
+    vocab_size: int = 50000,
+    epoch_size: int = 1000000,
+    num_folds: int = 5,
 ) -> tuple[str, list[str]]:
     script_options = (
         f"--vocab_size {vocab_size} --epoch_size {epoch_size} --num_folds {num_folds}"
@@ -35,7 +37,9 @@ def create_and_queue_datagen(
 
 
 def create_and_queue_train_repetition(
-    dependency_id_vars: list[str], array_arg_file: pathlib.Path, array_len: int
+    dependency_id_vars: list[str],
+    array_arg_file: pathlib.Path,
+    array_len: int,
 ) -> tuple[str, list[str]]:
     training_path = autoarg_slurmarray_file_generator(
         job_name="train_rep_array",
