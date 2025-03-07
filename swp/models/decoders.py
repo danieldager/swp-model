@@ -76,8 +76,9 @@ class PhonemeDecoder(nn.Module):
 
         logits = []
         length = target.size(1)
-        if not self.training:
-            length = length + 10
+        # TODO Daniel: this shouldn't break legacy
+        # if not self.training:
+        #     length = length + 10
 
         for i in range(length):
 

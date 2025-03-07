@@ -14,7 +14,7 @@ warnings.filterwarnings(
 sns.set_palette("colorblind")
 
 
-def fi_scatter(fi_df: pd.DataFrame, model_dir: Path):
+def importance_scatter(fi_df: pd.DataFrame, model_dir: Path):
     plt.rcParams.update({"font.size": 18})
 
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -40,7 +40,7 @@ def fi_scatter(fi_df: pd.DataFrame, model_dir: Path):
     plt.close(fig)
 
 
-def scatter_plot(
+def ablation_plots(
     results_df: pd.DataFrame,
     x,
     y,
@@ -76,7 +76,8 @@ def scatter_plot(
     results_df[y] = 1 - results_df[y]
     results_df["distance"] = (results_df[y] - results_df[x]) / np.sqrt(2)
 
-    ### Scatter plot
+    ### Scatter plot ###
+
     sns.scatterplot(
         data=results_df,
         x=x,
@@ -137,7 +138,8 @@ def scatter_plot(
     plt.close(fig)
     plt.close(figLegend)
 
-    ### Histogram
+    ### Histogram ###
+
     common_bins = np.linspace(
         results_df["distance"].min(), results_df["distance"].max(), 21
     )

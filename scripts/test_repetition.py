@@ -24,8 +24,8 @@ from swp.utils.datasets import enrich_for_plotting, get_test_data, get_train_dat
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import (
     get_ablations_dir,
+    get_evaluation_dir,
     get_figures_dir,
-    get_test_dir,
     get_weights_dir,
 )
 from swp.utils.setup import backend_setup, seed_everything, set_device
@@ -120,9 +120,14 @@ if __name__ == "__main__":
 
     for checkpoint in checkpoints:
 
-        results_dir = get_test_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+        results_dir = (
+            get_evaluation_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+        )
         figures_dir = (
-            get_figures_dir() / f"{model_name}~{train_name}" / f"{checkpoint}" / "test"
+            get_figures_dir()
+            / f"{model_name}~{train_name}"
+            / f"{checkpoint}"
+            / "evaluation"
         )
 
         model = get_model(args.model_name)
