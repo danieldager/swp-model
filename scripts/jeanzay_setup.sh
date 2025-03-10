@@ -8,13 +8,24 @@ cp -r ../stimuli/ $WORK
 
 module load pytorch-gpu/py3/2.5.0
 
-pip install --user --upgrade --no-cache-dir g2p_en
-pip install --user --upgrade --no-cache-dir levenshtein
-pip install --user --upgrade --no-cache-dir morphemes
-pip install --user --upgrade --no-cache-dir spacy
-pip install --user --upgrade --no-cache-dir wordfreq
+# pip install --user --upgrade --no-cache-dir g2p_en
+# pip install --user --upgrade --no-cache-dir levenshtein
+# pip install --user --upgrade --no-cache-dir morphemes
+# pip install --user --upgrade --no-cache-dir spacy
+# pip install --user --upgrade --no-cache-dir wordfreq
 
-python -m spacy download en_core_web_lg
+pip install --upgrade --no-cache-dir g2p_en
+pip install --upgrade --no-cache-dir levenshtein
+pip install --upgrade --no-cache-dir morphemes
+pip install --upgrade --no-cache-dir spacy
+pip install --upgrade --no-cache-dir wordfreq
+
+if ! python -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then
+    python -m spacy download en_core_web_lg
+else
+    echo "SpaCy model already installed, skipping download"
+fi
+
 python -m nltk.downloader "averaged_perceptron_tagger" "cmudict"
 
 module purge
