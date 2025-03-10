@@ -1,3 +1,10 @@
+"""
+Before running script:
+module purge
+module load pytorch-gpu/py3/2.5.0
+"""
+
+import argparse
 import os
 import sys
 
@@ -35,6 +42,14 @@ def get_grid():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--datagen",
+        action="store_true",
+        help="Model name string",
+    )
+    args = parser.parse_args()
+
     backend_setup()
     grid = get_grid()
-    create_jean_zay_train_repetition_queuer(grid=grid, bypass_datagen=True)
+    create_jean_zay_train_repetition_queuer(grid=grid, bypass_datagen=args.datagen)
