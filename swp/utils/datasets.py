@@ -45,7 +45,6 @@ def process_dataset(directory: Path, real=False) -> pd.DataFrame:
 
 def get_morphological_data(word: str):
     r"""Get morphological data for a `word`"""
-    # TODO check that the path is ok
     mrp = Morphemes(str(get_morphemes_dir()))
     parse = mrp.parse(word)
 

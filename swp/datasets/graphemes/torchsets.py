@@ -64,7 +64,7 @@ class RepetitionDataset(ImageFolder):
             # NOTE you might want to make sure these are integers
             return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
 
-        # TODO use word_to_phoneme dict and build like word to phon tensors
+        # TODO use word_to_phoneme dict and build like word to phone tensors
 
         super().__init__(
             root,
