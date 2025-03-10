@@ -17,7 +17,7 @@ def calc_accuracy(df: pd.DataFrame, error_condition, total_condition) -> float:
 
 
 def calc_importance(
-    df: pd.DataFrame, mode: str = "real"
+    df: pd.DataFrame, mode: str = "real", y_column: str = "Edit Distance"
 ) -> tuple[Pipeline, float, float, float]:
 
     df = df.copy()
@@ -34,7 +34,7 @@ def calc_importance(
         raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
 
     X = df[continuous_features + categorical_features]
-    y = df["Edit Distance"]
+    y = df[y_column]
 
     # Split the data.
     X_train, X_test, y_train, y_test = train_test_split(
@@ -57,7 +57,11 @@ def calc_importance(
 
     # Compute permutation importance on the test set.
     result = permutation_importance(
-        pipeline, X_test, y_test, n_repeats=100, random_state=42, scoring="r2"
+        pipeline,
+        X_test,
+        y_test,
+        n_repeats=100,
+        random_state=42,
     )
     # result.importances_mean gives an array with the mean importance per feature.
     # The order corresponds to continuous_features: "Length" then "Zipf Frequency"

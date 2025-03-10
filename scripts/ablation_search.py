@@ -16,9 +16,9 @@ from swp.datasets.phonemes import get_phoneme_testloader
 from swp.test.ablations import ablate
 from swp.utils.datasets import get_test_data
 from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
-from swp.utils.paths import get_figures_dir, get_test_dir
+from swp.utils.paths import get_evaluation_dir, get_figures_dir
 from swp.utils.setup import seed_everything
-from swp.viz.ablation import fi_scatter, scatter_plot
+from swp.viz.ablation import ablation_plots, importance_scatter
 
 warnings.filterwarnings(
     "ignore",
@@ -94,16 +94,16 @@ if __name__ == "__main__":
     )
 
     # Set up directories
-    results_dir = get_test_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+    results_dir = get_evaluation_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
     figures_dir = (
-        get_figures_dir() / f"{model_name}~{train_name}" / f"{checkpoint}" / "ablation"
+        get_figures_dir() / f"{model_name}~{train_name}" / f"{checkpoint}" / "ablations"
     )
     results_dir.mkdir(exist_ok=True, parents=True)
     figures_dir.mkdir(exist_ok=True, parents=True)
 
     # Check if results_df already exists
-    fi_path = results_dir / "fi.csv"
-    results_path = results_dir / "ablation.csv"
+    fi_path = results_dir / "importances.csv"
+    results_path = results_dir / "ablations.csv"
     if args.retest or not (fi_path.exists() and results_path.exists()):
         fi_df, results_df = ablate(
             model=model,  # type: ignore
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         results_df.to_csv(results_path, index=False)
 
     fi_df = pd.read_csv(fi_path)
-    fi_scatter(fi_df, figures_dir)
+    importance_scatter(fi_df, figures_dir)
 
     results_df = pd.read_csv(results_path)
     print("\nLowest accuracies:")
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         )
 
     # Produce scatter plots.
-    scatter_plot(
+    ablation_plots(
         results_df,
         "real_accuracy",
         "pseudo_accuracy",
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         figures_dir,
     )
 
-    scatter_plot(
+    ablation_plots(
         results_df,
         "low_freq_accuracy",
         "high_freq_accuracy",
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         figures_dir,
     )
 
-    scatter_plot(
+    ablation_plots(
         results_df,
         "simple_accuracy",
         "complex_accuracy",
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         figures_dir,
     )
 
-    scatter_plot(
+    ablation_plots(
         results_df,
         "primacy_accuracy",
         "recency_accuracy",
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         figures_dir,
     )
 
-    scatter_plot(
+    ablation_plots(
         results_df,
         "short_accuracy",
         "long_accuracy",

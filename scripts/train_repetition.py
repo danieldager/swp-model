@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_epochs",
         type=int,
-        default=30,
+        default=50,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=64,
+        default=128,
         help="Hidden size of recurrent subnetworks.",
     )
     parser.add_argument(

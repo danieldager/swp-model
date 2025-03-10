@@ -81,10 +81,10 @@ def get_train_dir() -> pathlib.Path:
     return train_dir
 
 
-def get_test_dir() -> pathlib.Path:
-    test_dir = get_results_dir() / "test"
-    test_dir.mkdir(parents=True, exist_ok=True)
-    return test_dir
+def get_evaluation_dir() -> pathlib.Path:
+    eval_dir = get_results_dir() / "evaluation"
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    return eval_dir
 
 
 def get_graphemes_dir() -> pathlib.Path:

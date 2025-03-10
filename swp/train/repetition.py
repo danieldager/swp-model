@@ -6,8 +6,8 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
-from ..utils.grid_search import grid_search_log
 from ..utils.datasets import get_phoneme_to_id
+from ..utils.grid_search import grid_search_log
 from ..utils.models import save_weights
 
 
@@ -141,7 +141,7 @@ def train(
             print(f"Valid Errors: {valid_error}")
             h = epoch_time // 3600
             m = epoch_time % 3600 // 60
-            s = epoch_time % 3600
+            s = epoch_time % 3600 % 60
             print(f"Epoch Time: {h:.0f}h {m:.0f}m {s:.0f}s")
 
     grid_search_log(

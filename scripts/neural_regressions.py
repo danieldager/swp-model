@@ -13,12 +13,12 @@ from ast import literal_eval
 import pandas as pd
 
 from swp.datasets.phonemes import get_phoneme_testloader
-from swp.test.activations import trajectories
+from swp.test.activations import neural_regressions
 from swp.utils.datasets import get_test_data
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_evaluation_dir, get_figures_dir, get_weights_dir
 from swp.utils.setup import backend_setup, seed_everything, set_device
-from swp.viz.trajectory import plot_trajectories, sns_plot_trajectories
+from swp.viz.test.regressions import activation_plots
 
 warnings.filterwarnings(
     "ignore",
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=1,
+        default=128,
         help="Test dataloader batch size",
     )
     parser.add_argument(
@@ -52,16 +52,16 @@ if __name__ == "__main__":
         default=None,
         help="Checkpoint to load",
     )
-    parser.add_argument(
-        "--mode",
-        type=str,
-        default=None,
-        help="Activation analysis algorithm",
-    )
+    # parser.add_argument(
+    #     "--mode",
+    #     type=str,
+    #     default=None,
+    #     help="Activation analysis algorithm",
+    # )
     parser.add_argument(
         "--layers",
         type=str,
-        default="all",
+        default="encoder",
         help="Layers of the model to include for analysis",
     )
     parser.add_argument(
@@ -75,9 +75,9 @@ if __name__ == "__main__":
         help="Use cell states for trajectories as well",
     )
     parser.add_argument(
-        "--include_start",
+        "--retest",
         action="store_true",
-        help="Add zero position at the beginning of the trajectories",
+        help="Recompute the feature importances",
     )
 
     args = parser.parse_args()
@@ -86,22 +86,16 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     checkpoint = args.checkpoint
     include_stress = args.include_stress
-    mode = args.mode
+    # mode = args.mode
     layers = args.layers
     include_cell = args.include_cell
     cell_str = "c" if include_cell else "h"
-    include_start = args.include_start
-    start_str = "s" if include_start else "n"
 
     seed_everything()
     backend_setup()
     device = set_device()
     model = None
 
-    # TODO think about saving directory
-    eval_dir = get_evaluation_dir()
-    model_dir = eval_dir / f"{model_name}~{train_name}"
-    model_dir.mkdir(exist_ok=True, parents=True)
     weights_dir = get_weights_dir() / model_name / train_name
 
     if checkpoint is None:
@@ -110,13 +104,14 @@ if __name__ == "__main__":
         checkpoints = [checkpoint]
 
     for checkpoint in checkpoints:
-        traj_results = None
-        csv_name = (
-            f"trajectories_{checkpoint}_{layers}_{mode}_{cell_str}{start_str}.csv"
-        )
+
+        eval_dir = get_evaluation_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+        eval_dir.mkdir(exist_ok=True, parents=True)
+        csv_path = eval_dir / "activations.csv"
 
         # if the results datasets already exist, skip testing
-        if not (model_dir / csv_name).exists():
+        if args.retest or not csv_path.exists():
+            print(f"Neural Regressions")
             if model is None:
                 model = get_model(model_name)
             load_weights(
@@ -129,45 +124,23 @@ if __name__ == "__main__":
 
             test_df = get_test_data()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
-            traj_results = trajectories(
+            results = neural_regressions(
                 model=model,  # type: ignore
                 device=device,
                 test_df=test_df,
                 test_loader=test_loader,
-                mode=mode,
                 include_cell=include_cell,
-                include_start=include_start,
                 layers=layers,
             )
-            traj_results.to_csv(model_dir / csv_name)
+            results.to_csv(csv_path)
 
-        figures_dir = get_figures_dir() / f"{model_name}~{train_name}"
+        figures_dir = (
+            get_figures_dir()
+            / f"{model_name}~{train_name}"
+            / f"{checkpoint}"
+            / "activations"
+        )
         figures_dir.mkdir(exist_ok=True)
 
-        if traj_results is None:
-            converters = {
-                "Phonemes": literal_eval,
-                "No Stress": literal_eval,
-                "Prediction": literal_eval,
-                "Trajectory": literal_eval,
-            }
-
-            traj_results = pd.read_csv(
-                model_dir / csv_name,
-                index_col=0,
-                converters=converters,
-            )
-
-        image_name = f"{mode}_{checkpoint}_{layers}_{cell_str}{start_str}_traj.png"
-
-        plot_trajectories(
-            traj_results,
-            figures_dir,
-            filename=image_name,
-        )
-
-        sns_plot_trajectories(
-            traj_results,
-            figures_dir,
-            filename=f"sns_{image_name}",
-        )
+        results = pd.read_csv(csv_path, index_col=0)
+        activation_plots(results, figures_dir)
