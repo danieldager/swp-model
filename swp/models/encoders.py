@@ -28,6 +28,10 @@ class PhonemeEncoder(nn.Module):
         `num_layers` : number of layers in the recurrent subnetwork
         `dropout` : dropout rate
 
+    Methods :
+        `to_unroll` : sets the recurrent subnetwork to process input phonemes one by one
+        `to_chain` : sets the recurrent subnetwork to process input phonemes in one single pass
+
     Attributes:
         `vocab_size` : number of phonemes
         `hidden_size` : phoneme embedding dimensions
@@ -36,9 +40,8 @@ class PhonemeEncoder(nn.Module):
         `embedding` : embedding layer
         `dropout` : dropout layer
         `recurrent` : recurrent subnetwork
+        `unrolling` : if the recurrent subnetwork is currently unrolling every time step
     """
-
-    # TODO add unroll doc
 
     def __init__(
         self,

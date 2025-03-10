@@ -174,6 +174,8 @@ class Unimodel(nn.Module):
 
     Methods :
         `bind` : allows binding the embedding layers of the auditory encoder and vocal decoder
+        `to_unroll` : sets the encoder to process input phonemes one by one
+        `to_chain` : sets the encoder to process input phonemes in one single pass
 
     Attributes:
         `encoder` : encoder part of the model
@@ -182,8 +184,6 @@ class Unimodel(nn.Module):
         `is_visual` : `True` if encoder part is a `VisualEncoder`
         `start_tensor` : tensor passed to the decoder at the beginning of decoding
     """
-
-    # TODO add unroll doc
 
     def __init__(
         self,
@@ -251,6 +251,8 @@ class Bimodel(nn.Module):
         `bind` : allows binding the embedding layers of the auditory encoder and vocal decoder
         `to_audio` : switch the model in audio input mode
         `to_visual` : switch the model in visual input mode
+        `to_unroll` : sets the auditory encoder to process input phonemes one by one
+        `to_chain` : sets the auditory encoder to process input phonemes in one single pass
 
     Attributes:
         `audit_encoder` : auditory encoder part of the model
@@ -259,8 +261,6 @@ class Bimodel(nn.Module):
         `mode` : current mode of execution of the model
         `start_tensor` : tensor passed to the decoder at the beginning of decoding
     """
-
-    # TODO add unroll doc
 
     def __init__(
         self,

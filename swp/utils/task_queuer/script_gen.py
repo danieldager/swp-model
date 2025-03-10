@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 import sys
 
@@ -35,11 +36,15 @@ def trim(string: str) -> str:
     return "\n".join(trimmed)
 
 
-def slurm_partition_args(partition: str) -> tuple[str, str]:
+def slurm_partition_args(partition: str) -> tuple[str, str, str]:
     if partition == "gpu_p5":
         partition = "a100"
+        partition_type = "a100"
     elif partition == "gpu_p6":
         partition = "h100"
+        partition_type = "h100"
+    else:
+        partition_type = "v100"
     module_str = ""
     if partition in {"a100", "h100", "v100-16g", "v100-32g"}:
         partition_str = f"-C {partition}"
@@ -49,7 +54,7 @@ def slurm_partition_args(partition: str) -> tuple[str, str]:
             module_str = "arch/h100"
     else:
         partition_str = f"--partition={partition}"
-    return partition_str, module_str
+    return partition_str, module_str, partition_type
 
 
 def base_slurm_file_generator(
@@ -76,12 +81,12 @@ def base_slurm_file_generator(
     logger.info(f"Generating slurm file for {job_name}")
     slurm_directory = get_generated_scripts_dir()
     file_path = slurm_directory / f"{job_name}.slurm"
-    partition_str, module_str = slurm_partition_args(partition)
+    partition_str, module_str, partition_type = slurm_partition_args(partition)
     file_as_string = f"""
     #!/bin/bash
     #SBATCH --job-name={job_name}
     #SBATCH {partition_str}
-    #SBATCH -A {"sna@v100" if partition == "prepost" else "sna@a100"}
+    #SBATCH -A {os.environ["IDRPROJ"]}@{partition_type}
     #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_%j.out
     #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_%j.err
     #SBATCH --time={timestr}
@@ -133,11 +138,12 @@ def autoarg_slurmarray_file_generator(
     logger.info(f"Generating slurm file for {job_name}")
     slurm_directory = get_generated_scripts_dir()
     file_path = slurm_directory / f"{job_name}.slurm"
-    partition_str, module_str = slurm_partition_args(partition)
+    partition_str, module_str, partition_type = slurm_partition_args(partition)
     file_as_string = f"""
     #!/bin/bash
     #SBATCH --job-name={job_name}
     #SBATCH {partition_str}
+    #SBATCH -A {os.environ["IDRPROJ"]}@{partition_type}
     #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_%A_%a.out
     #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_%A_%a.err
     #SBATCH --time={timestr}

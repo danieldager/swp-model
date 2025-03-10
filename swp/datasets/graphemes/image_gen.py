@@ -112,7 +112,7 @@ def text_to_grapheme(
         not (0 <= original_x <= W - letter_width[0])
         or not (0 <= letter_origin[0, 0] <= W - letter_width[-1])
         or not (0 <= original_y <= H - letter_height[0])
-        or not (0 <= letter_origin[0, 0] <= H - letter_height[-1])
+        or not (0 <= letter_origin[1, 0] <= H - letter_height[-1])
     ):
         raise ValueError(f"Text width is bigger than image. Failed on size:{size}")
 
@@ -225,3 +225,8 @@ def get_dataset_max_font_size(word_dataset: Sequence[str]) -> tuple[int, int]:
     if max_size is None or max_space is None:
         raise ValueError("No words in the dataset")
     return max_size, max_space
+
+
+# fontsize per font
+# only try longer words, without surrogate estimates, just empirical
+# maybe constant width ?
