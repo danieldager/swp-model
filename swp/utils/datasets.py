@@ -269,20 +269,17 @@ def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_test_data() -> pd.DataFrame:
+def get_evaluation_dataset() -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
     Set `force_recreate` to `True` to enforce recomputation of the data."""
-    csv_test_path = get_handmade_dir() / "test_equalized.csv"
-    if csv_test_path.exists():
-        dataframe = pd.read_csv(
-            csv_test_path,
-            # index_col=0,
-            converters={
-                "Word": str,
-                "Phonemes": literal_eval,
-                "No Stress": literal_eval,
-            },
-        )
+    filepath = get_handmade_dir() / "eval_equalized.csv"
+    converters = {
+        "Word": str,
+        "Phonemes": literal_eval,
+        "No Stress": literal_eval,
+    }
+    if filepath.exists():
+        dataframe = pd.read_csv(filepath, index_col=0, converters=converters)
     else:
         raise FileNotFoundError("User does not have the evaluation dataset.")
 
@@ -332,7 +329,7 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     return dataframe
 
 
-def get_train_data(force_recreate: bool = False) -> pd.DataFrame:
+def get_train_dataset(force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved training dataset if it exists, create it otherwise.
 
     Use `force_recreate` to recreate the training set from scratch"""
@@ -394,10 +391,10 @@ def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
     train_df = None
     csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}.csv"
     if force_recreate or not csv_train_fold_path.exists():
-        train_df = get_train_data(force_recreate)
+        train_df = get_train_dataset(force_recreate)
         create_folds(train_df)
     if fold_id is None:
-        dataframe = get_train_data(force_recreate) if train_df is None else train_df
+        dataframe = get_train_dataset(force_recreate) if train_df is None else train_df
     else:
         dataframe = pd.read_csv(
             csv_train_fold_path,
@@ -419,10 +416,10 @@ def get_valid_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
     train_df = None
     csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}.csv"
     if force_recreate or not csv_valid_fold_path.exists():
-        train_df = get_train_data(force_recreate)
+        train_df = get_train_dataset(force_recreate)
         create_folds(train_df)
     if fold_id is None:
-        dataframe = get_train_data(force_recreate) if train_df is None else train_df
+        dataframe = get_train_dataset(force_recreate) if train_df is None else train_df
     else:
         dataframe = pd.read_csv(
             csv_valid_fold_path,
@@ -621,6 +618,6 @@ def get_phoneme_to_id(
         with phoneme_dict_path.open("r") as f:
             phoneme_dict = json.load(f)
     else:
-        train_data = get_train_data(force_recreate)
+        train_data = get_train_dataset(force_recreate)
         phoneme_dict = create_phoneme_to_id(train_data, include_stress)
     return phoneme_dict

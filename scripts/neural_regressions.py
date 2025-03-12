@@ -14,7 +14,7 @@ import pandas as pd
 
 from swp.datasets.phonemes import get_phoneme_testloader
 from swp.test.activations import neural_regressions
-from swp.utils.datasets import get_test_data
+from swp.utils.datasets import get_evaluation_dataset
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_evaluation_dir, get_figures_dir, get_weights_dir
 from swp.utils.setup import backend_setup, seed_everything, set_device
@@ -111,7 +111,6 @@ if __name__ == "__main__":
 
         # if the results datasets already exist, skip testing
         if args.retest or not csv_path.exists():
-            print(f"Neural Regressions")
             if model is None:
                 model = get_model(model_name)
             load_weights(
@@ -122,7 +121,7 @@ if __name__ == "__main__":
                 device=device,
             )
 
-            test_df = get_test_data()
+            test_df = get_evaluation_dataset()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
             results = neural_regressions(
                 model=model,  # type: ignore

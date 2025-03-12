@@ -14,7 +14,7 @@ import torch
 
 from swp.datasets.phonemes import get_phoneme_testloader
 from swp.test.ablations import ablate
-from swp.utils.datasets import get_test_data
+from swp.utils.datasets import get_evaluation_dataset
 from swp.utils.models import get_model, get_model_args, get_train_args, load_weights
 from swp.utils.paths import get_evaluation_dir, get_figures_dir
 from swp.utils.setup import seed_everything
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     device = torch.device("cpu")
 
     # Load and prepare data
-    test_data = get_test_data()
+    test_data = get_evaluation_dataset()
     test_loader = get_phoneme_testloader(batch_size, include_stress)
 
     # Load the model and weights

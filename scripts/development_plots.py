@@ -20,7 +20,11 @@ from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
 from swp.models.metrics import classic_errors, free_gen_errors
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
-from swp.utils.datasets import enrich_for_plotting, get_test_data, get_train_data
+from swp.utils.datasets import (
+    enrich_for_plotting,
+    get_evaluation_dataset,
+    get_train_dataset,
+)
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import (
     get_ablations_dir,
@@ -138,6 +142,7 @@ if __name__ == "__main__":
             / f"{model_name}~{train_name}"
             / "epochs"
             / f"{checkpoint}"
+            / "control"
         )
         results_dir.mkdir(exist_ok=True, parents=True)
         model = get_model(args.model_name)
@@ -152,7 +157,7 @@ if __name__ == "__main__":
         ### TESTING ###
 
         if args.retest or not (results_dir / "evaluation.csv").exists():
-            test_df = get_test_data()
+            test_df = get_evaluation_dataset()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
             test_results, _ = test(
                 model=model,

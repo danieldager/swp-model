@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader, Dataset
 
 from ..utils.datasets import (
     get_epoch_numpy,
+    get_evaluation_dataset,
     get_phoneme_to_id,
-    get_test_data,
-    get_train_data,
+    get_train_dataset,
     get_train_fold,
     get_valid_fold,
 )
@@ -144,12 +144,12 @@ class PhonemeTestDataset(Dataset):
         self,
         phoneme_to_id: dict[str, int],
         include_stress: bool = False,
-        override_data_df: pd.DataFrame | None = None,
+        dataset_df: pd.DataFrame | None = None,
     ):
-        if override_data_df is None:
-            self.data_df = get_test_data()
+        if dataset_df is None:
+            self.data_df = get_evaluation_dataset()
         else:
-            self.data_df = override_data_df
+            self.data_df = dataset_df
         self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
         if include_stress:
@@ -172,17 +172,17 @@ class PhonemeTestDataset(Dataset):
 def get_phoneme_testloader(
     batch_size: int,
     include_stress: bool = False,
-    override_data_df: pd.DataFrame | None = None,
+    dataset_df: pd.DataFrame | None = None,
 ) -> DataLoader:
     r"""Return a dataloader containing the phoneme test data batched in size `batch_size`.
     If `include_stress` is set to `True`, phonemes will include stress.
     Pass a dataframe as `override_data_df` to override the test data used.
     """
-    phoneme_to_id = get_phoneme_to_id(include_stress=include_stress)
+    phoneme_to_id = get_phoneme_to_id(include_stress)
     phoneme_set = PhonemeTestDataset(
         phoneme_to_id=phoneme_to_id,
         include_stress=include_stress,
-        override_data_df=override_data_df,
+        dataset_df=dataset_df,
     )
     phoneme_loader = DataLoader(
         phoneme_set,
@@ -192,6 +192,34 @@ def get_phoneme_testloader(
         ),
     )
     return phoneme_loader
+
+
+### Handmade Datasets ###
+
+vowels = [
+    "AH0",
+    "OY0",
+    "AA0",
+    "AY0",
+    "ER0",
+    "AO0",
+    "UW0",
+    "IH0",
+    "EH0",
+    "UH0",
+    "IY0",
+    "EY0",
+    "OW0",
+    "AE0",
+    "AW0",
+]
+plosives = ["P", "T", "K", "B", "D", "G"]
+fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
+affricates = ["CH", "JH"]
+nasals = ["M", "N", "NG"]
+liquids = ["L", "R"]
+glides = ["W", "Y"]
+consonants = plosives + fricatives + affricates + nasals + liquids + glides
 
 
 def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
@@ -211,36 +239,6 @@ def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
         )
 
     else:
-
-        vowels = [
-            "AH0",
-            "OY0",
-            "AA0",
-            "AY0",
-            "ER0",
-            "AO0",
-            "UW0",
-            "IH0",
-            "EH0",
-            "UH0",
-            "IY0",
-            "EY0",
-            "OW0",
-            "AE0",
-            "AW0",
-        ]
-
-        if not include_stress:
-            vowels = [vowel[:-1] for vowel in vowels]
-
-        plosives = ["P", "T", "K", "B", "D", "G"]
-        fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
-        affricates = ["CH", "JH"]
-        nasals = ["M", "N", "NG"]
-        liquids = ["L", "R"]
-        glides = ["W", "Y"]
-
-        consonants = plosives + fricatives + affricates + nasals + liquids + glides
 
         def get_sonority(c):
             if c in plosives:
@@ -288,7 +286,7 @@ def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
 
         # TODO: make it work for include_stress=True
         # remove the phonemes that are in the training set
-        train_df = get_train_data()
+        train_df = get_train_dataset()
         train_3 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 3]
         train3_set = set()
         for phonemes in train_3["No Stress"]:
@@ -299,3 +297,92 @@ def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
         sonority_dataset.to_csv(get_dataframe_dir() / f"sonority_dataset_{stress}.csv")
 
         return filtered_sonority_dataset
+
+
+def get_bigrams_dataset() -> pd.DataFrame:
+    filepath = get_dataframe_dir() / f"bigrams_dataset.csv"
+
+    # check if the sonority_dataset.csv exists
+    if filepath.exists():
+        converters = {
+            "Word": str,
+            "Phonemes": literal_eval,
+            "No Stress": literal_eval,
+        }
+        return pd.read_csv(filepath, index_col=0, converters=converters)
+
+    else:
+        data = {
+            "Phonemes": [],
+            "No Stress": [],
+            "Type": [],
+            "Consonant": [],
+            "Vowel": [],
+            "Included": [],
+        }
+
+        train_df = get_train_dataset()
+        train2 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 2]
+        train2_set = {tuple(phonemes) for phonemes in train2["No Stress"]}
+
+        for c in consonants:
+            for v in vowels:
+                # CV
+                data["Phonemes"].append([c, v])
+                data["No Stress"].append([c, v[:-1]])
+                data["Type"].append("CV")
+                data["Consonant"].append(c)
+                data["Vowel"].append(v[:-1])
+                data["Included"].append(
+                    True if (c, v[:-1]) not in train2_set else False
+                )
+
+                # VC
+                data["Phonemes"].append([v, c])
+                data["No Stress"].append([v[:-1], c])
+                data["Type"].append("VC")
+                data["Consonant"].append(c)
+                data["Vowel"].append(v[:-1])
+                data["Included"].append(
+                    True if (v[:-1], c) not in train2_set else False
+                )
+
+        bigrams_df = pd.DataFrame(data)
+        bigrams_df.to_csv(filepath)
+        return bigrams_df
+
+
+def get_phoneme_dataset() -> pd.DataFrame:
+    filepath = get_dataframe_dir() / f"phoneme_dataset.csv"
+
+    # check if the sonority_dataset.csv exists
+    if filepath.exists():
+        converters = {
+            "Word": str,
+            "Phonemes": literal_eval,
+            "No Stress": literal_eval,
+        }
+        return pd.read_csv(filepath, index_col=0, converters=converters)
+
+    else:
+        data = {
+            "Phonemes": [],
+            "No Stress": [],
+            "Type": [],
+            "Included": [],
+        }
+
+        train_df = get_train_dataset()
+        train1 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 1]
+        train1_set = {tuple(phonemes) for phonemes in train1["No Stress"]}
+
+        phonemes = vowels + consonants
+        for p in phonemes:
+            data["Phonemes"].append([p])
+            data["No Stress"].append([p[:-1]] if p in vowels else [p])
+            data["Type"].append("V" if p in vowels else "C")
+            data["Included"].append(True if (p,) not in train1_set else False)
+
+        phoneme_df = pd.DataFrame(data)
+        phoneme_df.to_csv(filepath)
+        return phoneme_df

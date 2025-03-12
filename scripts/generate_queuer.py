@@ -44,12 +44,13 @@ def get_grid():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--datagen",
+        "--bypass_datagen",
         action="store_true",
         help="Model name string",
     )
     args = parser.parse_args()
-
     backend_setup()
     grid = get_grid()
-    create_jean_zay_train_repetition_queuer(grid=grid, bypass_datagen=args.datagen)
+    create_jean_zay_train_repetition_queuer(
+        grid=grid, bypass_datagen=args.bypass_datagen
+    )
