@@ -240,6 +240,32 @@ def enrich_for_ablations(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def enrich_for_mlem(df: pd.DataFrame) -> pd.DataFrame:  # type: ignore
+    r"""Enrich training data with features for metric learning."""
+
+    # fmt: off
+    vowels = [
+        "AH", "OY", "AA", "AY", "ER", "AO", "UW", "IH", 
+        "EH", "UH", "IY", "EY", "OW", "AE", "AW"
+    ]  # fmt: on
+    plosives = ["P", "T", "K", "B", "D", "G"]
+    fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
+    affricates = ["CH", "JH"]
+    nasals = ["M", "N", "NG"]
+    liquids = ["L", "R"]
+    glides = ["W", "Y"]
+    consonants = plosives + fricatives + affricates + nasals + liquids + glides
+    df = df.copy()
+
+    def counts(phonemes: list, lst: list) -> int:
+        return sum(1 for p in phonemes if p in lst)
+
+    df["Vowel Count"] = df["No Stress"].apply(lambda x: counts(x, vowels))
+    df["Consonant Count"] = df["No Stress"].apply(counts, lst=consonants)
+
+    return df
+
+
 def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
     """
     Add 'Primacy Error' and 'Recency Error' columns to the DataFrame.

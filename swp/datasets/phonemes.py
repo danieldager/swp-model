@@ -15,7 +15,7 @@ from ..utils.datasets import (
     get_train_fold,
     get_valid_fold,
 )
-from ..utils.paths import get_dataframe_dir
+from ..utils.paths import get_dataframe_dir, get_handmade_dir
 
 
 class PhonemeTrainDataset(Dataset):
@@ -196,23 +196,11 @@ def get_phoneme_testloader(
 
 ### Handmade Datasets ###
 
+# fmt: off
 vowels = [
-    "AH0",
-    "OY0",
-    "AA0",
-    "AY0",
-    "ER0",
-    "AO0",
-    "UW0",
-    "IH0",
-    "EH0",
-    "UH0",
-    "IY0",
-    "EY0",
-    "OW0",
-    "AE0",
-    "AW0",
-]
+    "AH0", "OY0", "AA0", "AY0", "ER0", "AO0", "UW0", "IH0", 
+    "EH0", "UH0", "IY0", "EY0", "OW0", "AE0", "AW0"
+]  # fmt: on
 plosives = ["P", "T", "K", "B", "D", "G"]
 fricatives = ["F", "TH", "S", "SH", "Z", "ZH", "V", "DH", "HH"]
 affricates = ["CH", "JH"]
@@ -352,7 +340,7 @@ def get_bigrams_dataset() -> pd.DataFrame:
         return bigrams_df
 
 
-def get_phoneme_dataset() -> pd.DataFrame:
+def create_phoneme_dataset() -> pd.DataFrame:
     filepath = get_dataframe_dir() / f"phoneme_dataset.csv"
 
     # check if the sonority_dataset.csv exists
@@ -386,3 +374,19 @@ def get_phoneme_dataset() -> pd.DataFrame:
         phoneme_df = pd.DataFrame(data)
         phoneme_df.to_csv(filepath)
         return phoneme_df
+
+
+def get_phoneme_dataset() -> pd.DataFrame:
+    filepath = get_handmade_dir() / f"phoneme_dataset.csv"
+
+    # check if the sonority_dataset.csv exists
+    if filepath.exists():
+        converters = {
+            "Word": str,
+            "Phonemes": literal_eval,
+            "No Stress": literal_eval,
+        }
+        return pd.read_csv(filepath, index_col=0, converters=converters)
+
+    else:
+        raise FileNotFoundError(f"File {filepath} does not exist")

@@ -125,6 +125,11 @@ if __name__ == "__main__":
         help="Regenerate test results",
     )
     parser.add_argument(
+        "--plot",
+        action="store_true",
+        help="Plot dissimilarity matrix, PCA and MDS",
+    )
+    parser.add_argument(
         "--ablate_layer",
         type=str,
         default=None,
@@ -244,8 +249,19 @@ if __name__ == "__main__":
                 error_meter=error_meter,
                 verbose=args.verbose,
             )
-
             embeddings_df = pd.DataFrame(embeddings)
+
+            print(results_df.head())
+            results_df = results_df.reset_index(drop=True)
+            print(results_df.head())
+            print(embeddings_df.head())
+            # embeddings_df = embeddings_df.reset_index(drop=True)
+            print(embeddings_df.head())
+
+            # print the dimensions of the results and embeddings
+            print(f"Results shape: {results_df.shape}")
+            print(f"Embeddings shape: {embeddings_df.shape}")
+
             combined_df = pd.concat([results_df, embeddings_df], axis=1)
             combined_df.to_csv(filepath)
 
@@ -262,10 +278,11 @@ if __name__ == "__main__":
             converters[f"C{i+1}"] = literal_eval
 
         results = pd.read_csv(filepath, index_col=0, converters=converters)
-        results = enrich_for_plotting(results, args.include_stress)
+        # results = enrich_for_plotting(results, args.include_stress)
 
-        dissimilarity_matrix(results, num_layers, figures_dir)
-        embeddings_PCA_MDS(results, num_layers, figures_dir)
+        if args.plot:
+            dissimilarity_matrix(results, num_layers, figures_dir)
+            embeddings_PCA_MDS(results, num_layers, figures_dir)
 
         if args.verbose:
             print("-" * 60)
