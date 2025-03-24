@@ -298,7 +298,7 @@ def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
 def get_evaluation_dataset() -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
     Set `force_recreate` to `True` to enforce recomputation of the data."""
-    filepath = get_handmade_dir() / "eval_equalized.csv"
+    filepath = get_handmade_dir() / "evaluation_dataset.csv"
     converters = {
         "Word": str,
         "Phonemes": literal_eval,
