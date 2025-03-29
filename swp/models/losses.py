@@ -167,7 +167,7 @@ class FirstErrorXENT(nn.CrossEntropyLoss):
     def forward(self, preds: list[torch.Tensor], targets: torch.Tensor):
         audit_preds = preds[0]
         targets = targets.clone()
-        mismatches = audit_preds.argmax(dim=-1) != targets
+        mismatches = (audit_preds.argmax(dim=-1) != targets).int()
         first_error = mismatches.argmax(dim=-1, keepdim=True)
 
         mask = torch.arange(targets.shape[-1], device=targets.device)
