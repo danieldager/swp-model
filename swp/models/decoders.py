@@ -112,7 +112,7 @@ class PhonemeDecoder(nn.Module):
         # Turn all tokens after first <EOS> into <PAD>
         if not self.training:
             preds = output.argmax(dim=-1)
-            eos_mask = preds == self.eos_idx
+            eos_mask = (preds == self.eos_idx).int()
             first_eos = eos_mask.argmax(dim=1, keepdim=True)
             mask = torch.arange(preds.shape[-1], device=preds.device)
             if len(preds.shape) > 1:
