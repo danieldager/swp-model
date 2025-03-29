@@ -42,7 +42,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--fold_id",
-        type=str,
+        type=int,
         default=None,
         help="Evaluation fold id",
     )

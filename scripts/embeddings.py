@@ -185,7 +185,14 @@ if __name__ == "__main__":
 
         return embeddings_LSTM_hook
 
-    valid_datasets = ["evaluation", "sonority", "train", "bigram", "phoneme"]
+    valid_datasets = [
+        "evaluation",
+        "sonority",
+        "train",
+        "bigram",
+        "phoneme",
+        "full_trigram",
+    ]
     if args.dataset not in valid_datasets:
         raise ValueError(f"Dataset {args.dataset} not recognized")
 
@@ -264,7 +271,7 @@ if __name__ == "__main__":
         )
         if args.retest or not filepath.exists():
 
-            if args.dataset in ["phoneme", "bigram"]:
+            if args.dataset in ["phoneme", "bigram", "full_trigram"]:
                 test_df = get_handmade_dataset(args.dataset)
             elif args.dataset == "sonority":
                 test_df = get_sonority_dataset()
@@ -305,7 +312,6 @@ if __name__ == "__main__":
             converters[f"H{i+1}"] = literal_eval
             converters[f"C{i+1}"] = literal_eval
 
-        print(filepath)
         results = pd.read_csv(filepath, index_col=0, converters=converters)
         # results = enrich_for_plotting(results, args.include_stress)
 

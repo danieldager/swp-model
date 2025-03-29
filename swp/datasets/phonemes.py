@@ -350,6 +350,55 @@ def create_phoneme_dataset() -> pd.DataFrame:
     return phoneme_df
 
 
+def get_full_trigram_dataset() -> pd.DataFrame:
+    filepath = get_handmade_dir() / "full_trigram_dataset.csv"
+
+    df = {
+        "Phonemes": [],
+        "No Stress": [],
+        "Type": [],
+        "Real": [],
+        "Length": [],
+    }
+
+    train_df = get_train_dataset()
+    train_df = train_df[train_df["No Stress"].apply(lambda x: len(x)) <= 3]
+    train_set = {tuple(phonemes) for phonemes in train_df["No Stress"]}
+
+    phonemes = vowels + consonants
+
+    for p1 in phonemes:
+        df["Phonemes"].append([p1])
+        t1 = "V" if p1 in vowels else "C"
+        df["Type"].append(t1)
+        n1 = p1[:-1] if p1 in vowels else p1
+        df["No Stress"].append([n1])
+        df["Real"].append(True if (n1,) in train_set else False)
+        df["Length"].append(1)
+
+        for p2 in phonemes:
+            df["Phonemes"].append([p1, p2])
+            t2 = "V" if p2 in vowels else "C"
+            df["Type"].append(t1 + t2)
+            n2 = p2[:-1] if p2 in vowels else p2
+            df["No Stress"].append([n1, n2])
+            df["Real"].append(True if (n1, n1) in train_set else False)
+            df["Length"].append(2)
+
+            for p3 in phonemes:
+                df["Phonemes"].append([p1, p2, p3])
+                t3 = "V" if p3 in vowels else "C"
+                df["Type"].append(t1 + t2 + t3)
+                n3 = p3[:-1] if p3 in vowels else p3
+                df["No Stress"].append([n1, n2, n3])
+                df["Real"].append(True if (n1, n2, n3) in train_set else False)
+                df["Length"].append(3)
+
+    full_trigram_df = pd.DataFrame(df)
+    full_trigram_df.to_csv(filepath)
+    return full_trigram_df
+
+
 def get_handmade_dataset(name: str) -> pd.DataFrame:
     filepath = get_handmade_dir() / f"{name}_dataset.csv"
 

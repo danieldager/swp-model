@@ -4,13 +4,13 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-n_epochs=(150)
-fold_ids=(0)
-b_sizes=(1024)
+n_epochs=(250)
+fold_ids=("all")
+b_sizes=(1024 2048)
 r_types=("lstm")
-h_sizes=(64 128)
+h_sizes=(64)
 n_layers=(1)
-l_rates=(0.001 0.0005)
+l_rates=(0.005 0.001 0.0005)
 dropouts=(0.0)
 tf_ratios=(0.0)
 
