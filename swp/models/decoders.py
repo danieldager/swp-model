@@ -120,7 +120,7 @@ class PhonemeDecoder(nn.Module):
             mask = mask > first_eos
             pad_one_hot = torch.zeros(self.vocab_size, device=preds.device)
             pad_one_hot[self.pad_idx] = 1
-            output[mask] = pad_one_hot
+            output[mask] = pad_one_hot.expand_as(output[mask])
 
         return output
 
