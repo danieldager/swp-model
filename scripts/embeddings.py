@@ -24,7 +24,10 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 from swp.datasets.phonemes import (
+    get_bigram_dataset,
+    get_trigram_dataset,
     get_handmade_dataset,
+    get_phoneme_dataset,
     get_phoneme_testloader,
     get_sonority_dataset,
 )
@@ -126,11 +129,6 @@ if __name__ == "__main__":
         default=None,
         help="Neuron index to ablate",
     )
-    parser.add_argument(
-        "--second_last",
-        action="store_true",
-        help="Hook the second to last hidden state",
-    )
 
     args = parser.parse_args()
     error_meter = free_gen_errors
@@ -150,38 +148,24 @@ if __name__ == "__main__":
         ],
         None,
     ]:
+        MAX_PAD = 20
+
         def embeddings_LSTM_hook(
             module: nn.Module,
             inputs: tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]],
             output: tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]],
         ):
             """Hook function to capture the final hidden state."""
-            # out has shape (B, T, V) or (T, V)
-            # h and c have shape (L, B, V) or (L, V)
-            out, (h, c) = output
+            out, _ = output  # h, c (L, B, H)
 
-            if args.second_last:
-                if not is_batched:
-                    out = out.unsqueeze(0)
-                batch_size = out.shape[0]
-                out = out.detach().cpu().numpy()
+            if not is_batched:
+                out = out.unsqueeze(0)
 
-                for j in range(batch_size):
-                    embeddings["H1"].append(out[j, -2, :].tolist())  # type: ignore
-                    embeddings["C1"].append(out[j, -2, :].tolist())  # type: ignore
-
-            else:
-                if not is_batched:
-                    h = h.unsqueeze(1)
-                    c = c.unsqueeze(1)
-                batch_size = h.shape[1]
-                h = h.detach().cpu().numpy()
-                c = c.detach().cpu().numpy()
-
-                for j in range(batch_size):
-                    for i in range(num_layers):
-                        embeddings[f"H{i+1}"].append(h[i, j, :].tolist())  # type: ignore
-                        embeddings[f"C{i+1}"].append(c[i, j, :].tolist())  # type: ignore
+            out = out.detach().cpu().numpy()
+            B, T, H = out.shape
+            padded_out = np.zeros((B, MAX_PAD, H))
+            padded_out[:, :T, :] = out
+            embeddings[f"Hidden"].append(padded_out)
 
         return embeddings_LSTM_hook
 
@@ -189,9 +173,9 @@ if __name__ == "__main__":
         "evaluation",
         "sonority",
         "train",
-        "bigram",
         "phoneme",
-        "full_trigram",
+        "bigram",
+        "trigram",
     ]
     if args.dataset not in valid_datasets:
         raise ValueError(f"Dataset {args.dataset} not recognized")
@@ -206,14 +190,9 @@ if __name__ == "__main__":
     )
 
     for checkpoint in checkpoints:
+        # TODO: redo the file structure
         results_dir = get_evaluation_dir() / name / "epochs" / f"{checkpoint}"
-        figures_dir = (
-            get_figures_dir()
-            / name
-            / "epochs"
-            / f"{checkpoint}"
-            / f"{'second_last' if args.second_last else 'embeddings'}"
-        )
+        figures_dir = get_figures_dir() / name / "embeddings" / f"{checkpoint}"
 
         ### LOAD AND HOOK ###
 
@@ -228,7 +207,7 @@ if __name__ == "__main__":
         )
         num_layers = model.encoder.num_layers
 
-        embeddings = {}
+        embeddings = {"Hidden": []}
         for i in range(num_layers):
             embeddings[f"H{i+1}"] = []
             embeddings[f"C{i+1}"] = []
@@ -266,13 +245,17 @@ if __name__ == "__main__":
 
         ### TESTING ###
 
-        filepath = (
-            results_dir / f"{args.dataset}{'_sl' if args.second_last else ''}.csv"
-        )
-        if args.retest or not filepath.exists():
+        csv_path = results_dir / f"{args.dataset}.csv"
+        npy_path = results_dir / f"{args.dataset}.npy"
 
-            if args.dataset in ["phoneme", "bigram", "full_trigram"]:
-                test_df = get_handmade_dataset(args.dataset)
+        if args.retest or not csv_path.exists():
+
+            if args.dataset == "phoneme":
+                test_df = get_phoneme_dataset()
+            elif args.dataset == "bigram":
+                test_df = get_bigram_dataset()
+            elif args.dataset == "trigram":
+                test_df = get_trigram_dataset()
             elif args.dataset == "sonority":
                 test_df = get_sonority_dataset()
             elif args.dataset == "evaluation":
@@ -295,10 +278,19 @@ if __name__ == "__main__":
                 error_meter=error_meter,
                 verbose=args.verbose,
             )
-            results_df = results_df.reset_index(drop=True)  # TODO: why ??
-            embeddings_df = pd.DataFrame(embeddings)
-            combined_df = pd.concat([results_df, embeddings_df], axis=1)
-            combined_df.to_csv(filepath)
+            # results_df = results_df.reset_index(drop=True)
+            results_df.to_csv(csv_path)
+
+            embeddings_np = np.concat(embeddings["Hidden"])
+
+            lengths = results_df["Length"].to_numpy()
+            pad = np.ones(embeddings_np.shape)
+
+            # use lengths array to add zeros to the pad matrix
+
+
+
+            np.save(npy_path, embeddings_np)
 
         ### PLOTTING ###
 
@@ -308,22 +300,19 @@ if __name__ == "__main__":
             "Prediction": literal_eval,
         }
 
-        for i in range(num_layers):
-            converters[f"H{i+1}"] = literal_eval
-            converters[f"C{i+1}"] = literal_eval
+        df = pd.read_csv(csv_path, index_col=0, converters=converters)
 
-        results = pd.read_csv(filepath, index_col=0, converters=converters)
-        # results = enrich_for_plotting(results, args.include_stress)
+        emb = np.load(npy_path)
 
         if args.all or args.dmat:
-            dissim_matrix(results, args.dataset, num_layers, figures_dir, args.metric)
+            dissim_matrix(df, args.dataset, num_layers, figures_dir, args.metric)
 
         if args.all or args.mlem:
-            mlem_importance(results, args.dataset, num_layers, figures_dir, args.metric)
+            mlem_importance(df, args.dataset, num_layers, figures_dir, args.metric)
 
         if args.all or args.pca:
-            pca_mds(results, args.dataset, num_layers, figures_dir)
-            pca_mds(results, args.dataset, num_layers, figures_dir, last_token=True)
+            pca_mds(df, args.dataset, num_layers, figures_dir)
+            pca_mds(df, args.dataset, num_layers, figures_dir, last_token=True)
 
         if args.verbose:
             print("-" * 60)

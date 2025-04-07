@@ -35,7 +35,11 @@ def test(
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for inputs, target in test_loader:
+        for i, (inputs, target) in enumerate(test_loader, 1):
+
+            if verbose:
+                print(f"{i+1}/{len(test_loader)+1}   ", end="\r")
+
             inputs = inputs.to(device)
             target = target.to(device)
 
