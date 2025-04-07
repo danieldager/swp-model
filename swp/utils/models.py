@@ -258,12 +258,12 @@ def get_train_name(
     learning_rate: float,
     fold_id: int | None,
     include_stress: bool,
+    seed: int,
     **kwargs,
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
-    train_name = (
-        f"b{batch_size}_l{learning_rate}_f{'all' if fold_id is None else fold_id}"
-    )
+    fold_str = "all" if fold_id is None else fold_id
+    train_name = f"b{batch_size}_l{learning_rate}_f{fold_str}_s{seed}"
     if include_stress:
         train_name = f"{train_name}_sw"
     else:

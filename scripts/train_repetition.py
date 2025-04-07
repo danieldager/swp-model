@@ -104,8 +104,15 @@ if __name__ == "__main__":
         action="store_true",
         help="Print logs during training",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed",
+    )
     args = parser.parse_args()
-    seed_everything()
+    seed_everything(args.seed)
+    print(f"seed: {args.seed}")
     backend_setup()
     device = set_device()
 
@@ -120,6 +127,7 @@ if __name__ == "__main__":
             learn_rate,
             fold_id,
             include_stress,
+            args.seed,
         )
     else:
         train_name = args.train_name

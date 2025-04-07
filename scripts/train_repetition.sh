@@ -54,31 +54,28 @@ export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 # set python to be unbuffered (why is this necessary?)
 export PYTHONUNBUFFERED=1
 
-# # Assign default values if environment variables are not set
-# FOLD_ID=${FOLD_ID:-0}
-# MODEL_TYPE=${MODEL_TYPE:-"lstm"}
-# NUM_EPOCHS=${NUM_EPOCHS:-10}
-# HIDDEN_SIZE=${HIDDEN_SIZE:-64}
-# NUM_LAYERS=${NUM_LAYERS:-1}
-# LEARN_RATE=${LEARN_RATE:-0.001}
-# DROPOUT=${DROPOUT:-0.0}
-# TF_RATIO=${TF_RATIO:-0.0}
-
 # launch your computation
 echo "computation start : $(date)"
 
-python scripts/train_repetition.py \
-    --num_epochs "$NUM_EPOCHS" \
-    --batch_size "$BATCH_SIZE" \
-    --recur_type "$RECUR_TYPE" \
-    --hidden_size "$HIDDEN_SIZE" \
-    --num_layers "$NUM_LAYERS" \
-    --learn_rate "$LEARN_RATE" \
-    --dropout "$DROPOUT" \
-    --tf_ratio "$TF_RATIO" \
-    --verbose \
-    # --fold_id "$FOLD_ID" \
-    # --include_stress \
+cmd=(python scripts/train_repetition.py
+    --num_epochs "$NUM_EPOCHS"
+    --batch_size "$BATCH_SIZE"
+    --recur_type "$RECUR_TYPE"
+    --hidden_size "$HIDDEN_SIZE"
+    --num_layers "$NUM_LAYERS"
+    --learn_rate "$LEARN_RATE"
+    --dropout "$DROPOUT"
+    --tf_ratio "$TF_RATIO"
+    --seed "$SEED"
+    --verbose
+)
+
+# add FOLD_ID only if non-empty
+if [[ -n "$FOLD_ID" ]]; then
+    cmd="$cmd --fold_id \"$FOLD_ID\""
+fi
+
+"${cmd[@]}"
 
 echo "computation end : $(date)"
 echo ""
