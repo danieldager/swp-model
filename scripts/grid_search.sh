@@ -20,8 +20,8 @@ total=0
 
 # Nested loops to iterate through all combinations
 for e in "${n_epochs[@]}"; do
-    for b in "${b_sizes[@]}"; do
-        for f in "${fold_ids[@]}"; do
+    for f in "${fold_ids[@]}"; do
+        for b in "${b_sizes[@]}"; do
             for m in "${r_types[@]}"; do
                 for h in "${h_sizes[@]}"; do
                     for l in "${n_layers[@]}"; do
@@ -38,12 +38,14 @@ for e in "${n_epochs[@]}"; do
                                         export DROPOUT=$d
                                         export TF_RATIO=$t
                                         export FOLD_ID=$f
-                                    echo "Submitting e=$e b=$b m=$m h=$h l=$l r=$r d=$d t=$t f=$f s=$s"
-                                    sbatch --export=ALL "$TRAIN_SCRIPT"
-                                    ((total++))
+                                        export SEED=$s
+                                        echo "Submitting e=$e b=$b m=$m h=$h l=$l r=$r d=$d t=$t f=$f s=$s"
+                                        sbatch --export=ALL "$TRAIN_SCRIPT"
+                                        ((total++))
 
-                                    echo "Submitted job $total"
-                                    echo "----------------------------------------"
+                                        echo "Submitted job $total"
+                                        echo "----------------------------------------"
+                                    done
                                 done
                             done
                         done
