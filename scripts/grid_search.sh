@@ -13,7 +13,7 @@ n_layers=(1)
 l_rates=(0.001)
 dropouts=(0.0)
 tf_ratios=(0.0)
-seeds=(111 124 31 74 0 43 21 41 8 87)
+seeds=(70 37 96 45 5 68 83 1 95 4)
 
 # Initialize counter for total combinations
 total=0

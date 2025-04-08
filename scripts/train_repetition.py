@@ -110,6 +110,13 @@ if __name__ == "__main__":
         default=42,
         help="Random seed",
     )
+    parser.add_argument(
+        "--loss",
+        type=str,
+        default="classic",
+        help="Loss function to use",
+    )
+
     args = parser.parse_args()
     seed_everything(args.seed)
     print(f"seed: {args.seed}")
@@ -128,6 +135,7 @@ if __name__ == "__main__":
             fold_id,
             include_stress,
             args.seed,
+            args.loss,
         )
     else:
         train_name = args.train_name
@@ -178,8 +186,14 @@ if __name__ == "__main__":
         batch_size=batch_size,
         include_stress=include_stress,
     )
-    # criterion = AuditoryXENT()
-    criterion = FirstErrorXENT()
+
+    if args.loss == "classic":
+        criterion = AuditoryXENT()
+    elif args.loss == "first":
+        criterion = FirstErrorXENT()
+    else:
+        raise ValueError("Invalid loss function")
+
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
     phoneme_to_id = get_phoneme_to_id(include_stress)
 

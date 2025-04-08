@@ -259,6 +259,7 @@ def get_train_name(
     fold_id: int | None,
     include_stress: bool,
     seed: int,
+    loss: str = "classic",
     **kwargs,
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
@@ -268,6 +269,12 @@ def get_train_name(
         train_name = f"{train_name}_sw"
     else:
         train_name = f"{train_name}_sn"
+
+    if loss == "classic":
+        train_name = f"{train_name}_lc"
+    elif loss == "first":
+        train_name = f"{train_name}_lf"
+
     # TODO add support for visual dataset, mixed or not
     return train_name
 
