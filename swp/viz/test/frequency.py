@@ -20,28 +20,28 @@ def plot_frequency_errors(df, dir: pathlib.Path):
     """Plot average edit distance by word frequency.
 
     Parameters:
-        df (pd.DataFrame): Data containing 'Lexicality', 'Zipf Frequency', 'Size',
-            'Morphology', and 'Edit Distance'.
+        df (pd.DataFrame): Data containing 'Lexicality', 'Zipf_Frequency', 'Size',
+            'Morphology', and 'Edit_Distance'.
     """
     # Filter for only real word predictions.
     data = df.copy()
     data = data[data["Lexicality"] == "real"]
 
-    # Bin the Zipf Frequency.
-    data["Zipf Bin"] = pd.cut(
-        data["Zipf Frequency"], bins=[1, 2, 3, 4, 5, 6, 7], right=False
+    # Bin the Zipf_Frequency.
+    data["Zipf_Bin"] = pd.cut(
+        data["Zipf_Frequency"], bins=[1, 2, 3, 4, 5, 6, 7], right=False
     )
 
     # Group by the Zipf Bin only (ignoring Size and Morphology) and compute the average Edit Distance.
     grouped_df = (
-        data.groupby(["Zipf Bin"], observed=True)["Edit Distance"].mean().reset_index()
+        data.groupby(["Zipf_Bin"], observed=True)["Edit_Distance"].mean().reset_index()
     )
     # Convert the bins to string for plotting
-    grouped_df["Zipf Bin"] = grouped_df["Zipf Bin"].astype(str)
+    grouped_df["Zipf_Bin"] = grouped_df["Zipf_Bin"].astype(str)
 
     # Create a dummy control DataFrame with a value of 0 for each Zipf Bin.
     dummy_df = grouped_df.copy()
-    dummy_df["Edit Distance"] = 0
+    dummy_df["Edit_Distance"] = 0
 
     # Plotting
     plt.figure(figsize=(11, 6))
@@ -50,8 +50,8 @@ def plot_frequency_errors(df, dir: pathlib.Path):
     # Plot the ablated data (from df) in red.
     sns.lineplot(
         data=grouped_df,
-        x="Zipf Bin",
-        y="Edit Distance",
+        x="Zipf_Bin",
+        y="Edit_Distance",
         # style="Size",
         marker="o",
         markersize=8,
@@ -63,8 +63,8 @@ def plot_frequency_errors(df, dir: pathlib.Path):
     # Plot the dummy control (all zeros) in blue.
     sns.lineplot(
         data=dummy_df,
-        x="Zipf Bin",
-        y="Edit Distance",
+        x="Zipf_Bin",
+        y="Edit_Distance",
         marker="o",
         markersize=8,
         linewidth=3,
@@ -72,8 +72,8 @@ def plot_frequency_errors(df, dir: pathlib.Path):
         label="control",
         ax=ax,
     )
-    plt.xlabel("Zipf Frequency", fontsize=24, labelpad=10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
+    plt.xlabel("Zipf_Frequency", fontsize=24, labelpad=10)
+    plt.ylabel("Edit_Distance", fontsize=24, labelpad=-35)
     plt.legend(fontsize=22, title_fontsize=26)
 
     # Manually adjust y-axis ticks

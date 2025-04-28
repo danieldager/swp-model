@@ -94,9 +94,15 @@ if __name__ == "__main__":
     )
 
     # Set up directories
-    results_dir = get_evaluation_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+    results_dir = (
+        get_evaluation_dir() / f"{model_name}" / f"{train_name}" / f"{checkpoint}"
+    )
     figures_dir = (
-        get_figures_dir() / f"{model_name}~{train_name}" / f"{checkpoint}" / "ablations"
+        get_figures_dir()
+        / f"{model_name}"
+        / f"{train_name}"
+        / f"{checkpoint}"
+        / "ablations"
     )
     results_dir.mkdir(exist_ok=True, parents=True)
     figures_dir.mkdir(exist_ok=True, parents=True)
@@ -132,14 +138,13 @@ if __name__ == "__main__":
         "short_accuracy",
         "long_accuracy",
     ]:
-        # print the neuron indices as well
         print(
             results_df.sort_values(condition).head(3)[
                 ["neuron_idx", "layer_name", condition]
             ]
         )
 
-    # Produce scatter plots.
+    # Scatter plots
     ablation_plots(
         results_df,
         "real_accuracy",

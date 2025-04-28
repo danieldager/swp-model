@@ -9,44 +9,39 @@ warnings.filterwarnings(
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 sns.set_palette("colorblind")
 
 
-def plot_length_errors(df, dir: pathlib.Path):
+def plot_length_errors(
+    df: pd.DataFrame,
+    dir: pathlib.Path | None = None,
+    var: str = "ci",
+):
     """Plot average edit distance by sequence length.
 
     Parameters:
-        df (pd.DataFrame): Data containing 'Sequence Length', 'Lexicality',
-            'Morphology', and 'Edit Distance'.
+        df (pd.DataFrame): Data containing 'Length', 'Lexicality',
+            'Morphology', and 'Edit_Distance'.\
+        dir (pathlib.Path): Directory to save the plot.
     """
     data = df.copy()
-    grouped_df = (
-        data.groupby(
-            [
-                "Sequence Length",
-                "Lexicality",
-                "Morphology",
-            ],
-            observed=True,
-        )["Edit Distance"]
-        .mean()
-        .reset_index()
-    )
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
-        data=grouped_df,
-        x="Sequence Length",
-        y="Edit Distance",
+        data=data,
+        x="Length",
+        y="Edit_Distance",
         hue="Lexicality",
         style="Morphology",
         marker="o",
         markersize=8,
         linewidth=3,
         palette={"real": "red", "pseudo": "blue"},
+        errorbar=var,
     )
-    plt.xlabel("Sequence Length", fontsize=24, labelpad=-10)
+    plt.xlabel("Length", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-5)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
@@ -80,7 +75,10 @@ def plot_length_errors(df, dir: pathlib.Path):
     while tick_labels[-1][-1] in {"0", "."}:
         tick_labels[-1] = tick_labels[-1][:-1]
     ax.set_yticklabels(tick_labels, fontsize=22)
-
     ax.grid(True)
-    plt.savefig(dir / f"errors_len.png", dpi=300, bbox_inches="tight")
-    plt.close()
+
+    if dir:
+        plt.savefig(dir / f"errors_len.png", dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()

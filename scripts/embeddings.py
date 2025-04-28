@@ -25,11 +25,11 @@ sys.path.append(parent)
 
 from swp.datasets.phonemes import (
     get_bigram_dataset,
-    get_trigram_dataset,
     get_handmade_dataset,
     get_phoneme_dataset,
     get_phoneme_testloader,
     get_sonority_dataset,
+    get_trigram_dataset,
 )
 from swp.models.metrics import classic_errors, free_gen_errors
 from swp.test.ablations import ablate_lstm_neuron
@@ -131,7 +131,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    error_meter = free_gen_errors
+
+    model_name = args.model_name
+    train_name = args.train_name
+    error_meter = classic_errors
 
     backend_setup()
     seed_everything()
@@ -156,10 +159,10 @@ if __name__ == "__main__":
             output: tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]],
         ):
             """Hook function to capture the final hidden state."""
-            out, _ = output  # h, c (L, B, H)
-
+            out, (h, c) = output  # h, c (L, B, H)
             if not is_batched:
                 out = out.unsqueeze(0)
+                c = c.unsqueeze(1)
 
             out = out.detach().cpu().numpy()
             B, T, H = out.shape
@@ -167,21 +170,24 @@ if __name__ == "__main__":
             padded_out[:, :T, :] = out
             embeddings[f"Hidden"].append(padded_out)
 
+            c = c.squeeze(0)
+            c = c.detach().cpu().numpy()
+            embeddings["Cell"].append(c)
+
         return embeddings_LSTM_hook
 
     valid_datasets = [
         "evaluation",
         "sonority",
-        "train",
-        "phoneme",
-        "bigram",
-        "trigram",
+        "training",
+        "phonemes",
+        "bigrams",
+        "trigrams",
     ]
     if args.dataset not in valid_datasets:
         raise ValueError(f"Dataset {args.dataset} not recognized")
 
-    name = f"{args.model_name}~{args.train_name}"
-    weights_dir = get_weights_dir() / name
+    weights_dir = get_weights_dir() / model_name / train_name
 
     checkpoints = (
         [args.checkpoint]
@@ -190,24 +196,25 @@ if __name__ == "__main__":
     )
 
     for checkpoint in checkpoints:
-        # TODO: redo the file structure
-        results_dir = get_evaluation_dir() / name / "epochs" / f"{checkpoint}"
-        figures_dir = get_figures_dir() / name / "embeddings" / f"{checkpoint}"
+        results_dir = get_evaluation_dir() / model_name / train_name / f"{checkpoint}"
+        figures_dir = (
+            get_figures_dir() / model_name / train_name / "embeddings" / f"{checkpoint}"
+        )
 
         ### LOAD AND HOOK ###
 
         if model == None:
-            model = get_model(args.model_name)
+            model = get_model(model_name)
         load_weights(
             model=model,
-            model_name=args.model_name,
-            train_name=args.train_name,
+            model_name=model_name,
+            train_name=train_name,
             checkpoint=checkpoint,
             device=device,
         )
         num_layers = model.encoder.num_layers
 
-        embeddings = {"Hidden": []}
+        embeddings = {"Hidden": [], "Cell": []}
         for i in range(num_layers):
             embeddings[f"H{i+1}"] = []
             embeddings[f"C{i+1}"] = []
@@ -245,22 +252,23 @@ if __name__ == "__main__":
 
         ### TESTING ###
 
-        csv_path = results_dir / f"{args.dataset}.csv"
-        npy_path = results_dir / f"{args.dataset}.npy"
+        df_path = results_dir / f"{args.dataset}.csv"
+        h_path = results_dir / f"{args.dataset}_h.npy"
+        c_path = results_dir / f"{args.dataset}_c.npy"
 
-        if args.retest or not csv_path.exists():
+        if args.retest or not h_path.exists():
 
-            if args.dataset == "phoneme":
-                test_df = get_phoneme_dataset()
-            elif args.dataset == "bigram":
+            if args.dataset == "phonemes":
+                test_df = get_handmade_dataset("phonemes")
+            elif args.dataset == "bigrams":
                 test_df = get_bigram_dataset()
-            elif args.dataset == "trigram":
+            elif args.dataset == "trigrams":
                 test_df = get_trigram_dataset()
             elif args.dataset == "sonority":
                 test_df = get_sonority_dataset()
             elif args.dataset == "evaluation":
                 test_df = get_evaluation_dataset()
-            elif args.dataset == "train":
+            elif args.dataset == "training":
                 test_df = get_train_dataset()
 
             test_loader = get_phoneme_testloader(
@@ -269,7 +277,7 @@ if __name__ == "__main__":
                 dataset_df=test_df,
             )
 
-            results_df, _ = test(
+            results, _ = test(
                 model=model,
                 device=device,
                 test_df=test_df,
@@ -278,31 +286,34 @@ if __name__ == "__main__":
                 error_meter=error_meter,
                 verbose=args.verbose,
             )
-            # results_df = results_df.reset_index(drop=True)
-            results_df.to_csv(csv_path)
+            if not df_path.exists() or args.retest:
+                results.to_csv(df_path)
+            h_emb = np.concat(embeddings["Hidden"])
+            c_emb = np.concat(embeddings["Cell"])
 
-            embeddings_np = np.concat(embeddings["Hidden"])
+            # mask padded hidden states
+            _, T, _ = h_emb.shape
+            lengths = results["Length"].to_numpy() + 1
+            mask = np.arange(T)[None, :] < lengths[:, None]
+            mask = mask[:, :, None]
+            h_emb *= mask
 
-            lengths = results_df["Length"].to_numpy()
-            pad = np.ones(embeddings_np.shape)
-
-            # use lengths array to add zeros to the pad matrix
-
-
-
-            np.save(npy_path, embeddings_np)
+            print(f"Saving embeddings to {h_path}")
+            np.save(h_path, h_emb)
+            np.save(c_path, c_emb)
 
         ### PLOTTING ###
 
         converters = {
             "Phonemes": literal_eval,
-            "No Stress": literal_eval,
+            "No_Stress": literal_eval,
             "Prediction": literal_eval,
         }
 
-        df = pd.read_csv(csv_path, index_col=0, converters=converters)
+        df = pd.read_csv(df_path, index_col=0, converters=converters)
 
-        emb = np.load(npy_path)
+        h_emb = np.load(h_path)
+        c_emb = np.load(c_path)
 
         if args.all or args.dmat:
             dissim_matrix(df, args.dataset, num_layers, figures_dir, args.metric)

@@ -54,7 +54,9 @@ def ablate(
     test_loader: DataLoader,
     include_stress: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # TODO docstring
+    """Ablate each neuron in a network sequentially and compute the impact of 
+    said ablation on the error rates for different types of stimuli."""
+    
     # Loop over layers and neurons for ablation.
     ablation_results = []
     fi_results = []
@@ -97,60 +99,60 @@ def ablate(
             # Compute accuracy values
             real_accuracy = calc_accuracy(
                 df,
-                (df["Lexicality"] == "real") & (df["Edit Distance"] > 0),
+                (df["Lexicality"] == "real") & (df["Edit_Distance"] > 0),
                 (df["Lexicality"] == "real"),
             )
             pseudo_accuracy = calc_accuracy(
                 df,
-                (df["Lexicality"] == "pseudo") & (df["Edit Distance"] > 0),
+                (df["Lexicality"] == "pseudo") & (df["Edit_Distance"] > 0),
                 (df["Lexicality"] == "pseudo"),
             )
             low_freq_accuracy = calc_accuracy(
                 df,
                 (df["Lexicality"] == "real")
-                & (df["Zipf Frequency"] < 3.0)
-                & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real") & (df["Zipf Frequency"] < 3.0),
+                & (df["Zipf_Frequency"] < 3.0)
+                & (df["Edit_Distance"] > 0),
+                (df["Lexicality"] == "real") & (df["Zipf_Frequency"] < 3.0),
             )
             high_freq_accuracy = calc_accuracy(
                 df,
                 (df["Lexicality"] == "real")
-                & (df["Zipf Frequency"] >= 3.0)
-                & (df["Edit Distance"] > 0),
-                (df["Lexicality"] == "real") & (df["Zipf Frequency"] >= 3.0),
+                & (df["Zipf_Frequency"] >= 3.0)
+                & (df["Edit_Distance"] > 0),
+                (df["Lexicality"] == "real") & (df["Zipf_Frequency"] >= 3.0),
             )
             simple_accuracy = calc_accuracy(
                 df,
                 (df["Lexicality"] == "real")
                 & (df["Morphology"] == "simple")
-                & (df["Edit Distance"] > 0),
+                & (df["Edit_Distance"] > 0),
                 (df["Lexicality"] == "real") & (df["Morphology"] == "simple"),
             )
             complex_accuracy = calc_accuracy(
                 df,
                 (df["Lexicality"] == "real")
                 & (df["Morphology"] == "complex")
-                & (df["Edit Distance"] > 0),
+                & (df["Edit_Distance"] > 0),
                 (df["Lexicality"] == "real") & (df["Morphology"] == "complex"),
             )
             primacy_accuracy = calc_accuracy(
                 df,
-                (df["Primacy Error"] > 0),
-                df["Edit Distance"] >= 0,
+                (df["Primacy_Error"] > 0),
+                df["Edit_Distance"] >= 0,
             )
             recency_accuracy = calc_accuracy(
                 df,
-                (df["Recency Error"] > 0),
-                (df["Edit Distance"] >= 0),
+                (df["Recency_Error"] > 0),
+                (df["Edit_Distance"] >= 0),
             )
             short_accuracy = calc_accuracy(
                 df,
-                (df["Size"] == "short") & (df["Edit Distance"] > 0),
+                (df["Size"] == "short") & (df["Edit_Distance"] > 0),
                 (df["Size"] == "short"),
             )
             long_accuracy = calc_accuracy(
                 df,
-                (df["Size"] == "long") & (df["Edit Distance"] > 0),
+                (df["Size"] == "long") & (df["Edit_Distance"] > 0),
                 (df["Size"] == "long"),
             )
             ablation_results.append(
@@ -170,7 +172,7 @@ def ablate(
                 }
             )
 
-    # Save results.
+    # Save results
     fi_df = pd.DataFrame(fi_results)
     results_df = pd.DataFrame(ablation_results)
 

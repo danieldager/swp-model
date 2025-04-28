@@ -1,4 +1,4 @@
-,Word,Condition,Lexicality,Size,Morphology,Frequency,Length,Zipf Frequency,Phonemes,No Stress,Part of Speech
+,Word,Condition,Lexicality,Size,Morphology,Frequency,Length,Zipf_Frequency,Phonemes,No_Stress,Part of Speech
 0,discipline,RLCH,real,long,complex,1.7e-05,8,4.23,"['D', 'IH1', 'S', 'AH0', 'P', 'L', 'AH0', 'N']","['D', 'IH', 'S', 'AH', 'P', 'L', 'AH', 'N']",VERB
 1,strongly,RLCH,real,long,complex,2.95e-05,7,4.47,"['S', 'T', 'R', 'AO1', 'NG', 'L', 'IY0']","['S', 'T', 'R', 'AO', 'NG', 'L', 'IY']",ADV
 2,producer,RLCH,real,long,complex,2.75e-05,7,4.44,"['P', 'R', 'AH0', 'D', 'UW1', 'S', 'ER0']","['P', 'R', 'AH', 'D', 'UW', 'S', 'ER']",NOUN

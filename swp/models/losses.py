@@ -12,7 +12,6 @@ def alignment_loss(output, target, criterion, penalty):
         outputs: (output_len, vocab_size) tensor of logits
         targets: (target_len) tensor of target indices
     """
-    # TODO Daniel more precise docstring
     output_len = output.size(0)
     target_len = target.size(0)
 
@@ -51,7 +50,7 @@ def alignment_loss(output, target, criterion, penalty):
 
 # Decoder forward pass using alignment loss ^^^
 def alignment_forward(self, x, hidden, stop_token, target_len):
-    # TODO Daniel docstring
+    # TODO Should we scrap these two ? ^^
 
     outputs = []
 
@@ -120,9 +119,7 @@ class TaskLosses(nn.Module):
 
 
 class AuditoryXENT(nn.CrossEntropyLoss):
-    r"""Cross Entropy Loss made to automatically process the outputs of model classes
-    like `Unimodel` or `Bimodel`.
-    """
+    r"""Cross Entropy Loss equipped to handle bimodal inputs."""
 
     def __init__(
         self,
@@ -147,9 +144,7 @@ class AuditoryXENT(nn.CrossEntropyLoss):
 
 
 class FirstErrorXENT(nn.CrossEntropyLoss):
-    r"""Cross Entropy Loss made to automatically process the outputs of model classes
-    like `Unimodel` or `Bimodel`.
-    """
+    r"""Cross Entropy Loss applied only to the first error in the sequence."""
 
     def __init__(
         self,

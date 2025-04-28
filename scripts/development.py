@@ -89,11 +89,11 @@ if __name__ == "__main__":
         help="Neuron index to ablate",
     )
     parser.add_argument(
-        "--test_train",
-        action="store_true",
-        help="Tests also on the training set",
+        "--dataset",
+        type=str,
+        default="evaluation",
+        help="Dataset to test on",
     )
-    ### TODO: Implement this
     parser.add_argument(
         "--save_all",
         action="store_true",
@@ -112,6 +112,7 @@ if __name__ == "__main__":
     backend_setup()
     device = set_device()
 
+    # set up dictionaries
     conditions = [
         "RSCH",
         "RSCL",
@@ -133,8 +134,23 @@ if __name__ == "__main__":
     for condition in conditions:
         edits_by_condition[condition] = []
 
+    # load dataset and dataloader
+    if args.dataset == "evaluation":
+        test_df = get_evaluation_dataset()
+        test_loader = get_phoneme_testloader(batch_size, include_stress)
+    elif args.dataset == "sonority":
+        test_df = get_sonority_dataset(include_stress=include_stress)
+        test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
+    elif args.dataset == "train":
+        test_df = get_train_dataset()
+        test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
+    else:
+        raise ValueError(f"Unsupported dataset: {args.dataset}")
+
+    # testing loop
     weights_dir = get_weights_dir() / model_name / train_name
     checkpoints = sorted([f.stem.split(".")[-1] for f in weights_dir.glob("*.pth")])
+
     for checkpoint in checkpoints:
         print(f"Epoch: {checkpoint:<3}", end="\r")
         results_dir = (
@@ -154,12 +170,10 @@ if __name__ == "__main__":
             device=device,
         )
 
-        ### TESTING ###
-
-        if args.retest or not (results_dir / "evaluation.csv").exists():
+        if args.retest or not (results_dir / f"{args.dataset}.csv").exists():
             test_df = get_evaluation_dataset()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
-            test_results, _ = test(
+            results, _ = test(
                 model=model,
                 device=device,
                 test_df=test_df,
@@ -168,67 +182,33 @@ if __name__ == "__main__":
                 error_meter=error_meter,
                 verbose=args.verbose,
             )
-            test_results.to_csv(results_dir / "evaluation.csv")
-
-        # if args.retest or not (results_dir / f"sonority.csv").exists():
-        #     ssp_df = get_sonority_dataset(include_stress=include_stress)
-        #     ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
-        #     ssp_results, _ = test(
-        #         model=model,
-        #         device=device,
-        #         test_df=ssp_df,
-        #         test_loader=ssp_loader,
-        #         include_stress=include_stress,
-        #         error_meter=error_meter,
-        #         verbose=args.verbose,
-        #     )
-        #     ssp_results.to_csv(results_dir / f"sonority.csv")
-
-        # if args.test_train and (
-        #     args.retest or not (results_dir / f"train.csv").exists()
-        # ):
-        #     train_df = get_train_data()
-        #     train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-        #     train_results, train_error = test(
-        #         model=model,
-        #         device=device,
-        #         test_df=train_df,
-        #         test_loader=train_loader,
-        #         include_stress=include_stress,
-        #         error_meter=error_meter,
-        #         verbose=args.verbose,
-        #     )
-        #     train_results.to_csv(results_dir / f"train.csv")
-        #     train_results = enrich_for_plotting(train_results, include_stress)
-
-        ### PLOTTING ###
-
-        converters = {
-            "Phonemes": literal_eval,
-            "No Stress": literal_eval,
-            "Prediction": literal_eval,
-        }
-        test_results = pd.read_csv(
-            results_dir / "evaluation.csv", index_col=0, converters=converters
-        )
+            if args.save_all:
+                results.to_csv(results_dir / f"{args.dataset}.csv")
+        else:
+            results = pd.read_csv(
+                results_dir / f"{args.dataset}.csv",
+                index_col=0,
+                converters={
+                    "Phonemes": literal_eval,
+                    "No_Stress": literal_eval,
+                    "Prediction": literal_eval,
+                },
+            )
         test_results = enrich_for_plotting(test_results, include_stress)
 
-        # ssp_results = pd.read_csv(
-        #     results_dir / "ssp.csv", index_col=0, converters=converters
-        # )
-        # ssp_results = enrich_for_plotting(ssp_results, include_stress)
-
+        # compute errors
         errors_by_condition["epoch"].append(checkpoint)
         edits_by_condition["epoch"].append(checkpoint)
         for condition in conditions:
             edit_distances = test_results.loc[
-                test_results["Condition"] == condition, "Edit Distance"
+                test_results["Condition"] == condition, "Edit_Distance"
             ]
             error_count = (edit_distances > 0).sum()
             mean_edits = edit_distances.mean()
             errors_by_condition[condition].append(error_count)
             edits_by_condition[condition].append(mean_edits)
 
+    # save results
     results_dir = get_evaluation_dir() / f"{model_name}~{train_name}" / "development"
     results_dir.mkdir(exist_ok=True, parents=True)
     errors_df = pd.DataFrame(errors_by_condition)
@@ -236,6 +216,7 @@ if __name__ == "__main__":
     errors_df.to_csv(results_dir / "dev_errors.csv")
     edits_df.to_csv(results_dir / "dev_edits.csv")
 
+    # plot results
     figures_dir = get_figures_dir() / f"{model_name}~{train_name}" / "development"
     figures_dir.mkdir(exist_ok=True, parents=True)
     development_plots(errors_df, figures_dir, "errors")

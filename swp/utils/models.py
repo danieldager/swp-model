@@ -83,6 +83,7 @@ class TrainArgs(TypedDict):
     learning_rate: float
     fold_id: int | None
     include_stress: bool
+    loss: str
 
 
 def get_model_args(model_name: str) -> ModelArgs:
@@ -271,9 +272,9 @@ def get_train_name(
         train_name = f"{train_name}_sn"
 
     if loss == "classic":
-        train_name = f"{train_name}_lc"
+        train_name = f"{train_name}_ec"
     elif loss == "first":
-        train_name = f"{train_name}_lf"
+        train_name = f"{train_name}_ef"
 
     # TODO add support for visual dataset, mixed or not
     return train_name
@@ -295,6 +296,7 @@ def get_train_args(train_name: str) -> TrainArgs:
             "learning_rate": float(str_args["l"]),
             "fold_id": None if str_args["f"] == "all" else int(str_args["f"]),
             "include_stress": include_stress,
+            "loss": str_args["e"],
         }
     )
     return train_args

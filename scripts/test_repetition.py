@@ -39,7 +39,7 @@ from swp.viz.test import (
     plot_length_errors,
     plot_position_errors,
     plot_position_errors_bins,
-    plot_position_smoothened_errors,
+    plot_position_errors_smooth,
     plot_sonority_errors,
     regression_plots,
 )
@@ -86,19 +86,13 @@ if __name__ == "__main__":
         help="Regenerate test results",
     )
     parser.add_argument(
-        "--ablate_layer",
+        "--ablate",
         type=str,
         default=None,
-        help="Layer name to ablate",
+        help="Layer and neuron index to ablate",
     )
     parser.add_argument(
-        "--ablate_neuron",
-        type=int,
-        default=None,
-        help="Neuron index to ablate",
-    )
-    parser.add_argument(
-        "--test_train",
+        "--train",
         action="store_true",
         help="Tests also on the training set",
     )
@@ -109,7 +103,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     checkpoint = args.checkpoint
     include_stress = args.include_stress
-    error_meter = free_gen_errors
+    error_meter = classic_errors
 
     seed_everything()
     backend_setup()
@@ -125,11 +119,12 @@ if __name__ == "__main__":
     for checkpoint in checkpoints:
 
         results_dir = (
-            get_evaluation_dir() / f"{model_name}~{train_name}" / f"{checkpoint}"
+            get_evaluation_dir() / f"{model_name}" / f"{train_name}" / f"{checkpoint}"
         )
         figures_dir = (
             get_figures_dir()
-            / f"{model_name}~{train_name}"
+            / f"{model_name}"
+            / f"{train_name}"
             / f"{checkpoint}"
             / "evaluation"
         )
@@ -144,24 +139,18 @@ if __name__ == "__main__":
         )
 
         ### ABLATIONS ###
-
-        if args.ablate_layer is not None and args.ablate_neuron is not None:
-            layer_name = args.ablate_layer
-            neuron_idx = args.ablate_neuron
+        if args.ablate is not None:
+            layer_name = args.ablate[0]
+            neuron_idx = int(args.ablate[1:])
             layers = {
-                "encoder": model.encoder.recurrent,
-                "decoder": model.decoder.recurrent,
+                "e": model.encoder.recurrent,
+                "d": model.decoder.recurrent,
             }
             layer = layers[layer_name]
             num_neurons = layer.hidden_size
             ablate_lstm_neuron(layer, neuron_idx, num_neurons)
-            results_dir = results_dir / f"{layer_name}_{neuron_idx}"
-            figures_dir = figures_dir / f"{layer_name}_{neuron_idx}"
-
-        elif args.ablate_layer is not None or args.ablate_neuron is not None:
-            raise ValueError(
-                "ablate_layer and ablate_neuron have to be passed together to run ablation"
-            )
+            results_dir = results_dir / f"{layer_name}{neuron_idx}"
+            figures_dir = figures_dir / f"{layer_name}{neuron_idx}"
 
         else:
             results_dir = results_dir / "control"
@@ -172,7 +161,7 @@ if __name__ == "__main__":
 
         ### TESTING ###
 
-        if args.retest or not (results_dir / "fdd.csv").exists():
+        if args.retest or not (results_dir / "evaluation.csv").exists():
             test_df = get_evaluation_dataset()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
             test_results, _ = test(
@@ -184,9 +173,10 @@ if __name__ == "__main__":
                 error_meter=error_meter,
                 verbose=args.verbose,
             )
-            test_results.to_csv(results_dir / "fdd.csv")
+            test_results = enrich_for_plotting(test_results, include_stress)
+            test_results.to_csv(results_dir / "evaluation.csv")
 
-        if args.retest or not (results_dir / f"ssp.csv").exists():
+        if args.retest or not (results_dir / f"sonority.csv").exists():
             ssp_df = get_sonority_dataset(include_stress=include_stress)
             ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
             ssp_results, _ = test(
@@ -198,11 +188,10 @@ if __name__ == "__main__":
                 error_meter=error_meter,
                 verbose=args.verbose,
             )
-            ssp_results.to_csv(results_dir / f"ssp.csv")
+            ssp_results = enrich_for_plotting(ssp_results, include_stress)
+            ssp_results.to_csv(results_dir / f"sonority.csv")
 
-        if args.test_train and (
-            args.retest or not (results_dir / f"train.csv").exists()
-        ):
+        if args.train and (args.retest or not (results_dir / f"train.csv").exists()):
             train_df = get_train_dataset()
             train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
             train_results, train_error = test(
@@ -221,29 +210,26 @@ if __name__ == "__main__":
 
         converters = {
             "Phonemes": literal_eval,
-            "No Stress": literal_eval,
+            "No_Stress": literal_eval,
             "Prediction": literal_eval,
+            "Error_Indices": literal_eval,
         }
 
         test_results = pd.read_csv(
-            results_dir / "fdd.csv", index_col=0, converters=converters
+            results_dir / "evaluation.csv", index_col=0, converters=converters
         )
         ssp_results = pd.read_csv(
-            results_dir / "ssp.csv", index_col=0, converters=converters
+            results_dir / "sonority.csv", index_col=0, converters=converters
         )
-
-        test_results = enrich_for_plotting(test_results, include_stress)
-        ssp_results = enrich_for_plotting(ssp_results, include_stress)
 
         plot_length_errors(test_results, figures_dir)
         plot_frequency_errors(test_results, figures_dir)
         plot_sonority_errors(ssp_results, figures_dir)
-        plot_position_smoothened_errors(test_results, figures_dir)
-        plot_position_errors_bins(test_results, figures_dir, num_bins=3)
-
-        plot_category_errors(test_results, figures_dir)
+        plot_position_errors_smooth(test_results, figures_dir)
+        # plot_position_errors_bins(test_results, figures_dir, num_bins=3)
         regression_plots(test_results, figures_dir, "real")
         regression_plots(test_results, figures_dir, "both")
+        # plot_category_errors(test_results, figures_dir)
 
         if args.verbose:
             print("-" * 60)

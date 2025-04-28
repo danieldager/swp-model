@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,company,0.000398,5.6,NOUN,"['K', 'AH1', 'M', 'P', 'AH0', 'N', 'IY0']","['K', 'AH', 'M', 'P', 'AH', 'N', 'IY']",real,7,long
 1,different,0.000389,5.59,ADJ,"['D', 'IH1', 'F', 'ER0', 'AH0', 'N', 'T']","['D', 'IH', 'F', 'ER', 'AH', 'N', 'T']",real,7,long
 2,government,0.000372,5.57,NOUN,"['G', 'AH1', 'V', 'ER0', 'M', 'AH0', 'N', 'T']","['G', 'AH', 'V', 'ER', 'M', 'AH', 'N', 'T']",real,8,long

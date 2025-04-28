@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,absorbing,3.16e-06,3.5,VERB,"['AH0', 'B', 'Z', 'AO1', 'R', 'B', 'IH0', 'NG']","['AH', 'B', 'Z', 'AO', 'R', 'B', 'IH', 'NG']",real,8,long
 1,adapting,3.16e-06,3.5,VERB,"['AH0', 'D', 'AE1', 'P', 'T', 'IH0', 'NG']","['AH', 'D', 'AE', 'P', 'T', 'IH', 'NG']",real,7,long
 2,allegation,3.16e-06,3.5,NOUN,"['AE2', 'L', 'AH0', 'G', 'EY1', 'SH', 'AH0', 'N']","['AE', 'L', 'AH', 'G', 'EY', 'SH', 'AH', 'N']",real,8,long

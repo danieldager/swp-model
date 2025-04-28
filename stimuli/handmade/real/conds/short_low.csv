@@ -1,4 +1,4 @@
-Unnamed: 0,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+Unnamed: 0,Word,Frequency,Zipf_Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 13923,annex,3.16e-06,3.5,VERB,"['AE1', 'N', 'EH2', 'K', 'S']","['AE', 'N', 'EH', 'K', 'S']",real,5,short
 13929,avid,3.16e-06,3.5,ADJ,"['AE1', 'V', 'AH0', 'D']","['AE', 'V', 'AH', 'D']",real,4,short
 13930,avoids,3.16e-06,3.5,VERB,"['AH0', 'V', 'OY1', 'D', 'Z']","['AH', 'V', 'OY', 'D', 'Z']",real,5,short

@@ -1,4 +1,4 @@
-,Word,Phonemes,No Stress,Length,Morphology,Condition,Size
+,Word,Phonemes,No_Stress,Length,Morphology,Condition,Size
 5212,recauses,"['R', 'IH0', 'K', 'AO1', 'Z', 'IH0', 'Z']","['R', 'IH', 'K', 'AO', 'Z', 'IH', 'Z']",7,complex,PLC,long
 7197,belenter,"['B', 'EH1', 'L', 'AH0', 'N', 'T', 'ER0']","['B', 'EH', 'L', 'AH', 'N', 'T', 'ER']",7,complex,PLC,long
 9542,canuted,"['K', 'AH0', 'N', 'UW1', 'T', 'AH0', 'D']","['K', 'AH', 'N', 'UW', 'T', 'AH', 'D']",7,complex,PLC,long

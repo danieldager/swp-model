@@ -1,4 +1,4 @@
-,Word,Condition,Lexicality,Size,Morphology,Frequency,Length,Zipf Frequency,Phonemes,No Stress,Part of Speech
+,Word,Condition,Lexicality,Size,Morphology,Frequency,Length,Zipf_Frequency,Phonemes,No_Stress,Part of Speech
 0,solocomov,PLS,pseudo,long,simple,,9,,"['S', 'OW0', 'L', 'OW1', 'K', 'AH0', 'M', 'AO0', 'F']","['S', 'OW', 'L', 'OW', 'K', 'AH', 'M', 'AO', 'F']",
 1,gostrient,PLS,pseudo,long,simple,,9,,"['G', 'AA1', 'S', 'T', 'R', 'IY0', 'EH0', 'N', 'T']","['G', 'AA', 'S', 'T', 'R', 'IY', 'EH', 'N', 'T']",
 2,divestrate,PLS,pseudo,long,simple,,9,,"['D', 'IH1', 'V', 'EH0', 'S', 'T', 'R', 'EY2', 'T']","['D', 'IH', 'V', 'EH', 'S', 'T', 'R', 'EY', 'T']",
