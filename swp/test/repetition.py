@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
+from ..models.metrics import classic_errors, free_gen_errors
 from ..utils.datasets import get_phoneme_to_id
 
 
@@ -14,7 +15,7 @@ def test(
     test_df: pd.DataFrame,
     test_loader: DataLoader,
     include_stress: bool,
-    error_meter: Callable[[torch.Tensor, torch.Tensor], int],
+    error_meter: Callable[[torch.Tensor, torch.Tensor], int] = classic_errors,
     verbose: bool = False,
 ) -> tuple[pd.DataFrame, float]:
     r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
@@ -28,14 +29,18 @@ def test(
     test_error = 0
     last_index = 0
     predictions = []
-    phoneme_key = "Phonemes" if include_stress else "No Stress"
+    phoneme_key = "Phonemes" if include_stress else "No_Stress"
     phoneme_to_id = get_phoneme_to_id(include_stress)
     id_to_phoneme = list(phoneme_to_id)
 
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for inputs, target in test_loader:
+        for i, (inputs, target) in enumerate(test_loader, 1):
+
+            if verbose:
+                print(f"{i+1}/{len(test_loader)+1}   ", end="\r")
+
             inputs = inputs.to(device)
             target = target.to(device)
 

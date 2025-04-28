@@ -1,4 +1,4 @@
-,Word,Size,Length,Frequency,Zipf Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No Stress,Condition
+,Word,Size,Length,Frequency,Zipf_Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No_Stress,Condition
 28,unkintep,long,9,,,complex,pseudo,,"['AH0', 'N', 'K', 'IH1', 'N', 'T', 'P', 'IH0', 'NG']","['AH', 'N', 'K', 'IH', 'N', 'T', 'P', 'IH', 'NG']",PLC
 39,deodeness,long,9,,,complex,pseudo,,"['D', 'IY1', 'D', 'AH0', 'N', 'IH2', 'S', 'AH0', 'Z']","['D', 'IY', 'D', 'AH', 'N', 'IH', 'S', 'AH', 'Z']",PLC
 41,deodorism,long,9,,,complex,pseudo,,"['D', 'IY1', 'AH0', 'D', 'R', 'IH2', 'Z', 'AH0', 'M']","['D', 'IY', 'AH', 'D', 'R', 'IH', 'Z', 'AH', 'M']",PLC

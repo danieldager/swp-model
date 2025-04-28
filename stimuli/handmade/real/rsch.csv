@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,their,0.00214,6.33,PRON,"['DH', 'EH1', 'R']","['DH', 'EH', 'R']",real,3,short
 1,its,0.00138,6.14,PRON,"['IH1', 'T', 'S']","['IH', 'T', 'S']",real,3,short
 2,into,0.00129,6.11,ADP,"['IH0', 'N', 'T', 'UW1']","['IH', 'N', 'T', 'UW']",real,4,short

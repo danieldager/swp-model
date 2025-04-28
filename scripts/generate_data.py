@@ -42,7 +42,7 @@ if __name__ == "__main__":
         create_epoch(fold_id, fold_train_df, args.epoch_size, generator)
     create_epoch(None, train_df, epoch_size=args.epoch_size, generator=generator)
 
-    print("\nComputing phoneme statistics...\n")
+    print("\nComputing phoneme statistics...")
     get_phoneme_statistics(train_df)
 
     print("\nComputing phoneme tokens...\n")

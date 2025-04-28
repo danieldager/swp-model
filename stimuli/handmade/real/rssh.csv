@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,and,0.0257,7.41,CCONJ,"['AH0', 'N', 'D']","['AH', 'N', 'D']",real,3,short
 1,for,0.0102,7.01,ADP,"['F', 'AO1', 'R']","['F', 'AO', 'R']",real,3,short
 2,that,0.0102,7.01,PRON,"['DH', 'AE1', 'T']","['DH', 'AE', 'T']",real,3,short

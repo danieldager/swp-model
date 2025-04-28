@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,albuquerque,3.16e-06,3.5,PROPN,"['AE1', 'L', 'B', 'AH0', 'K', 'ER0', 'K', 'IY0']","['AE', 'L', 'B', 'AH', 'K', 'ER', 'K', 'IY']",real,8,long
 1,barbados,3.16e-06,3.5,PROPN,"['B', 'AA0', 'R', 'B', 'EY1', 'D', 'OW0', 'S']","['B', 'AA', 'R', 'B', 'EY', 'D', 'OW', 'S']",real,8,long
 2,broccoli,3.16e-06,3.5,VERB,"['B', 'R', 'AA1', 'K', 'AH0', 'L', 'IY0']","['B', 'R', 'AA', 'K', 'AH', 'L', 'IY']",real,7,long

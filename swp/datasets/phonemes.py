@@ -54,10 +54,7 @@ class PhonemeTrainDataset(Dataset):
             self.data_df = get_valid_fold(self.fold_id)
             self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
-        if include_stress:
-            self.phoneme_key = "Phonemes"
-        else:
-            self.phoneme_key = "No Stress"
+        self.phoneme_key = "Phonemes" if include_stress else "No_Stress"
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
@@ -152,10 +149,7 @@ class PhonemeTestDataset(Dataset):
             self.data_df = dataset_df
         self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
-        if include_stress:
-            self.phoneme_key = "Phonemes"
-        else:
-            self.phoneme_key = "No Stress"
+        self.phoneme_key = "Phonemes" if include_stress else "No_Stress"
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
@@ -194,7 +188,7 @@ def get_phoneme_testloader(
     return phoneme_loader
 
 
-### Handmade Datasets ###
+### Datasets ###
 
 # fmt: off
 vowels = [
@@ -208,185 +202,217 @@ nasals = ["M", "N", "NG"]
 liquids = ["L", "R"]
 glides = ["W", "Y"]
 consonants = plosives + fricatives + affricates + nasals + liquids + glides
+converters = {"Word": str, "Phonemes": literal_eval, "No_Stress": literal_eval}
+
+
+def get_handmade_dataset(name: str) -> pd.DataFrame:
+    path = get_handmade_dir() / f"{name}.csv"
+    return pd.read_csv(path, index_col=0, converters=converters)
+
+
+def son_score(c):
+    if c in plosives:
+        return 0
+    elif c in fricatives:
+        return 1
+    elif c in affricates:
+        return 2
+    elif c in nasals:
+        return 3
+    elif c in liquids:
+        return 4
+    elif c in glides:
+        return 5
+    else:
+        raise ValueError(
+            f"Phoneme {c} was not recognized in any of the consonant classes"
+        )
 
 
 def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
-    stress = "sw" if include_stress else "sn"
+    path = get_dataframe_dir() / f"sonority.csv"
 
-    # check if the sonority_dataset.csv exists
-    if (get_dataframe_dir() / f"sonority_dataset_{stress}.csv").exists():
-        converters = {
-            "Word": str,
-            "Phonemes": literal_eval,
-            "No Stress": literal_eval,
-        }
-        return pd.read_csv(
-            get_dataframe_dir() / f"sonority_dataset_{stress}.csv",
-            index_col=0,
-            converters=converters,
-        )
+    # check if the sonority.csv exists
+    if path.exists():
+        return pd.read_csv(path, index_col=0, converters=converters)
 
     else:
+        words1 = []
+        words2 = []
+        scores = []
+        types = []
 
-        def get_sonority(c):
-            if c in plosives:
-                return 0
-            elif c in fricatives:
-                return 1
-            elif c in affricates:
-                return 2
-            elif c in nasals:
-                return 3
-            elif c in liquids:
-                return 4
-            elif c in glides:
-                return 5
-            else:
-                raise ValueError(
-                    f"Phoneme {c} was not recognized in any of the consonant classes"
-                )
-
-        def get_sonority_score(c1, c2):
-            return get_sonority(c2) - get_sonority(c1)
-
-        ccv = {}
-        vcc = {}
         for c1 in consonants:
             for c2 in consonants:
                 if c1 != c2:
-                    score = get_sonority_score(c1, c2)
+                    score = son_score(c2) - son_score(c1)
                     for v in vowels:
-                        ccv[(c1, c2, v)] = score
-                        vcc[(v, c1, c2)] = -score
+                        # CCV
+                        words1.append([c1, c2, v])
+                        words2.append([c1, c2, v[:-1]])
+                        scores.append(score)
+                        types.append("CCV")
 
-        # create test dataframe for sonority plotting
-        ccv_df = pd.DataFrame(
-            [(list(phonemes), score) for phonemes, score in ccv.items()],
-            columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
-        )
-        vcc_df = pd.DataFrame(
-            [(list(phonemes), score) for phonemes, score in vcc.items()],
-            columns=["Phonemes" if include_stress else "No Stress", "Sonority"],
-        )
-        ccv_df["Type"] = "CCV"
-        vcc_df["Type"] = "VCC"
-        sonority_dataset = pd.concat([ccv_df, vcc_df])
+                        # VCC
+                        words1.append([v, c1, c2])
+                        words2.append([v[:-1], c1, c2])
+                        scores.append(-score)
+                        types.append("VCC")
 
-        # TODO: make it work for include_stress=True
-        # remove the phonemes that are in the training set
+        # create sonority dataset
+        sonority_dataset = pd.DataFrame(
+            {
+                "Phonemes": words1,
+                "No_Stress": words2,
+                "Sonority": scores,
+                "Type": types,
+            }
+        )
+        sonority_dataset["Length"] = 3
+
         train_df = get_train_dataset()
-        train_3 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 3]
+        train_3 = train_df[train_df["No_Stress"].apply(lambda x: len(x)) == 3]
         train3_set = set()
-        for phonemes in train_3["No Stress"]:
+        for phonemes in train_3["No_Stress"]:
             train3_set.add(tuple(phonemes))  # only tuples are hashable
         filtered_sonority_dataset = sonority_dataset[
-            sonority_dataset["No Stress"].apply(lambda x: tuple(x) not in train3_set)
+            sonority_dataset["No_Stress"].apply(lambda x: tuple(x) not in train3_set)
         ]
-        sonority_dataset.to_csv(get_dataframe_dir() / f"sonority_dataset_{stress}.csv")
-
+        sonority_dataset.to_csv(path)
         return filtered_sonority_dataset
 
 
-def get_bigrams_dataset() -> pd.DataFrame:
-    filepath = get_dataframe_dir() / f"bigrams_dataset.csv"
-
-    # check if the sonority_dataset.csv exists
-    if filepath.exists():
-        converters = {
-            "Word": str,
-            "Phonemes": literal_eval,
-            "No Stress": literal_eval,
-        }
-        return pd.read_csv(filepath, index_col=0, converters=converters)
+def get_phoneme_dataset() -> pd.DataFrame:
+    path = get_dataframe_dir() / f"phonemes.csv"
+    if path.exists():
+        return pd.read_csv(path, index_col=0, converters=converters)
 
     else:
         data = {
             "Phonemes": [],
-            "No Stress": [],
+            "No_Stress": [],
+            "Type": [],
+            "Included": [],
+            "Length": [],
+        }
+        train_df = get_train_dataset()
+        train1 = train_df[train_df["No_Stress"].apply(lambda x: len(x)) == 1]
+        train1_set = {tuple(phonemes) for phonemes in train1["No_Stress"]}
+
+        phonemes = vowels + consonants
+        for p in phonemes:
+            data["Phonemes"].append([p])
+            no_stress = p[:-1] if p in vowels else p
+            data["No_Stress"].append([no_stress])
+            data["Type"].append("V" if p in vowels else "C")
+            data["Included"].append(True if (no_stress,) in train1_set else False)
+            data["Length"].append(1)
+
+        phoneme_df = pd.DataFrame(data)
+        phoneme_df.to_csv(path)
+        return phoneme_df
+
+
+def get_bigram_dataset() -> pd.DataFrame:
+    path = get_dataframe_dir() / f"bigrams.csv"
+    if path.exists():
+        return pd.read_csv(path, index_col=0, converters=converters)
+
+    else:
+        data = {
+            "Phonemes": [],
+            "No_Stress": [],
             "Type": [],
             "Consonant": [],
             "Vowel": [],
             "Included": [],
         }
-
         train_df = get_train_dataset()
-        train2 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 2]
-        train2_set = {tuple(phonemes) for phonemes in train2["No Stress"]}
+        train2 = train_df[train_df["No_Stress"].apply(lambda x: len(x)) == 2]
+        train2_set = {tuple(phonemes) for phonemes in train2["No_Stress"]}
 
         for c in consonants:
             for v in vowels:
                 # CV
                 data["Phonemes"].append([c, v])
-                data["No Stress"].append([c, v[:-1]])
+                data["No_Stress"].append([c, v[:-1]])
                 data["Type"].append("CV")
                 data["Consonant"].append(c)
                 data["Vowel"].append(v[:-1])
-                data["Included"].append(
-                    True if (c, v[:-1]) not in train2_set else False
-                )
+                data["Included"].append(True if (c, v[:-1]) in train2_set else False)
 
                 # VC
                 data["Phonemes"].append([v, c])
-                data["No Stress"].append([v[:-1], c])
+                data["No_Stress"].append([v[:-1], c])
                 data["Type"].append("VC")
                 data["Consonant"].append(c)
                 data["Vowel"].append(v[:-1])
-                data["Included"].append(
-                    True if (v[:-1], c) not in train2_set else False
-                )
+                data["Included"].append(True if (v[:-1], c) in train2_set else False)
 
-        bigrams_df = pd.DataFrame(data)
-        bigrams_df.to_csv(filepath)
-        return bigrams_df
+        bigram_df = pd.DataFrame(data)
+        bigram_df.to_csv(path)
+        return bigram_df
 
 
-def create_phoneme_dataset() -> pd.DataFrame:
-    filepath = get_dataframe_dir() / f"phoneme_dataset.csv"
-
-    # check if the sonority_dataset.csv exists
-    if filepath.exists():
-        converters = {
-            "Word": str,
-            "Phonemes": literal_eval,
-            "No Stress": literal_eval,
-        }
-        return pd.read_csv(filepath, index_col=0, converters=converters)
+def get_trigram_dataset() -> pd.DataFrame:
+    path = get_dataframe_dir() / f"trigrams.csv"
+    if path.exists():
+        return pd.read_csv(path, index_col=0, converters=converters)
 
     else:
-        data = {
+        print("Generating trigram dataset...")
+        df = {
             "Phonemes": [],
-            "No Stress": [],
+            "No_Stress": [],
             "Type": [],
-            "Included": [],
+            "Real": [],
+            "Length": [],
+            "First": [],
+            "Second": [],
+            "Third": [],
         }
 
         train_df = get_train_dataset()
-        train1 = train_df[train_df["No Stress"].apply(lambda x: len(x)) == 1]
-        train1_set = {tuple(phonemes) for phonemes in train1["No Stress"]}
+        train_df = train_df[train_df["No_Stress"].apply(lambda x: len(x)) <= 3]
+        train_set = {tuple(phonemes) for phonemes in train_df["No_Stress"]}
 
         phonemes = vowels + consonants
-        for p in phonemes:
-            data["Phonemes"].append([p])
-            data["No Stress"].append([p[:-1]] if p in vowels else [p])
-            data["Type"].append("V" if p in vowels else "C")
-            data["Included"].append(True if (p,) not in train1_set else False)
+        for p1 in phonemes:
+            df["Phonemes"].append([p1])
+            t1 = "V" if p1 in vowels else "C"
+            df["Type"].append(t1)
+            n1 = p1[:-1] if p1 in vowels else p1
+            df["No_Stress"].append([n1])
+            df["Real"].append(True if (n1,) in train_set else False)
+            df["Length"].append(1)
+            df["First"].append(t1)
+            df["Second"].append(None)
+            df["Third"].append(None)
 
-        phoneme_df = pd.DataFrame(data)
-        phoneme_df.to_csv(filepath)
-        return phoneme_df
+            for p2 in phonemes:
+                df["Phonemes"].append([p1, p2])
+                t2 = "V" if p2 in vowels else "C"
+                df["Type"].append(t1 + t2)
+                n2 = p2[:-1] if p2 in vowels else p2
+                df["No_Stress"].append([n1, n2])
+                df["Real"].append(True if (n1, n1) in train_set else False)
+                df["Length"].append(2)
+                df["First"].append(t1)
+                df["Second"].append(t2)
+                df["Third"].append(None)
 
+                for p3 in phonemes:
+                    df["Phonemes"].append([p1, p2, p3])
+                    t3 = "V" if p3 in vowels else "C"
+                    df["Type"].append(t1 + t2 + t3)
+                    n3 = p3[:-1] if p3 in vowels else p3
+                    df["No_Stress"].append([n1, n2, n3])
+                    df["Real"].append(True if (n1, n2, n3) in train_set else False)
+                    df["Length"].append(3)
+                    df["First"].append(t1)
+                    df["Second"].append(t2)
+                    df["Third"].append(t3)
 
-def get_phoneme_dataset() -> pd.DataFrame:
-    filepath = get_handmade_dir() / f"phoneme_dataset.csv"
-
-    # check if the sonority_dataset.csv exists
-    if filepath.exists():
-        converters = {
-            "Word": str,
-            "Phonemes": literal_eval,
-            "No Stress": literal_eval,
-        }
-        return pd.read_csv(filepath, index_col=0, converters=converters)
-
-    else:
-        raise FileNotFoundError(f"File {filepath} does not exist")
+        trigram_df = pd.DataFrame(df)
+        trigram_df.to_csv(path)
+        return trigram_df

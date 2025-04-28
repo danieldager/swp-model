@@ -95,15 +95,15 @@ def clean_and_enrich_data(
     # Drop rows with no word value
     df = df.dropna(subset=["Word"])
 
-    # Add Zipf Frequency and Part of Speech columns
+    # Add Zipf_Frequency and Part of Speech columns
     if real:
         df = df.drop(
             columns=["Number", "percentile freq", "morph structure"], errors="ignore"
         )
-        df["Zipf Frequency"] = df["Word"].apply(lambda x: zipf_frequency(x, "en"))
-        df["Part of Speech"] = df["Word"].apply(lambda x: nlp(x)[0].pos_)
+        df["Zipf_Frequency"] = df["Word"].apply(lambda x: zipf_frequency(x, "en"))
+        df["Part_of_Speech"] = df["Word"].apply(lambda x: nlp(x)[0].pos_)
     else:
-        df["Zipf Frequency"] = 0.0
+        df["Zipf_Frequency"] = 0.0
 
     # Add Phonemes column
     cmu = cmudict.dict()
@@ -121,7 +121,7 @@ def clean_and_enrich_data(
     def remove_stress(phonemes):
         return [p[:-1] if p[-1].isdigit() else p for p in phonemes]
 
-    df["No Stress"] = df["Phonemes"].apply(remove_stress)
+    df["No_Stress"] = df["Phonemes"].apply(remove_stress)
 
     # NOTE: Very slow
     # Add Morphological data
@@ -131,7 +131,7 @@ def clean_and_enrich_data(
             "Roots",
             "Frequencies",
             "Suffixes",
-            "Morpheme Count",
+            "Morpheme_Count",
             "Structure",
         ]
         df[columns] = df["Word"].apply(
@@ -141,73 +141,55 @@ def clean_and_enrich_data(
     return df
 
 
-def enrich_for_plotting(df: pd.DataFrame, include_stress: bool) -> pd.DataFrame:
-    """
-    Calculate error and bigram statistics for each row in the DataFrame and append them as new columns.
+def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.DataFrame:
+    """Calculate error and bigram statistics for each row in the DataFrame."""
+    if not include_stress:
+        df["Phonemes"] = df["No_Stress"]
 
-    Args:
-        df (pd.DataFrame): The input DataFrame with columns for phonemes, predictions, and optionally stress.
-        phoneme_to_id (dict): A mapping of phonemes to their corresponding IDs.
-        include_stress (bool): Whether to use the "Phonemes" column or "No Stress" column.
+    df = df[df["Phonemes"].apply(len) > 1].copy()
 
-    Returns:
-        pd.DataFrame: The DataFrame with additional columns for error statistics.
-    """
-    phoneme_to_id = get_phoneme_to_id(include_stress)
-    phoneme_key = "Phonemes" if include_stress else "No Stress"
-    # df[phoneme_key] = df[phoneme_key].apply(literal_eval)
-    # df["Prediction"] = df["Prediction"].apply(literal_eval)
-    df = df[df[phoneme_key].apply(len) > 1].copy()
+    # stats_dir = get_stimuli_dir() / "statistics"
+    # bfs = pd.read_csv(stats_dir / f"bigram_stats_{stress}.csv")
+    # bigram_to_freq = dict(zip(bfs["Bigram"], bfs["Normalized Frequency"]))
 
     # Initialize lists to store results
     edit_distances = []
     insertions = []
     deletions = []
     substitutions = []
-    sequence_lengths = []
+    lengths = []
     error_indices = []
-    bigram_frequency = []
+    # bigram_frequency = []
 
-    stress = "sw" if include_stress else "sn"
-    stats_dir = get_stimuli_dir() / "statistics"
-    bigram_stats_df = pd.read_csv(stats_dir / f"bigram_stats_{stress}.csv")
-    bigram_to_freq = dict(
-        zip(bigram_stats_df["Bigram"], bigram_stats_df["Normalized Frequency"])
-    )
-
-    for _, row in df.iterrows():
+    for row in df.itertuples(index=False):
         # Compute average bigram frequency for the sequence
-        phonemes = row[phoneme_key]
-        bigrams = [" ".join(phonemes[i : i + 2]) for i in range(len(phonemes) - 1)]
-        bigram_freqs = [bigram_to_freq.get(bigram, 0) for bigram in bigrams]
-        avg_bigram_freq = sum(bigram_freqs) / len(bigram_freqs)
+        # bigrams = [" ".join(phonemes[i : i + 2]) for i in range(len(phonemes) - 1)]
+        # bigram_freqs = [bigram_to_freq.get(bigram, 0) for bigram in bigrams]
+        # avg_bigram_freq = sum(bigram_freqs) / len(bigram_freqs)
 
         # Tally edit operations and identify error indices
-        phonemes = [phoneme_to_id[p] for p in phonemes]
-        prediction = [phoneme_to_id[p] for p in row["Prediction"]]
-        errors = editops(phonemes, prediction)
+        errors = editops(row.Phonemes, row.Prediction)  # type: ignore
         counts = Counter(op for op, _, _ in errors)
-        mismatched_indices = [
-            i + 1 for i, (j, k) in enumerate(zip(phonemes, prediction)) if j != k
-        ]
+        zipped = zip(row.Phonemes, row.Prediction)  # type: ignore
+        indices = [i + 1 for i, (a, b) in enumerate(zipped) if a != b]
 
         # Append results to the respective lists
         edit_distances.append(len(errors))
         insertions.append(counts["insert"])
         deletions.append(counts["delete"])
         substitutions.append(counts["replace"])
-        sequence_lengths.append(len(phonemes))
-        error_indices.append(mismatched_indices)
-        bigram_frequency.append(avg_bigram_freq)
+        lengths.append(row.Length)
+        error_indices.append(indices)
+        # bigram_frequency.append(avg_bigram_freq)
 
     # Add results as new columns to the DataFrame
-    df["Edit Distance"] = edit_distances
+    df["Edit_Distance"] = edit_distances
     df["Insertions"] = insertions
     df["Deletions"] = deletions
     df["Substitutions"] = substitutions
-    df["Sequence Length"] = sequence_lengths
-    df["Error Indices"] = error_indices
-    df["Bigram Frequency"] = bigram_frequency
+    df["Length"] = lengths
+    df["Error_Indices"] = error_indices
+    # df["Bigram Frequency"] = bigram_frequency
 
     return df
 
@@ -260,8 +242,8 @@ def enrich_for_mlem(df: pd.DataFrame) -> pd.DataFrame:  # type: ignore
     def counts(phonemes: list, lst: list) -> int:
         return sum(1 for p in phonemes if p in lst)
 
-    df["Vowel Count"] = df["No Stress"].apply(lambda x: counts(x, vowels))
-    df["Consonant Count"] = df["No Stress"].apply(counts, lst=consonants)
+    df["Vowel_Count"] = df["No_Stress"].apply(lambda x: counts(x, vowels))
+    df["Consonant_Count"] = df["No_Stress"].apply(counts, lst=consonants)
 
     return df
 
@@ -279,30 +261,30 @@ def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     def classify(row):
-        threshold = row["Sequence Length"] // 2
+        threshold = row["Length"] // 2
         return pd.Series(
             {
-                "Primacy Error": int(
-                    any(idx <= threshold for idx in row["Error Indices"])
+                "Primacy_Error": int(
+                    any(idx <= threshold for idx in row["Error_Indices"])
                 ),
-                "Recency Error": int(
-                    any(idx > threshold for idx in row["Error Indices"])
+                "Recency_Error": int(
+                    any(idx > threshold for idx in row["Error_Indices"])
                 ),
             }
         )
 
-    df.loc[:, ["Primacy Error", "Recency Error"]] = df.apply(classify, axis=1)
+    df.loc[:, ["Primacy_Error", "Recency_Error"]] = df.apply(classify, axis=1)
     return df
 
 
 def get_evaluation_dataset() -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
     Set `force_recreate` to `True` to enforce recomputation of the data."""
-    filepath = get_handmade_dir() / "eval_equalized.csv"
+    filepath = get_handmade_dir() / "evaluation_dataset.csv"
     converters = {
         "Word": str,
         "Phonemes": literal_eval,
-        "No Stress": literal_eval,
+        "No_Stress": literal_eval,
     }
     if filepath.exists():
         dataframe = pd.read_csv(filepath, index_col=0, converters=converters)
@@ -333,7 +315,7 @@ def get_curated_words() -> list[tuple[str, float]]:
 def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     r"""Create a training dataset with `num_unique_words` words selected from the most frequent english words.
 
-    Data is enrichened with word Frequency, Zipf Frequency, Part of Speech and Phonemes
+    Data is enrichened with word Frequency, Zipf_Frequency, Part of Speech and Phonemes
     """
     curated = get_curated_words()
     if num_unique_words > len(curated):
@@ -345,7 +327,7 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
 
     dataframe = pd.DataFrame({"Word": list(word_tuple), "Frequency": list(freq_tuple)})
     dataframe = clean_and_enrich_data(dataframe, real=True)
-    csv_train_path = get_dataframe_dir() / "complete_train.csv"
+    csv_train_path = get_dataframe_dir() / "training.csv"
     dataframe.to_csv(csv_train_path)
 
     # ablation_train = dataframe.sample(frac=0.1)
@@ -359,7 +341,7 @@ def get_train_dataset(force_recreate: bool = False) -> pd.DataFrame:
     r"""Get saved training dataset if it exists, create it otherwise.
 
     Use `force_recreate` to recreate the training set from scratch"""
-    csv_train_path = get_dataframe_dir() / "complete_train.csv"
+    csv_train_path = get_dataframe_dir() / "training.csv"
     if csv_train_path.exists() and not force_recreate:
         dataframe = pd.read_csv(
             csv_train_path,
@@ -367,7 +349,7 @@ def get_train_dataset(force_recreate: bool = False) -> pd.DataFrame:
             converters={
                 "Word": str,
                 "Phonemes": literal_eval,
-                "No Stress": literal_eval,
+                "No_Stress": literal_eval,
             },
         )
     else:
@@ -387,7 +369,7 @@ def create_folds(
     Randomness of splits can be controlled through the `generator` argument.
     If left as `None`, a generator is deterministically seeded and used.
     """
-    # TODO check that folds are balanced
+    # TODO check that folds are balanced (meaning?)
     if generator is None:
         generator = np.random.default_rng(seed=42)
     folds_dir = get_folds_dir()
@@ -428,7 +410,7 @@ def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
             converters={
                 "Word": str,
                 "Phonemes": literal_eval,
-                "No Stress": literal_eval,
+                "No_Stress": literal_eval,
             },
         )
     return dataframe
@@ -453,7 +435,7 @@ def get_valid_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
             converters={
                 "Word": str,
                 "Phonemes": literal_eval,
-                "No Stress": literal_eval,
+                "No_Stress": literal_eval,
             },
         )
     return dataframe
@@ -531,10 +513,10 @@ def get_epoch(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame
 
 
 def get_phoneme_statistics(train_df: pd.DataFrame):
-    # TODO Daniel docstring
+    r"""Get frequencies of phonemes, bigrams and trigrams from the training dataset."""
 
     # iterate over the rows of the dataframe
-    for phoneme_key in ["Phonemes", "No Stress"]:
+    for phoneme_key in ["Phonemes", "No_Stress"]:
         phoneme_stats = defaultdict(int)
         bigram_stats = defaultdict(int)
         trigram_stats = defaultdict(int)
@@ -560,15 +542,15 @@ def get_phoneme_statistics(train_df: pd.DataFrame):
         # Convert to dataframes with normalized frequencies
         phoneme_df = pd.DataFrame(
             [(k, v, v / phoneme_total) for k, v in phoneme_stats.items()],
-            columns=["Phoneme", "Frequency", "Normalized Frequency"],
+            columns=["Phoneme", "Frequency", "Normalized_Frequency"],
         )
         bigram_df = pd.DataFrame(
             [(k, v, v / bigram_total) for k, v in bigram_stats.items()],
-            columns=["Bigram", "Frequency", "Normalized Frequency"],
+            columns=["Bigram", "Frequency", "Normalized_Frequency"],
         )
         trigram_df = pd.DataFrame(
             [(k, v, v / trigram_total) for k, v in trigram_stats.items()],
-            columns=["Trigram", "Frequency", "Normalized Frequency"],
+            columns=["Trigram", "Frequency", "Normalized_Frequency"],
         )
 
         statistics_dir = get_stimuli_dir() / "statistics"

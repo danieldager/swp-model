@@ -2,6 +2,7 @@ import pathlib
 import warnings
 
 import numpy as np
+import pandas as pd
 
 warnings.filterwarnings(
     "ignore",
@@ -15,33 +16,31 @@ import seaborn as sns
 sns.set_palette("colorblind")
 
 
-def plot_sonority_errors(df, dir: pathlib.Path):
+def plot_sonority_errors(
+    df: pd.DataFrame,
+    path: pathlib.Path | None = None,
+    var: str = "se",
+) -> None:
     """Plot average edit distance grouped by sonority.
 
     Parameters:
-        df (pd.DataFrame): Data containing 'Sonority', 'Type', and 'Edit Distance'.
-        ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
-            If None, a new figure and axes are created.
-
+        df (pd.DataFrame): Data containing 'Sonority', 'Type', and 'Edit_Distance'.
+        path (pathlib.Path): Directory to save the plot.
+        var (str): Error bar type, default is 'se' (standard error).
     """
-    data = df.copy()
-    grouped_df = (
-        data.groupby(["Sonority", "Type"], observed=True)["Edit Distance"]
-        .mean()
-        .reset_index()
-    )
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
-        data=grouped_df,
+        data=df,
         x="Sonority",
-        y="Edit Distance",
+        y="Edit_Distance",
         hue="Type",
         marker="o",
         markersize=8,
         linewidth=3,
+        errorbar=var,
     )
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-35)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-15)
     plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
     ax.set_xticks([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])
     ax.set_xticklabels(["-5", "", "", "", "", "", "", "", "", "", "5"], fontsize=22)
@@ -59,7 +58,10 @@ def plot_sonority_errors(df, dir: pathlib.Path):
     while tick_labels[-1][-1] in {"0", "."}:
         tick_labels[-1] = tick_labels[-1][:-1]
     ax.set_yticklabels(tick_labels, fontsize=22)
-
     ax.grid(True)
-    plt.savefig(dir / "errors_son.png", dpi=300, bbox_inches="tight")
-    plt.close()
+
+    if path:
+        plt.savefig(path / "errors_son.png", dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()

@@ -1,4 +1,4 @@
-,Word,Phonemes,No Stress,Length,Morphology,Condition,Size
+,Word,Phonemes,No_Stress,Length,Morphology,Condition,Size
 128,tog,"['T', 'AO1', 'G']","['T', 'AO', 'G']",3,simple,PSS,short
 154,mim,"['M', 'IH1', 'M']","['M', 'IH', 'M']",3,simple,PSS,short
 167,fut,"['F', 'AH1', 'T']","['F', 'AH', 'T']",3,simple,PSS,short

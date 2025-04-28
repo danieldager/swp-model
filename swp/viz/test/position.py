@@ -19,11 +19,11 @@ sns.set_palette("colorblind")
 
 
 # Function to plot Average Edit Distance by Position
-def plot_position_errors(df, dir: pathlib.Path):
+def plot_position_errors(df: pd.DataFrame, dir: pathlib.Path):
     """Plot average edit distance by relative position within each sequence.
 
     Parameters:
-        df (pd.DataFrame): Data containing 'Lexicality', 'Sequence Length',
+        df (pd.DataFrame): Data containing 'Lexicality', 'Length',
             and 'Error Indices'.
         ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
             If None, a new figure and axes are created.
@@ -35,14 +35,14 @@ def plot_position_errors(df, dir: pathlib.Path):
         totals = {}
         errors = {}
         for _, row in group_df.iterrows():
-            length = row["Sequence Length"]
+            length = row["Length"]
 
             # Count total occurrences and errors by normalized position
             for index in range(1, length + 1):
                 normalized = (index - 1) / (length - 1)
                 totals[normalized] = totals.get(normalized, 0) + 1
 
-            for index in row["Error Indices"]:
+            for index in row["Error_Indices"]:
                 normalized = (index - 1) / (length - 1)
                 errors[normalized] = errors.get(normalized, 0) + 1
 
@@ -51,7 +51,7 @@ def plot_position_errors(df, dir: pathlib.Path):
             [
                 {
                     "Position": index,
-                    "Error Rate": errors.get(index, 0) / total,
+                    "Error_Rate": errors.get(index, 0) / total,
                     "Lexicality": lexicality,
                 }
                 for index, total in totals.items()
@@ -61,7 +61,7 @@ def plot_position_errors(df, dir: pathlib.Path):
     plt.figure(figsize=(11, 6))
     ax = sns.lineplot(
         x="Position",
-        y="Error Rate",
+        y="Error_Rate",
         hue="Lexicality",
         data=plot_df,
         marker="o",
@@ -77,16 +77,21 @@ def plot_position_errors(df, dir: pathlib.Path):
     plt.close()
 
 
-def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
-    """Plot smoothened average edit distance by relative position within each sequence.
+def plot_position_errors_smooth(
+    df: pd.DataFrame,
+    dir: pathlib.Path | None = None,
+    var: str = "ci",
+    multi: bool = False,
+):
+    """Plot smooth average edit distance by relative position within each sequence.
     Also does a subplot for every length.
 
     Parameters:
-        df (pd.DataFrame): Data containing 'Lexicality', 'Sequence Length',
+        df (pd.DataFrame): Data containing 'Lexicality', 'Length',
             and 'Error Indices'.
-        ax (matplotlib.axes.Axes, optional): Axes object to draw the plot onto.
-            If None, a new figure and axes are created.
-
+        dir (pathlib.Path): Directory to save the plot.
+        var (str): Type of error bar to use. Defaults to "".
+        multi (bool): Whether to plot multiple lines for each length. Defaults to False.
     """
     data_by_lexicality = []
     # Iterate through rows grouped by Lexicality
@@ -94,14 +99,15 @@ def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
     x = np.linspace(0, 1, num_points, endpoint=True)
     for lexicality, group_df in df.groupby("Lexicality"):
         y = np.zeros(num_points)
-        for length, length_df in group_df.groupby("Sequence Length"):
-            errors = {index / (length - 1): 0 for index in range(length)}
+        for length, length_df in group_df.groupby("Length"):
+            length = int(length)  # type: ignore
+            errors = {i / (length - 1): 0 for i in range(length)}
             for _, row in length_df.iterrows():
-                length = row["Sequence Length"]
+                length = row["Length"]
 
                 # Count total occurrences and errors by normalized position
 
-                for index in row["Error Indices"]:
+                for index in row["Error_Indices"]:
                     normalized = (index - 1) / (length - 1)
                     errors[normalized] = errors.get(normalized, 0) + 1
             indices = np.array([index for index in errors])
@@ -112,7 +118,7 @@ def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
                     [
                         {
                             "Position": x[i],
-                            "Error Rate": curr_y[i],
+                            "Error_Rate": curr_y[i],
                             "Lexicality": lexicality,
                             "Length": length,
                             "Smooth": "smooth",
@@ -124,7 +130,7 @@ def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
                     [
                         {
                             "Position": indices[i],
-                            "Error Rate": rates[i],
+                            "Error_Rate": rates[i],
                             "Lexicality": lexicality,
                             "Length": length,
                             "Smooth": "raw",
@@ -140,7 +146,7 @@ def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
             [
                 {
                     "Position": x[i],
-                    "Error Rate": y[i],
+                    "Error_Rate": y[i],
                     "Lexicality": lexicality,
                     "Length": "all",
                     "Smooth": "smooth",
@@ -154,7 +160,7 @@ def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
         for i, (length, plot_subdf) in enumerate(plot_df.groupby("Length")):
             ax = sns.lineplot(
                 x="Position",
-                y="Error Rate",
+                y="Error_Rate",
                 hue="Lexicality",
                 style="Smooth",
                 data=plot_subdf,
@@ -176,31 +182,26 @@ def plot_position_smoothened_errors(df, dir: pathlib.Path, multi: bool = False):
         plt.figure(figsize=(11, 6))
         ax = sns.lineplot(
             x="Position",
-            y="Error Rate",
+            y="Error_Rate",
             hue="Lexicality",
             style="Smooth",
             data=plot_df,
             markersize=8,
             linewidth=3,
             palette={"real": "red", "pseudo": "blue"},
+            errorbar=var,
         )
         ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
         ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
-        # ax.legend(
-        #     title=f"Lexicality",
-        #     fontsize=24,
-        #     title_fontsize=24,
-        #     bbox_to_anchor=(1.05, 1),
-        # )
-        # get rid of legend
         ax.get_legend().remove()
         set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(
-        dir / f"errors_pos{'_len' if multi else ''}.png",
-        dpi=300,
-        bbox_inches="tight",
-    )
-    plt.close()
+
+    if dir:
+        fig_path = dir / f"errors_pos{'_len' if multi else ''}.png"
+        plt.savefig(fig_path, bbox_inches="tight", dpi=300)
+        plt.close()
+    else:
+        plt.show()
 
 
 def plot_position_errors_bins(
@@ -221,11 +222,11 @@ def plot_position_errors_bins(
     for lexicality, group_df in df.groupby("Lexicality"):
         bins = {i / num_bins: 0 for i in range(num_bins)}
         for _, row in group_df.iterrows():
-            length = row["Sequence Length"]
+            length = row["Length"]
 
             # Count total occurrences and errors by normalized position
             added = set()
-            for index in row["Error Indices"]:
+            for index in row["Error_Indices"]:
                 normalized = (index - 1) / (length - 1)
                 for i in range(num_bins):
                     if normalized == 1.0:
@@ -246,7 +247,7 @@ def plot_position_errors_bins(
             [
                 {
                     "Position": curr_bin,
-                    "Error Rate": bins[curr_bin] / len(group_df),
+                    "Error_Rate": bins[curr_bin] / len(group_df),
                     "Lexicality": lexicality,
                 }
                 for curr_bin in bins
@@ -256,7 +257,7 @@ def plot_position_errors_bins(
     plt.figure(figsize=(11, 6))
     ax = sns.barplot(
         x="Position",
-        y="Error Rate",
+        y="Error_Rate",
         hue="Lexicality",
         data=plot_df,
         linewidth=3,

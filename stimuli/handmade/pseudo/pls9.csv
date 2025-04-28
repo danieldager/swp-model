@@ -1,4 +1,4 @@
-,Word,Size,Length,Frequency,Zipf Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No Stress,Condition
+,Word,Size,Length,Frequency,Zipf_Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No_Stress,Condition
 68,mucipital,long,9,,,simple,pseudo,,"['M', 'AH0', 'S', 'IH1', 'P', 'IH0', 'T', 'AH0', 'L']","['M', 'AH', 'S', 'IH', 'P', 'IH', 'T', 'AH', 'L']",PLS
 98,advantint,long,9,,,simple,pseudo,,"['AE0', 'D', 'V', 'AE1', 'N', 'T', 'IH0', 'N', 'T']","['AE', 'D', 'V', 'AE', 'N', 'T', 'IH', 'N', 'T']",PLS
 108,avalitect,long,9,,,simple,pseudo,,"['AE0', 'V', 'AE1', 'L', 'IH1', 'T', 'IH0', 'K', 'T']","['AE', 'V', 'AE', 'L', 'IH', 'T', 'IH', 'K', 'T']",PLS

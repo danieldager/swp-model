@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,important,0.000275,5.44,ADJ,"['IH0', 'M', 'P', 'AO1', 'R', 'T', 'AH0', 'N', 'T']","['IH', 'M', 'P', 'AO', 'R', 'T', 'AH', 'N', 'T']",real,9,long
 1,control,0.000251,5.4,NOUN,"['K', 'AH0', 'N', 'T', 'R', 'OW1', 'L']","['K', 'AH', 'N', 'T', 'R', 'OW', 'L']",real,7,long
 2,problem,0.000251,5.4,NOUN,"['P', 'R', 'AA1', 'B', 'L', 'AH0', 'M']","['P', 'R', 'AA', 'B', 'L', 'AH', 'M']",real,7,long

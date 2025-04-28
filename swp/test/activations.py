@@ -208,12 +208,12 @@ def neural_regressions(
 
     df = test_df.copy()
 
-    # df[df["Lexicality"] == "pseudo"]["Zipf Frequency"] = 0
+    # df[df["Lexicality"] == "pseudo"]["Zipf_Frequency"] = 0
 
     # Define features: include the continuous variables and the categorical one.
     if mode == "real":
         df = df[df["Lexicality"] == "real"]
-        continuous_features = ["Length", "Zipf Frequency"]
+        continuous_features = ["Length", "Zipf_Frequency"]
         categorical_features = ["Morphology"]
         features = ["Len", "Fre", "Mor"]
     elif mode == "both":
@@ -221,7 +221,7 @@ def neural_regressions(
         categorical_features = ["Lexicality", "Morphology"]
         features = ["Len", "Lex", "Mor"]
     elif mode == "test":
-        continuous_features = ["Length", "Zipf Frequency"]
+        continuous_features = ["Length", "Zipf_Frequency"]
         categorical_features = ["Lexicality", "Morphology"]
         features = ["Len", "Fre", "Lex", "Mor"]
 

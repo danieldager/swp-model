@@ -1,4 +1,4 @@
-,Word,Size,Length,Frequency,Zipf Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No Stress,Condition
+,Word,Size,Length,Frequency,Zipf_Frequency,Morphology,Lexicality,Part of Speech,Phonemes,No_Stress,Condition
 8,dishaven,long,8,,,complex,pseudo,,"['D', 'IH0', 'S', 'HH', 'EY1', 'V', 'AH0', 'N']","['D', 'IH', 'S', 'HH', 'EY', 'V', 'AH', 'N']",PLC
 9,dishonal,long,8,,,complex,pseudo,,"['D', 'IH1', 'S', 'HH', 'AH0', 'N', 'AH0', 'L']","['D', 'IH', 'S', 'HH', 'AH', 'N', 'AH', 'L']",PLC
 16,sprictal,long,8,,,complex,pseudo,,"['S', 'P', 'R', 'IH1', 'K', 'T', 'AA2', 'L']","['S', 'P', 'R', 'IH', 'K', 'T', 'AA', 'L']",PLC

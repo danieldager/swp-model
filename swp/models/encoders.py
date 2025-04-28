@@ -3,7 +3,7 @@ from typing import Callable, Type, Union
 import torch
 import torch.fx
 import torch.nn as nn
-from torch.utils.model_zoo import load_url
+from torch.utils.model_zoo import load_url  # type: ignore
 from torchvision.models.feature_extraction import create_feature_extractor
 
 from .cornet_r import HASH as HASH_R

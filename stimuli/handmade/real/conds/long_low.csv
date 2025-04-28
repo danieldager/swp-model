@@ -1,4 +1,4 @@
-Unnamed: 0,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+Unnamed: 0,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 13914,absorbing,3.16e-06,3.5,VERB,"['AH0', 'B', 'Z', 'AO1', 'R', 'B', 'IH0', 'NG']","['AH', 'B', 'Z', 'AO', 'R', 'B', 'IH', 'NG']",real,8,long
 13915,adapting,3.16e-06,3.5,VERB,"['AH0', 'D', 'AE1', 'P', 'T', 'IH0', 'NG']","['AH', 'D', 'AE', 'P', 'T', 'IH', 'NG']",real,7,long
 13918,albuquerque,3.16e-06,3.5,PROPN,"['AE1', 'L', 'B', 'AH0', 'K', 'ER0', 'K', 'IY0']","['AE', 'L', 'B', 'AH', 'K', 'ER', 'K', 'IY']",real,8,long

@@ -1,4 +1,4 @@
-,Word,Phonemes,No Stress,Length,Morphology,Condition,Size
+,Word,Phonemes,No_Stress,Length,Morphology,Condition,Size
 623,anot,"['AH0', 'N', 'OW1', 'T']","['AH', 'N', 'OW', 'T']",4,complex,PSC,short
 632,ront,"['R', 'AA1', 'N', 'T']","['R', 'AA', 'N', 'T']",4,complex,PSC,short
 644,valo,"['V', 'AA1', 'L', 'OW0']","['V', 'AA', 'L', 'OW']",4,complex,PSC,short

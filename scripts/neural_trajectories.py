@@ -147,7 +147,7 @@ if __name__ == "__main__":
         if traj_results is None:
             converters = {
                 "Phonemes": literal_eval,
-                "No Stress": literal_eval,
+                "No_Stress": literal_eval,
                 "Prediction": literal_eval,
                 "Trajectory": literal_eval,
             }

@@ -4,39 +4,48 @@
 TRAIN_SCRIPT="./scripts/train_repetition.sh"
 
 # Define arrays for each hyperparameter
-n_epochs=(150)
-fold_ids=(0)
+n_epochs=(100)
+fold_ids=("")
 b_sizes=(1024)
 r_types=("lstm")
-h_sizes=(64 128)
+h_sizes=(128)
 n_layers=(1)
-l_rates=(0.001 0.0005)
+l_rates=(0.001)
 dropouts=(0.0)
 tf_ratios=(0.0)
+seeds=(70 37 96 45 5 68 83 1 95 4)
 
 # Initialize counter for total combinations
 total=0
 
 # Nested loops to iterate through all combinations
 for e in "${n_epochs[@]}"; do
-    for b in "${b_sizes[@]}"; do
-        for f in "${fold_ids[@]}"; do
+    for f in "${fold_ids[@]}"; do
+        for b in "${b_sizes[@]}"; do
             for m in "${r_types[@]}"; do
                 for h in "${h_sizes[@]}"; do
                     for l in "${n_layers[@]}"; do
                         for d in "${dropouts[@]}"; do
                             for r in "${l_rates[@]}"; do
                                 for t in "${tf_ratios[@]}"; do
-                                    echo "Submitting f=$f m=$m h=$h n=$l l=$r d=$d tf=$t e=$e"
+                                    for s in "${seeds[@]}"; do
+                                        export NUM_EPOCHS=$e
+                                        export BATCH_SIZE=$b
+                                        export RECUR_TYPE=$m
+                                        export HIDDEN_SIZE=$h
+                                        export NUM_LAYERS=$l
+                                        export LEARN_RATE=$r
+                                        export DROPOUT=$d
+                                        export TF_RATIO=$t
+                                        export FOLD_ID=$f
+                                        export SEED=$s
+                                        echo "Submitting e=$e b=$b m=$m h=$h l=$l r=$r d=$d t=$t f=$f s=$s"
+                                        sbatch --export=ALL "$TRAIN_SCRIPT"
+                                        ((total++))
 
-                                    # Submit job with parameters passed as environment variables
-                                    sbatch --export=ALL,RECUR_TYPE=$m,HIDDEN_SIZE=$h,NUM_LAYERS=$l,LEARN_RATE=$r,DROPOUT=$d,TF_RATIO=$t,NUM_EPOCHS=$e,BATCH_SIZE=$b,FOLD_ID=$f "$TRAIN_SCRIPT"
-
-                                    # Increment counter
-                                    ((total++))
-
-                                    echo "Submitted job $total"
-                                    echo "----------------------------------------"
+                                        echo "Submitted job $total"
+                                        echo "----------------------------------------"
+                                    done
                                 done
                             done
                         done

@@ -1,4 +1,4 @@
-,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No Stress,Lexicality,Length,Size
+,Word,Frequency,Zipf Frequency,Part of Speech,Phonemes,No_Stress,Lexicality,Length,Size
 0,avoids,3.16e-06,3.5,VERB,"['AH0', 'V', 'OY1', 'D', 'Z']","['AH', 'V', 'OY', 'D', 'Z']",real,5,short
 1,badges,3.16e-06,3.5,NOUN,"['B', 'AE1', 'JH', 'IH0', 'Z']","['B', 'AE', 'JH', 'IH', 'Z']",real,5,short
 2,bows,3.16e-06,3.5,VERB,"['B', 'AW1', 'Z']","['B', 'AW', 'Z']",real,3,short

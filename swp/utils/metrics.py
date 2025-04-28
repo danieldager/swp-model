@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.inspection import permutation_importance
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -17,45 +17,40 @@ def calc_accuracy(df: pd.DataFrame, error_condition, total_condition) -> float:
 
 
 def calc_importance(
-    df: pd.DataFrame, mode: str = "real", y_column: str = "Edit Distance"
+    df: pd.DataFrame,
+    mode: str = "real",
+    y_column: str = "Edit_Distance",
 ) -> tuple[Pipeline, float, float, float]:
 
+    # Prepare data
     df = df.copy()
-
-    # Define features: include the continuous variables and the categorical one.
     if mode == "real":
         df = df[df["Lexicality"] == "real"]
-        continuous_features = ["Length", "Zipf Frequency"]
+        continuous_features = ["Length", "Zipf_Frequency"]
         categorical_features = ["Morphology"]
     elif mode == "both":
         continuous_features = ["Length"]
         categorical_features = ["Lexicality", "Morphology"]
     else:
         raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
-
     X = df[continuous_features + categorical_features]
     y = df[y_column]
 
-    # Split the data.
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # Create a preprocessor that standardizes continuous features and one-hot encodes categorical features.
+    # Pipeline
     preprocessor = ColumnTransformer(
         transformers=[
             ("cont", StandardScaler(), continuous_features),
             ("cat", OneHotEncoder(drop="first"), categorical_features),
         ]
     )
-
-    # Build a pipeline with the preprocessor and a linear regression model.
-    pipeline = Pipeline(
-        [("preprocessor", preprocessor), ("regressor", LinearRegression())]
-    )
+    pipeline = Pipeline([("preprocessor", preprocessor), ("regressor", Ridge())])
     pipeline.fit(X_train, y_train)
 
-    # Compute permutation importance on the test set.
+    # Permutation (feature) importance
     result = permutation_importance(
         pipeline,
         X_test,
@@ -63,8 +58,7 @@ def calc_importance(
         n_repeats=100,
         random_state=42,
     )
-    # result.importances_mean gives an array with the mean importance per feature.
-    # The order corresponds to continuous_features: "Length" then "Zipf Frequency"
+    # importances_mean is an array of mean importances per feature
     fi1 = result.importances_mean[0]  # type: ignore
     fi2 = result.importances_mean[1]  # type: ignore
     fi3 = result.importances_mean[2]  # type: ignore
