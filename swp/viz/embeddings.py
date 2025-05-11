@@ -7,7 +7,8 @@ import pandas as pd
 from matplotlib import gridspec
 from matplotlib.colors import PowerNorm, TwoSlopeNorm
 from matplotlib.lines import Line2D
-from mlem_minimal import feature_distances, mlem, representation_distances
+
+# from mlem_minimal import feature_distances, mlem, representation_distances
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import KMeans
@@ -152,6 +153,7 @@ def custom_dmatrix(
     # cbar.set_label(f"{metric.title()} Distance", fontsize=18)
 
     plt.show()
+
 
 # TODO: Danny rewrite
 def pca_mds(
@@ -600,164 +602,164 @@ def find_best_n_clusters(
     return best_num_clusters, clusters
 
 
-# TODO: Danny rewrite
-def mlem_importance(
-    df: pd.DataFrame,
-    dataset: str,
-    num_layers: int,
-    path: pathlib.Path,
-    metric: str = "euclidean",
-) -> None:
-    """Use metric learning to derive feature importances on embeddings"""
+# # TODO: Danny rewrite
+# def mlem_importance(
+#     df: pd.DataFrame,
+#     dataset: str,
+#     num_layers: int,
+#     path: pathlib.Path,
+#     metric: str = "euclidean",
+# ) -> None:
+#     """Use metric learning to derive feature importances on embeddings"""
 
-    drops = ["Phonemes", "No_Stress", "Prediction", "H1", "C1"]
+#     drops = ["Phonemes", "No_Stress", "Prediction", "H1", "C1"]
 
-    if dataset == "phoneme":
-        drops += ["Included", "Dipthong"]
-    elif dataset == "evaluation":
-        drops += ["Word", "Condition", "Size", "Frequency", "Length"]
+#     if dataset == "phoneme":
+#         drops += ["Included", "Dipthong"]
+#     elif dataset == "evaluation":
+#         drops += ["Word", "Condition", "Size", "Frequency", "Length"]
 
-    features = df.drop(columns=drops)
-    feat_dists = feature_distances(features, verbose=0)
+#     features = df.drop(columns=drops)
+#     feat_dists = feature_distances(features, verbose=0)
 
-    num_layers = 1
-    for layer in range(1, num_layers + 1):
-        h_emb = np.array(df[f"H{layer}"].to_list())
-        c_emb = np.array(df[f"C{layer}"].to_list())
-        hc_emb = np.concatenate([h_emb, c_emb], axis=1)
+#     num_layers = 1
+#     for layer in range(1, num_layers + 1):
+#         h_emb = np.array(df[f"H{layer}"].to_list())
+#         c_emb = np.array(df[f"C{layer}"].to_list())
+#         hc_emb = np.concatenate([h_emb, c_emb], axis=1)
 
-        # for name, emb in zip(["H", "C", "HC"], [h_emb, c_emb, hc_emb]):
-        for name, emb in zip(["H"], [h_emb]):
-            repr_dists = representation_distances(emb, metric=metric, verbose=0)
-            # plt.figure(figsize=(8, 6))
-            # plt.imshow(repr_dists, cmap="viridis")
-            # plt.colorbar(label=f"{metric.title()} Distance")
-            # plt.xlabel("Stimulus Index")
-            # plt.ylabel("Stimulus Index")
-            # plt.show()
+#         # for name, emb in zip(["H", "C", "HC"], [h_emb, c_emb, hc_emb]):
+#         for name, emb in zip(["H"], [h_emb]):
+#             repr_dists = representation_distances(emb, metric=metric, verbose=0)
+#             # plt.figure(figsize=(8, 6))
+#             # plt.imshow(repr_dists, cmap="viridis")
+#             # plt.colorbar(label=f"{metric.title()} Distance")
+#             # plt.xlabel("Stimulus Index")
+#             # plt.ylabel("Stimulus Index")
+#             # plt.show()
 
-            results = mlem(
-                repr_dists,
-                feat_dists,
-                features_df=features,
-                outer_folds=2,
-                inner_folds=3,
-                n_permutations=50,
-                random_state=0,
-                verbose=0,
-                n_jobs=-2,
-                scale=True,
-            )
+#             results = mlem(
+#                 repr_dists,
+#                 feat_dists,
+#                 features_df=features,
+#                 outer_folds=2,
+#                 inner_folds=3,
+#                 n_permutations=50,
+#                 random_state=0,
+#                 verbose=0,
+#                 n_jobs=-2,
+#                 scale=True,
+#             )
 
-            plt.figure(figsize=(8, 6))
-            plt.bar(results["feature"], results["importance"], yerr=results["std"])
-            # plt.xlabel("Features")
-            plt.ylabel("Importance")
-            plt.title(f"Feature Importance {name}{layer}")
-            # plt.xticks(rotation=45)
+#             plt.figure(figsize=(8, 6))
+#             plt.bar(results["feature"], results["importance"], yerr=results["std"])
+#             # plt.xlabel("Features")
+#             plt.ylabel("Importance")
+#             plt.title(f"Feature Importance {name}{layer}")
+#             # plt.xticks(rotation=45)
 
-            # Highlight significant features
-            # TODO: does this work ?
-            for i, is_significant in enumerate(results["significant"]):
-                color = "green" if is_significant else "red"
-                plt.text(
-                    i,
-                    results["importance"].iloc[i] + results["std"].iloc[i] + 0.01,
-                    "*" if is_significant else "ns",
-                    ha="center",
-                    color=color,
-                )
-            plt.tight_layout()
-            plt.savefig(path / f"{dataset}_mlem_{name}{layer}_{metric}.png", dpi=300)
-            plt.close()
+#             # Highlight significant features
+#             # TODO: does this work ?
+#             for i, is_significant in enumerate(results["significant"]):
+#                 color = "green" if is_significant else "red"
+#                 plt.text(
+#                     i,
+#                     results["importance"].iloc[i] + results["std"].iloc[i] + 0.01,
+#                     "*" if is_significant else "ns",
+#                     ha="center",
+#                     color=color,
+#                 )
+#             plt.tight_layout()
+#             plt.savefig(path / f"{dataset}_mlem_{name}{layer}_{metric}.png", dpi=300)
+#             plt.close()
 
 
-def mlem_univariate(
-    df: pd.DataFrame,
-    emb: np.ndarray,
-    dataset: str,
-    h_type: str = "H",
-    metric: str = "euclidean",
-    path: pathlib.Path | None = None,
-):  # -> None:
-    """Use metric learning to derive feature importances on embeddings
+# def mlem_univariate(
+#     df: pd.DataFrame,
+#     emb: np.ndarray,
+#     dataset: str,
+#     h_type: str = "H",
+#     metric: str = "euclidean",
+#     path: pathlib.Path | None = None,
+# ):  # -> None:
+#     """Use metric learning to derive feature importances on embeddings
 
-    Parameters:
-        df (pd.DataFrame): DataFrame containing the features and embeddings.
-        emb (np.ndarray): Embedding vectors extracted from the model.
-        dataset (str): Name of the dataset (e.g., "phoneme", "bigram", "evaluation").
-        path (pathlib.Path): Directory to save the plots.
-        metric (str): Distance metric to use for representation distances.
-    """
-    drops = [
-        "Word",
-        "Condition",
-        # "Lexicality",
-        "Size",
-        # "Morphology",
-        "Frequency",
-        # "Length",
-        # "Zipf_Frequency",
-        "Phonemes",
-        "No_Stress",
-        "Part of Speech",
-        "Vowel Count",
-        "Consonant Count",
-        "Prediction",
-        "Edit_Distance",
-        "Insertions",
-        "Deletions",
-        "Substitutions",
-        "Error_Indices",
-    ]
-    features = df.drop(columns=drops)
-    feat_dists = feature_distances(features, verbose=0)
+#     Parameters:
+#         df (pd.DataFrame): DataFrame containing the features and embeddings.
+#         emb (np.ndarray): Embedding vectors extracted from the model.
+#         dataset (str): Name of the dataset (e.g., "phoneme", "bigram", "evaluation").
+#         path (pathlib.Path): Directory to save the plots.
+#         metric (str): Distance metric to use for representation distances.
+#     """
+#     drops = [
+#         "Word",
+#         "Condition",
+#         # "Lexicality",
+#         "Size",
+#         # "Morphology",
+#         "Frequency",
+#         # "Length",
+#         # "Zipf_Frequency",
+#         "Phonemes",
+#         "No_Stress",
+#         "Part of Speech",
+#         "Vowel Count",
+#         "Consonant Count",
+#         "Prediction",
+#         "Edit_Distance",
+#         "Insertions",
+#         "Deletions",
+#         "Substitutions",
+#         "Error_Indices",
+#     ]
+#     features = df.drop(columns=drops)
+#     feat_dists = feature_distances(features, verbose=0)
 
-    batch_size = emb.shape[0]
-    num_neurons = emb.shape[-1]
+#     batch_size = emb.shape[0]
+#     num_neurons = emb.shape[-1]
 
-    if h_type == "H":
-        # use lengths to get final time step
-        lengths = df["Length"].to_numpy()
-        emb = emb[np.arange(batch_size), lengths, :]
-    elif h_type != "C":
-        raise ValueError(f"Unknown hidden type: {h_type}")
+#     if h_type == "H":
+#         # use lengths to get final time step
+#         lengths = df["Length"].to_numpy()
+#         emb = emb[np.arange(batch_size), lengths, :]
+#     elif h_type != "C":
+#         raise ValueError(f"Unknown hidden type: {h_type}")
 
-    data = {"Neuron": [], "Feature": [], "Importance": [], "Spearman": []}
+#     data = {"Neuron": [], "Feature": [], "Importance": [], "Spearman": []}
 
-    for idx in range(num_neurons):
-        print(f"Neuron {idx + 1}/{num_neurons}  ", end="\r")
-        repr_dists = representation_distances(
-            emb[:, idx : idx + 1], metric=metric, verbose=0
-        )
-        results = mlem(
-            repr_dists,
-            feat_dists,
-            features_df=features,
-            outer_folds=2,
-            inner_folds=3,
-            n_permutations=50,
-            random_state=0,
-            verbose=0,
-            n_jobs=-2,
-            scale=True,
-        )
+#     for idx in range(num_neurons):
+#         print(f"Neuron {idx + 1}/{num_neurons}  ", end="\r")
+#         repr_dists = representation_distances(
+#             emb[:, idx : idx + 1], metric=metric, verbose=0
+#         )
+#         results = mlem(
+#             repr_dists,
+#             feat_dists,
+#             features_df=features,
+#             outer_folds=2,
+#             inner_folds=3,
+#             n_permutations=50,
+#             random_state=0,
+#             verbose=0,
+#             n_jobs=-2,
+#             scale=True,
+#         )
 
-        for row in results.itertuples():
-            data["Neuron"].append(idx)
-            data["Feature"].append(row.feature)
-            data["Importance"].append(row.importance)
-            spearman = (row.test_score_0 + row.test_score_1) / 2  # type: ignore
-            data["Spearman"].append(spearman)
+#         for row in results.itertuples():
+#             data["Neuron"].append(idx)
+#             data["Feature"].append(row.feature)
+#             data["Importance"].append(row.importance)
+#             spearman = (row.test_score_0 + row.test_score_1) / 2  # type: ignore
+#             data["Spearman"].append(spearman)
 
-    results_df = pd.DataFrame(data)
-    return results_df
+#     results_df = pd.DataFrame(data)
+#     return results_df
 
-    # if path:
-    #     plt.savefig(path / f"{dataset}_mlem_{h_type}_{metric}.png", dpi=300)
-    #     plt.close()
-    # else:
-    #     plt.show()
+#     # if path:
+#     #     plt.savefig(path / f"{dataset}_mlem_{h_type}_{metric}.png", dpi=300)
+#     #     plt.close()
+#     # else:
+#     #     plt.show()
 
 
 if __name__ == "__main__":
