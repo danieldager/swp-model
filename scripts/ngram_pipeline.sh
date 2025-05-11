@@ -10,6 +10,22 @@
 #SBATCH --error=logs/ngram_%j.err
 #SBATCH --nice=100
 
+# create execution environment
+module purge
+module load miniconda3/24.3.0-ui7c
+eval "$(conda shell.bash hook)"
+
+# create environment only if it doesn't exist
+if ! conda env list | grep -q "^swpm "; then
+    conda create -n swpm python=3.12 -y
+fi
+
+# activate environment and install dependencies
+conda activate swpm
+pip install -r requirements.txt --quiet
+
+export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
+
 # Parameters for the pipeline
 MODEL_NAME="Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
 TRAIN_NAME="b1024_l0.001_fall_s42_sn_ec"
