@@ -3,8 +3,11 @@ from typing import Callable, Type, Union
 import torch
 import torch.fx
 import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.utils.model_zoo import load_url  # type: ignore
 from torchvision.models.feature_extraction import create_feature_extractor
+
+from swp.datasets.phonemes import get_phoneme_to_id
 
 from .cornet_r import HASH as HASH_R
 from .cornet_r import CORnet_R
@@ -69,9 +72,21 @@ class PhonemeEncoder(nn.Module):
         return out
 
     def chained_forward(self, inp: torch.Tensor):
-        embedded = self.embedding(inp)
-        dropped = self.dropout(embedded)
-        _, hidden = self.recurrent(dropped)
+        out = self.dropout(self.embedding(inp))
+
+        # TODO: make this an argument, it is only necessary
+        # when we want LSTM hooks to return the correct (h, c)
+        # when the embedding dataset is of variable lengths
+
+        # packing the input to avoid padding
+        # pad_idx = get_phoneme_to_id()["<PAD>"]
+        # lengths = (inp != pad_idx).sum(dim=-1).cpu()
+        # packed = pack_padded_sequence(
+        #     out, lengths, batch_first=True, enforce_sorted=False
+        # )
+        # out = packed
+
+        _, hidden = self.recurrent(out)
         return hidden
 
     def unrolled_forward(self, inp: torch.Tensor):

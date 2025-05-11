@@ -64,7 +64,7 @@ def create_LSTM_hook(
 def hook_model(
     model: Unimodel | Bimodel,
     hook: Callable[[nn.Module, Any, Any], Any],
-    layers: str,
+    layers: str = "all",
 ) -> list[RemovableHandle]:
     layers = layers.lower()
     if layers not in {"all", "encoder", "decoder"}:

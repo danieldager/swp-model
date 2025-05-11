@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
+from torch.nn.utils.rnn import PackedSequence, pad_packed_sequence
 
 warnings.filterwarnings(
     "ignore",
@@ -23,22 +24,10 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from swp.datasets.phonemes import (
-    get_bigram_dataset,
-    get_handmade_dataset,
-    get_phoneme_dataset,
-    get_phoneme_testloader,
-    get_sonority_dataset,
-    get_trigram_dataset,
-)
+from swp.datasets.phonemes import get_dataset, get_phoneme_testloader
 from swp.models.metrics import classic_errors, free_gen_errors
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
-from swp.utils.datasets import (
-    enrich_for_plotting,
-    get_evaluation_dataset,
-    get_train_dataset,
-)
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_evaluation_dir, get_figures_dir, get_weights_dir
 from swp.utils.setup import backend_setup, seed_everything, set_device
@@ -73,13 +62,24 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset",
         type=str,
-        help="Dataset to test on",
         required=True,
+        help="Dataset to test on",
+    )
+    parser.add_argument(
+        "--ngrams",
+        type=int,
+        default=None,
+        help="Determines size of ngrams to test",
     )
     parser.add_argument(
         "--include_stress",
         action="store_true",
         help="Include stress in phonemes",
+    )
+    parser.add_argument(
+        "--store_out",
+        action="store_true",
+        help="Store the 'out' variable of LSTM hook",
     )
     parser.add_argument(
         "--verbose",
@@ -142,7 +142,10 @@ if __name__ == "__main__":
     model = None
 
     def create_embeddings_LSTM_hook(
-        embeddings: dict[str, list[np.ndarray]], is_batched: bool, num_layers: int
+        embeddings: dict[str, list[np.ndarray]],
+        is_batched: bool,
+        num_layers: int,
+        store_out: bool = False,
     ) -> Callable[
         [
             nn.Module,
@@ -160,32 +163,32 @@ if __name__ == "__main__":
         ):
             """Hook function to capture the final hidden state."""
             out, (h, c) = output  # h, c (L, B, H)
+
+            if store_out and isinstance(out, PackedSequence):
+                out, _ = pad_packed_sequence(out, batch_first=True)
+
             if not is_batched:
                 out = out.unsqueeze(0)
+                h = h.unsqueeze(1)
                 c = c.unsqueeze(1)
 
-            out = out.detach().cpu().numpy()
-            B, T, H = out.shape
-            padded_out = np.zeros((B, MAX_PAD, H))
-            padded_out[:, :T, :] = out
-            embeddings[f"Hidden"].append(padded_out)
+            # Pad output to allow for concatenation
+            if store_out:
+                out = out.detach().cpu().numpy()
+                B, T, H = out.shape
+                padded_out = np.zeros((B, MAX_PAD, H))
+                padded_out[:, :T, :] = out
+                embeddings["Out"].append(padded_out)
+
+            h = h.squeeze(0)
+            h = h.detach().cpu().numpy()
+            embeddings["Hidden"].append(h)
 
             c = c.squeeze(0)
             c = c.detach().cpu().numpy()
             embeddings["Cell"].append(c)
 
         return embeddings_LSTM_hook
-
-    valid_datasets = [
-        "evaluation",
-        "sonority",
-        "training",
-        "phonemes",
-        "bigrams",
-        "trigrams",
-    ]
-    if args.dataset not in valid_datasets:
-        raise ValueError(f"Dataset {args.dataset} not recognized")
 
     weights_dir = get_weights_dir() / model_name / train_name
 
@@ -214,10 +217,7 @@ if __name__ == "__main__":
         )
         num_layers = model.encoder.num_layers
 
-        embeddings = {"Hidden": [], "Cell": []}
-        for i in range(num_layers):
-            embeddings[f"H{i+1}"] = []
-            embeddings[f"C{i+1}"] = []
+        embeddings = {"Out": [], "Hidden": [], "Cell": []}
         is_batched = True if args.batch_size > 1 else False
 
         hook = create_embeddings_LSTM_hook(embeddings, is_batched, num_layers)
@@ -252,31 +252,22 @@ if __name__ == "__main__":
 
         ### TESTING ###
 
-        df_path = results_dir / f"{args.dataset}.csv"
-        h_path = results_dir / f"{args.dataset}_h.npy"
-        c_path = results_dir / f"{args.dataset}_c.npy"
+        if args.ngrams:
+            dataset = f"{args.ngrams}{args.dataset[1:]}"
+        else:
+            dataset = args.dataset
+
+        df_path = results_dir / f"{dataset}.csv"
+        h_path = results_dir / f"{dataset}_h.npy"
+        c_path = results_dir / f"{dataset}_c.npy"
 
         if args.retest or not h_path.exists():
-
-            if args.dataset == "phonemes":
-                test_df = get_handmade_dataset("phonemes")
-            elif args.dataset == "bigrams":
-                test_df = get_bigram_dataset()
-            elif args.dataset == "trigrams":
-                test_df = get_trigram_dataset()
-            elif args.dataset == "sonority":
-                test_df = get_sonority_dataset()
-            elif args.dataset == "evaluation":
-                test_df = get_evaluation_dataset()
-            elif args.dataset == "training":
-                test_df = get_train_dataset()
-
+            test_df = get_dataset(args.dataset, args.ngrams)
             test_loader = get_phoneme_testloader(
                 args.batch_size,
                 args.include_stress,
                 dataset_df=test_df,
             )
-
             results, _ = test(
                 model=model,
                 device=device,
@@ -291,14 +282,19 @@ if __name__ == "__main__":
             h_emb = np.concat(embeddings["Hidden"])
             c_emb = np.concat(embeddings["Cell"])
 
-            # mask padded hidden states
-            _, T, _ = h_emb.shape
-            lengths = results["Length"].to_numpy() + 1
-            mask = np.arange(T)[None, :] < lengths[:, None]
-            mask = mask[:, :, None]
-            h_emb *= mask
+            if args.store_out:
+                # if you want hidden state for each token in sequence
+                # use lengths to zero out hidden states for pad tokens
+                o_emb = np.concat(embeddings["Out"])
+                _, T, _ = o_emb.shape
+                lengths = results["Length"].to_numpy() + 1
+                mask = np.arange(T)[None, :] < lengths[:, None]
+                mask = mask[:, :, None]
+                o_emb *= mask
+                o_path = results_dir / f"{dataset}_o.npy"
+                np.save(o_path, o_emb)
 
-            print(f"Saving embeddings to {h_path}")
+            print(f"Saving embeddings to {results_dir}")
             np.save(h_path, h_emb)
             np.save(c_path, c_emb)
 
@@ -316,14 +312,14 @@ if __name__ == "__main__":
         c_emb = np.load(c_path)
 
         if args.all or args.dmat:
-            dissim_matrix(df, args.dataset, num_layers, figures_dir, args.metric)
+            dissim_matrix(df, dataset, num_layers, figures_dir, args.metric)
 
         if args.all or args.mlem:
-            mlem_importance(df, args.dataset, num_layers, figures_dir, args.metric)
+            mlem_importance(df, dataset, num_layers, figures_dir, args.metric)
 
         if args.all or args.pca:
-            pca_mds(df, args.dataset, num_layers, figures_dir)
-            pca_mds(df, args.dataset, num_layers, figures_dir, last_token=True)
+            pca_mds(df, dataset, num_layers, figures_dir)
+            pca_mds(df, dataset, num_layers, figures_dir, last_token=True)
 
         if args.verbose:
             print("-" * 60)

@@ -87,6 +87,12 @@ def get_evaluation_dir() -> pathlib.Path:
     return eval_dir
 
 
+def get_intervention_dir() -> pathlib.Path:
+    intervention_dir = get_results_dir() / "intervention"
+    intervention_dir.mkdir(parents=True, exist_ok=True)
+    return intervention_dir
+
+
 def get_graphemes_dir() -> pathlib.Path:
     graphemes_dir = get_stimuli_dir() / "graphemes"
     graphemes_dir.mkdir(parents=True, exist_ok=True)
