@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=ngram_pipeline
-#SBATCH --output=logs/ngram_pipeline_%j.out
-#SBATCH --error=logs/ngram_pipeline_%j.err
-#SBATCH --ntasks=1
+#SBATCH --partition=gpu
+#SBATCH --export=ALL
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
+#SBATCH --gres=gpu:A40:1
+#SBATCH --mem=20G
 #SBATCH --time=24:00:00
-#SBATCH --gres=gpu:1
+#SBATCH --output=logs/ngram_%j.out
+#SBATCH --error=logs/ngram_%j.err
+#SBATCH --nice=100
 
 # Parameters for the pipeline
 MODEL_NAME="Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
