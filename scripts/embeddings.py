@@ -31,7 +31,7 @@ from swp.test.repetition import test
 from swp.utils.models import get_model, load_weights
 from swp.utils.paths import get_evaluation_dir, get_figures_dir, get_weights_dir
 from swp.utils.setup import backend_setup, seed_everything, set_device
-from swp.viz.embeddings import dissim_matrix, mlem_importance, pca_mds
+from swp.viz.embeddings import dissim_matrix, pca_mds  # mlem_importance
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -314,8 +314,8 @@ if __name__ == "__main__":
         if args.all or args.dmat:
             dissim_matrix(df, dataset, num_layers, figures_dir, args.metric)
 
-        if args.all or args.mlem:
-            mlem_importance(df, dataset, num_layers, figures_dir, args.metric)
+        # if args.all or args.mlem:
+        #     mlem_importance(df, dataset, num_layers, figures_dir, args.metric)
 
         if args.all or args.pca:
             pca_mds(df, dataset, num_layers, figures_dir)
