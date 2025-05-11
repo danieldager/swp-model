@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 total = 0
                 correct = 0
                 s_correct = 0
-                all_correct = 0
+                # all_correct = 0
 
                 # counts = {
                 #     "CC": 0,
@@ -456,10 +456,10 @@ if __name__ == "__main__":
                     s_correct += (preds[:, idxs] == target[:, idxs]).sum().item()
 
                     # calculate overall accuracy (all tokens)
-                    all_correct += (preds == target).sum().item()
+                    # all_correct += (preds == target).sum().item()
 
                     total += target.shape[0]
-                    total_tokens = target.numel()
+                    # total_tokens = target.numel()
 
                     # # get only incorrect predictions for printing
                     # if epoch == num_epochs:
@@ -483,7 +483,7 @@ if __name__ == "__main__":
 
                 accuracy = correct / total
                 stability = s_correct / (total * (length - 1))
-                all_accuracy = all_correct / total_tokens
+                # all_accuracy = all_correct / total_tokens
 
                 results["Epoch"].append(epoch)
                 results["Index"].append(index)
@@ -491,7 +491,7 @@ if __name__ == "__main__":
                 results["Distance"].append(epoch_loss)
                 results["Accuracy"].append(accuracy)
                 results["Stability"].append(stability)
-                results["All_Accuracy"].append(all_accuracy)
+                # results["All_Accuracy"].append(all_accuracy)
                 results["Batch_Size"].append(batch_size)
                 results["Hidden_Size"].append(encoder_hidden)
                 results["Learning_Rate"].append(learning_rate)
@@ -500,7 +500,7 @@ if __name__ == "__main__":
                 if args.verbose:
                     if epoch % 20 == 0:
                         print(
-                            f"E: {epoch} L: {epoch_loss:.4f} A: {accuracy:.4f} S: {stability:.4f} AA: {all_accuracy:.4f}"
+                            f"E: {epoch} L: {epoch_loss:.4f} A: {accuracy:.4f} S: {stability:.4f}"  # AA: {all_accuracy:.4f}"
                         )
 
                     # if epoch == num_epochs:
