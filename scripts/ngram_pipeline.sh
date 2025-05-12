@@ -95,13 +95,13 @@ for n in {3..10}; do
     echo "Extracting embeddings for ${n}grams..."
     TASK_START=$(date +%s)
     
-    python scripts/embeddings.py \
-        --model_name $MODEL_NAME \
-        --train_name $TRAIN_NAME \
-        --batch_size $BATCH_SIZE \
-        --checkpoint $CHECKPOINT \
-        --dataset "ngrams" \
-        --ngrams $n \
+    # python scripts/embeddings.py \
+    #     --model_name $MODEL_NAME \
+    #     --train_name $TRAIN_NAME \
+    #     --batch_size $BATCH_SIZE \
+    #     --checkpoint $CHECKPOINT \
+    #     --dataset "ngrams" \
+    #     --ngrams $n \
         # --retest
     
     if [ $? -ne 0 ]; then

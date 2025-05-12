@@ -445,7 +445,7 @@ if __name__ == "__main__":
                         correct += (preds[:, index] == target[:, index]).sum().item()
 
                     # calculate percentage of correct predictions (w/o target index)
-                    idxs = np.delete(np.arange(preds.shape[1].cpu().numpy()), index)
+                    idxs = np.delete(np.arange(preds.shape[1]), index)
                     s_correct += (preds[:, idxs] == target[:, idxs]).sum().item()
 
                     # calculate overall accuracy (all tokens)
