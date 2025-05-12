@@ -95,14 +95,14 @@ for n in {3..10}; do
     echo "Extracting embeddings for ${n}grams..."
     TASK_START=$(date +%s)
     
-    # python scripts/embeddings.py \
-    #     --model_name $MODEL_NAME \
-    #     --train_name $TRAIN_NAME \
-    #     --batch_size $BATCH_SIZE \
-    #     --checkpoint $CHECKPOINT \
-    #     --dataset "ngrams" \
-    #     --ngrams $n \
-        # --retest
+    python scripts/embeddings.py \
+        --model_name $MODEL_NAME \
+        --train_name $TRAIN_NAME \
+        --batch_size $BATCH_SIZE \
+        --checkpoint $CHECKPOINT \
+        --dataset "ngrams" \
+        --ngrams 3 \
+        --retest
     
     if [ $? -ne 0 ]; then
         echo "Error extracting embeddings for ${n}grams"
@@ -132,10 +132,10 @@ for n in {3..10}; do
         --train_name $TRAIN_NAME \
         --batch_size $BATCH_SIZE \
         --checkpoint $CHECKPOINT \
-        --length $n \
+        --model_type $MODEL_TYPE \
         --edit_type "substitution" \
         --target_type "type" \
-        --model_type $MODEL_TYPE \
+        --length $n \
         --verbose
     
     if [ $? -ne 0 ]; then
