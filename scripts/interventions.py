@@ -357,6 +357,11 @@ if __name__ == "__main__":
     )
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
 
+    # early stopping parameters
+    best_accuracy = 0
+    patience = 10
+    wait = 0
+
     for index in indices:
         for target_id in targets:
             if args.verbose:
@@ -496,6 +501,18 @@ if __name__ == "__main__":
                         print(
                             f"E: {epoch} L: {epoch_loss:.3f} A: {accuracy:.3f} S: {stability:.3f}"  # AA: {all_accuracy:.4f}"
                         )
+
+                # early stopping
+                if round(accuracy, 3) > best_accuracy:
+                    best_accuracy = round(accuracy, 3)
+                    wait = 0
+                else:
+                    wait += 1
+                    if wait >= patience:
+                        print(
+                            f"E: {epoch} L: {epoch_loss:.3f} A: {accuracy:.3f} S: {stability:.3f}"
+                        )
+                        break
 
                     # if epoch == num_epochs:
                     #     print(counts, total)
