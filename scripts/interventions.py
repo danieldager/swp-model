@@ -296,8 +296,6 @@ if __name__ == "__main__":
     model_type = args.model_type
     learning_rate = args.learning_rate
 
-    print(1)
-
     path = f"results/evaluation/{model_name}/{train_name}/{checkpoint}"
 
     csv_path = f"{path}/control/{length}grams.csv"
@@ -320,8 +318,6 @@ if __name__ == "__main__":
     elif target_type == "identity":
         targets = vowels + consonants
 
-    print(2)
-
     model = get_model(model_name)
     load_weights(
         model=model,
@@ -336,8 +332,6 @@ if __name__ == "__main__":
     decoder = model.decoder.to(device)
     decoder.eval()
 
-    print(3)
-
     results = {
         "Epoch": [],
         "Index": [],
@@ -345,7 +339,7 @@ if __name__ == "__main__":
         "Distance": [],
         "Accuracy": [],
         "Stability": [],
-        "All_Accuracy": [],
+        # "All_Accuracy": [],
         "Batch_Size": [],
         "Hidden_Size": [],
         "Learning_Rate": [],
@@ -360,8 +354,6 @@ if __name__ == "__main__":
     )
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
 
-    print(4)
-
     for index in indices:
         for target_id in targets:
             if args.verbose:
@@ -370,8 +362,6 @@ if __name__ == "__main__":
             if target_type == "type":
                 p_type = v_tokens if target_id == "V" else c_tokens
                 # print([i2p[p] for p in p_type])
-
-            print(5)
 
             train_loader, valid_loader = get_intervention_dataset(
                 data,
@@ -482,6 +472,7 @@ if __name__ == "__main__":
                     #         counts["VV"] += 1
 
                 accuracy = correct / total
+                print(s_correct, total, length - 1, batch_size)
                 stability = s_correct / (total * (length - 1))
                 # all_accuracy = all_correct / total_tokens
 
@@ -500,7 +491,7 @@ if __name__ == "__main__":
                 if args.verbose:
                     if epoch % 20 == 0:
                         print(
-                            f"E: {epoch} L: {epoch_loss:.4f} A: {accuracy:.4f} S: {stability:.4f}"  # AA: {all_accuracy:.4f}"
+                            f"E: {epoch} L: {epoch_loss:.3f} A: {accuracy:.3f} S: {stability:.3f}"  # AA: {all_accuracy:.4f}"
                         )
 
                     # if epoch == num_epochs:
