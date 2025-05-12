@@ -136,12 +136,16 @@ def get_intervention_dataset(
         Yh.append(yh)
         Yc.append(yc)
 
+    print(f"List dataset size: {len(I)}")
+
     I = np.concatenate(I, axis=0)
     Xh = np.concatenate(Xh, axis=0)
     Xc = np.concatenate(Xc, axis=0)
     T = np.concatenate(T, axis=0)
     Yh = np.concatenate(Yh, axis=0)
     Yc = np.concatenate(Yc, axis=0)
+
+    print(f"Array dataset size: {len(I)}")
 
     I = torch.tensor(I, dtype=torch.long)
     Xh = torch.tensor(Xh, dtype=torch.float32)
@@ -150,9 +154,13 @@ def get_intervention_dataset(
     Yh = torch.tensor(Yh, dtype=torch.float32)
     Yc = torch.tensor(Yc, dtype=torch.float32)
 
+    print(f"Tensor dataset size: {len(I)}")
+
     dataset = TensorDataset(I, Xh, Xc, T, Yh, Yc)
+    print(f"TensorDataset size: {len(dataset)}")
     train_size = int(0.8 * len(dataset))
     valid_size = len(dataset) - train_size
+    print(f"Train size: {train_size}, Valid size: {valid_size}")
     train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
@@ -357,11 +365,6 @@ if __name__ == "__main__":
     )
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
 
-    # early stopping parameters
-    best_accuracy = 0
-    patience = 10
-    wait = 0
-
     for index in indices:
         for target_id in targets:
             if args.verbose:
@@ -381,6 +384,11 @@ if __name__ == "__main__":
                 target_id=target_id,
                 target_type=target_type,
             )
+
+            # early stopping parameters
+            best_accuracy = 0
+            patience = 10
+            wait = 0
 
             bias_only = True if model_type == "bias" else False
             model = Net(encoder_hidden, decoder_hidden, bias_only=bias_only).to(device)
