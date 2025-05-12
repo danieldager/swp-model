@@ -472,8 +472,8 @@ if __name__ == "__main__":
                     #         counts["VV"] += 1
 
                 accuracy = correct / total
-                print(s_correct, total, length - 1, batch_size)
-                stability = s_correct / (total * (length - 1))
+                # print(s_correct, total, length - 1, batch_size)
+                stability = s_correct / (total * length)
                 # all_accuracy = all_correct / total_tokens
 
                 results["Epoch"].append(epoch)
