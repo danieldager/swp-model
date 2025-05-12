@@ -296,6 +296,8 @@ if __name__ == "__main__":
     model_type = args.model_type
     learning_rate = args.learning_rate
 
+    print(1)
+
     path = f"results/evaluation/{model_name}/{train_name}/{checkpoint}"
 
     csv_path = f"{path}/control/{length}grams.csv"
@@ -318,6 +320,8 @@ if __name__ == "__main__":
     elif target_type == "identity":
         targets = vowels + consonants
 
+    print(2)
+
     model = get_model(model_name)
     load_weights(
         model=model,
@@ -331,6 +335,8 @@ if __name__ == "__main__":
     decoder_hidden = model.decoder.hidden_size
     decoder = model.decoder.to(device)
     decoder.eval()
+
+    print(3)
 
     results = {
         "Epoch": [],
@@ -354,6 +360,8 @@ if __name__ == "__main__":
     )
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
 
+    print(4)
+
     for index in indices:
         for target_id in targets:
             if args.verbose:
@@ -362,6 +370,8 @@ if __name__ == "__main__":
             if target_type == "type":
                 p_type = v_tokens if target_id == "V" else c_tokens
                 # print([i2p[p] for p in p_type])
+
+            print(5)
 
             train_loader, valid_loader = get_intervention_dataset(
                 data,

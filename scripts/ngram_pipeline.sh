@@ -25,6 +25,7 @@ conda activate swpm
 pip install -r requirements.txt --quiet
 
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
+export PYTHONUNBUFFERED=1
 
 # Parameters for the pipeline
 MODEL_NAME="Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
@@ -102,7 +103,7 @@ for n in {3..10}; do
         --checkpoint $CHECKPOINT \
         --dataset "ngrams" \
         --ngrams 3 \
-        --retest
+        # --retest
     
     if [ $? -ne 0 ]; then
         echo "Error extracting embeddings for ${n}grams"
