@@ -440,19 +440,12 @@ if __name__ == "__main__":
 
                     # check if the target phoneme is correct
                     if target_type == "type":
-                        correct += np.isin(preds[:, index], p_type).sum()
-
-                        # if epoch == num_epochs:
-                        # print(
-                        #     np.isin(preds[:, index], p_type).sum(), target.shape[0]
-                        # )
-                        # print([i2p[p] for p in preds[:, index].tolist()])
-
+                        correct += np.isin(preds[:, index].cpu().numpy(), p_type).sum()
                     elif target_type == "identity":
                         correct += (preds[:, index] == target[:, index]).sum().item()
 
                     # calculate percentage of correct predictions (w/o target index)
-                    idxs = np.delete(np.arange(preds.shape[1]), index)
+                    idxs = np.delete(np.arange(preds.shape[1].cpu().numpy()), index)
                     s_correct += (preds[:, idxs] == target[:, idxs]).sum().item()
 
                     # calculate overall accuracy (all tokens)
@@ -463,12 +456,9 @@ if __name__ == "__main__":
 
                     # # get only incorrect predictions for printing
                     # if epoch == num_epochs:
-                    #     mask = ~np.isin(preds[:, 1], Vs)
+                    #     mask = ~np.isin(preds[:, 1].cpu().numpy(), Vs)
                     #     inputs = inputs[mask]
                     #     preds = preds[mask]
-
-                    #     wrong_i = [[i2p[p] for p in b] for b in inputs.tolist()]
-                    #     wrong_p = [[i2p[p] for p in b] for b in preds.tolist()]
 
                     # for i, p in zip(wrong_i, wrong_p):
                     #     print(" ".join(i), "   ->   ", " ".join(p))

@@ -28,7 +28,7 @@ export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
 # Parameters for the pipeline
 MODEL_NAME="Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
-TRAIN_NAME="b1024_l0.001_fall_s42_sn_ec"
+TRAIN_NAME="b1024_l0.001_fall_sn"
 CHECKPOINT="75"
 BATCH_SIZE=2048
 MAX_SAMPLES=300000
@@ -70,7 +70,7 @@ for n in {3..10}; do
     echo "Generating ${n}grams dataset..."
     TASK_START=$(date +%s)
     
-    python scripts/generate_ngrams.py --n $n --max_samples $MAX_SAMPLES --base_n $BASE_N
+    # python scripts/generate_ngrams.py --n $n --max_samples $MAX_SAMPLES --base_n $BASE_N
     
     if [ $? -ne 0 ]; then
         echo "Error generating ${n}grams dataset"
@@ -102,7 +102,7 @@ for n in {3..10}; do
         --checkpoint $CHECKPOINT \
         --dataset "ngrams" \
         --ngrams $n \
-        --retest
+        # --retest
     
     if [ $? -ne 0 ]; then
         echo "Error extracting embeddings for ${n}grams"
