@@ -85,6 +85,9 @@ def get_intervention_dataset(
     """
     I, Xh, Xc, Yh, Yc, T = [], [], [], [], [], []
 
+    # print size of the dataset
+    print(f"Raw dataset size: {len(data)}")
+
     data["Tokens"] = data["No_Stress"].apply(
         lambda x: [p2i[p] for p in x] + [stop_token]
     )

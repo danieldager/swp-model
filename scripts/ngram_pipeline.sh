@@ -71,7 +71,7 @@ for n in {3..10}; do
     echo "Generating ${n}grams dataset..."
     TASK_START=$(date +%s)
     
-    # python scripts/generate_ngrams.py --n $n --max_samples $MAX_SAMPLES --base_n $BASE_N
+    python scripts/generate_ngrams.py --n $n --max_samples $MAX_SAMPLES --base_n $BASE_N
     
     if [ $? -ne 0 ]; then
         echo "Error generating ${n}grams dataset"
@@ -96,14 +96,14 @@ for n in {3..10}; do
     echo "Extracting embeddings for ${n}grams..."
     TASK_START=$(date +%s)
     
-    # python scripts/embeddings.py \
-    #     --model_name $MODEL_NAME \
-    #     --train_name $TRAIN_NAME \
-    #     --batch_size $BATCH_SIZE \
-    #     --checkpoint $CHECKPOINT \
-    #     --dataset "ngrams" \
-    #     --ngrams 3 \
-    #     --retest
+    python scripts/embeddings.py \
+        --model_name $MODEL_NAME \
+        --train_name $TRAIN_NAME \
+        --batch_size $BATCH_SIZE \
+        --checkpoint $CHECKPOINT \
+        --dataset "ngrams" \
+        --ngrams $n \
+        --retest
     
     if [ $? -ne 0 ]; then
         echo "Error extracting embeddings for ${n}grams"
