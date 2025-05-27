@@ -1,12 +1,11 @@
 from bisect import bisect_right
 from pathlib import Path
-from string import ascii_letters
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional
 
 import numpy as np
 import torch
 import torchvision.transforms
-from g2p_en import G2p
+from torch.nested import nested_tensor
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, default_collate
 from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import default_loader
@@ -14,6 +13,7 @@ from torchvision.datasets.imagenet import ImageNet
 
 from ...utils.datasets import (
     get_epoch_numpy,
+    get_evaluation_dataset,
     get_phoneme_to_id,
     get_train_fold,
     get_valid_fold,
@@ -44,27 +44,18 @@ class RepetitionDataset(ImageFolder):
     def __init__(
         self,
         root: Path,
+        word_to_phoneme: dict[str, list[str]],
         phoneme_to_id: dict[str, int],
         transform: Optional[Callable] = None,
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Optional[Callable[[str], bool]] = None,
         allow_empty: bool = False,
     ):
-        g2p = G2p()
-
-        # TODO rework to get max length beforehand
-        # TODO handle stress and no stress data
-        length_to_pad = 10  # max_len + 5
 
         def to_phoneme(word: str) -> torch.Tensor:
-            phonemes: list[str] = g2p(word)  # TODO rework to avoid calling g2p
+            phonemes: list[str] = word_to_phoneme[word]
             phonemes.append("<EOS>")
-            phonemes.extend(["<PAD>" for _ in range(length_to_pad - len(phonemes))])
-            # store in dict ?
-            # NOTE you might want to make sure these are integers
             return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
-
-        # TODO use word_to_phoneme dict and build like word to phone tensors
 
         super().__init__(
             root,
@@ -95,6 +86,7 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         `train` : return training split if set to `True`, validation split otherwise
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         `generator` : generator used to control random sampling. If `None`, then a generator is initialized deterministically.
+        `query` : query to use when getting the data
         other args are passed to the `ImageFolder` parent class
 
     Attributes :
@@ -104,31 +96,46 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         `id_tensor` : Tensor of size `[num_fold_classes, num_samples_per_class]` containing overall dataset index. First dim is indexed along the fold dataframe.
         `epoch_ids` : Array containing the class indices to go through over one epoch
         `generator` : generator used to control random sampling
+        `query` : query used when getting the data
     """
 
     def __init__(
         self,
         root: Path,
-        fold_id: int,
+        fold_id: int | None,
         train: bool,
         phoneme_to_id: dict[str, int],
+        include_stress: bool = False,
         generator: torch.Generator | None = None,
         transform: Callable[..., Any] | None = None,
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Callable[[str], bool] | None = None,
         allow_empty: bool = False,
+        query: str | None = None,
     ):
-        super().__init__(
-            root, phoneme_to_id, transform, loader, is_valid_file, allow_empty
-        )
         self.fold_id = fold_id
         self.train = train
+        self.query = query
         if self.train:
-            data_df = get_train_fold(self.fold_id)
-            self.epoch_ids = get_epoch_numpy(self.fold_id)
+            data_df = get_train_fold(self.fold_id, query=query)
+            self.epoch_ids = get_epoch_numpy(self.fold_id, query=query)
         else:
-            data_df = get_valid_fold(self.fold_id)
+            data_df = get_valid_fold(self.fold_id, query=query)
             self.epoch_ids = np.arange(len(data_df))
+        if include_stress:
+            phoneme_label = "Phonemes"
+        else:
+            phoneme_label = "No Stress"
+        word_to_phoneme = dict(zip(data_df["Word"], data_df[phoneme_label]))
+        super().__init__(
+            root,
+            word_to_phoneme,
+            phoneme_to_id,
+            transform,
+            loader,
+            is_valid_file,
+            allow_empty,
+        )
         self.id_tensor = torch.stack(
             [
                 torch.tensor(self.class_to_sample_id[class_name], dtype=torch.int)
@@ -155,7 +162,11 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
 
 
 def get_grapheme_trainloader(
-    fold_id: int, train: bool, batch_size: int, generator: torch.Generator | None = None
+    fold_id: int | None,
+    train: bool,
+    batch_size: int,
+    include_stress: bool = False,
+    generator: torch.Generator | None = None,
 ) -> DataLoader:
     r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
     Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
@@ -169,6 +180,7 @@ def get_grapheme_trainloader(
         fold_id=fold_id,
         train=train,
         phoneme_to_id=get_phoneme_to_id(),
+        include_stress=include_stress,
         transform=torchvision.transforms.ToTensor(),
     )
     if generator is None:
@@ -179,11 +191,24 @@ def get_grapheme_trainloader(
     return grapheme_loader
 
 
-def get_grapheme_testloader(batch_size: int) -> DataLoader:
-    r"""Return a dataloader containing the grapheme test data batched in size `batch_size`."""
+def get_grapheme_testloader(
+    batch_size: int,
+    include_stress: bool = False,
+    query: str | None = None,
+) -> DataLoader:
+    r"""Return a dataloader containing the grapheme test data batched in size `batch_size`.
+    Passing a `query` string gives a dataloader containing the corresponding queried test set.
+    """
     check_test_dataset(get_graphemes_dir())
+    if include_stress:
+        phoneme_label = "Phonemes"
+    else:
+        phoneme_label = "No Stress"
+    test_df = get_evaluation_dataset(query=query)
+    word_to_phoneme = dict(zip(test_df["Word"], test_df[phoneme_label]))
     grapheme_set = RepetitionDataset(
         root=get_graphemes_dir() / "test",
+        word_to_phoneme=word_to_phoneme,
         phoneme_to_id=get_phoneme_to_id(),
         transform=torchvision.transforms.ToTensor(),
     )
@@ -224,8 +249,9 @@ def task_collate_fn(
       - a list of tensors containing the collated target per corresponding dataset
       - a tensor containing the matching dataset id for the inputs
     """
+    # TODO update to include nested tensors
     batch_data = []
-    batch_targets = [[] for i in range(num_tasks)]
+    batch_targets = [[] for _ in range(num_tasks)]
     task_ids = []
     for sample in batch:
         data, target, id = sample
@@ -238,11 +264,25 @@ def task_collate_fn(
     return (batched_data, (batched_targets, batched_ids))
 
 
+def grapheme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value: int):
+    r"""A collate function that get tensors of different length from `batch`, then
+    batch them together by extending them to the max length, filling with `pad_value`"""
+    data, target = tuple(zip(*batch))
+    collated_data = default_collate(list(data))
+    nt_target = nested_tensor(list(target), dtype=torch.long)
+    padded_target = nt_target.to_padded_tensor(padding=pad_value)
+    return collated_data, padded_target
+
+
 def get_mixed_trainloader(
-    fold_id: int, train: bool, batch_size: int, generator: torch.Generator | None = None
+    fold_id: int | None,
+    train: bool,
+    batch_size: int,
+    include_stress: bool = False,
+    generator: torch.Generator | None = None,
 ) -> DataLoader:
     r"""Return a dataloader containing both the grapheme training data corresponding to the `fold_id` fold
-    and the ImageNet dataset, batched in size `batch_size`.
+    and the ImageNet dataset, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
     Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
 
     Return the corresponding training data if `train` is set to `True`.
@@ -254,6 +294,7 @@ def get_mixed_trainloader(
         fold_id=fold_id,
         train=train,
         phoneme_to_id=get_phoneme_to_id(),
+        include_stress=include_stress,
         transform=torchvision.transforms.ToTensor(),
     )
     if train:

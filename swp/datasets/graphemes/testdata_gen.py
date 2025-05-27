@@ -1,18 +1,12 @@
 from pathlib import Path
 from typing import Sequence
 
-from .image_gen import text_to_grapheme
-from .traindata_gen import get_gen_arg_dict
+from .image_gen import ByFontArgs, get_gen_arg_dict, text_to_grapheme
 
 
 def exhaustive_cartesian_product(
     word: str,
-    fonts: list[str],
-    global_rot: list[int],
-    line_rot: list[int],
-    all_letter_rot: list[int],
-    sizes: list[int],
-    all_spacing: list[int],
+    image_args: ByFontArgs,
 ) -> list[dict]:
     r"""Generate all possible arg samples used for grapheme generation with the word `word`.
     Possibilities are extracted from the cartesian product as follow :
@@ -26,12 +20,13 @@ def exhaustive_cartesian_product(
     Returns a list of dict containing args to generate each image.
     """
     args = []
+    fonts = list(image_args["font2sizes"].keys())
     for font in fonts:
-        for global_rot_item in global_rot:
-            for line_angle in line_rot:
-                for letter_rot in all_letter_rot:
-                    for size in sizes:
-                        for space in all_spacing:
+        for global_rot_item in image_args["global_rotations"]:
+            for line_angle in image_args["line_rot"]:
+                for letter_rot in image_args["letter_rotations"]:
+                    for size in image_args["font2sizes"][font]:
+                        for space in image_args["spaces"]:
                             for case in [True, False, "Title"]:
                                 if case == "Title":
                                     case_arg = [i == 0 for i in range(len(word))]
@@ -63,12 +58,7 @@ def create_test_dataset(path: Path, words: Sequence[str]) -> None:
     for word in words:
         images_args = exhaustive_cartesian_product(
             word=word,
-            fonts=train_gen_arg_dict["fonts"],
-            global_rot=train_gen_arg_dict["global_rotations"],
-            line_rot=train_gen_arg_dict["line_rot"],
-            all_letter_rot=train_gen_arg_dict["letter_rotations"],
-            sizes=train_gen_arg_dict["sizes"],
-            all_spacing=train_gen_arg_dict["spaces"],
+            image_args=train_gen_arg_dict,
         )
         word_dir = test_path / word
         word_dir.mkdir(parents=True, exist_ok=True)
@@ -76,9 +66,7 @@ def create_test_dataset(path: Path, words: Sequence[str]) -> None:
             im = text_to_grapheme(**arg)
             im_name = f'{word}_{arg["fontname"]}_{arg["size"]}'
             im_name = f'{im_name}_l{arg["line_angle"]}'
-            im_name = (
-                f'{im_name}_charrot{"-".join(str(angle) for angle in arg["angles"])}'
-            )
+            im_name = f'{im_name}_cr{"-".join(str(angle) for angle in arg["angles"])}'
             im_name = f'{im_name}_sp{"-".join(str(space) for space in arg["spacing"])}'
             if not arg["case"][0]:
                 case_name = "lowers"
@@ -97,11 +85,11 @@ def check_test_dataset(path: Path) -> int:
     generate the training set, then return that number."""
     train_gen_arg_dict = get_gen_arg_dict(path)
     per_class_count = 3  # for UPPER, lower and Title casing
-    per_class_count *= len(train_gen_arg_dict["fonts"])
+    per_class_count *= len(train_gen_arg_dict["font2sizes"])
     per_class_count *= len(train_gen_arg_dict["global_rotations"])
     per_class_count *= len(train_gen_arg_dict["line_rot"])
     per_class_count *= len(train_gen_arg_dict["letter_rotations"])
-    per_class_count *= len(train_gen_arg_dict["sizes"])
+    per_class_count *= train_gen_arg_dict["num_sizes"]
     per_class_count *= len(train_gen_arg_dict["spaces"])
     path = path / "test"
     for dir in path.glob("*/"):

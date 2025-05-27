@@ -1,40 +1,42 @@
-import json
 from pathlib import Path
 from typing import Sequence
 
 import numpy as np
 
-from .image_gen import get_all_fonts, get_dataset_max_font_size, text_to_grapheme
+from .image_gen import ByFontArgs, get_gen_arg_dict, text_to_grapheme
 
 
 def random_cartesian_product(
     num_samples: int,
     word: str,
-    fonts: list[str],
-    global_rot: list[int],
-    line_rot: list[int],
-    letter_rot: list[int],
-    sizes: list[int],
-    spacing: list[int],
+    image_args: ByFontArgs,
+    generator: np.random.Generator,
 ) -> list[dict]:
     r"""Sample `num_samples` different arg samples used for grapheme generation with the word `word`.
-    Args are sampled without replacement from the cartesian product defined by :
-    - all fonts in `fonts`
+    Args are sampled without replacement from the cartesian product defined `image_args` :
+    - all fonts in `font2sizes` dictionnary
     - all global rotations (letter + line inclination) in `global_rot`
     - all line inclinations in `line_rot` (relative to drawn global rot)
-    - all letter rotation (independent for every letter) from `letter rot` (relative to drawn global rot)
-    - all font sizes in `sizes`
-    - all letter spacings (independently for every bigram) from `spacing`
+    - all letter rotation (independent for every letter) from `letter_rotations` (relative to drawn global rot)
+    - all font sizes corresponding to the fonts
+    - all letter spacings (independently for every bigram) from `spaces`
     - cases from all upper, all lower or Title (first letter in upper only)
     Returns a list of dict containing args to generate each sample image.
+    Randomness is controlled by the `generator`.
     """
+    fonts = list(image_args["font2sizes"].keys())
+    global_rot = image_args["global_rotations"]
+    line_rot = image_args["line_rot"]
+    letter_rot = image_args["letter_rotations"]
+    num_sizes = image_args["num_sizes"]
+    spacing = image_args["spaces"]
     # by letter random case is not implemented
     amount = (
         len(fonts)
         * len(global_rot)
         * len(line_rot)
         * (len(letter_rot) ** len(word))
-        * len(sizes)
+        * num_sizes
         * (len(spacing) ** (len(word) - 1))
         * 3
     )
@@ -42,7 +44,8 @@ def random_cartesian_product(
     def id_to_dict(id):
         items = {}
         items["word"] = word
-        items["fontname"] = fonts[id % len(fonts)]
+        font = fonts[id % len(fonts)]
+        items["fontname"] = font
         id //= len(fonts)
         global_rot_item = global_rot[id % len(global_rot)]
         id //= len(global_rot)
@@ -53,8 +56,8 @@ def random_cartesian_product(
             letter_rots.append(letter_rot[id % len(letter_rot)] + global_rot_item)
             id //= len(letter_rot)
         items["angles"] = letter_rots
-        items["size"] = sizes[id % len(sizes)]
-        id //= len(sizes)
+        items["size"] = image_args["font2sizes"][font][id % num_sizes]
+        id //= num_sizes
         spaces = []
         for _ in word[:-1]:
             spaces.append(spacing[id % len(spacing)])
@@ -68,59 +71,32 @@ def random_cartesian_product(
             items["case"] = [i == 0 for i in range(len(word))]
         return items
 
-    draws = np.random.choice(amount, size=num_samples)
+    draws = generator.choice(amount, size=num_samples)
     return [id_to_dict(draw) for draw in draws]
 
 
-def create_gen_arg_dict(path: Path, words: Sequence[str]):
-    r"""Generate a dictionnary of the arguments used to generate the grapheme dataset and save it."""
-    train_path = path / "train"
-    train_path.mkdir(exist_ok=True, parents=True)
-    rotations = [-15, -10, -5, 0, 5, 10, 15]
-    max_size, max_space = get_dataset_max_font_size(words)
-    all_fonts = get_all_fonts()
-    line_rot = [0]
-    spaces = [
-        0,
-        int(max_space / 4),
-        int(max_space / 2),
-        int(3 * max_space / 4),
-        max_space,
-    ]
-    sizes = [int(2 * max_size / 3), int(5 * max_size / 6), max_size]
-    dataset_gen_dict = {
-        "fonts": list(set(all_fonts)),
-        "global_rotations": list(set(rotations)),
-        "line_rot": list(set(line_rot)),
-        "letter_rotations": list(set(rotations)),
-        "spaces": list(set(spaces)),
-        "sizes": list(set(sizes)),
-    }
-    gen_args_path = train_path / "gen_args.json"
-    with gen_args_path.open("w") as f:
-        json.dump(dataset_gen_dict, f, indent=4)
-    return dataset_gen_dict
-
-
 def create_train_dataset(
-    path: Path, words: Sequence[str], images_per_word: int
+    path: Path,
+    words: Sequence[str],
+    images_per_word: int,
+    seed: int | None = None,
 ) -> None:
     r"""Create a grapheme dataset at `path / "train"` location.
 
     Creates `images_per_word` images per word in `words`, each saved in a directory named after the corresponding word.
+    Use `seed` to control randomness. If none is provided, randomness is handled in a deterministic way.
     """
-    dataset_gen_dict = create_gen_arg_dict(path, words)
+    if seed is None:
+        seed = 42
+    dataset_gen_dict = get_gen_arg_dict(path)
     train_path = path / "train"
+    generator = np.random.default_rng(seed)
     for word in words:
         images_args = random_cartesian_product(
             num_samples=images_per_word,
             word=word,
-            fonts=dataset_gen_dict["fonts"],
-            global_rot=dataset_gen_dict["global_rotations"],
-            line_rot=dataset_gen_dict["line_rot"],
-            letter_rot=dataset_gen_dict["letter_rotations"],
-            sizes=dataset_gen_dict["sizes"],
-            spacing=dataset_gen_dict["spaces"],
+            image_args=dataset_gen_dict,
+            generator=generator,
         )
         word_dir = train_path / word
         word_dir.mkdir(parents=True, exist_ok=True)
@@ -163,11 +139,3 @@ def check_train_dataset(path: Path) -> int:
         raise RuntimeError(
             f"Number of images per class is not constant, different counts : {counts}"
         )
-
-
-def get_gen_arg_dict(path) -> dict:
-    r"""Return the arguments used to generate the dataset stored in `path / "train"` directory"""
-    train_gen_args_path = path / "train" / "gen_args.json"
-    with train_gen_args_path.open("r") as f:
-        gen_arg_dict = json.load(f)
-    return gen_arg_dict

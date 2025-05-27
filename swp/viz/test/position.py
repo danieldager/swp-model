@@ -118,7 +118,7 @@ def plot_position_errors_smooth(
                     [
                         {
                             "Position": x[i],
-                            "Error_Rate": curr_y[i],
+                            "Error_Rate": curr_y[i],  # type: ignore
                             "Lexicality": lexicality,
                             "Length": length,
                             "Smooth": "smooth",

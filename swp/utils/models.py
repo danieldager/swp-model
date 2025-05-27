@@ -1,3 +1,4 @@
+from hashlib import md5
 from typing import TypedDict
 
 import torch
@@ -5,6 +6,7 @@ import torch
 from ..models.autoencoder import Bimodel, Unimodel
 from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
+from .datasets import check_query, unhash_query
 from .paths import get_weights_dir
 
 
@@ -84,6 +86,7 @@ class TrainArgs(TypedDict):
     fold_id: int | None
     include_stress: bool
     loss: str
+    query: str | None
 
 
 def get_model_args(model_name: str) -> ModelArgs:
@@ -261,6 +264,7 @@ def get_train_name(
     include_stress: bool,
     seed: int,
     loss: str = "classic",
+    query: str | None = None,
     **kwargs,
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
@@ -275,7 +279,10 @@ def get_train_name(
         train_name = f"{train_name}_ec"
     elif loss == "first":
         train_name = f"{train_name}_ef"
-
+    if query is not None:
+        hashed = md5(query.encode()).hexdigest()[:8]
+        check_query(query=query, hashed=f"_{hashed}")
+        train_name = f"{train_name}_q{hashed}"
     # TODO add support for visual dataset, mixed or not
     return train_name
 
@@ -290,6 +297,9 @@ def get_train_args(train_name: str) -> TrainArgs:
         include_stress = False
     else:
         raise ValueError(f'Stress value not recognized : {str_args["s"]}')
+    query = None
+    if "q" in str_args:
+        query = unhash_query(f"_{str_args["q"]}")
     train_args = TrainArgs(
         {
             "batch_size": int(str_args["b"]),
@@ -297,6 +307,7 @@ def get_train_args(train_name: str) -> TrainArgs:
             "fold_id": None if str_args["f"] == "all" else int(str_args["f"]),
             "include_stress": include_stress,
             "loss": str_args["e"],
+            "query": query,
         }
     )
     return train_args

@@ -217,12 +217,13 @@ class CorNetEncoder(VisualEncoder):
     r"""A visual encoder based on CORNet convolutional networks.
 
     Args :
-        `hidden_size` : the size of the encoding to generate
-        `cornet_model` : the CORNet model code of the model to use for the encoder
+    - `hidden_size` : the size of the encoding to generate
+    - `cornet_model` : the CORNet model code of the model to use for the encoder
+
     Attributes :
-        `cnn` : CNN part of the model
-        `to_hidden` : subnetwork converting neural code to proper encoding
-        `hidden_shape` : `torch.Size` object representing the output shape of `to_hidden`. The dimension containing `-1` is expected to be batch dimension.
+    - `cnn` : CNN part of the model
+    - `to_hidden` : subnetwork converting neural code to proper encoding
+    - `hidden_shape` : `torch.Size` object representing the output shape of `to_hidden`. The dimension containing `-1` is expected to be batch dimension.
     """
 
     def __init__(self, hidden_size: int, cornet_model: str):

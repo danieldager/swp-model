@@ -17,6 +17,9 @@ def create_and_queue_datagen(
     epoch_size: int = 1000000,
     num_folds: int = 5,
 ) -> tuple[str, list[str]]:
+    r"""Create data generation slurm script and return the corresponding identification variable
+    for bash script as well as command lines for bash script to queue the slurm script.
+    """
     script_options = (
         f"--vocab_size {vocab_size} --epoch_size {epoch_size} --num_folds {num_folds}"
     )
@@ -41,6 +44,9 @@ def create_and_queue_train_repetition(
     array_arg_file: pathlib.Path,
     array_len: int,
 ) -> tuple[str, list[str]]:
+    r"""Create repetition training slurm array script and return the corresponding identification variable
+    for bash script as well as command lines for bash script to queue the slurm script.
+    """
     training_path = autoarg_slurmarray_file_generator(
         job_name="train_rep_array",
         partition="gpu_p5",
@@ -61,6 +67,9 @@ def create_and_queue_train_repetition(
 
 
 def create_and_queue_aggregate(dependency_id_vars: list[str]) -> tuple[str, list[str]]:
+    r"""Create result aggregation slurm script and return the corresponding identification variable
+    for bash script as well as command lines for bash script to queue the slurm script.
+    """
     aggregate_path = base_slurm_file_generator(
         job_name="aggregate",
         partition="prepost",
@@ -83,7 +92,9 @@ def create_jean_zay_train_repetition_queuer(
     grid: Grid,
     bypass_datagen: bool = False,
 ):
-    # TODO docstring
+    r"""Create a bash script that queues the data generation, then the repetition
+    trainings corresponding to the `grid` and the result aggregation. The bash script
+    is made executable."""
     gen_script_dir = get_generated_scripts_dir()
     logger.info("Beginning script generation")
     commands = ["#!/bin/bash"]

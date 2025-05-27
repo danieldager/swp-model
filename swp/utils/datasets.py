@@ -1,6 +1,7 @@
 import json
 from ast import literal_eval
 from collections import Counter, defaultdict
+from hashlib import md5
 from pathlib import Path
 
 import numpy as np
@@ -277,9 +278,10 @@ def classify_error_positions(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_evaluation_dataset() -> pd.DataFrame:
+def get_evaluation_dataset(query: str | None = None) -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
-    Set `force_recreate` to `True` to enforce recomputation of the data."""
+    Set `force_recreate` to `True` to enforce recomputation of the data.
+    Pass a `query` string to extract a subdataframe."""
     filepath = get_handmade_dir() / "evaluation_dataset.csv"
     converters = {
         "Word": str,
@@ -291,6 +293,8 @@ def get_evaluation_dataset() -> pd.DataFrame:
     else:
         raise FileNotFoundError("User does not have the evaluation dataset.")
 
+    if query is not None:
+        dataframe = dataframe.query(query)
     return dataframe
 
 
@@ -337,10 +341,14 @@ def create_train_data(num_unique_words: int = 50000) -> pd.DataFrame:
     return dataframe
 
 
-def get_train_dataset(force_recreate: bool = False) -> pd.DataFrame:
+def get_train_dataset(
+    force_recreate: bool = False,
+    query: str | None = None,
+) -> pd.DataFrame:
     r"""Get saved training dataset if it exists, create it otherwise.
 
-    Use `force_recreate` to recreate the training set from scratch"""
+    Use `force_recreate` to recreate the training set from scratch.
+    Pass a `query` string to extract a subdataframe."""
     csv_train_path = get_dataframe_dir() / "training.csv"
     if csv_train_path.exists() and not force_recreate:
         dataframe = pd.read_csv(
@@ -354,6 +362,8 @@ def get_train_dataset(force_recreate: bool = False) -> pd.DataFrame:
         )
     else:
         dataframe = create_train_data()
+    if query is not None:
+        dataframe = dataframe.query(query)
     return dataframe
 
 
@@ -361,6 +371,7 @@ def create_folds(
     train_data: pd.DataFrame,
     num_folds: int = 5,
     generator: np.random.Generator | None = None,
+    query: str | None = None,
 ) -> None:
     r"""Create `num_folds` equilibrated folds from `train_data`.
 
@@ -368,10 +379,18 @@ def create_folds(
 
     Randomness of splits can be controlled through the `generator` argument.
     If left as `None`, a generator is deterministically seeded and used.
+
+    Using a `query` string extract the corresponding data from the `train_data`
+    dataframe before creating folds.
     """
     # TODO check that folds are balanced (meaning?)
+    query_str = ""
     if generator is None:
         generator = np.random.default_rng(seed=42)
+    if query is not None:
+        train_data = train_data.query(query)
+        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
+        check_query(query=query, hashed=query_str)
     folds_dir = get_folds_dir()
     dataset_len = len(train_data.index)
 
@@ -384,25 +403,38 @@ def create_folds(
         ith_train_fold = train_data[np.logical_not(mask)].reset_index(drop=True)
         ith_valid_fold = train_data[mask].reset_index(drop=True)
 
-        csv_ith_train_fold_path = folds_dir / f"train_fold_{i}.csv"
-        csv_ith_valid_fold_path = folds_dir / f"valid_fold_{i}.csv"
+        csv_ith_train_fold_path = folds_dir / f"train_fold_{i}{query_str}.csv"
+        csv_ith_valid_fold_path = folds_dir / f"valid_fold_{i}{query_str}.csv"
 
         ith_train_fold.to_csv(csv_ith_train_fold_path)
         ith_valid_fold.to_csv(csv_ith_valid_fold_path)
 
 
-def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame:
+def get_train_fold(
+    fold_id: int | None,
+    force_recreate: bool = False,
+    query: str | None = None,
+) -> pd.DataFrame:
     r"""Get saved training fold number `fold_id` if it exists, recreate all folds otherwise.
     If `fold_id` is None, return the complete training set.
 
-    Use `force_recreate` to recreate training set and folds from scratch"""
+    Use `force_recreate` to recreate training set and folds from scratch.
+    Pass a `query` string to get folds corresponding to the queried data."""
     train_df = None
-    csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}.csv"
+    query_str = ""
+    if query is not None:
+        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
+        check_query(query=query, hashed=query_str)
+    csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}{query_str}.csv"
     if force_recreate or not csv_train_fold_path.exists():
-        train_df = get_train_dataset(force_recreate)
-        create_folds(train_df)
+        train_df = get_train_dataset(force_recreate, query=query)
+        create_folds(train_df, query=query)
     if fold_id is None:
-        dataframe = get_train_dataset(force_recreate) if train_df is None else train_df
+        dataframe = (
+            get_train_dataset(force_recreate, query=query)
+            if train_df is None
+            else train_df
+        )
     else:
         dataframe = pd.read_csv(
             csv_train_fold_path,
@@ -416,18 +448,31 @@ def get_train_fold(fold_id: int | None, force_recreate: bool = False) -> pd.Data
     return dataframe
 
 
-def get_valid_fold(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame:
+def get_valid_fold(
+    fold_id: int | None,
+    force_recreate: bool = False,
+    query: str | None = None,
+) -> pd.DataFrame:
     r"""Get saved validation fold number `fold_id` if it exists, recreate all folds otherwise.
     If `fold_id` is None, return the complete training set.
 
-    Use `force_recreate` to recreate training set and folds from scratch"""
+    Use `force_recreate` to recreate training set and folds from scratch.
+    Pass a `query` string to get folds corresponding to the queried data."""
     train_df = None
-    csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}.csv"
+    query_str = ""
+    if query is not None:
+        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
+        check_query(query=query, hashed=query_str)
+    csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}{query_str}.csv"
     if force_recreate or not csv_valid_fold_path.exists():
-        train_df = get_train_dataset(force_recreate)
-        create_folds(train_df)
+        train_df = get_train_dataset(force_recreate, query=query)
+        create_folds(train_df, query=query)
     if fold_id is None:
-        dataframe = get_train_dataset(force_recreate) if train_df is None else train_df
+        dataframe = (
+            get_train_dataset(force_recreate, query=query)
+            if train_df is None
+            else train_df
+        )
     else:
         dataframe = pd.read_csv(
             csv_valid_fold_path,
@@ -446,6 +491,7 @@ def create_epoch(
     train_data: pd.DataFrame,
     epoch_size: int = 10**6,
     generator: np.random.Generator | None = None,
+    query: str | None = None,
 ) -> np.ndarray:
     r"""Samples `epoch_size` samples from the training split `train_data`.
     Saves the generated ids in a `.npy` file depeding on ̀`fold_id`.
@@ -455,12 +501,19 @@ def create_epoch(
 
     Randomness of sampling can be controlled through `generator`.
     If left `None`, is instantiated in a deterministic way.
+
+    Pass a `query` string to create an epoch corresponding to the queried data.
     """
     if generator is None:
         generator = np.random.default_rng(seed=42)
+    query_str = ""
+    if query is not None:
+        train_data = train_data.query(query)
+        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
+        check_query(query=query, hashed=query_str)
     array_epoch_path = (
         get_folds_dir()
-        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}.npy"
+        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
     )
     indices = train_data.index.to_numpy()
     weights = train_data["Frequency"].to_numpy()
@@ -479,36 +532,53 @@ def create_epoch(
 
 
 def get_epoch_numpy(
-    fold_id: int | None, force_recreate: bool = False, epoch_size: int = 10**8
+    fold_id: int | None,
+    force_recreate: bool = False,
+    epoch_size: int = 10**8,
+    query: str | None = None,
 ) -> np.ndarray:
     r"""Get saved training fold `fold_id` epoch ids as numpy array if they exist, create them otherwise.
 
-    Use `force_recreate` to recreate training set and folds from scratch"""
+    Use `force_recreate` to recreate training set and folds from scratch.
+    Pass a `query` string to get the epoch corresponding to the queried data."""
+    query_str = ""
+    if query is not None:
+        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
+        check_query(query=query, hashed=query_str)
     array_epoch_path = (
         get_folds_dir()
-        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}.npy"
+        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
     )
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)
     else:
-        train_fold = get_train_fold(fold_id, force_recreate)
-        indices = create_epoch(fold_id, train_fold, epoch_size)
+        train_fold = get_train_fold(fold_id, force_recreate, query=query)
+        indices = create_epoch(fold_id, train_fold, epoch_size, query=query)
     return indices
 
 
-def get_epoch(fold_id: int | None, force_recreate: bool = False) -> pd.DataFrame:
+def get_epoch(
+    fold_id: int | None,
+    force_recreate: bool = False,
+    query: str | None = None,
+) -> pd.DataFrame:
     r"""Get saved training fold `fold_id` epoch dataframe if epoch ids exist, create them otherwise.
 
-    Use `force_recreate` to recreate training set and folds from scratch"""
+    Use `force_recreate` to recreate training set and folds from scratch.
+    Pass a `query` string to get the epoch corresponding to the queried data."""
+    query_str = ""
+    if query is not None:
+        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
+        check_query(query=query, hashed=query_str)
     array_epoch_path = (
         get_folds_dir()
-        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}.npy"
+        / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
     )
-    train_fold = get_train_fold(fold_id, force_recreate)
+    train_fold = get_train_fold(fold_id, force_recreate, query=query)
     if array_epoch_path.exists() and not force_recreate:
         indices = np.load(array_epoch_path)
     else:
-        indices = create_epoch(fold_id, train_fold)
+        indices = create_epoch(fold_id, train_fold, query=query)
     return train_fold.iloc[indices]
 
 
@@ -629,3 +699,31 @@ def get_phoneme_to_id(
         train_data = get_train_dataset(force_recreate)
         phoneme_dict = create_phoneme_to_id(train_data, include_stress)
     return phoneme_dict
+
+
+def check_query(query: str, hashed: str):
+    r"""Check that no collision happen with other saved files when hashing the query"""
+    stored_hashes_path = get_stimuli_dir() / "hashed_queries.json"
+    if stored_hashes_path.exists():
+        with stored_hashes_path.open("r") as f:
+            stored: dict = json.load(f)
+    else:
+        stored = {}
+    if hashed not in stored:
+        stored[hashed] = query
+        with stored_hashes_path.open("w") as f:
+            json.dump(stored, f, indent=4)
+    elif stored[hashed] != query:
+        raise RuntimeError(
+            f"Hash {hashed} has already another associated query than : {query}"
+        )
+
+
+def unhash_query(hashed: str) -> str:
+    r"""Retrieve the query from the hash"""
+    stored_hashes_path = get_stimuli_dir() / "hashed_queries.json"
+    if not stored_hashes_path.exists():
+        raise RuntimeError("No saved hash table has been found for queries")
+    with stored_hashes_path.open("r") as f:
+        stored: dict = json.load(f)
+    return stored[hashed]

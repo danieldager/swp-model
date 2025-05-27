@@ -132,7 +132,7 @@ def regression_plots(
     # Save the plot
     if path:
         fig_path = path / f"errors_import_{mode}.png"
-        fig1.savefig(fig_path, dpi=300, bbox_inches="tight")
+        fig1.savefig(fig_path, dpi=300, bbox_inches="tight")  # type: ignore
         plt.close(fig1)
     else:
         plt.show()

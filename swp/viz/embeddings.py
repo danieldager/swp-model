@@ -153,6 +153,7 @@ def custom_dmatrix(
 
     plt.show()
 
+
 # TODO: Danny rewrite
 def pca_mds(
     df: pd.DataFrame,
@@ -299,7 +300,7 @@ def pca_mds(
                         pts = results[idx, :]
                         clr = cmap[key[0]]  # type: ignore
                         mrk = mmap[key[1]]  # type: ignore
-                        plt.scatter(pts[:, 0], pts[:, 1], color=clr, marker=mrk)
+                        plt.scatter(pts[:, 0], pts[:, 1], color=clr, marker=mrk)  # type: ignore
 
                     color_handles = [
                         plt.Line2D(  # type: ignore
@@ -381,7 +382,7 @@ def custom_pca(
     v1 = sorted(df[f1].unique())
     # colors = ["blue", "red", "black"]
     # cmap = {val: colors[i % len(colors)] for i, val in enumerate(v1)}
-    palette = plt.cm.get_cmap("viridis", len(v1))
+    palette = plt.cm.get_cmap("viridis", len(v1))  # type: ignore
     # palette = plt.cm.get_cmap("tab10", len(v1))
     cmap = {val: palette(i) for i, val in enumerate(v1)}
 
@@ -430,13 +431,13 @@ def custom_pca(
             pts = proj[idx, :]
             clr = cmap[key[0]]  # type: ignore
             mrk = mmap[key[1]]  # type: ignore
-            plt.scatter(pts[:, 0], pts[:, 1], color=clr, marker=mrk)
+            plt.scatter(pts[:, 0], pts[:, 1], color=clr, marker=mrk)  # type: ignore
 
         plt.scatter(
             proj_zero[0, 0],
             proj_zero[0, 1],
             color="black",
-            marker="x",
+            marker="x",  # type: ignore
             s=300,
             # label="Zero Vector",
         )
@@ -518,7 +519,7 @@ def pca_types(pca: PCA, df: pd.DataFrame, key: str = "H1") -> None:
     }
 
     unique_types = sorted(df["Type"].unique())
-    type_palette = plt.cm.get_cmap("tab10", len(unique_types))
+    type_palette = plt.cm.get_cmap("tab10", len(unique_types))  # type: ignore
     type_cmap = {val: type_palette(i) for i, val in enumerate(unique_types)}
 
     fig, ax = plt.subplots(figsize=(18, 18))
@@ -531,7 +532,7 @@ def pca_types(pca: PCA, df: pd.DataFrame, key: str = "H1") -> None:
         text_color = custom_palette.get(phoneme_type, "black")
 
         ax.scatter(
-            x, y, marker="o", color=type_cmap[phoneme_type], s=100, zorder=3, alpha=0
+            x, y, marker="o", color=type_cmap[phoneme_type], s=100, zorder=3, alpha=0  # type: ignore
         )
         ax.text(
             x, y, length_val, color=text_color, ha="center", va="center", fontsize=12
