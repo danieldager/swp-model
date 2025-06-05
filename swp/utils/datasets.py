@@ -172,7 +172,7 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.Da
         errors = editops(row.Phonemes, row.Prediction)  # type: ignore
         counts = Counter(op for op, _, _ in errors)
         zipped = zip(row.Phonemes, row.Prediction)  # type: ignore
-        indices = [i + 1 for i, (a, b) in enumerate(zipped) if a != b]
+        indices = [i + 1 for i, (a, b) in enumerate(zipped) if a != b]  # type: ignore
 
         # Append results to the respective lists
         edit_distances.append(len(errors))
@@ -282,7 +282,7 @@ def get_evaluation_dataset(query: str | None = None) -> pd.DataFrame:
     r"""Return dataframe of aggregated test data.
     Set `force_recreate` to `True` to enforce recomputation of the data.
     Pass a `query` string to extract a subdataframe."""
-    filepath = get_handmade_dir() / "evaluation_dataset.csv"
+    filepath = get_handmade_dir() / "evaluation.csv"
     converters = {
         "Word": str,
         "Phonemes": literal_eval,

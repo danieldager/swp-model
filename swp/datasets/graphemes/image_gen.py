@@ -6,6 +6,8 @@ from typing import Sequence, TypedDict
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from ...utils.paths import get_fonts_dir
+
 SCRIPT_FONTS = ["brushscriptstd", "Pacifico-Regular"]
 SANS_FONTS = ["Arial", "helvetica"]
 SERIF_FONTS = ["Times_New_Roman", "Georgia"]
@@ -58,7 +60,7 @@ def text_to_grapheme(
     )
 
     img = Image.new("RGB", (W, H), color="white")
-    fnt = ImageFont.truetype(fontname + ".ttf", size)
+    fnt = ImageFont.truetype(get_fonts_dir() / f"{fontname}.ttf", size)
     letter_width = []
     letter_height = []
     letter_patches = []
@@ -146,7 +148,7 @@ def adaptive_get_max_width(
     else:
         rot_set = rot
     cached_widths = _optimized_angle_width_cache.get(rot_set, {})
-    fnt = ImageFont.truetype(font + ".ttf", size)
+    fnt = ImageFont.truetype(get_fonts_dir() / f"{font}.ttf", size)
     width = 0
     for letter in word:
         key = (letter, font, size)

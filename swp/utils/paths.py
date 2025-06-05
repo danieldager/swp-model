@@ -120,3 +120,8 @@ def get_morphemes_dir() -> pathlib.Path:
     morphemes_dir = get_stimuli_dir() / "morphemes_data"
     morphemes_dir.mkdir(parents=True, exist_ok=True)
     return morphemes_dir
+
+
+def get_fonts_dir() -> pathlib.Path:
+    fonts_dir = repo_root / "fonts"
+    return fonts_dir

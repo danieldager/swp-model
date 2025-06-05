@@ -108,7 +108,9 @@ class TaskLosses(nn.Module):
         task_targets, task_ids = targets
         loss = 0
         for i in range(len(task_targets)):
-            ith_task_loss = self.task_losses[i](
+            ith_task_loss = self.task_losses[
+                i
+            ](  # TODO correct problem, other losses automatically extract
                 preds[i][task_ids == i], task_targets[i]
             )
             if self.weights is not None:

@@ -6,7 +6,6 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
-from ..utils.datasets import get_phoneme_to_id
 from ..utils.grid_search import grid_search_log
 from ..utils.models import save_weights
 
