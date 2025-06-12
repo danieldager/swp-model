@@ -32,8 +32,8 @@ MODEL_NAME="Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
 TRAIN_NAME="b1024_l0.001_fall_sn"
 CHECKPOINT="75"
 BATCH_SIZE=2048
-MAX_SAMPLES=300000
-BASE_N=3
+MAX_SAMPLES=1500000
+BASE_N=7
 MODEL_TYPE="matrix"  # Options: bias, matrix
 
 # Function to calculate elapsed time
@@ -67,7 +67,7 @@ echo "-----------------------------------"
 echo "Generating ngram datasets..."
 STEP1_START=$(date +%s)
 
-for n in {3..10}; do
+for n in {7..10}; do
     echo "Generating ${n}grams dataset..."
     TASK_START=$(date +%s)
     
@@ -92,7 +92,7 @@ echo "==================================="
 echo "Extracting embeddings for all datasets..."
 STEP2_START=$(date +%s)
 
-for n in {3..10}; do
+for n in {7..10}; do
     echo "Extracting embeddings for ${n}grams..."
     TASK_START=$(date +%s)
     
@@ -124,7 +124,7 @@ echo "==================================="
 echo "Running interventions on all datasets..."
 STEP3_START=$(date +%s)
 
-for n in {3..10}; do
+for n in {7..10}; do
     echo "Running interventions for ${n}grams..."
     TASK_START=$(date +%s)
     

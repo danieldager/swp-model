@@ -58,7 +58,6 @@ converters = {
     "Real": bool,
 }
 
-
 def get_intervention_dataset(
     data: pd.DataFrame,
     emb_h: np.ndarray,
@@ -96,18 +95,23 @@ def get_intervention_dataset(
     match_cols = [c for c in index_cols if c != f"P{index}"]
     groups = data.groupby(match_cols, sort=False)
 
+    print(groups)
+
     if target_type == "type":
         target_set = vowels if target_id == "V" else consonants
 
     # iterate over the groups
     for keys, group in groups:
 
+        print(group)
+
         if target_type == "type":
             mask = group[f"P{index}"].isin(target_set)
             dfx = group[~mask]  # not in the target set
             dfy = group[mask]  # in the target set
 
-            if dfy.empty or dfx.empty:
+            if dfx.empty or dfy.empty:
+                print("Nothing to pair")
                 continue  # nothing to pair here
 
             i = np.array(dfx["Tokens"].to_list())
@@ -160,7 +164,7 @@ def get_intervention_dataset(
     print(f"TensorDataset size: {len(dataset)}")
     train_size = int(0.8 * len(dataset))
     valid_size = len(dataset) - train_size
-    print(f"Train size: {train_size}, Valid size: {valid_size}")
+    print(f"Train size: {train_size}, Valid size: {valid_size}\n")
     train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
@@ -189,28 +193,6 @@ class Net(nn.Module):
         x = self.fc1(x)
         # x = F.relu(x)
         return x
-
-
-class CombinedLoss(nn.Module):
-    """
-    mixed_loss = mse + alpha * (1 - cosine)
-    """
-
-    def __init__(self, alpha: float = 0.1, reduction: str = "mean"):
-        super().__init__()
-        self.alpha = alpha
-        self.mse = nn.MSELoss(reduction=reduction)
-
-    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        e_dist = self.mse(pred, target)
-        c_dist = 1.0 - F.cosine_similarity(pred, target, dim=1)
-        if c_dist.ndim:  # keep 'mean' behaviour consistent
-            c_dist = c_dist.mean()
-
-        # with torch.no_grad():  # use to tune ratio
-        #     print("mse", e_dist.item(), "cos", c_dist.item())
-
-        return e_dist + self.alpha * c_dist
 
 
 if __name__ == "__main__":
@@ -315,7 +297,7 @@ if __name__ == "__main__":
         data["Phonemes"] = data["No_Stress"]
 
     h_path = f"{path}/control/{length}grams_h.npy"
-    emb_h = np.load(h_path)  # [np.arange(len(data)), data.Length, :]
+    emb_h = np.load(h_path)
 
     c_path = f"{path}/control/{length}grams_c.npy"
     emb_c = np.load(c_path)
@@ -340,7 +322,9 @@ if __name__ == "__main__":
     start_token = torch.Tensor([model.start_token_id])
     encoder_hidden = model.encoder.hidden_size
     decoder_hidden = model.decoder.hidden_size
+    encoder = model.encoder.to(device)
     decoder = model.decoder.to(device)
+    encoder.eval()
     decoder.eval()
 
     results = {
@@ -350,7 +334,6 @@ if __name__ == "__main__":
         "Distance": [],
         "Accuracy": [],
         "Stability": [],
-        # "All_Accuracy": [],
         "Batch_Size": [],
         "Hidden_Size": [],
         "Learning_Rate": [],

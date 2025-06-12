@@ -56,12 +56,6 @@ if __name__ == "__main__":
         help="Test dataloader batch size",
     )
     parser.add_argument(
-        "--checkpoint",
-        type=str,
-        default=None,
-        help="Checkpoint to load",
-    )
-    parser.add_argument(
         "--include_stress",
         action="store_true",
         help="Include stress in phonemes",
@@ -104,9 +98,9 @@ if __name__ == "__main__":
     model_name = args.model_name
     train_name = args.train_name
     batch_size = args.batch_size
-    checkpoint = args.checkpoint
     include_stress = args.include_stress
     error_meter = classic_errors
+    verbose = args.verbose
 
     seed_everything()
     backend_setup()
@@ -139,7 +133,7 @@ if __name__ == "__main__":
         test_df = get_evaluation_dataset()
         test_loader = get_phoneme_testloader(batch_size, include_stress)
     elif args.dataset == "sonority":
-        test_df = get_sonority_dataset(include_stress=include_stress)
+        test_df = get_sonority_dataset()
         test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
     elif args.dataset == "train":
         test_df = get_train_dataset()
@@ -152,15 +146,22 @@ if __name__ == "__main__":
     checkpoints = sorted([f.stem.split(".")[-1] for f in weights_dir.glob("*.pth")])
 
     for checkpoint in checkpoints:
-        print(f"Epoch: {checkpoint:<3}", end="\r")
+        if "_" in checkpoint or int(checkpoint) > 100:
+            print(f"passing {checkpoint}")
+            continue
+        if verbose:
+            print(f"Epoch: {checkpoint:<3}   ", end="\r")
+
         results_dir = (
             get_evaluation_dir()
-            / f"{model_name}~{train_name}"
-            / "epochs"
+            / f"{model_name}"
+            / f"{train_name}"
             / f"{checkpoint}"
             / "control"
         )
-        results_dir.mkdir(exist_ok=True, parents=True)
+        if args.save_all:
+            results_dir.mkdir(exist_ok=True, parents=True)
+
         model = get_model(args.model_name)
         load_weights(
             model=model,
@@ -194,7 +195,7 @@ if __name__ == "__main__":
                     "Prediction": literal_eval,
                 },
             )
-        test_results = enrich_for_plotting(test_results, include_stress)
+        test_results = enrich_for_plotting(results, include_stress)
 
         # compute errors
         errors_by_condition["epoch"].append(checkpoint)
@@ -204,12 +205,16 @@ if __name__ == "__main__":
                 test_results["Condition"] == condition, "Edit_Distance"
             ]
             error_count = (edit_distances > 0).sum()
+            # if condition == "RLSL":
+            #     print(checkpoint, error_count)
             mean_edits = edit_distances.mean()
             errors_by_condition[condition].append(error_count)
             edits_by_condition[condition].append(mean_edits)
 
     # save results
-    results_dir = get_evaluation_dir() / f"{model_name}~{train_name}" / "development"
+    results_dir = (
+        get_evaluation_dir() / f"{model_name}" / f"{train_name}" / "development"
+    )
     results_dir.mkdir(exist_ok=True, parents=True)
     errors_df = pd.DataFrame(errors_by_condition)
     edits_df = pd.DataFrame(edits_by_condition)
@@ -217,7 +222,7 @@ if __name__ == "__main__":
     edits_df.to_csv(results_dir / "dev_edits.csv")
 
     # plot results
-    figures_dir = get_figures_dir() / f"{model_name}~{train_name}" / "development"
+    figures_dir = get_figures_dir() / f"{model_name}" / f"{train_name}" / "development"
     figures_dir.mkdir(exist_ok=True, parents=True)
     development_plots(errors_df, figures_dir, "errors")
     development_plots(edits_df, figures_dir, "edits")

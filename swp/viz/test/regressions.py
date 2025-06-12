@@ -56,7 +56,7 @@ def regression_plots(
     dfs: pd.DataFrame | list[pd.DataFrame],
     path: pathlib.Path | None = None,
     mode: str = "both",
-    var: str = "ci",
+    var: str | None = "ci",
 ) -> None:
     """Perform regression analysis on test data, plot feature importance.
 
@@ -103,7 +103,8 @@ def regression_plots(
     fi_sorted = fi_df.sort_values(by="AbsImp", ascending=True)
 
     plt.rcParams.update({"font.size": 24})
-    fig1, ax1 = plt.subplots(figsize=(11, 6))
+    # fig1, ax1 = plt.subplots(figsize=(11, 6))
+    fig1, ax1 = plt.subplots(figsize=(7, 6))
     # bar plot with error bars
     sns.barplot(
         data=fi_sorted,
@@ -119,7 +120,7 @@ def regression_plots(
     # Force x-axis symmetric around 0
     max_imp = fi_sorted["AbsImp"].max()
     ax1.set_xlim(-max_imp, max_imp)
-    ax1.set_xlabel("Feature Importance", labelpad=-5)
+    ax1.set_xlabel("Feature Importance", labelpad=-15)
     ax1.set_ylabel("")
     ax1.legend([], [], frameon=False)
     ticks = np.linspace(-max_imp - 0.005, max_imp + 0.005, 5)
