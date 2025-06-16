@@ -87,6 +87,7 @@ class TrainArgs(TypedDict):
     include_stress: bool
     loss: str
     query: str | None
+    seed: int
 
 
 def get_model_args(model_name: str) -> ModelArgs:
@@ -269,7 +270,7 @@ def get_train_name(
 ) -> str:
     r"""Generate the `train_name` from the training arguments."""
     fold_str = "all" if fold_id is None else fold_id
-    train_name = f"b{batch_size}_l{learning_rate}_f{fold_str}_s{seed}"
+    train_name = f"b{batch_size}_l{learning_rate}_f{fold_str}_g{seed}"
     if include_stress:
         train_name = f"{train_name}_sw"
     else:
@@ -308,6 +309,7 @@ def get_train_args(train_name: str) -> TrainArgs:
             "include_stress": include_stress,
             "loss": str_args["e"],
             "query": query,
+            "seed": int(str_args["g"]),
         }
     )
     return train_args

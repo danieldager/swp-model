@@ -20,7 +20,7 @@ def calc_importance(
     df: pd.DataFrame,
     mode: str = "real",
     y_column: str = "Edit_Distance",
-) -> tuple[Pipeline, float, float, float]:
+) -> tuple[Pipeline, *tuple[float, ...]]:
 
     # Prepare data
     df = df.copy()
@@ -31,6 +31,9 @@ def calc_importance(
     elif mode == "both":
         continuous_features = ["Length"]
         categorical_features = ["Lexicality", "Morphology"]
+    elif mode == "forced":
+        continuous_features = ["Length", "Zipf_Frequency"]
+        categorical_features = ["Morphology"]
     else:
         raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
     X = df[continuous_features + categorical_features]
@@ -59,8 +62,9 @@ def calc_importance(
         random_state=42,
     )
     # importances_mean is an array of mean importances per feature
-    fi1 = result.importances_mean[0]  # type: ignore
-    fi2 = result.importances_mean[1]  # type: ignore
-    fi3 = result.importances_mean[2]  # type: ignore
+    fis = []
+    num_fis = len(continuous_features) + len(categorical_features)
+    for i in range(num_fis):
+        fis.append(result.importances_mean[i])  #  type: ignore
 
-    return pipeline, fi1, fi2, fi3
+    return pipeline, *fis

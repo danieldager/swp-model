@@ -167,12 +167,15 @@ def get_grapheme_trainloader(
     batch_size: int,
     include_stress: bool = False,
     generator: torch.Generator | None = None,
+    query: str | None = None,
 ) -> DataLoader:
     r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
     Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
+
+    Passing a `query` string gives a dataloader containing the corresponding queried dataset.
     """
     check_train_dataset(get_graphemes_dir())
     grapheme_set = RandomizedFoldRepetitionDataset(
@@ -182,6 +185,7 @@ def get_grapheme_trainloader(
         phoneme_to_id=get_phoneme_to_id(),
         include_stress=include_stress,
         transform=torchvision.transforms.ToTensor(),
+        query=query,
     )
     if generator is None:
         generator = torch.Generator().manual_seed(42)
@@ -280,6 +284,7 @@ def get_mixed_trainloader(
     batch_size: int,
     include_stress: bool = False,
     generator: torch.Generator | None = None,
+    query: str | None = None,
 ) -> DataLoader:
     r"""Return a dataloader containing both the grapheme training data corresponding to the `fold_id` fold
     and the ImageNet dataset, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
@@ -287,6 +292,8 @@ def get_mixed_trainloader(
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
+
+    Passing a `query` string gives a dataloader containing the corresponding queried grapheme dataset.
     """
     check_train_dataset(get_graphemes_dir())
     grapheme_set = RandomizedFoldRepetitionDataset(
@@ -296,6 +303,7 @@ def get_mixed_trainloader(
         phoneme_to_id=get_phoneme_to_id(),
         include_stress=include_stress,
         transform=torchvision.transforms.ToTensor(),
+        query=query,
     )
     if train:
         imagenet_split = "train"
@@ -338,3 +346,47 @@ def get_mixed_trainloader(
         generator=generator,
     )
     return train_loader
+
+
+def get_mixed_testloader(
+    batch_size: int,
+    include_stress: bool = False,
+    query: str | None = None,
+) -> DataLoader:
+    r"""Return a dataloader containing both the grapheme test data and the ImageNet
+    test data, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
+
+    Passing a `query` string gives a dataloader containing the corresponding queried grapheme dataset.
+    """
+    check_test_dataset(get_graphemes_dir())
+    if include_stress:
+        phoneme_label = "Phonemes"
+    else:
+        phoneme_label = "No Stress"
+    test_df = get_evaluation_dataset(query=query)
+    word_to_phoneme = dict(zip(test_df["Word"], test_df[phoneme_label]))
+    grapheme_set = RepetitionDataset(
+        root=get_graphemes_dir() / "test",
+        word_to_phoneme=word_to_phoneme,
+        phoneme_to_id=get_phoneme_to_id(),
+        transform=torchvision.transforms.ToTensor(),
+    )
+    imagenet_transform = torchvision.transforms.Compose(
+        [
+            torchvision.transforms.Resize(256),
+            torchvision.transforms.CenterCrop(224),
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(
+                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+            ),
+        ]
+    )
+    imagenet_root = get_imagenet_dir()
+    imagenet_set = ImageNet(
+        imagenet_root,
+        split="val",
+        transform=imagenet_transform,
+    )
+    concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
+    test_loader = DataLoader(dataset=concat_dataset, batch_size=batch_size)
+    return test_loader

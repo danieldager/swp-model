@@ -169,3 +169,5 @@ phonemes_to_id.json
 public_datasets
 generated_scripts
 fonts
+notebooks/*
+! notebooks/*.ipynb

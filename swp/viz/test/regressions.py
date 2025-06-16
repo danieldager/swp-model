@@ -65,7 +65,7 @@ def regression_plots(
             'Morphology', 'Sequence Length', 'Bigram Frequency') and target ('Edit Distance').
         path (pathlib.Path): Directory path where plots will be saved.
         mode (int): Flag to indicate which subset of the data to use.
-        var (str): Type of error bar to use. Defaults to "se".
+        var (str): Type of error bar to use. Defaults to "ci".
     """
     if isinstance(dfs, pd.DataFrame):
         dfs = [dfs]
@@ -86,7 +86,7 @@ def regression_plots(
             "Length": "Len.",
             "Lexicality": "Lex.",
             "Morphology": "Mor.",
-            "Zipf Frequency": "Frq.",
+            "Zipf_Frequency": "Frq.",
         }
         features = [
             next((v for k, v in mapping.items() if k in fn), fn) for fn in features

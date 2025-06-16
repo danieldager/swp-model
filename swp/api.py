@@ -71,6 +71,7 @@ def get_train_method(
             learn_rate,
             fold_id,
             include_stress,
+            seed=42,  # TODO make seed and loss modular
         )
     else:
         training_name = training_name

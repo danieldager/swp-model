@@ -14,6 +14,12 @@ from swp.utils.datasets import create_epoch, get_evaluation_dataset, get_train_d
 from swp.utils.paths import get_graphemes_dir
 from swp.utils.setup import seed_everything
 
+# see
+# https://docs.python.org/3/library/signal.html#signal.signal
+# https://docs.python.org/3/reference/datamodel.html#frame-objects
+# https://docs.python.org/3/reference/datamodel.html#code-objects
+# for backup when signal
+
 if __name__ == "__main__":
 
     query = "(Word.str.len() < 11) & (Word.str.len() > 1)"

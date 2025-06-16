@@ -16,6 +16,7 @@ if _ON_JEAN_ZAY:
     weights_dir = work_dir / "weights"
     results_dir = work_dir / "results"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
+    graphemes_dir = pathlib.Path(os.environ["SCRATCH"])
 elif _ON_OBERON:
     pass  # TODO set paths for Oberon
 else:  # personnal computer
@@ -24,6 +25,7 @@ else:  # personnal computer
     weights_dir = repo_root / "weights"
     results_dir = repo_root / "results"
     public_dataset_dir = repo_root / "public_datasets"
+    graphemes_dir = stimuli_dir / "graphemes"
 
 
 def get_root() -> pathlib.Path:

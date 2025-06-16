@@ -180,7 +180,6 @@ def reworked_max_font_size(
     max_spacing = 3
     max_length = np.max([len(word) for word in words])
     candidates = [word for word in words if len(word) >= max_length - 3]
-    print([word for word in words if len(word) == max_length])
     real_candidates = []
     real_candidates.extend([word.lower() for word in candidates])
     real_candidates.extend([word.upper() for word in candidates])
