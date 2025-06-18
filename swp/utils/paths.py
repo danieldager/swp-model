@@ -16,7 +16,7 @@ if _ON_JEAN_ZAY:
     weights_dir = work_dir / "weights"
     results_dir = work_dir / "results"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
-    graphemes_dir = pathlib.Path(os.environ["SCRATCH"])
+    graphemes_dir = pathlib.Path(os.environ["SCRATCH"]) / "graphemes"
 elif _ON_OBERON:
     pass  # TODO set paths for Oberon
 else:  # personnal computer
@@ -90,7 +90,6 @@ def get_evaluation_dir() -> pathlib.Path:
 
 
 def get_graphemes_dir() -> pathlib.Path:
-    graphemes_dir = get_stimuli_dir() / "graphemes"
     graphemes_dir.mkdir(parents=True, exist_ok=True)
     return graphemes_dir
 
