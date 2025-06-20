@@ -30,3 +30,9 @@ python -m nltk.downloader "averaged_perceptron_tagger" "cmudict"
 
 module purge
 conda deactivate
+
+mkdir -p $WORK/weights/cornet
+wget https://s3.amazonaws.com/cornet-models/cornet_z-5c427c9c.pth -P $WORK/weights/cornet
+wget https://s3.amazonaws.com/cornet-models/cornet_rt-933c001c.pth -P $WORK/weights/cornet
+wget https://s3.amazonaws.com/cornet-models/cornet_s-1d3f7974.pth -P $WORK/weights/cornet
+wget https://s3.amazonaws.com/cornet-models/cornet_r-5930a990.pth -P $WORK/weights/cornet

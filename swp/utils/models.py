@@ -1,13 +1,13 @@
-from hashlib import md5
 from typing import TypedDict
 
 import torch
+from torch.utils.model_zoo import load_url
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
 from .datasets import check_query, unhash_query
-from .paths import get_weights_dir
+from .paths import _ON_JEAN_ZAY, get_weights_dir
 
 
 def save_weights(
@@ -322,3 +322,17 @@ def get_train_args(train_name: str) -> TrainArgs:
         }
     )
     return train_args
+
+
+def load_cornet_checkpoint(model_letter: str, model_hash: str, map_location) -> dict:
+    file_name = f"cornet_{model_letter.lower()}-{model_hash}.pth"
+    if _ON_JEAN_ZAY:
+        cornet_dir = get_weights_dir() / "cornet"
+        cornet_dir.mkdir(parents=True, exist_ok=True)
+        ckpt_data = torch.load(
+            cornet_dir / file_name, map_location=map_location, weights_only=False
+        )
+    else:
+        url = f"https://s3.amazonaws.com/cornet-models/{file_name}"
+        ckpt_data = load_url(url, map_location=map_location)
+    return ckpt_data
