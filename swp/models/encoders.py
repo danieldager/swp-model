@@ -3,9 +3,10 @@ from typing import Callable, Type, Union
 import torch
 import torch.fx
 import torch.nn as nn
+from torch.utils.model_zoo import load_url
 from torchvision.models.feature_extraction import create_feature_extractor
 
-from ..utils.models import load_cornet_checkpoint
+from ..utils.paths import _ON_JEAN_ZAY, get_weights_dir
 from .cornet_r import HASH as HASH_R
 from .cornet_r import CORnet_R
 from .cornet_rt import HASH as HASH_RT
@@ -168,9 +169,16 @@ def cornet_loader(
         )
     model = model_class()
     if pretrained:
-        ckpt_data = load_cornet_checkpoint(
-            model_letter=model_letter, model_hash=model_hash, map_location=map_location
-        )
+        file_name = f"cornet_{model_letter.lower()}-{model_hash}.pth"
+        if _ON_JEAN_ZAY:
+            cornet_dir = get_weights_dir() / "cornet"
+            cornet_dir.mkdir(parents=True, exist_ok=True)
+            ckpt_data = torch.load(
+                cornet_dir / file_name, map_location=map_location, weights_only=False
+            )
+        else:
+            url = f"https://s3.amazonaws.com/cornet-models/{file_name}"
+            ckpt_data = load_url(url, map_location=map_location)
         state_dict = ckpt_data["state_dict"]
         new_state_dict = {k.removeprefix("module."): v for (k, v) in state_dict.items()}
         model.load_state_dict(new_state_dict)
