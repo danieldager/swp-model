@@ -280,6 +280,10 @@ def get_train_name(
         train_name = f"{train_name}_ec"
     elif loss == "first":
         train_name = f"{train_name}_ef"
+    else:
+        raise NotImplementedError(
+            f"No support for loss {loss} is currently implemented"
+        )
     if query is not None:
         hashed = check_query(query=query)
         train_name = f"{train_name}_q{hashed}"
@@ -297,6 +301,12 @@ def get_train_args(train_name: str) -> TrainArgs:
         include_stress = False
     else:
         raise ValueError(f'Stress value not recognized : {str_args["s"]}')
+    if str_args["e"] == "c":
+        loss = "classic"
+    elif str_args["e"] == "f":
+        loss = "first"
+    else:
+        raise ValueError(f'Loss value not recognized : {str_args["e"]}')
     query = None
     if "q" in str_args:
         query = unhash_query(f"_{str_args["q"]}")
@@ -306,7 +316,7 @@ def get_train_args(train_name: str) -> TrainArgs:
             "learning_rate": float(str_args["l"]),
             "fold_id": None if str_args["f"] == "all" else int(str_args["f"]),
             "include_stress": include_stress,
-            "loss": str_args["e"],
+            "loss": loss,
             "query": query,
             "seed": int(str_args["g"]),
         }

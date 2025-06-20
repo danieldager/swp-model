@@ -147,6 +147,7 @@ if __name__ == "__main__":
         learn_rate = args.learn_rate
         fold_id = args.fold_id
         include_stress = args.include_stress
+        loss = "classic"  # TODO add loss to arguments
         seed = args.seed
         train_name = get_train_name(
             batch_size,
@@ -154,6 +155,7 @@ if __name__ == "__main__":
             fold_id,
             include_stress,
             seed=seed,
+            loss=loss,
             query=query,
         )
     else:
@@ -164,6 +166,7 @@ if __name__ == "__main__":
         fold_id = train_args["fold_id"]
         include_stress = train_args["include_stress"]
         seed = train_args["seed"]
+        loss = train_args["loss"]
         query = train_args["query"]
 
     if args.model_name is None:
@@ -202,7 +205,12 @@ if __name__ == "__main__":
         }
         model.decoder.load_state_dict(decoder_dict)
 
-    auditory_loss = FirstErrorXENT()  # can switch to AuditoryXENT()
+    if loss == "classic":
+        auditory_loss = AuditoryXENT()
+    elif loss == "first":
+        auditory_loss = FirstErrorXENT()
+    else:
+        raise ValueError("Argument of loss isn't recognized, use `classic` or `first`")
 
     if args.grapheme_only:
         train_loader = get_grapheme_trainloader(
