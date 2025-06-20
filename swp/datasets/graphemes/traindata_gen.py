@@ -71,7 +71,7 @@ def random_cartesian_product(
             items["case"] = [i == 0 for i in range(len(word))]
         return items
 
-    draws = generator.choice(amount, size=num_samples)
+    draws = generator.choice(amount, size=num_samples, replace=False)
     return [id_to_dict(draw) for draw in draws]
 
 
