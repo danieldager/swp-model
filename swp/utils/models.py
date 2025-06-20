@@ -281,8 +281,7 @@ def get_train_name(
     elif loss == "first":
         train_name = f"{train_name}_ef"
     if query is not None:
-        hashed = md5(query.encode()).hexdigest()[:8]
-        check_query(query=query, hashed=f"_{hashed}")
+        hashed = check_query(query=query)
         train_name = f"{train_name}_q{hashed}"
     # TODO add support for visual dataset, mixed or not
     return train_name

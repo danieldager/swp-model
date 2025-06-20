@@ -21,7 +21,7 @@ from swp.models.decoders import DecoderLSTM, DecoderRNN
 from swp.models.encoders import CorNetEncoder
 from swp.models.losses import AuditoryXENT, FirstErrorXENT, TaskLosses
 from swp.train.repetition import train
-from swp.utils.datasets import get_phoneme_to_id
+from swp.utils.datasets import check_query, get_phoneme_to_id
 from swp.utils.models import get_model, get_model_name, get_train_args, get_train_name
 from swp.utils.setup import backend_setup, seed_everything, set_device
 
@@ -139,6 +139,8 @@ if __name__ == "__main__":
 
     # TODO add query ?
     query = "(Word.str.len() < 11) & (Word.str.len() > 1)"
+    if query is not None:
+        check_query(query=query)
 
     if args.train_name is None:
         batch_size = args.batch_size

@@ -389,8 +389,8 @@ def create_folds(
         generator = np.random.default_rng(seed=42)
     if query is not None:
         train_data = train_data.query(query)
-        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
-        check_query(query=query, hashed=query_str)
+        hashed = check_query(query=query)
+        query_str = f"_{hashed}"
     folds_dir = get_folds_dir()
     dataset_len = len(train_data.index)
 
@@ -423,8 +423,8 @@ def get_train_fold(
     train_df = None
     query_str = ""
     if query is not None:
-        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
-        check_query(query=query, hashed=query_str)
+        hashed = check_query(query=query)
+        query_str = f"_{hashed}"
     csv_train_fold_path = get_folds_dir() / f"train_fold_{fold_id}{query_str}.csv"
     if force_recreate or not csv_train_fold_path.exists():
         train_df = get_train_dataset(force_recreate, query=query)
@@ -461,8 +461,8 @@ def get_valid_fold(
     train_df = None
     query_str = ""
     if query is not None:
-        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
-        check_query(query=query, hashed=query_str)
+        hashed = check_query(query=query)
+        query_str = f"_{hashed}"
     csv_valid_fold_path = get_folds_dir() / f"valid_fold_{fold_id}{query_str}.csv"
     if force_recreate or not csv_valid_fold_path.exists():
         train_df = get_train_dataset(force_recreate, query=query)
@@ -509,8 +509,8 @@ def create_epoch(
     query_str = ""
     if query is not None:
         train_data = train_data.query(query)
-        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
-        check_query(query=query, hashed=query_str)
+        hashed = check_query(query=query)
+        query_str = f"_{hashed}"
     array_epoch_path = (
         get_folds_dir()
         / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
@@ -543,8 +543,8 @@ def get_epoch_numpy(
     Pass a `query` string to get the epoch corresponding to the queried data."""
     query_str = ""
     if query is not None:
-        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
-        check_query(query=query, hashed=query_str)
+        hashed = check_query(query=query)
+        query_str = f"_{hashed}"
     array_epoch_path = (
         get_folds_dir()
         / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
@@ -568,8 +568,8 @@ def get_epoch(
     Pass a `query` string to get the epoch corresponding to the queried data."""
     query_str = ""
     if query is not None:
-        query_str = f"_{md5(query.encode()).hexdigest()[:8]}"
-        check_query(query=query, hashed=query_str)
+        hashed = check_query(query=query)
+        query_str = f"_{hashed}"
     array_epoch_path = (
         get_folds_dir()
         / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
@@ -701,8 +701,12 @@ def get_phoneme_to_id(
     return phoneme_dict
 
 
-def check_query(query: str, hashed: str):
-    r"""Check that no collision happen with other saved files when hashing the query"""
+def check_query(query: str) -> str:
+    r"""
+    Check that no collision happen with other saved files when hashing the query
+    Returns the hash
+    """
+    hashed = md5(query.encode()).hexdigest()[:8]
     stored_hashes_path = get_stimuli_dir() / "hashed_queries.json"
     if stored_hashes_path.exists():
         with stored_hashes_path.open("r") as f:
@@ -717,6 +721,7 @@ def check_query(query: str, hashed: str):
         raise RuntimeError(
             f"Hash {hashed} has already another associated query than : {query}"
         )
+    return hashed
 
 
 def unhash_query(hashed: str) -> str:
