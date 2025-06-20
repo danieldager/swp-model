@@ -309,7 +309,7 @@ def get_train_args(train_name: str) -> TrainArgs:
         raise ValueError(f'Loss value not recognized : {str_args["e"]}')
     query = None
     if "q" in str_args:
-        query = unhash_query(f"_{str_args["q"]}")
+        query = unhash_query(str_args["q"])
     train_args = TrainArgs(
         {
             "batch_size": int(str_args["b"]),
