@@ -20,7 +20,7 @@ from swp.models.autoencoder import Unimodel
 from swp.models.decoders import DecoderLSTM, DecoderRNN
 from swp.models.encoders import CorNetEncoder
 from swp.models.losses import AuditoryXENT, FirstErrorXENT, TaskLosses
-from swp.train.repetition import train
+from swp.train.reading import train
 from swp.utils.datasets import check_query, get_phoneme_to_id
 from swp.utils.models import get_model, get_model_name, get_train_args, get_train_name
 from swp.utils.setup import backend_setup, seed_everything, set_device
