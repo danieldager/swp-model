@@ -294,7 +294,7 @@ def get_evaluation_dataset(query: str | None = None) -> pd.DataFrame:
         raise FileNotFoundError("User does not have the evaluation dataset.")
 
     if query is not None:
-        dataframe = dataframe.query(query)
+        dataframe = dataframe.query(query).reset_index(drop=True)
     return dataframe
 
 
@@ -363,7 +363,7 @@ def get_train_dataset(
     else:
         dataframe = create_train_data()
     if query is not None:
-        dataframe = dataframe.query(query)
+        dataframe = dataframe.query(query).reset_index(drop=True)
     return dataframe
 
 
@@ -388,9 +388,9 @@ def create_folds(
     if generator is None:
         generator = np.random.default_rng(seed=42)
     if query is not None:
-        train_data = train_data.query(query)
         hashed = check_query(query=query)
         query_str = f"_{hashed}"
+        train_data = train_data.query(query).reset_index(drop=True)
     folds_dir = get_folds_dir()
     dataset_len = len(train_data.index)
 
@@ -508,9 +508,9 @@ def create_epoch(
         generator = np.random.default_rng(seed=42)
     query_str = ""
     if query is not None:
-        train_data = train_data.query(query)
         hashed = check_query(query=query)
         query_str = f"_{hashed}"
+        train_data = train_data.query(query).reset_index(drop=True)
     array_epoch_path = (
         get_folds_dir()
         / f"epoch_{'complete' if fold_id is None else f'fold_{fold_id}'}{query_str}.npy"
