@@ -52,8 +52,9 @@ class RepetitionDataset(ImageFolder):
         allow_empty: bool = False,
     ):
 
-        def to_phoneme(word: str) -> torch.Tensor:
-            phonemes: list[str] = word_to_phoneme[word]
+        def to_phoneme(target: int) -> torch.Tensor:
+            word = self.classes[target]
+            phonemes = word_to_phoneme[word]
             phonemes.append("<EOS>")
             return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
 
