@@ -190,8 +190,14 @@ def get_grapheme_trainloader(
     )
     if generator is None:
         generator = torch.Generator().manual_seed(42)
+    pad_value = get_phoneme_to_id()["<PAD>"]
+    my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
     grapheme_loader = DataLoader(
-        grapheme_set, batch_size, shuffle=True, generator=generator
+        grapheme_set,
+        batch_size,
+        shuffle=True,
+        generator=generator,
+        collate_fn=my_collate,
     )
     return grapheme_loader
 
@@ -217,7 +223,9 @@ def get_grapheme_testloader(
         phoneme_to_id=get_phoneme_to_id(),
         transform=torchvision.transforms.ToTensor(),
     )
-    grapheme_loader = DataLoader(grapheme_set, batch_size)
+    pad_value = get_phoneme_to_id()["<PAD>"]
+    my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
+    grapheme_loader = DataLoader(grapheme_set, batch_size, collate_fn=my_collate)
     return grapheme_loader
 
 
