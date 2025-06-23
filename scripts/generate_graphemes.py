@@ -30,7 +30,7 @@ if __name__ == "__main__":
     all_words = train_words + test_words
     graphemes_dir = get_graphemes_dir()
 
-    create_gen_arg_dict(graphemes_dir, all_words)
+    create_gen_arg_dict(graphemes_dir, all_words, query=query)
     create_train_dataset(graphemes_dir, train_words, 100, seed=42)
     create_test_dataset(graphemes_dir, test_words)
 

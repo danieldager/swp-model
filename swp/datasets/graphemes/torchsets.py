@@ -125,7 +125,7 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         if include_stress:
             phoneme_label = "Phonemes"
         else:
-            phoneme_label = "No Stress"
+            phoneme_label = "No_Stress"
         word_to_phoneme = dict(zip(data_df["Word"], data_df[phoneme_label]))
         super().__init__(
             root,
@@ -207,7 +207,7 @@ def get_grapheme_testloader(
     if include_stress:
         phoneme_label = "Phonemes"
     else:
-        phoneme_label = "No Stress"
+        phoneme_label = "No_Stress"
     test_df = get_evaluation_dataset(query=query)
     word_to_phoneme = dict(zip(test_df["Word"], test_df[phoneme_label]))
     grapheme_set = RepetitionDataset(
@@ -362,7 +362,7 @@ def get_mixed_testloader(
     if include_stress:
         phoneme_label = "Phonemes"
     else:
-        phoneme_label = "No Stress"
+        phoneme_label = "No_Stress"
     test_df = get_evaluation_dataset(query=query)
     word_to_phoneme = dict(zip(test_df["Word"], test_df[phoneme_label]))
     grapheme_set = RepetitionDataset(
