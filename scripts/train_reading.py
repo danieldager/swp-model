@@ -169,13 +169,14 @@ if __name__ == "__main__":
         loss = train_args["loss"]
         query = train_args["query"]
 
+    phoneme_to_id = get_phoneme_to_id(include_stress)
+
     if args.model_name is None:
         recur_type = args.recur_type.upper()
         if recur_type not in ["RNN", "LSTM"]:
             raise ValueError("Invalid recurrent layer type")
         Decoder = DecoderRNN if recur_type == "RNN" else DecoderLSTM
 
-        phoneme_to_id = get_phoneme_to_id(include_stress)
         vocab_size = len(phoneme_to_id)
         encoder = CorNetEncoder(
             hidden_size=args.reading_hidden,
