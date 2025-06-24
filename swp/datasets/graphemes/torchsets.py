@@ -149,7 +149,6 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
             self.generator = torch.Generator().manual_seed(42)
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
-        print(index)
         new_index = int(
             self.id_tensor[
                 self.epoch_ids[index],

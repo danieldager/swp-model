@@ -73,12 +73,14 @@ def train(
 
             # Loss computation
             loss = criterion(output, target)
-            train_loss += loss.item()
+            train_loss += loss.detach().cpu().numpy()
 
             # Error computation
             preds = torch.argmax(output[0], dim=-1)
             mask = target != phoneme_to_id["<PAD>"]
-            train_error += torch.any((preds != target) * mask, dim=1).sum().item()
+            train_error += (
+                torch.any((preds != target) * mask, dim=1).detach().cpu().numpy().sum()
+            )
             # TODO add error computation for visual prediction
 
             # Backward pass
@@ -118,12 +120,18 @@ def train(
 
                 # Loss computation
                 loss = criterion(output, target)
-                valid_loss += loss.item()
+                valid_loss += loss.detach().cpu().numpy()
 
                 # Error computation
                 preds = torch.argmax(output[0], dim=-1)
                 mask = target != phoneme_to_id["<PAD>"]
-                valid_error += torch.any((preds != target) * mask, dim=1).sum().item()
+                valid_error += (
+                    torch.any((preds != target) * mask, dim=1)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .sum()
+                )
                 # TODO add error computation for visual loss
 
         valid_loss /= len(valid_loader)
@@ -144,7 +152,7 @@ def train(
             print(f"Valid Errors: {valid_error}")
             h = epoch_time // 3600
             m = epoch_time % 3600 // 60
-            s = epoch_time % 3600 % 60
+            s = epoch_time % 60
             print(f"Epoch Time: {h:.0f}h {m:.0f}m {s:.0f}s")
 
     grid_search_log(
