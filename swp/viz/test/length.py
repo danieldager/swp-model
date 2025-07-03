@@ -28,7 +28,8 @@ def plot_length_errors(
         dir (pathlib.Path): Directory to save the plot.
     """
     data = df.copy()
-    plt.figure(figsize=(11, 6))
+    # plt.figure(figsize=(11, 6))
+    plt.figure(figsize=(7, 6))
     ax = sns.lineplot(
         data=data,
         x="Length",
@@ -39,10 +40,10 @@ def plot_length_errors(
         markersize=8,
         linewidth=3,
         palette={"real": "red", "pseudo": "blue"},
-        errorbar=var,
+        errorbar=None,
     )
-    plt.xlabel("Length", fontsize=24, labelpad=-10)
-    plt.ylabel("Edit Distance", fontsize=24, labelpad=-5)
+    plt.xlabel("Length", fontsize=24, labelpad=-15)
+    plt.ylabel("Edit Distance", fontsize=24, labelpad=-15)
     handles, labels = ax.get_legend_handles_labels()
     filtered_handles = []
     filtered_labels = []
@@ -53,9 +54,9 @@ def plot_length_errors(
     leg = plt.legend(
         filtered_handles,
         filtered_labels,
-        title="Lexicality & Morphology",
-        fontsize=22,
-        title_fontsize=22,
+        # title="Lexicality & Morphology",
+        # title_fontsize=22,
+        fontsize=20,
         ncol=2,
     )
     plt.setp(leg.get_title(), multialignment="left")

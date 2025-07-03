@@ -18,7 +18,7 @@ echo "Running job on $(hostname)"
 
 # Create logs directory if it doesn't exist
 mkdir -p logs
-mkdir -p logs/test
+# mkdir -p logs/test
 
 # create execution environment
 module purge

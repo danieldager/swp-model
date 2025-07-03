@@ -19,7 +19,7 @@ sns.set_palette("colorblind")
 def plot_sonority_errors(
     df: pd.DataFrame,
     path: pathlib.Path | None = None,
-    var: str = "se",
+    var: str | None = "se",
 ) -> None:
     """Plot average edit distance grouped by sonority.
 
@@ -28,7 +28,8 @@ def plot_sonority_errors(
         path (pathlib.Path): Directory to save the plot.
         var (str): Error bar type, default is 'se' (standard error).
     """
-    plt.figure(figsize=(11, 6))
+    # plt.figure(figsize=(11, 6))
+    plt.figure(figsize=(7, 6))
     ax = sns.lineplot(
         data=df,
         x="Sonority",
@@ -41,7 +42,7 @@ def plot_sonority_errors(
     )
     plt.xlabel("Sonority Gradient", fontsize=24, labelpad=-10)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-15)
-    plt.legend(title="CCV or VCC", fontsize=24, title_fontsize=24)
+    plt.legend(title="", fontsize=24, title_fontsize=24)
     ax.set_xticks([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])
     ax.set_xticklabels(["-5", "", "", "", "", "", "", "", "", "", "5"], fontsize=22)
 

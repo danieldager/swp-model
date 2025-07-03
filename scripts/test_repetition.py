@@ -16,7 +16,11 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
+from swp.datasets.phonemes import (
+    get_ngram_dataset,
+    get_phoneme_testloader,
+    get_sonority_dataset,
+)
 from swp.models.metrics import classic_errors, free_gen_errors
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
@@ -160,6 +164,7 @@ if __name__ == "__main__":
         figures_dir.mkdir(exist_ok=True, parents=True)
 
         ### TESTING ###
+        # TODO: replace with get_dataset(args.dataset)
 
         if args.retest or not (results_dir / "evaluation.csv").exists():
             test_df = get_evaluation_dataset()
@@ -177,7 +182,7 @@ if __name__ == "__main__":
             test_results.to_csv(results_dir / "evaluation.csv")
 
         if args.retest or not (results_dir / f"sonority.csv").exists():
-            ssp_df = get_sonority_dataset(include_stress=include_stress)
+            ssp_df = get_sonority_dataset()
             ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
             ssp_results, _ = test(
                 model=model,
@@ -222,10 +227,10 @@ if __name__ == "__main__":
             results_dir / "sonority.csv", index_col=0, converters=converters
         )
 
-        plot_length_errors(test_results, figures_dir)
-        plot_frequency_errors(test_results, figures_dir)
-        plot_sonority_errors(ssp_results, figures_dir)
-        plot_position_errors_smooth(test_results, figures_dir)
+        # plot_length_errors(test_results, figures_dir)
+        # plot_frequency_errors(test_results, figures_dir)
+        # plot_sonority_errors(ssp_results, figures_dir)
+        # plot_position_errors_smooth(test_results, figures_dir)
         # plot_position_errors_bins(test_results, figures_dir, num_bins=3)
         regression_plots(test_results, figures_dir, "real")
         regression_plots(test_results, figures_dir, "both")

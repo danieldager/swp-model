@@ -2,6 +2,7 @@ from typing import Iterable
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from ..utils.datasets import get_phoneme_to_id
 
@@ -175,3 +176,25 @@ class FirstErrorXENT(nn.CrossEntropyLoss):
         targets = targets.flatten()
 
         return super().forward(audit_preds, targets)
+
+
+class MseCosLoss(nn.Module):
+    """
+    mixed_loss = mse + alpha * (1 - cosine)
+    """
+
+    def __init__(self, alpha: float = 0.1, reduction: str = "mean"):
+        super().__init__()
+        self.alpha = alpha
+        self.mse = nn.MSELoss(reduction=reduction)
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        e_dist = self.mse(pred, target)
+        c_dist = 1.0 - F.cosine_similarity(pred, target, dim=1)
+        if c_dist.ndim:  # keep 'mean' behaviour consistent
+            c_dist = c_dist.mean()
+
+        # with torch.no_grad():  # use to tune ratio
+        #     print("mse", e_dist.item(), "cos", c_dist.item())
+
+        return e_dist + self.alpha * c_dist

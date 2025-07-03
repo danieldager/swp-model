@@ -1,5 +1,6 @@
 from ast import literal_eval
-from typing import Any
+from random import sample
+from typing import Any, Iterable, List
 
 import numpy as np
 import pandas as pd
@@ -168,7 +169,7 @@ def get_phoneme_testloader(
     include_stress: bool = False,
     dataset_df: pd.DataFrame | None = None,
 ) -> DataLoader:
-    r"""Return a dataloader containing the phoneme test data batched in size `batch_size`.
+    r"""Return a dataloader of the phoneme test data with a certain batch size.
     If `include_stress` is set to `True`, phonemes will include stress.
     Pass a dataframe as `override_data_df` to override the test data used.
     """
@@ -229,7 +230,7 @@ def son_score(c):
         )
 
 
-def get_sonority_dataset(include_stress: bool = False) -> pd.DataFrame:
+def get_sonority_dataset() -> pd.DataFrame:
     path = get_dataframe_dir() / f"sonority.csv"
 
     # check if the sonority.csv exists
@@ -355,7 +356,7 @@ def get_bigram_dataset() -> pd.DataFrame:
 
 
 def get_trigram_dataset() -> pd.DataFrame:
-    path = get_dataframe_dir() / f"trigrams.csv"
+    path = get_dataframe_dir() / "trigrams.csv"
     if path.exists():
         return pd.read_csv(path, index_col=0, converters=converters)
 
@@ -416,3 +417,113 @@ def get_trigram_dataset() -> pd.DataFrame:
         trigram_df = pd.DataFrame(df)
         trigram_df.to_csv(path)
         return trigram_df
+
+
+def random_permutations(
+    items: List[str],
+    length: int,
+    limit: int = 100000,
+) -> Iterable[List[str]]:
+    """
+    Yield up to `limit` distinct length-n permutations (with replacement)
+    drawn uniformly at random from `items`.
+
+    items  : list/tuple of symbols (must be hashable)
+    length : length of each list
+    limit  : how many lists to produce (None ⇒ exhaust full space)
+    """
+    size = len(items)  # size of the alphabet
+    total = size**length  # |items|^length possible n-grams
+
+    if limit > total:
+        limit = total
+
+    # get shuffled list of unique indices
+    for idx in sample(range(total), limit):
+        q = idx
+        phones = []
+        for _ in range(length):
+            q, r = divmod(q, size)  # strip least-significant base-n digit
+            phones.append(items[r])  # use remainder as index
+
+        # phones were collected LSB→MSB, so reverse for the right order
+        yield phones[::-1]
+
+
+def get_ngram_dataset(n: int, limit: int = 100000) -> pd.DataFrame:
+    """Generate a dataset of n-grams (n = length) with the given phonemes."""
+    path = get_dataframe_dir() / f"{n}grams.csv"
+    if path.exists():
+        df = pd.read_csv(path, index_col=0, converters=converters)
+
+    else:
+        print(f"Generating {n}grams dataset...")
+
+        # TODO: stress is useless
+        nvowels = [v[:-1] for v in vowels]
+
+        rows = []
+        for word in random_permutations(
+            items=nvowels + consonants,
+            length=n,
+            limit=limit,
+        ):
+            vc = ["V" if p in nvowels else "C" for p in word]
+            row = {
+                "No_Stress": word,
+                "Type": "".join(vc),
+                "Length": n,
+                **{f"P{i}": p for i, p in enumerate(word)},
+                **{f"T{i}": t for i, t in enumerate(vc)},
+            }
+            rows.append(row)
+
+        df = pd.DataFrame(rows)
+        df.to_csv(path)
+
+    return df
+
+
+# Core datasets that take no extra args
+datasets = {
+    "phonemes": get_phoneme_dataset,
+    "bigrams": get_bigram_dataset,
+    "trigrams": get_trigram_dataset,
+    "sonority": get_sonority_dataset,
+    "evaluation": get_evaluation_dataset,
+}
+
+
+def get_dataset(
+    name: str,
+    n: int | None = None,
+) -> pd.DataFrame:
+    """Get a dataset by name. If the dataset is not found, it will be generated.
+    If the dataset is not recognized, a ValueError will be raised.
+    Args:
+        name (str): The name of the dataset to get.
+        n (int, optional): The length of the n-grams to generate. Required for ngrams dataset.
+    Returns:
+        pd.DataFrame: The dataset as a pandas DataFrame.
+    """
+
+    # ngrams datasets
+    if name == "ngrams":
+        if n is None:
+            raise ValueError("n must be specified for ngrams dataset.")
+        return get_ngram_dataset(n)
+
+    # core datasets
+    try:
+        return datasets[name]()
+
+    # handmade datasets
+    except KeyError:
+        path = get_handmade_dir()
+        names = [f.stem for f in path.glob("*.csv") if f.is_file()]
+        if name in names:
+            return get_handmade_dataset(name)
+
+        # if the dataset is not found
+        else:
+            raise ValueError(f"Dataset {name!r} not recognized.")

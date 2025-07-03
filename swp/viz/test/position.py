@@ -19,7 +19,10 @@ sns.set_palette("colorblind")
 
 
 # Function to plot Average Edit Distance by Position
-def plot_position_errors(df: pd.DataFrame, dir: pathlib.Path):
+def plot_position_errors(
+    df: pd.DataFrame,
+    dir: pathlib.Path | None = None,
+):
     """Plot average edit distance by relative position within each sequence.
 
     Parameters:
@@ -73,7 +76,10 @@ def plot_position_errors(df: pd.DataFrame, dir: pathlib.Path):
     plt.ylabel("Error Rate", fontsize=24, labelpad=-40)
     plt.legend(title="Lexicality", fontsize=24, title_fontsize=24)
     # set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
-    plt.savefig(dir / f"pos_errors.png", dpi=300, bbox_inches="tight")
+    if dir:
+        plt.savefig(dir / f"pos_errors.png", dpi=300, bbox_inches="tight")
+    else:
+        plt.show()
     plt.close()
 
 
@@ -179,7 +185,8 @@ def plot_position_errors_smooth(
             )
             set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     else:
-        plt.figure(figsize=(11, 6))
+        # plt.figure(figsize=(11, 6))
+        plt.figure(figsize=(7, 6))
         ax = sns.lineplot(
             x="Position",
             y="Error_Rate",
@@ -191,8 +198,8 @@ def plot_position_errors_smooth(
             palette={"real": "red", "pseudo": "blue"},
             errorbar=var,
         )
-        ax.set_xlabel("Relative Position", fontsize=24, labelpad=-10)
-        ax.set_ylabel("Error Rate", fontsize=24, labelpad=-40)
+        ax.set_xlabel("Relative Position", fontsize=24, labelpad=-15)
+        ax.set_ylabel("Error Rate", fontsize=24, labelpad=-35)
         ax.get_legend().remove()
         set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
 
