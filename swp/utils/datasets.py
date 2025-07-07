@@ -534,7 +534,7 @@ def create_epoch(
 def get_epoch_numpy(
     fold_id: int | None,
     force_recreate: bool = False,
-    epoch_size: int = 10**8,
+    epoch_size: int = 10**6,
     query: str | None = None,
 ) -> np.ndarray:
     r"""Get saved training fold `fold_id` epoch ids as numpy array if they exist, create them otherwise.

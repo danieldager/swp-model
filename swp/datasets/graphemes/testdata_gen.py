@@ -1,14 +1,17 @@
+import json
 from pathlib import Path
 from typing import Sequence
+
+import torch
+import torchvision.transforms.functional as F
 
 from .image_gen import ByFontArgs, get_gen_arg_dict, text_to_grapheme
 
 
 def exhaustive_cartesian_product(
-    word: str,
     image_args: ByFontArgs,
 ) -> list[dict]:
-    r"""Generate all possible arg samples used for grapheme generation with the word `word`.
+    r"""Generate all possible arg samples used for grapheme generation independently of words.
     Possibilities are extracted from the cartesian product as follow :
     - all fonts in `fonts`
     - all global rotations (letter + line inclination) in `global_rot`
@@ -27,20 +30,13 @@ def exhaustive_cartesian_product(
                 for letter_rot in image_args["letter_rotations"]:
                     for size in image_args["font2sizes"][font]:
                         for space in image_args["spaces"]:
-                            for case in [True, False, "Title"]:
-                                if case == "Title":
-                                    case_arg = [i == 0 for i in range(len(word))]
-                                else:
-                                    case_arg = [case for _ in word]
+                            for case_arg in ["upper", "lower", "title"]:
                                 arg_dict = {
-                                    "word": word,
                                     "fontname": font,
                                     "line_angle": line_angle + global_rot_item,
-                                    "angles": [
-                                        letter_rot + global_rot_item for _ in word
-                                    ],
+                                    "angles": letter_rot + global_rot_item,
                                     "size": size,
-                                    "spacing": [space for _ in word],
+                                    "spacing": space,
                                     "case": case_arg,
                                 }
                                 args.append(arg_dict)
@@ -55,28 +51,50 @@ def create_test_dataset(path: Path, words: Sequence[str]) -> None:
     train_gen_arg_dict = get_gen_arg_dict(path)
     test_path = path / "test"
     test_path.mkdir(exist_ok=True, parents=True)
+    images_args = exhaustive_cartesian_product(image_args=train_gen_arg_dict)
     for word in words:
-        images_args = exhaustive_cartesian_product(
-            word=word,
-            image_args=train_gen_arg_dict,
-        )
         word_dir = test_path / word
         word_dir.mkdir(parents=True, exist_ok=True)
         for arg in images_args:
-            im = text_to_grapheme(**arg)
+            im = text_to_grapheme(word=word, **arg)
             im_name = f'{word}_{arg["fontname"]}_{arg["size"]}'
             im_name = f'{im_name}_l{arg["line_angle"]}'
-            im_name = f'{im_name}_cr{"-".join(str(angle) for angle in arg["angles"])}'
-            im_name = f'{im_name}_sp{"-".join(str(space) for space in arg["spacing"])}'
-            if not arg["case"][0]:
-                case_name = "lowers"
-            elif arg["case"][-1]:
-                case_name = "uppers"
+            angles = arg["angles"]
+            if isinstance(angles, int):
+                im_name = f"{im_name}_cr{angles}"
             else:
-                case_name = "title"
-            im_name = f"{im_name}_{case_name}"
+                im_name = f'{im_name}_cr{"-".join(str(angle) for angle in angles)}'
+            spaces = arg["spacing"]
+            if isinstance(spaces, int):
+                im_name = f"{im_name}_sp{spaces}"
+            else:
+                im_name = f'{im_name}_sp{"-".join(str(space) for space in spaces)}'
+            im_name = f"{im_name}_{arg["case"]}"
             im_name = f"{im_name}.jpg"
             im.save(word_dir / im_name)
+
+
+def create_test_tensor_dataset(path: Path, words: Sequence[str]) -> None:
+    # TODO docstring
+    train_gen_arg_dict = get_gen_arg_dict(path)
+    test_path = path / "test"
+    test_path.mkdir(exist_ok=True, parents=True)
+    images_args = exhaustive_cartesian_product(image_args=train_gen_arg_dict)
+    dataset = torch.zeros((len(words), len(images_args), 3, 224, 224))
+    sorted_words = sorted(words)
+    order_tracker = {"words": sorted_words, "img_args": images_args}
+    word_to_id = {}
+    for i, word in enumerate(sorted_words):
+        for j, arg in enumerate(images_args):
+            dataset[i, j] = F.to_tensor(text_to_grapheme(word=word, **arg))
+        word_to_id[word] = i
+    order_tracker_path = test_path / "order_tracker.json"
+    with order_tracker_path.open("w") as f:
+        json.dump(order_tracker, f, indent=4)
+    word_to_id_path = test_path / "word_to_id.json"
+    with word_to_id_path.open("w") as f:
+        json.dump(word_to_id, f, indent=4)
+    torch.save(dataset, test_path / "tensorset.pth")
 
 
 def check_test_dataset(path: Path) -> int:

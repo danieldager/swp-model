@@ -1,7 +1,10 @@
+import json
 from pathlib import Path
 from typing import Sequence
 
 import numpy as np
+import torch
+import torchvision.transforms.functional as F
 
 from .image_gen import ByFontArgs, get_gen_arg_dict, text_to_grapheme
 
@@ -117,6 +120,41 @@ def create_train_dataset(
             im_name = f"{im_name}_{case_name}"
             im_name = f"{im_name}.jpg"
             im.save(word_dir / im_name)
+
+
+def create_train_tensor_dataset(
+    path: Path,
+    words: Sequence[str],
+    images_per_word: int,
+    seed: int | None = None,
+) -> None:
+    # TODO docstring
+    if seed is None:
+        seed = 42
+    dataset_gen_dict = get_gen_arg_dict(path)
+    train_path = path / "train"
+    generator = np.random.default_rng(seed)
+    dataset = torch.zeros((len(words), images_per_word, 3, 224, 224))
+    order_tracker = {}
+    word_to_id = {}
+    for i, word in enumerate(sorted(words)):
+        images_args = random_cartesian_product(
+            num_samples=images_per_word,
+            word=word,
+            image_args=dataset_gen_dict,
+            generator=generator,
+        )
+        for j, arg in enumerate(images_args):
+            dataset[i, j] = F.to_tensor(text_to_grapheme(**arg))
+        order_tracker[word] = images_args
+        word_to_id[word] = i
+    order_tracker_path = train_path / "order_tracker.json"
+    with order_tracker_path.open("w") as f:
+        json.dump(order_tracker, f, indent=4)
+    word_to_id_path = train_path / "word_to_id.json"
+    with word_to_id_path.open("w") as f:
+        json.dump(word_to_id, f, indent=4)
+    torch.save(dataset, train_path / "tensorset.pth")
 
 
 def check_train_dataset(path: Path) -> int:

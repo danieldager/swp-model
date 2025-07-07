@@ -137,7 +137,7 @@ if __name__ == "__main__":
     backend_setup()
     device = set_device()
 
-    # TODO add query ?
+    # TODO add query to args ?
     query = "(Word.str.len() < 11) & (Word.str.len() > 1)"
     if query is not None:
         check_query(query=query)
@@ -258,4 +258,5 @@ if __name__ == "__main__":
         valid_loader=valid_loader,
         num_epochs=args.num_epochs,
         device=device,
+        verbose=args.verbose,
     )

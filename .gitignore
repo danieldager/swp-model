@@ -165,6 +165,7 @@ stimuli/phonemes
 stimuli/graphemes
 stimuli/dataframe
 stimuli/statistics
+stimuli/hashed_queries.json
 phonemes_to_id.json
 public_datasets
 generated_scripts
