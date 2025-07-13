@@ -238,7 +238,7 @@ class CorNetEncoder(VisualEncoder):
     def __init__(self, hidden_size: int, cornet_model: str):
         self.cnn_model = cornet_model
         self.hidden_size = hidden_size
-        cornet = cornet_loader(cornet_model)
+        cornet = cornet_loader(cornet_model, map_location=torch.device("cpu"))
 
         return_nodes = {
             "decoder.flatten.view": "neural_code",

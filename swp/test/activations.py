@@ -39,7 +39,9 @@ def create_LSTM_hook(
         input: tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]],
         output: tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]],
     ) -> None:
-        out, (h, c) = output  # (B, T, V), ((L, B, V), (L, B, V)) when batch_first
+        out, (h, c) = (
+            output  # (B, T, V), ((L, B, V), (L, B, V)) when batch_first, L = layers, B = batch, T = time, V = value
+        )
         buffer["is_batched"] = len(out.shape) == 3
         if include_cell:
             h_free = h.detach().cpu()

@@ -23,6 +23,18 @@ from .paths import (
     get_stimuli_dir,
 )
 
+_DEBUG: bool = False
+
+
+def enable_debugging():
+    global _DEBUG
+    _DEBUG = True
+
+
+def disable_deubgging():
+    global _DEBUG
+    _DEBUG = False
+
 
 def process_dataset(directory: Path, real=False) -> pd.DataFrame:
     r"""Process the hand-made test datasets located in `directory`.
@@ -158,7 +170,6 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.Da
     insertions = []
     deletions = []
     substitutions = []
-    lengths = []
     error_indices = []
     # bigram_frequency = []
 
@@ -179,7 +190,6 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.Da
         insertions.append(counts["insert"])
         deletions.append(counts["delete"])
         substitutions.append(counts["replace"])
-        lengths.append(row.Length)
         error_indices.append(indices)
         # bigram_frequency.append(avg_bigram_freq)
 
@@ -188,7 +198,6 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.Da
     df["Insertions"] = insertions
     df["Deletions"] = deletions
     df["Substitutions"] = substitutions
-    df["Length"] = lengths
     df["Error_Indices"] = error_indices
     # df["Bigram Frequency"] = bigram_frequency
 
@@ -295,7 +304,10 @@ def get_evaluation_dataset(query: str | None = None) -> pd.DataFrame:
 
     if query is not None:
         dataframe = dataframe.query(query).reset_index(drop=True)
-    return dataframe
+    if _DEBUG:
+        return dataframe.head(5)
+    else:
+        return dataframe
 
 
 def get_curated_words() -> list[tuple[str, float]]:
@@ -364,7 +376,10 @@ def get_train_dataset(
         dataframe = create_train_data()
     if query is not None:
         dataframe = dataframe.query(query).reset_index(drop=True)
-    return dataframe
+    if _DEBUG:
+        return dataframe.head(5)
+    else:
+        return dataframe
 
 
 def create_folds(

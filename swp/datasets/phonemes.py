@@ -147,20 +147,17 @@ class PhonemeTestDataset(Dataset):
             self.data_df = get_evaluation_dataset()
         else:
             self.data_df = dataset_df
-        self.epoch_ids = np.arange(len(self.data_df))
         self.phoneme_to_id = phoneme_to_id
         self.phoneme_key = "Phonemes" if include_stress else "No_Stress"
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
-        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
-            self.phoneme_key
-        ].copy()
+        phonemes: list[str] = self.data_df.iloc[index][self.phoneme_key].copy()
         phonemes.append("<EOS>")
         tokenized = torch.Tensor([self.phoneme_to_id[phoneme] for phoneme in phonemes])
         return tokenized, tokenized.clone()
 
     def __len__(self) -> int:
-        return len(self.epoch_ids)
+        return len(self.data_df)
 
 
 def get_phoneme_testloader(

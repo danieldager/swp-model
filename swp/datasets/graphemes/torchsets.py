@@ -75,7 +75,7 @@ class RandomizedTensorRepetitionDataset(Dataset):
         tensor_index = self.index_converter[self.epoch_ids[index]]
         img = self.img_tensor[
             tensor_index,
-            torch.randint(self.img_tensor.size(1), (1,), generator=self.generator),
+            int(torch.randint(self.img_tensor.size(1), (1,), generator=self.generator)),
         ]
         gt = self.phonemes[tensor_index]
         return img, gt
@@ -254,7 +254,11 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         new_index = int(
             self.id_tensor[
                 self.epoch_ids[index],
-                torch.randint(self.id_tensor.shape[1], (1,), generator=self.generator),
+                int(
+                    torch.randint(
+                        self.id_tensor.shape[1], (1,), generator=self.generator
+                    )
+                ),
             ].item()
         )
         return super().__getitem__(new_index)
