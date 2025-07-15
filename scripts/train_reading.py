@@ -132,6 +132,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Print logs during training",
     )
+    parser.add_argument(
+        "--low_mem",
+        action="store_true",
+        help="Use image dataset instead of tensor dataset to spare some RAM",
+    )
     args = parser.parse_args()
     seed_everything()
     backend_setup()
@@ -220,6 +225,7 @@ if __name__ == "__main__":
             batch_size=batch_size,
             include_stress=include_stress,
             query=query,
+            load_all=not args.low_mem,
         )
         valid_loader = get_grapheme_trainloader(
             fold_id=fold_id,
@@ -227,6 +233,7 @@ if __name__ == "__main__":
             batch_size=batch_size,
             include_stress=include_stress,
             query=query,
+            load_all=not args.low_mem,
         )
         criterion = auditory_loss
     else:

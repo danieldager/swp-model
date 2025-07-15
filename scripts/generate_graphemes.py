@@ -26,6 +26,13 @@ from swp.utils.paths import get_graphemes_dir
 # for backup when signal
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--tensor",
+        action="store_true",
+        help="Create a tensor dataset instead of image dataset",
+    )
+    args = parser.parse_args()
 
     query = "(Word.str.len() < 11) & (Word.str.len() > 1)"
     filtered_train_df = get_train_dataset(query=query)
@@ -36,7 +43,11 @@ if __name__ == "__main__":
     graphemes_dir = get_graphemes_dir()
 
     create_gen_arg_dict(graphemes_dir, all_words, query=query)
-    create_train_tensor_dataset(graphemes_dir, train_words, 100, seed=42)
-    create_test_tensor_dataset(graphemes_dir, test_words)
+    if args.tensor:
+        create_train_tensor_dataset(graphemes_dir, train_words, 100, seed=42)
+        create_test_tensor_dataset(graphemes_dir, test_words)
+    else:
+        create_train_dataset(graphemes_dir, train_words, 100, seed=42)
+        create_test_dataset(graphemes_dir, test_words)
 
     create_epoch(None, filtered_train_df, epoch_size=10**6, query=query)
