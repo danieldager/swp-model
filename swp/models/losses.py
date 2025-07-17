@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import torch
 import torch.nn as nn
@@ -102,15 +102,13 @@ class TaskLosses(nn.Module):
 
     def forward(
         self,
-        preds: list[torch.Tensor],
-        targets: tuple[list[torch.Tensor], torch.Tensor],
+        preds: Sequence[torch.Tensor],
+        targets: tuple[Sequence[torch.Tensor], torch.Tensor],
     ):
         task_targets, task_ids = targets
         loss = 0
         for i in range(len(task_targets)):
-            ith_task_loss = self.task_losses[
-                i
-            ](  # TODO correct problem, other losses automatically extract
+            ith_task_loss = self.task_losses[i](
                 preds[i][task_ids == i], task_targets[i]
             )
             if self.weights is not None:
@@ -136,8 +134,18 @@ class AuditoryXENT(nn.CrossEntropyLoss):
             weight, size_average, ignore_index, reduce, reduction, label_smoothing
         )
 
-    def forward(self, preds: list[torch.Tensor], targets: torch.Tensor):
-        audit_preds = preds[0]
+    def forward(
+        self, preds: torch.Tensor | Sequence[torch.Tensor | None], targets: torch.Tensor
+    ):
+        if isinstance(preds, torch.Tensor):
+            audit_preds = preds
+        else:
+            audit_preds = preds[0]
+            if audit_preds is None:
+                raise TypeError("Auditory loss is None")
+            for other_pred in preds[1:]:
+                if other_pred is not None:
+                    other_pred.detach_()  # in-place detach
         audit_preds = audit_preds.flatten(end_dim=-2)
         targets = targets.flatten()
         targets = targets.clone()
@@ -161,8 +169,18 @@ class FirstErrorXENT(nn.CrossEntropyLoss):
             weight, size_average, ignore_index, reduce, reduction, label_smoothing
         )
 
-    def forward(self, preds: list[torch.Tensor], targets: torch.Tensor):
-        audit_preds = preds[0]
+    def forward(
+        self, preds: torch.Tensor | Sequence[torch.Tensor | None], targets: torch.Tensor
+    ):
+        if isinstance(preds, torch.Tensor):
+            audit_preds = preds
+        else:
+            audit_preds = preds[0]
+            if audit_preds is None:
+                raise TypeError("Auditory loss is None")
+            for other_pred in preds[1:]:
+                if other_pred is not None:
+                    other_pred.detach_()  # in-place detach
         targets = targets.clone()
         mismatches = (audit_preds.argmax(dim=-1) != targets).int()
         first_error = mismatches.argmax(dim=-1, keepdim=True)
