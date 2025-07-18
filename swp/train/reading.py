@@ -63,42 +63,42 @@ def train(
         ### Max size batch to allocate memory and avoid fragmentation ###
         batch_size = train_loader.batch_size
         if batch_size is not None:
-            data = torch.zeros((batch_size, 3, 224, 224))
-            target = torch.zeros(
-                (batch_size, train_loader.dataset.max_len)  # type: ignore
+            data_buffer = torch.zeros((batch_size, 3, 224, 224), device=device)
+            target_buffer = torch.zeros(
+                (batch_size, train_loader.dataset.max_len),  # type: ignore
+                dtype=torch.long,
+                device=device,
             )
         else:
-            data = torch.zeros((3, 224, 224))
-            target = torch.zeros((train_loader.dataset.max_len))  # type: ignore
-
-        data = data.to(device)
-        target = target.to(device)
-        optimizer.zero_grad()
-
-        output = model(data, target)
-        loss = criterion(output, target)
-        loss.backward()
+            data_buffer = torch.zeros((3, 224, 224), device=device)
+            target_buffer = torch.zeros((train_loader.dataset.max_len), dtype=torch.long, device=device)  # type: ignore
 
         for i, (data, target) in enumerate(train_loader, 1):
             if verbose:
                 print(f"{i}/{len(train_loader)}", end="\n")
 
-            data = data.to(device)
-            target = target.to(device)
+            batch_len = len(data)
+            seq_len = target.size(-1)
+            data_dev = data_buffer[:batch_len].copy_(data)
+            target_dev = target_buffer[:batch_len, :seq_len].copy_(target)
             optimizer.zero_grad()
 
             # Forward pass
-            output = model(data, target)
+            output = model(data_dev, target_dev)
 
             # Loss computation
-            loss = criterion(output, target)
+            loss = criterion(output, target_dev)
             train_loss += loss.detach().cpu().numpy()
 
             # Error computation
             preds = torch.argmax(output[0], dim=-1)
-            mask = target != phoneme_to_id["<PAD>"]
+            mask = target_dev != phoneme_to_id["<PAD>"]
             train_error += (
-                torch.any((preds != target) * mask, dim=1).detach().cpu().numpy().sum()
+                torch.any((preds != target_dev) * mask, dim=1)
+                .detach()
+                .cpu()
+                .numpy()
+                .sum()
             )
             # TODO add error computation for visual prediction
 
