@@ -59,13 +59,17 @@ class RandomizedTensorRepetitionDataset(Dataset):
 
         self.index_converter = {}
         self.phonemes = {}
+        max_len = 0
         for index, row in data_df.iterrows():
             word_phonemes = row[phoneme_label]
             tensor_id = word_to_id[row["Word"]]
             self.index_converter[index] = tensor_id
             self.phonemes[tensor_id] = torch.Tensor(
                 [phoneme_to_id[phoneme] for phoneme in word_phonemes]
+                + [phoneme_to_id["<EOS>"]]
             )
+            max_len = max(max_len, len(word_phonemes) + 1)
+        self.max_len = max_len
         if generator is not None:
             self.generator = generator
         else:
@@ -107,12 +111,16 @@ class TensorRepetitionDataset(Dataset):
 
         self.index_converter = {}
         self.phonemes = {}
+        max_len = 0
         for index, row in data_df.iterrows():
             word_phonemes = row[phoneme_label]
             tensor_id = word_to_id[row["Word"]]
             self.phonemes[tensor_id] = torch.Tensor(
                 [phoneme_to_id[phoneme] for phoneme in word_phonemes]
+                + [phoneme_to_id["<EOS>"]]
             )
+            max_len = max(max_len, len(word_phonemes) + 1)
+        self.max_len = max_len
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         word_id = index // self.img_tensor.shape[1]
@@ -160,6 +168,7 @@ class RepetitionDataset(ImageFolder):
             phonemes.append("<EOS>")
             return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
 
+        self.max_len = max(len(v) for v in word_to_phoneme.values()) + 1
         super().__init__(
             root,
             transform,

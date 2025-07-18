@@ -60,9 +60,28 @@ def train(
         train_error = 0
         checkpoint = 1
 
+        ### Max size batch to allocate memory and avoid fragmentation ###
+        batch_size = train_loader.batch_size
+        if batch_size is not None:
+            data = torch.zeros((batch_size, 3, 224, 224))
+            target = torch.zeros(
+                (batch_size, train_loader.dataset.max_len)  # type: ignore
+            )
+        else:
+            data = torch.zeros((3, 224, 224))
+            target = torch.zeros((train_loader.dataset.max_len))  # type: ignore
+
+        data = data.to(device)
+        target = target.to(device)
+        optimizer.zero_grad()
+
+        output = model(data, target)
+        loss = criterion(output, target)
+        loss.backward()
+
         for i, (data, target) in enumerate(train_loader, 1):
             if verbose:
-                print(f"{i}/{len(train_loader)}", end="\r")
+                print(f"{i}/{len(train_loader)}", end="\n")
 
             data = data.to(device)
             target = target.to(device)
@@ -110,7 +129,7 @@ def train(
         with torch.no_grad():
             for i, (data, target) in enumerate(valid_loader, 1):
                 if verbose:
-                    print(f"{i+1}/{len(valid_loader)}", end="\r")
+                    print(f"{i+1}/{len(valid_loader)}", end="\n")
 
                 data = data.to(device)
                 target = target.to(device)
