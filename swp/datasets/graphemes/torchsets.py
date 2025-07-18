@@ -165,8 +165,10 @@ class RepetitionDataset(ImageFolder):
         def to_phoneme(target: int) -> torch.Tensor:
             word = self.classes[target]
             phonemes = word_to_phoneme[word]
-            phonemes.append("<EOS>")
-            return torch.Tensor([phoneme_to_id[phoneme] for phoneme in phonemes])
+            return torch.Tensor(
+                [phoneme_to_id[phoneme] for phoneme in phonemes]
+                + [phoneme_to_id["<EOS>"]]
+            )
 
         self.max_len = max(len(v) for v in word_to_phoneme.values()) + 1
         super().__init__(
