@@ -161,6 +161,20 @@ class RepetitionDataset(ImageFolder):
         is_valid_file: Optional[Callable[[str], bool]] = None,
         allow_empty: bool = False,
     ):
+        self.tokenized: tuple[torch.Tensor, ...]
+
+        def to_phoneme(target: int) -> torch.Tensor:
+            return self.tokenized[target]
+
+        super().__init__(
+            root=root,
+            transform=transform,
+            target_transform=to_phoneme,
+            loader=loader,
+            is_valid_file=is_valid_file,
+            allow_empty=allow_empty,
+        )
+
         self.tokenized = tuple(
             torch.Tensor(
                 [
@@ -172,18 +186,7 @@ class RepetitionDataset(ImageFolder):
             for target in range(len(self.classes))
         )
 
-        def to_phoneme(target: int) -> torch.Tensor:
-            return self.tokenized[target]
-
         self.max_len = max(len(v) for v in word_to_phoneme.values()) + 1
-        super().__init__(
-            root=root,
-            transform=transform,
-            target_transform=to_phoneme,
-            loader=loader,
-            is_valid_file=is_valid_file,
-            allow_empty=allow_empty,
-        )
         self.class_to_sample_id: dict[str, list[int]] = {}
         for sample_id, class_id in enumerate(self.targets):
             self.class_to_sample_id.setdefault(self.classes[class_id], []).append(
