@@ -128,7 +128,12 @@ def create_train_tensor_dataset(
     images_per_word: int,
     seed: int | None = None,
 ) -> None:
-    # TODO docstring
+    r"""Create a grapheme dataset at `path / "train"` location relying on one big tensor.
+    This could be significantly heavy on memory and storage.
+
+    Creates `images_per_word` images per word in `words`. Those are stored in a tensor saved at `path / "train" / "tensorset.pth"`
+    Use `seed` to control randomness. If none is provided, randomness is handled in a deterministic way.
+    """
     if seed is None:
         seed = 42
     dataset_gen_dict = get_gen_arg_dict(path)

@@ -15,6 +15,7 @@ if _ON_JEAN_ZAY:
     stimuli_dir = work_dir / "stimuli"
     weights_dir = work_dir / "weights"
     results_dir = work_dir / "results"
+    checkpoint_dir = work_dir / "checkpoint"
     public_dataset_dir = pathlib.Path(os.environ["DSDIR"])
     graphemes_dir = pathlib.Path(os.environ["SCRATCH"]) / "graphemes"
 elif _ON_OBERON:
@@ -24,6 +25,7 @@ else:  # personnal computer
     stimuli_dir = repo_root / "stimuli"
     weights_dir = repo_root / "weights"
     results_dir = repo_root / "results"
+    checkpoint_dir = repo_root / "checkpoint"
     public_dataset_dir = repo_root / "public_datasets"
     graphemes_dir = stimuli_dir / "graphemes"
 
@@ -58,6 +60,11 @@ def get_folds_dir() -> pathlib.Path:
 def get_weights_dir() -> pathlib.Path:
     weights_dir.mkdir(parents=True, exist_ok=True)
     return weights_dir
+
+
+def get_checkpoint_dir() -> pathlib.Path:
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    return checkpoint_dir
 
 
 def get_results_dir() -> pathlib.Path:

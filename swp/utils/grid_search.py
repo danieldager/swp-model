@@ -43,15 +43,20 @@ def grid_search_log(
     model_name: str,
     train_name: str,
     num_epochs: int,
+    append: bool = False,
 ):
     r"""Create one csv logging the training and validation losses of each epoch
     for a given model (descibed through `model_name`) along a given training process
     (described through `train_name`).
+
+    Set `append` to True to append to potentially already existing matching logs.
     """
     # Initialize log
     logfile_path = get_train_dir() / f"{model_name}~{train_name}.csv"
     logfile_path.parent.mkdir(exist_ok=True, parents=True)
     log = None
+    if append and logfile_path.exists():
+        log = pd.read_csv(logfile_path, index_col=0)
     # Extract parameters from the model name
     model_args = get_model_args(model_name)
     train_args = get_train_args(train_name)

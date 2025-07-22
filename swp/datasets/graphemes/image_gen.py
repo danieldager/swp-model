@@ -39,11 +39,14 @@ def text_to_grapheme(
 
     The word is centered over `(xshift, yshift)` and is written over a line inclined with an angle `line_angle` (in degrees).
 
-    Per char case is controlled through `case` argument. Missing values will default to lower.
+    Per char case is controlled through `case` argument. Missing values will default to lower. You can also pass a string among
+    `"upper"`, `"lower"` and `"title"` to automatically get the corresponding casing over the whole word.
 
-    Letter rotations (in degrees) can be controlled with ̀ angles`. Missing values will default to 0.
+    Letter rotations (in degrees) can be controlled with ̀ angles`. Missing values will default to 0. If only an int is passed, then
+    this value will be used for all the letters.
 
-    Spacing between letters (in pixel) can be controlled through `spacing`. Missing values will default to 0.
+    Spacing between letters (in pixel) can be controlled through `spacing`. Missing values will default to 0. If only an int is passed,
+    then this value will be used for all the spacings.
     """
 
     if isinstance(spacing, int):

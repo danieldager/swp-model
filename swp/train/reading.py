@@ -6,8 +6,9 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
+from ..utils.earlystop import SlurmHandler
 from ..utils.grid_search import grid_search_log
-from ..utils.models import save_weights
+from ..utils.models import save_training_checkpoint, save_weights
 
 
 def train(
@@ -22,8 +23,10 @@ def train(
     num_epochs: int,
     device: str | torch.device,
     verbose: bool = False,
+    sig_handler: SlurmHandler | None = None,
+    from_epoch: int = 0,
 ) -> None:
-    r"""Trains the `model` over `num_epoch` epochs with the data contained in the `train_loader`,
+    r"""Trains the `model` up to epoch `num_epoch` from epoch `from_epoch` with the data contained in the `train_loader`,
     the `criterion` loss and the `optimizer` weight update method.
 
     Set `verbose` to `True` to print intermediate logs.
@@ -32,6 +35,9 @@ def train(
     are saved in the end.
 
     Checkpointing happens 10 times during the first epoch, then once after each epoch.
+
+    Provide a `sig_handler` in order to trigger premature training saving and exit when a signal is sent to the process.
+    The premature saving and exit can only take place at the end of an epoch.
     """
 
     if isinstance(model, Unimodel) and not model.is_visual:
@@ -49,7 +55,7 @@ def train(
     valid_errors = []
     epoch_times = []
 
-    for epoch in range(1, num_epochs + 1):
+    for epoch in range(from_epoch + 1, num_epochs + 1):
         epoch_start = time.time()
         if verbose:
             print(f"\nEpoch {epoch}")
@@ -174,6 +180,18 @@ def train(
             s = epoch_time % 60
             print(f"Epoch Time: {h:.0f}h {m:.0f}m {s:.0f}s")
 
+        if sig_handler is not None and sig_handler.stop_signal and epoch != num_epochs:
+            sig_handler.ask_requeue()
+            save_training_checkpoint(
+                model_name=model_name,
+                train_name=train_name,
+                optimizer=optimizer,
+                epoch=epoch,
+                train_loader=train_loader,
+                valid_loader=valid_loader,
+            )
+            break
+
     grid_search_log(
         train_losses,
         valid_losses,
@@ -182,4 +200,5 @@ def train(
         model_name,
         train_name,
         num_epochs,
+        append=sig_handler is not None,
     )

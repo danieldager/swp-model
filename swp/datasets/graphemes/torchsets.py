@@ -1,7 +1,7 @@
 import json
 from bisect import bisect_right
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 import numpy as np
 import torch
@@ -137,7 +137,7 @@ class RepetitionDataset(ImageFolder):
     r"""Dataset class to handle graphemes to phonemes dataset.
     Load the images located at `root`, and use `phoneme_to_id` for phoneme tokenization.
 
-    Also implement a preprocessing for tokenizing and padding the phonemes.
+    Also implement a preprocessing for tokenizing the phonemes.
 
     Other arguments are passed to parent class.
 
@@ -161,23 +161,28 @@ class RepetitionDataset(ImageFolder):
         is_valid_file: Optional[Callable[[str], bool]] = None,
         allow_empty: bool = False,
     ):
-
-        def to_phoneme(target: int) -> torch.Tensor:
-            word = self.classes[target]
-            phonemes = word_to_phoneme[word]
-            return torch.Tensor(
-                [phoneme_to_id[phoneme] for phoneme in phonemes]
+        self.tokenized = tuple(
+            torch.Tensor(
+                [
+                    phoneme_to_id[phoneme]
+                    for phoneme in word_to_phoneme[self.classes[target]]
+                ]
                 + [phoneme_to_id["<EOS>"]]
             )
+            for target in range(len(self.classes))
+        )
+
+        def to_phoneme(target: int) -> torch.Tensor:
+            return self.tokenized[target]
 
         self.max_len = max(len(v) for v in word_to_phoneme.values()) + 1
         super().__init__(
-            root,
-            transform,
-            to_phoneme,
-            loader,
-            is_valid_file,
-            allow_empty,
+            root=root,
+            transform=transform,
+            target_transform=to_phoneme,
+            loader=loader,
+            is_valid_file=is_valid_file,
+            allow_empty=allow_empty,
         )
         self.class_to_sample_id: dict[str, list[int]] = {}
         for sample_id, class_id in enumerate(self.targets):
@@ -283,19 +288,21 @@ def get_grapheme_trainloader(
     train: bool,
     batch_size: int,
     include_stress: bool = False,
-    generator: torch.Generator | None = None,
+    dataset_generator: torch.Generator | None = None,
+    dataloader_generator: torch.Generator | None = None,
     query: str | None = None,
-    load_all: bool = True,
+    load_all: bool = False,
 ) -> DataLoader:
     r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
-    Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
+    Shuffling is controlled by `dataloader_generator`. If `dataloader_generator` is None, it is deterministically instantiated.
+    `dataset_generator` is passed to the dataset to control random sampling outside of shuffle.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
 
     Passing a `query` string gives a dataloader containing the corresponding queried dataset.
+    Setting `load_all` to True returns a dataset loading everything in memory, which is faster to use but might be memory heavy.
     """
-    # TODO doc load_all
     if load_all:
         grapheme_set = RandomizedTensorRepetitionDataset(
             root=get_graphemes_dir() / "train",
@@ -303,6 +310,7 @@ def get_grapheme_trainloader(
             train=train,
             phoneme_to_id=get_phoneme_to_id(),
             include_stress=include_stress,
+            generator=dataset_generator,
             query=query,
         )
     else:
@@ -313,18 +321,19 @@ def get_grapheme_trainloader(
             train=train,
             phoneme_to_id=get_phoneme_to_id(),
             include_stress=include_stress,
+            generator=dataset_generator,
             transform=torchvision.transforms.ToTensor(),
             query=query,
         )
-    if generator is None:
-        generator = torch.Generator().manual_seed(42)
+    if dataloader_generator is None:
+        dataloader_generator = torch.Generator().manual_seed(42)
     pad_value = get_phoneme_to_id()["<PAD>"]
     my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
     grapheme_loader = DataLoader(
         grapheme_set,
         batch_size,
         shuffle=True,
-        generator=generator,
+        generator=dataloader_generator,
         collate_fn=my_collate,
     )
     return grapheme_loader
@@ -334,12 +343,12 @@ def get_grapheme_testloader(
     batch_size: int,
     include_stress: bool = False,
     query: str | None = None,
-    load_all: bool = True,
+    load_all: bool = False,
 ) -> DataLoader:
     r"""Return a dataloader containing the grapheme test data batched in size `batch_size`.
     Passing a `query` string gives a dataloader containing the corresponding queried test set.
+    Setting `load_all` to True returns a dataset loading everything in memory, which is faster to use but might be memory heavy.
     """
-    # TODO doc load_all
     if load_all:
         grapheme_set = TensorRepetitionDataset(
             root=get_graphemes_dir() / "test",
@@ -370,7 +379,7 @@ def get_grapheme_testloader(
 class IndicedConcatDataset(ConcatDataset):
     r"""Concatenate datasets. Resulting dataset yields tuple `(data, target, dataset_id)`."""
 
-    def __init__(self, datasets: list[Dataset]) -> None:
+    def __init__(self, datasets: Iterable[Dataset]) -> None:
         super().__init__(datasets)
 
     def __getitem__(self, idx):
@@ -430,12 +439,14 @@ def get_mixed_trainloader(
     train: bool,
     batch_size: int,
     include_stress: bool = False,
-    generator: torch.Generator | None = None,
+    dataset_generator: torch.Generator | None = None,
+    dataloader_generator: torch.Generator | None = None,
     query: str | None = None,
 ) -> DataLoader:
     r"""Return a dataloader containing both the grapheme training data corresponding to the `fold_id` fold
     and the ImageNet dataset, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
-    Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
+    Shuffling is controlled by `dataloader_generator`. If `dataloader_generator` is None, it is deterministically instantiated.
+    `dataset_generator` is passed to the grapheme dataset to control random sampling outside of shuffle.
 
     Return the corresponding training data if `train` is set to `True`.
     Return the validation data otherwise.
@@ -449,11 +460,13 @@ def get_mixed_trainloader(
         train=train,
         phoneme_to_id=get_phoneme_to_id(),
         include_stress=include_stress,
+        generator=dataset_generator,
         transform=torchvision.transforms.ToTensor(),
         query=query,
     )
     if train:
         imagenet_split = "train"
+        # TODO can we control the randomness without machine state ?
         imagenet_transform = torchvision.transforms.Compose(
             [
                 torchvision.transforms.RandomResizedCrop(224),
@@ -483,14 +496,14 @@ def get_mixed_trainloader(
         transform=imagenet_transform,
     )
     concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
-    if generator is None:
-        generator = torch.Generator().manual_seed(42)
+    if dataloader_generator is None:
+        dataloader_generator = torch.Generator().manual_seed(42)
     train_loader = DataLoader(
         concat_dataset,
         batch_size=batch_size,
         collate_fn=lambda data: task_collate_fn(data, 2),
         shuffle=True,
-        generator=generator,
+        generator=dataloader_generator,
     )
     return train_loader
 

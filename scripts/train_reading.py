@@ -22,7 +22,14 @@ from swp.models.encoders import CorNetEncoder
 from swp.models.losses import AuditoryXENT, FirstErrorXENT, TaskLosses
 from swp.train.reading import train
 from swp.utils.datasets import check_query, get_phoneme_to_id
-from swp.utils.models import get_model, get_model_name, get_train_args, get_train_name
+from swp.utils.earlystop import SlurmHandler
+from swp.utils.models import (
+    get_model,
+    get_model_name,
+    get_train_args,
+    get_train_name,
+    load_last_training_checkpoint,
+)
 from swp.utils.setup import backend_setup, seed_everything, set_device
 
 if __name__ == "__main__":
@@ -133,9 +140,14 @@ if __name__ == "__main__":
         help="Print logs during training",
     )
     parser.add_argument(
-        "--low_mem",
+        "--load_all",
         action="store_true",
-        help="Use image dataset instead of tensor dataset to spare some RAM",
+        help="Use tensor dataset instead of image dataset. Faster but might use significantly more RAM",
+    )
+    parser.add_argument(
+        "--auto-requeue",
+        action="store_true",
+        help="Enable the program to requeue itself on SLURM clusters provided signal SIGUSR1 is sent early enough.",
     )
     args = parser.parse_args()
     seed_everything()
@@ -218,22 +230,51 @@ if __name__ == "__main__":
     else:
         raise ValueError("Argument of loss isn't recognized, use `classic` or `first`")
 
+    optimizer = optim.Adam(
+        model.encoder.to_hidden.parameters(), lr=learn_rate
+    )  # can include encoder, decoder, or also encoder.cnn.decoder.linear
+
+    sig_handler = None
+    trainset_generator = None
+    trainloader_generator = None
+    validset_generator = None
+    validloader_generator = None
+    last_epoch = 0
+    if args.auto_requeue:
+        sig_handler = SlurmHandler()
+        (
+            trainset_generator,
+            trainloader_generator,
+            validset_generator,
+            validloader_generator,
+            last_epoch,
+        ) = load_last_training_checkpoint(
+            model=model,
+            optimizer=optimizer,
+            model_name=model_name,
+            train_name=train_name,
+        )
+
     if args.grapheme_only:
         train_loader = get_grapheme_trainloader(
             fold_id=fold_id,
             train=True,
             batch_size=batch_size,
             include_stress=include_stress,
+            dataset_generator=trainset_generator,
+            dataloader_generator=trainloader_generator,
             query=query,
-            load_all=not args.low_mem,
+            load_all=args.load_all,
         )
         valid_loader = get_grapheme_trainloader(
             fold_id=fold_id,
             train=False,
             batch_size=batch_size,
             include_stress=include_stress,
+            dataset_generator=validset_generator,
+            dataloader_generator=validloader_generator,
             query=query,
-            load_all=not args.low_mem,
+            load_all=args.load_all,
         )
         criterion = auditory_loss
     else:
@@ -242,18 +283,19 @@ if __name__ == "__main__":
             train=True,
             batch_size=batch_size,
             include_stress=include_stress,
+            dataset_generator=trainset_generator,
+            dataloader_generator=trainloader_generator,
         )
         valid_loader = get_mixed_trainloader(
             fold_id=fold_id,
             train=False,
             batch_size=batch_size,
             include_stress=include_stress,
+            dataset_generator=validset_generator,
+            dataloader_generator=validloader_generator,
         )
         criterion = TaskLosses([auditory_loss, nn.CrossEntropyLoss()])
 
-    optimizer = optim.Adam(
-        model.encoder.to_hidden.parameters(), lr=learn_rate
-    )  # can include encoder, decoder, or also encoder.cnn.decoder.linear
     train(
         model=model,
         model_name=model_name,
@@ -266,4 +308,8 @@ if __name__ == "__main__":
         num_epochs=args.num_epochs,
         device=device,
         verbose=args.verbose,
+        sig_handler=sig_handler,
+        from_epoch=last_epoch,
     )
+    if sig_handler is not None:
+        sig_handler.land()

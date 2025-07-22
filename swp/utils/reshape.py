@@ -23,6 +23,17 @@ def find_and_delete_batchdim(shape: torch.Size) -> tuple[int | None, torch.Size]
 
 
 class Reshaper(Module):
+    r"""A torch.nn module to handle reshaping between two networks in an optimized way.
+
+    During forward, convert `to_reshape` tensor into tensor(s) of shape `expected_shapes`
+    while conserving potential batch dimension. Splitting is done if
+    `expected_shapes` is a tuple to generate the proper number of tensors. Potential
+    batch dimensions should be indicated by `-1`.
+
+    `initial_shape` should describe the shape of `to_reshape`, with a `-1` at
+    the potential batch dimension.
+    """
+
     def __init__(
         self,
         initial_shape: torch.Size,

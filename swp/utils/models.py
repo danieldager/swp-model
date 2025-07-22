@@ -1,12 +1,16 @@
+import random
 from typing import TypedDict
 
+import numpy as np
 import torch
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..models.decoders import DecoderLSTM, DecoderRNN
 from ..models.encoders import CorNetEncoder, EncoderLSTM, EncoderRNN
 from .datasets import check_query, unhash_query
-from .paths import get_weights_dir
+from .paths import get_checkpoint_dir, get_weights_dir
 
 
 def save_weights(
@@ -321,3 +325,80 @@ def get_train_args(train_name: str) -> TrainArgs:
         }
     )
     return train_args
+
+
+def save_training_checkpoint(
+    model_name: str,
+    train_name: str,
+    optimizer: torch.optim.Optimizer,
+    epoch: int,
+    train_loader: DataLoader,
+    valid_loader: DataLoader,
+):
+    r"""Allows to save all the training state (except the model weights) to resume
+    a fully reproducible training later. Make sure to call `save_weights` as well."""
+    # TODO handle case where generators are None
+    # TODO handle case where dataset has complex structure
+    ckpt_path = get_checkpoint_dir() / f"{model_name}~{train_name}.ckpt"
+    checkpoint = {
+        "epoch": epoch,
+        "model_load_args": {
+            "model_name": model_name,
+            "train_name": train_name,
+            "checkpoint": f"{epoch}",
+        },
+        "optimizer_state_dict": optimizer.state_dict(),
+        "random_state": random.getstate(),
+        "numpy_state": np.random.get_state(),
+        "torch_rng_state": torch.get_rng_state(),
+        "torch_cuda_rng_state": (
+            torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+        ),
+        "trainset_state": train_loader.dataset.generator.get_rng_state(),  # type: ignore
+        "trainloader_state": train_loader.generator.get_rng_state(),  # type: ignore
+        "validset_state": valid_loader.dataset.generator.get_rng_state(),  # type: ignore
+        "validloader_state": valid_loader.generator.get_rng_state(),  # type: ignore
+    }
+    torch.save(checkpoint, ckpt_path)
+
+
+def load_last_training_checkpoint(
+    model: Unimodel | Bimodel,
+    optimizer: Optimizer,
+    model_name: str,
+    train_name: str,
+    device: torch.device = torch.device("cpu"),
+) -> (
+    tuple[torch.Generator, torch.Generator, torch.Generator, torch.Generator, int]
+    | tuple[None, None, None, None, int]
+):
+    r"""Restores the state of the saved training of the corresponding model, including model weights.
+    Returns four generators, respectively for :
+    - the training set
+    - the training dataloader
+    - the validation set
+    - the validation dataloader
+    as well as an int containing the last achieved epoch.
+    If no saved training is found, does nothing, returns `None` instead of generators, and 0 as the last achieved epoch.
+    """
+    ckpt_path = get_checkpoint_dir() / f"{model_name}~{train_name}.ckpt"
+    if ckpt_path.exists():
+        checkpoint = torch.load(ckpt_path, map_location=device)
+        load_weights(model, device=device, **checkpoint["model_load_args"])
+
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        random.setstate(checkpoint["random_state"])
+        np.random.set_state(checkpoint["numpy_state"])
+        torch.set_rng_state(checkpoint["torch_rng_state"])
+        if torch.cuda.is_available() and checkpoint["torch_cuda_rng_state"] is not None:
+            torch.cuda.set_rng_state_all(checkpoint["torch_cuda_rng_state"])
+
+        keys = ("trainset", "trainloader", "validset", "validloader")
+        generators: dict[str, torch.Generator] = {}
+        for key in keys:
+            generators[key] = torch.Generator()
+            generators[key].set_state(checkpoint[f"{key}_state"])
+        return *(generators[key] for key in keys), checkpoint["epoch"]  #  type: ignore
+    else:
+        return None, None, None, None, 0

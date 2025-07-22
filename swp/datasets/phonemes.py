@@ -32,9 +32,9 @@ class PhonemeTrainDataset(Dataset):
     Attributes :
         `fold_id` : index of loaded fold
         `train` : bool indicating if it is training split
-        `data_df` : DataFrame containing all the fold data
-        `epoch_ids` : ids to use through one epoch to access the data in `data_df`
-        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        `include_stress` : bool indicating if the loaded phonemes include stress
+        `epoch_ids` : ids to use through one epoch to access the data from the dataframe
+        `tokenized` : a list containing the tokenized words, ordered along the dataframe those words come from
     """
 
     # is map-style dataset
@@ -47,24 +47,27 @@ class PhonemeTrainDataset(Dataset):
     ):
         self.fold_id = fold_id
         self.train = train
+        self.include_stress = include_stress
         if self.train:
-            self.data_df = get_train_fold(fold_id)
+            data_df = get_train_fold(fold_id)
             self.epoch_ids = get_epoch_numpy(fold_id=fold_id, epoch_size=int(1e6))
         else:
-            self.data_df = get_valid_fold(self.fold_id)
-            self.epoch_ids = np.arange(len(self.data_df))
-        self.phoneme_to_id = phoneme_to_id
-        self.phoneme_key = "Phonemes" if include_stress else "No_Stress"
-
-    def __getitem__(self, index: int) -> tuple[Any, Any]:
-        phonemes: list[str] = self.data_df.iloc[self.epoch_ids[index]][
-            self.phoneme_key
-        ].copy()
-        phonemes.append("<EOS>")
-        tokenized = torch.tensor(
-            [self.phoneme_to_id[phoneme] for phoneme in phonemes], dtype=torch.long
+            data_df = get_valid_fold(self.fold_id)
+            self.epoch_ids = np.arange(len(data_df))
+        phoneme_key = "Phonemes" if self.include_stress else "No_Stress"
+        all_phonemes = data_df[phoneme_key]
+        self.tokenized = tuple(
+            torch.tensor(
+                [phoneme_to_id[phoneme] for phoneme in phonemes]
+                + [phoneme_to_id["<EOS>"]],
+                dtype=torch.long,
+            )
+            for phonemes in all_phonemes
         )
-        return tokenized, tokenized.clone()
+
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
+        tokens = self.tokenized[self.epoch_ids[index]]
+        return tokens, tokens.clone()
 
     def __len__(self) -> int:
         return len(self.epoch_ids)
@@ -126,14 +129,12 @@ class PhonemeTestDataset(Dataset):
     Args :
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         `include_stress` : if set to `True`, the phonemes will include stress
-        `override_data_df` : an optionnal `pandas.DataFrame` that can be passed to override the original test data
+        `dataset_df` : an optionnal `pandas.DataFrame` that can be passed to override the original test data
 
     Attributes :
-        `fold_id` : index of loaded fold
-        `train` : bool indicating if it is training split
         `data_df` : DataFrame containing all the fold data
-        `epoch_ids` : ids to use through one epoch to access the data in `data_df`
-        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        `include_stress` : bool indicating if the loaded phonemes include stress
+        `tokenized` : a list containing the tokenized words, ordered along the dataframe those words come from
     """
 
     # is map-style dataset
@@ -143,21 +144,27 @@ class PhonemeTestDataset(Dataset):
         include_stress: bool = False,
         dataset_df: pd.DataFrame | None = None,
     ):
+        self.include_stress = include_stress
         if dataset_df is None:
-            self.data_df = get_evaluation_dataset()
-        else:
-            self.data_df = dataset_df
-        self.phoneme_to_id = phoneme_to_id
-        self.phoneme_key = "Phonemes" if include_stress else "No_Stress"
+            dataset_df = get_evaluation_dataset()
+        self._len = len(dataset_df)
+        phoneme_key = "Phonemes" if self.include_stress else "No_Stress"
+        all_phonemes = dataset_df[phoneme_key]
+        self.tokenized = tuple(
+            torch.tensor(
+                [phoneme_to_id[phoneme] for phoneme in phonemes]
+                + [phoneme_to_id["<EOS>"]],
+                dtype=torch.long,
+            )
+            for phonemes in all_phonemes
+        )
 
-    def __getitem__(self, index: int) -> tuple[Any, Any]:
-        phonemes: list[str] = self.data_df.iloc[index][self.phoneme_key].copy()
-        phonemes.append("<EOS>")
-        tokenized = torch.Tensor([self.phoneme_to_id[phoneme] for phoneme in phonemes])
-        return tokenized, tokenized.clone()
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
+        tokens = self.tokenized[index]
+        return tokens, tokens.clone()
 
     def __len__(self) -> int:
-        return len(self.data_df)
+        return self._len
 
 
 def get_phoneme_testloader(

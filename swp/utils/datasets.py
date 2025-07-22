@@ -27,11 +27,13 @@ _DEBUG: bool = False
 
 
 def enable_debugging():
+    r"""Enable debugging, making all dataset functions return the 5 first samples of the datasets"""
     global _DEBUG
     _DEBUG = True
 
 
 def disable_deubgging():
+    r"""Disable debugging, see `enable_debugging` for more info."""
     global _DEBUG
     _DEBUG = False
 

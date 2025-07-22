@@ -75,7 +75,11 @@ def create_test_dataset(path: Path, words: Sequence[str]) -> None:
 
 
 def create_test_tensor_dataset(path: Path, words: Sequence[str]) -> None:
-    # TODO docstring
+    r"""Create a grapheme dataset at `path / "test"` location relying on one big tensor.
+    This could be significantly heavy on memory and storage.
+
+    Number of images depends on the argument used to generate the training set.
+    """
     train_gen_arg_dict = get_gen_arg_dict(path)
     test_path = path / "test"
     test_path.mkdir(exist_ok=True, parents=True)
