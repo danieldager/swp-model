@@ -145,7 +145,7 @@ if __name__ == "__main__":
         help="Use tensor dataset instead of image dataset. Faster but might use significantly more RAM",
     )
     parser.add_argument(
-        "--auto-requeue",
+        "--auto_requeue",
         action="store_true",
         help="Enable the program to requeue itself on SLURM clusters provided signal SIGUSR1 is sent early enough.",
     )

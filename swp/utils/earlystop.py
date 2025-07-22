@@ -37,3 +37,5 @@ class SlurmHandler:
                     print(f"Error: Failed to requeue job {full_id}: {e}")
             else:
                 print("SLURM_JOB_ID not found")
+        else:
+            print("Landed without requeue requests")
