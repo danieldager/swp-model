@@ -127,39 +127,61 @@ def create_train_tensor_dataset(
     words: Sequence[str],
     images_per_word: int,
     seed: int | None = None,
+    sparse: bool = True,
 ) -> None:
     r"""Create a grapheme dataset at `path / "train"` location relying on one big tensor.
     This could be significantly heavy on memory and storage.
 
     Creates `images_per_word` images per word in `words`. Those are stored in a tensor saved at `path / "train" / "tensorset.pth"`
     Use `seed` to control randomness. If none is provided, randomness is handled in a deterministic way.
+
+    Set `sparse` to False to create an explicit tensor dataset instead of sparse tensor dataset.
     """
     if seed is None:
         seed = 42
     dataset_gen_dict = get_gen_arg_dict(path)
     train_path = path / "train"
     generator = np.random.default_rng(seed)
-    dataset = torch.zeros((len(words), images_per_word, 3, 224, 224))
     order_tracker = {}
     word_to_id = {}
-    for i, word in enumerate(sorted(words)):
-        images_args = random_cartesian_product(
-            num_samples=images_per_word,
-            word=word,
-            image_args=dataset_gen_dict,
-            generator=generator,
-        )
-        for j, arg in enumerate(images_args):
-            dataset[i, j] = F.to_tensor(text_to_grapheme(**arg))
-        order_tracker[word] = images_args
-        word_to_id[word] = i
+    if sparse:
+        sparse_words = []
+        for i, word in enumerate(sorted(words)):
+            images_args = random_cartesian_product(
+                num_samples=images_per_word,
+                word=word,
+                image_args=dataset_gen_dict,
+                generator=generator,
+            )
+            sparse_samples = []
+            for j, arg in enumerate(images_args):
+                sparse_img = (1 - F.to_tensor(text_to_grapheme(**arg))).to_sparse()
+                sparse_samples.append(sparse_img)
+            sparse_words.append(torch.stack(sparse_samples))
+            order_tracker[word] = images_args
+            word_to_id[word] = i
+        sparse_dataset = torch.stack(sparse_words).coalesce()
+        torch.save(sparse_dataset, train_path / "sparse_tensorset.pth")
+    else:
+        dataset = torch.zeros((len(words), images_per_word, 3, 224, 224))
+        for i, word in enumerate(sorted(words)):
+            images_args = random_cartesian_product(
+                num_samples=images_per_word,
+                word=word,
+                image_args=dataset_gen_dict,
+                generator=generator,
+            )
+            for j, arg in enumerate(images_args):
+                dataset[i, j] = F.to_tensor(text_to_grapheme(**arg))
+            order_tracker[word] = images_args
+            word_to_id[word] = i
+        torch.save(dataset, train_path / "tensorset.pth")
     order_tracker_path = train_path / "order_tracker.json"
     with order_tracker_path.open("w") as f:
         json.dump(order_tracker, f, indent=4)
     word_to_id_path = train_path / "word_to_id.json"
     with word_to_id_path.open("w") as f:
         json.dump(word_to_id, f, indent=4)
-    torch.save(dataset, train_path / "tensorset.pth")
 
 
 def check_train_dataset(path: Path) -> int:

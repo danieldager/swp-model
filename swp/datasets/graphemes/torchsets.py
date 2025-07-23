@@ -35,11 +35,16 @@ class RandomizedTensorRepetitionDataset(Dataset):
         include_stress: bool = False,
         generator: torch.Generator | None = None,
         query: str | None = None,
+        sparse: bool = True,
     ):
         self.fold_id = fold_id
         self.train = train
         self.query = query
-        self.img_tensor: torch.Tensor = torch.load(root / "tensorset.pth")
+        self.is_sparse = sparse
+        if self.is_sparse:
+            self.img_tensor: torch.Tensor = torch.load(root / "sparse_tensorset.pth")
+        else:
+            self.img_tensor: torch.Tensor = torch.load(root / "tensorset.pth")
         if self.train:
             data_df = get_train_fold(self.fold_id, query=self.query)
             self.epoch_ids = get_epoch_numpy(self.fold_id, query=self.query)
@@ -77,10 +82,27 @@ class RandomizedTensorRepetitionDataset(Dataset):
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         tensor_index = self.index_converter[self.epoch_ids[index]]
-        img = self.img_tensor[
-            tensor_index,
-            int(torch.randint(self.img_tensor.size(1), (1,), generator=self.generator)),
-        ]
+        if self.is_sparse:
+            img = (
+                1
+                - self.img_tensor[
+                    tensor_index,
+                    int(
+                        torch.randint(
+                            self.img_tensor.size(1), (1,), generator=self.generator
+                        )
+                    ),
+                ].to_dense()
+            )
+        else:
+            img = self.img_tensor[
+                tensor_index,
+                int(
+                    torch.randint(
+                        self.img_tensor.size(1), (1,), generator=self.generator
+                    )
+                ),
+            ]
         gt = self.phonemes[tensor_index]
         return img, gt
 
@@ -96,9 +118,14 @@ class TensorRepetitionDataset(Dataset):
         phoneme_to_id: dict[str, int],
         include_stress: bool = False,
         query: str | None = None,
+        sparse: bool = True,
     ):
         self.query = query
-        self.img_tensor: torch.Tensor = torch.load(root / "tensorset.pth")
+        self.is_sparse = sparse
+        if self.is_sparse:
+            self.img_tensor: torch.Tensor = torch.load(root / "sparse_tensorset.pth")
+        else:
+            self.img_tensor: torch.Tensor = torch.load(root / "tensorset.pth")
         data_df = get_evaluation_dataset(query=self.query)
         if include_stress:
             phoneme_label = "Phonemes"
@@ -112,7 +139,7 @@ class TensorRepetitionDataset(Dataset):
         self.index_converter = {}
         self.phonemes = {}
         max_len = 0
-        for index, row in data_df.iterrows():
+        for _, row in data_df.iterrows():
             word_phonemes = row[phoneme_label]
             tensor_id = word_to_id[row["Word"]]
             self.phonemes[tensor_id] = torch.Tensor(
@@ -125,7 +152,10 @@ class TensorRepetitionDataset(Dataset):
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         word_id = index // self.img_tensor.shape[1]
         img_id = index % self.img_tensor.shape[1]
-        img = self.img_tensor[word_id, img_id]
+        if self.is_sparse:
+            img = 1 - self.img_tensor[word_id, img_id].to_dense()
+        else:
+            img = self.img_tensor[word_id, img_id]
         gt = self.phonemes[word_id]
         return img, gt
 

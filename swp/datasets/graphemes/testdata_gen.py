@@ -74,31 +74,49 @@ def create_test_dataset(path: Path, words: Sequence[str]) -> None:
             im.save(word_dir / im_name)
 
 
-def create_test_tensor_dataset(path: Path, words: Sequence[str]) -> None:
+def create_test_tensor_dataset(
+    path: Path, words: Sequence[str], sparse: bool = True
+) -> None:
     r"""Create a grapheme dataset at `path / "test"` location relying on one big tensor.
     This could be significantly heavy on memory and storage.
 
     Number of images depends on the argument used to generate the training set.
+
+    Set `sparse` to False to create an explicit tensor dataset instead of sparse tensor dataset.
     """
     train_gen_arg_dict = get_gen_arg_dict(path)
     test_path = path / "test"
     test_path.mkdir(exist_ok=True, parents=True)
     images_args = exhaustive_cartesian_product(image_args=train_gen_arg_dict)
-    dataset = torch.zeros((len(words), len(images_args), 3, 224, 224))
     sorted_words = sorted(words)
     order_tracker = {"words": sorted_words, "img_args": images_args}
     word_to_id = {}
-    for i, word in enumerate(sorted_words):
-        for j, arg in enumerate(images_args):
-            dataset[i, j] = F.to_tensor(text_to_grapheme(word=word, **arg))
-        word_to_id[word] = i
+    if sparse:
+        sparse_words = []
+        for i, word in enumerate(sorted_words):
+            sparse_samples = []
+            for j, arg in enumerate(images_args):
+                sparse_img = (
+                    1 - F.to_tensor(text_to_grapheme(word=word, **arg))
+                ).to_sparse()
+                sparse_samples.append(sparse_img)
+            sparse_words.append(torch.stack(sparse_samples))
+            word_to_id[word] = i
+        sparse_dataset = torch.stack(sparse_words).coalesce()
+        torch.save(sparse_dataset, test_path / "sparse_tensorset.pth")
+    else:
+        dataset = torch.zeros((len(words), len(images_args), 3, 224, 224))
+        for i, word in enumerate(sorted_words):
+            for j, arg in enumerate(images_args):
+                dataset[i, j] = F.to_tensor(text_to_grapheme(word=word, **arg))
+            word_to_id[word] = i
+        torch.save(dataset, test_path / "tensorset.pth")
     order_tracker_path = test_path / "order_tracker.json"
     with order_tracker_path.open("w") as f:
         json.dump(order_tracker, f, indent=4)
     word_to_id_path = test_path / "word_to_id.json"
     with word_to_id_path.open("w") as f:
         json.dump(word_to_id, f, indent=4)
-    torch.save(dataset, test_path / "tensorset.pth")
 
 
 def check_test_dataset(path: Path) -> int:

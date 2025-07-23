@@ -32,6 +32,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Create a tensor dataset instead of image dataset",
     )
+    parser.add_argument(
+        "--sparse",
+        action="store_true",
+        help="Create a sparse tensor dataset instead of image dataset. Works only in pair with `--tensor` option",
+    )
     args = parser.parse_args()
 
     query = "(Word.str.len() < 11) & (Word.str.len() > 1)"
@@ -44,8 +49,10 @@ if __name__ == "__main__":
 
     create_gen_arg_dict(graphemes_dir, all_words, query=query)
     if args.tensor:
-        create_train_tensor_dataset(graphemes_dir, train_words, 100, seed=42)
-        create_test_tensor_dataset(graphemes_dir, test_words)
+        create_train_tensor_dataset(
+            graphemes_dir, train_words, 100, seed=42, sparse=args.sparse
+        )
+        create_test_tensor_dataset(graphemes_dir, test_words, sparse=args.sparse)
     else:
         create_train_dataset(graphemes_dir, train_words, 100, seed=42)
         create_test_dataset(graphemes_dir, test_words)
