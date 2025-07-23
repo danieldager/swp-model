@@ -354,10 +354,10 @@ def save_training_checkpoint(
         "torch_cuda_rng_state": (
             torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
         ),
-        "trainset_state": train_loader.dataset.generator.get_rng_state(),  # type: ignore
-        "trainloader_state": train_loader.generator.get_rng_state(),  # type: ignore
-        "validset_state": valid_loader.dataset.generator.get_rng_state(),  # type: ignore
-        "validloader_state": valid_loader.generator.get_rng_state(),  # type: ignore
+        "trainset_state": train_loader.dataset.generator.get_state(),  # type: ignore
+        "trainloader_state": train_loader.generator.get_state(),  # type: ignore
+        "validset_state": valid_loader.dataset.generator.get_state(),  # type: ignore
+        "validloader_state": valid_loader.generator.get_state(),  # type: ignore
     }
     torch.save(checkpoint, ckpt_path)
 
