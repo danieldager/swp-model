@@ -44,6 +44,7 @@ def grid_search_log(
     train_name: str,
     num_epochs: int,
     append: bool = False,
+    from_epoch: int = 0,
 ):
     r"""Create one csv logging the training and validation losses of each epoch
     for a given model (descibed through `model_name`) along a given training process
@@ -61,7 +62,7 @@ def grid_search_log(
     model_args = get_model_args(model_name)
     train_args = get_train_args(train_name)
     cnn_args = model_args["cnn_args"]
-    for epoch in range(num_epochs):
+    for epoch in range(num_epochs - from_epoch):
         row_dict = {
             "Model name": [model_name],
             "Train name": [train_name],
@@ -80,7 +81,7 @@ def grid_search_log(
             "Learning rate": [train_args["learning_rate"]],
             "Fold": [train_args["fold_id"]],
             "Include stress": [train_args["include_stress"]],
-            "Epoch": [epoch + 1],
+            "Epoch": [from_epoch + epoch + 1],
             "Train loss": [train_losses[epoch]],
             "Valid loss": [valid_losses[epoch]],
             "Train errors": [train_errors[epoch]],

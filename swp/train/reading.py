@@ -135,7 +135,7 @@ def train(
         with torch.no_grad():
             for i, (data, target) in enumerate(valid_loader, 1):
                 if verbose:
-                    print(f"{i+1}/{len(valid_loader)}", end="\n")
+                    print(f"{i}/{len(valid_loader)}", end="\n")
 
                 data = data.to(device)
                 target = target.to(device)
@@ -190,6 +190,8 @@ def train(
                 train_loader=train_loader,
                 valid_loader=valid_loader,
             )
+            if verbose:
+                print("Training checkpoint succesfully created")
             break
 
     grid_search_log(
@@ -199,6 +201,7 @@ def train(
         valid_errors,
         model_name,
         train_name,
-        num_epochs,
+        epoch,
         append=sig_handler is not None,
+        from_epoch=from_epoch,
     )

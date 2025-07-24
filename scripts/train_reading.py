@@ -254,6 +254,8 @@ if __name__ == "__main__":
             model_name=model_name,
             train_name=train_name,
         )
+        if args.verbose and last_epoch != 0:
+            print(f"Successfully loaded training state at epoch {last_epoch}")
 
     if args.grapheme_only:
         train_loader = get_grapheme_trainloader(
