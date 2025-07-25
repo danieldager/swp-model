@@ -47,6 +47,9 @@ def train(
     if isinstance(model, Bimodel):
         model.to_visual()
     model.to(device)
+    optimizer.load_state_dict(
+        optimizer.state_dict()
+    )  # trick to ensure optimizer is on right device
     model.train()
 
     train_losses = []
