@@ -7,14 +7,87 @@ import pandas as pd
 from matplotlib import gridspec
 from matplotlib.colors import PowerNorm, TwoSlopeNorm
 from matplotlib.lines import Line2D
-
-# from mlem_minimal import feature_distances, mlem, representation_distances
+from mlem_minimal import feature_distances, mlem, representation_distances
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.metrics import silhouette_score
+
+# fmt: off
+ARPA_TO_IPA = {
+    "AA": "ɑ", "AE": "æ", "AH": "ʌ", "AO": "ɔ", "AW": "aʊ", "AY": "aɪ",
+    "B": "b", "CH": "tʃ", "D": "d", "DH": "ð", "EH": "ɛ", "ER": "ɝ",
+    "EY": "eɪ", "F": "f", "G": "ɡ", "HH": "h", "IH": "ɪ", "IY": "i",
+    "JH": "dʒ", "K": "k", "L": "l", "M": "m", "N": "n", "NG": "ŋ",
+    "OW": "oʊ", "OY": "ɔɪ", "P": "p", "R": "ɹ", "S": "s", "SH": "ʃ",
+    "T": "t", "TH": "θ", "UH": "ʊ", "UW": "u", "V": "v", "W": "w",
+    "Y": "j", "Z": "z", "ZH": "ʒ"
+}
+# fmt: on
+
+
+def dendro_dmatrix(
+    df: pd.DataFrame,
+    emb: np.ndarray,
+    path: pathlib.Path | None = None,
+    metric: str = "euclidean",
+) -> None:
+    """
+    Compute the dendrogram and dissimilarity matrix for the phoenemes dataset
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the processed dataset
+        emb (np.ndarray): Embeddings for each row in the DataFrame
+        path (pathlib.Path): Path to save plots
+        metric (str): Distance metric to use
+
+    Returns:
+        None
+    """
+    dis = pdist(emb, metric=metric)  # type: ignore
+    lnk = linkage(emb, method="ward")
+
+    fig = plt.figure(figsize=(16, 12))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 8], wspace=0.06)
+
+    ax_den = plt.subplot(gs[0], frameon=False)
+    den = dendrogram(lnk, orientation="left")
+    ax_den.set_xticks([])
+    ax_den.set_yticks([])
+    order = den["leaves"]
+    labels = [v[0] for v in df["No_Stress"].values[order]]
+    labels = [ARPA_TO_IPA[l] for l in labels]
+
+    ax_mat = plt.subplot(gs[1])
+    mat = squareform(dis)[order, :][:, order][::-1, :]
+    vmin = np.percentile(mat, 3)  # mat.min()
+    vmax = np.percentile(mat, 99)  # mat.max()
+    norm = TwoSlopeNorm(np.median(mat), vmin, vmax)  # type: ignore
+    # norm = PowerNorm(gamma=5, vmin=mat.min(), vmax=mat.max())
+
+    im = ax_mat.imshow(mat, aspect="auto", cmap="RdBu_r", norm=norm)
+    ax_mat.set_xticks(np.arange(len(labels)))
+    ax_mat.set_yticks(np.arange(len(labels)))
+    ax_mat.set_xticklabels(labels, fontsize=14)
+    ax_mat.set_yticklabels(labels[::-1], fontsize=14)
+
+    cbar = fig.colorbar(
+        im,
+        ax=ax_mat,
+        pad=0.01,
+        aspect=60,
+    )
+    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label(f"{metric.title()} Distance", fontsize=20, labelpad=10)
+
+    if path:
+        filename = f"phonemes_dmatrix_{metric}.png"
+        plt.savefig(path / filename, dpi=300, bbox_inches="tight", transparent=True)
+        plt.close()
+    else:
+        plt.show()
 
 
 def dissim_matrix(
@@ -560,6 +633,99 @@ def pca_types(pca: PCA, df: pd.DataFrame, key: str = "H1") -> None:
     plt.show()
 
 
+def mlem_importance(
+    df: pd.DataFrame,
+    emb: np.ndarray,
+    dataset: str | None = None,
+    path: pathlib.Path | None = None,
+    metric: str = "euclidean",
+    verbose: int = 0,
+) -> pd.DataFrame:
+    """
+    Use metric learning to derive feature importances on embeddings
+    """
+    feat_dists = feature_distances(df, verbose=verbose)
+    repr_dists = representation_distances(emb, metric=metric, verbose=verbose)
+
+    results = mlem(
+        repr_dists,
+        feat_dists,
+        features_df=df,
+        outer_folds=2,
+        inner_folds=3,
+        n_permutations=50,
+        random_state=0,
+        verbose=verbose,
+        n_jobs=-2,
+        scale=True,
+    )
+    return results
+
+
+def mlem_phonemes(
+    v_results,
+    c_results,
+    path: pathlib.Path | None = None,
+    metric="euclidean",
+    figsize=(6, 4),
+):
+    error_kw = dict(ecolor="black", lw=0.8, capsize=4, capthick=0.8)
+
+    # Calculate standard errors
+    v_results["sem"] = v_results["std"] / np.sqrt(50)
+    c_results["sem"] = c_results["std"] / np.sqrt(50)
+    var = "sem"
+
+    # Common x-range so the 0-lines align
+    xmin = min(
+        (v_results["importance"] - v_results[var]).min(),
+        (c_results["importance"] - c_results[var]).min(),
+    )
+    xmax = max(
+        (v_results["importance"] + v_results[var]).max(),
+        (c_results["importance"] + c_results[var]).max(),
+    )
+    pad = 0.15 * (xmax - xmin)
+    xlims = (xmin - pad, xmax + pad)
+
+    for ptype, df in [("vowels", v_results), ("consonants", c_results)]:
+        plt.figure(figsize=figsize)
+        bars_v = plt.barh(
+            df["feature"],
+            df["importance"],
+            xerr=df[var],
+            error_kw=error_kw,
+        )
+        plt.xlim(xlims)
+        plt.axvline(0, color="grey", lw=0.8)
+        plt.xticks(fontsize=11)
+        plt.yticks(fontsize=11)
+
+        for i, bar in enumerate(bars_v):
+            imp = df["importance"].iloc[i]
+            err = df[var].iloc[i]
+            sig = df["significant"].iloc[i]
+            x = imp + np.sign(imp) * (err + 0.05 * (xlims[1] - xlims[0]))
+            y = bar.get_y() + bar.get_height() / 2
+            plt.text(
+                x,
+                y,
+                "*" if sig else "ns",
+                ha="center",
+                va="center",
+                color="green" if sig else "red",
+                fontsize=11,
+            )
+
+        plt.tight_layout()
+        if path:
+            filename = f"{ptype}_mlem_{metric}.png"
+            plt.savefig(path / filename, dpi=300, bbox_inches="tight", transparent=True)
+            plt.close()
+        else:
+            plt.show()
+
+
 def find_best_n_clusters(
     df: pd.DataFrame,
     min_clusters: int = 2,
@@ -600,78 +766,6 @@ def find_best_n_clusters(
     clusters = kmeans.fit_predict(df)
 
     return best_num_clusters, clusters
-
-
-# # TODO: Danny rewrite
-# def mlem_importance(
-#     df: pd.DataFrame,
-#     dataset: str,
-#     num_layers: int,
-#     path: pathlib.Path,
-#     metric: str = "euclidean",
-# ) -> None:
-#     """Use metric learning to derive feature importances on embeddings"""
-
-#     drops = ["Phonemes", "No_Stress", "Prediction", "H1", "C1"]
-
-#     if dataset == "phoneme":
-#         drops += ["Included", "Dipthong"]
-#     elif dataset == "evaluation":
-#         drops += ["Word", "Condition", "Size", "Frequency", "Length"]
-
-#     features = df.drop(columns=drops)
-#     feat_dists = feature_distances(features, verbose=0)
-
-#     num_layers = 1
-#     for layer in range(1, num_layers + 1):
-#         h_emb = np.array(df[f"H{layer}"].to_list())
-#         c_emb = np.array(df[f"C{layer}"].to_list())
-#         hc_emb = np.concatenate([h_emb, c_emb], axis=1)
-
-#         # for name, emb in zip(["H", "C", "HC"], [h_emb, c_emb, hc_emb]):
-#         for name, emb in zip(["H"], [h_emb]):
-#             repr_dists = representation_distances(emb, metric=metric, verbose=0)
-#             # plt.figure(figsize=(8, 6))
-#             # plt.imshow(repr_dists, cmap="viridis")
-#             # plt.colorbar(label=f"{metric.title()} Distance")
-#             # plt.xlabel("Stimulus Index")
-#             # plt.ylabel("Stimulus Index")
-#             # plt.show()
-
-#             results = mlem(
-#                 repr_dists,
-#                 feat_dists,
-#                 features_df=features,
-#                 outer_folds=2,
-#                 inner_folds=3,
-#                 n_permutations=50,
-#                 random_state=0,
-#                 verbose=0,
-#                 n_jobs=-2,
-#                 scale=True,
-#             )
-
-#             plt.figure(figsize=(8, 6))
-#             plt.bar(results["feature"], results["importance"], yerr=results["std"])
-#             # plt.xlabel("Features")
-#             plt.ylabel("Importance")
-#             plt.title(f"Feature Importance {name}{layer}")
-#             # plt.xticks(rotation=45)
-
-#             # Highlight significant features
-#             # TODO: does this work ?
-#             for i, is_significant in enumerate(results["significant"]):
-#                 color = "green" if is_significant else "red"
-#                 plt.text(
-#                     i,
-#                     results["importance"].iloc[i] + results["std"].iloc[i] + 0.01,
-#                     "*" if is_significant else "ns",
-#                     ha="center",
-#                     color=color,
-#                 )
-#             plt.tight_layout()
-#             plt.savefig(path / f"{dataset}_mlem_{name}{layer}_{metric}.png", dpi=300)
-#             plt.close()
 
 
 # def mlem_univariate(

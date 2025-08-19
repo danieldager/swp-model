@@ -56,7 +56,8 @@ def regression_plots(
     dfs: pd.DataFrame | list[pd.DataFrame],
     path: pathlib.Path | None = None,
     mode: str = "both",
-    var: str | None = "ci",
+    var: str | None = None,
+    figsize: tuple[int, int] = (7, 6),
 ) -> None:
     """Perform regression analysis on test data, plot feature importance.
 
@@ -104,7 +105,7 @@ def regression_plots(
 
     plt.rcParams.update({"font.size": 24})
     # fig1, ax1 = plt.subplots(figsize=(11, 6))
-    fig1, ax1 = plt.subplots(figsize=(7, 6))
+    fig1, ax1 = plt.subplots(figsize=figsize)
     # bar plot with error bars
     sns.barplot(
         data=fi_sorted,
@@ -133,7 +134,7 @@ def regression_plots(
     # Save the plot
     if path:
         fig_path = path / f"errors_import_{mode}.png"
-        fig1.savefig(fig_path, dpi=300, bbox_inches="tight")
+        fig1.savefig(fig_path, dpi=300, bbox_inches="tight", transparent=True)
         plt.close(fig1)
     else:
         plt.show()

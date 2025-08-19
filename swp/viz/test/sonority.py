@@ -19,7 +19,8 @@ sns.set_palette("colorblind")
 def plot_sonority_errors(
     df: pd.DataFrame,
     path: pathlib.Path | None = None,
-    var: str | None = "se",
+    var: str | None = None,
+    figsize: tuple[int, int] = (7, 6),
 ) -> None:
     """Plot average edit distance grouped by sonority.
 
@@ -29,7 +30,7 @@ def plot_sonority_errors(
         var (str): Error bar type, default is 'se' (standard error).
     """
     # plt.figure(figsize=(11, 6))
-    plt.figure(figsize=(7, 6))
+    plt.figure(figsize=figsize)
     ax = sns.lineplot(
         data=df,
         x="Sonority",
@@ -62,7 +63,9 @@ def plot_sonority_errors(
     ax.grid(True)
 
     if path:
-        plt.savefig(path / "errors_son.png", dpi=300, bbox_inches="tight")
+        plt.savefig(
+            path / "errors_son.png", dpi=300, bbox_inches="tight", transparent=True
+        )
         plt.close()
     else:
         plt.show()

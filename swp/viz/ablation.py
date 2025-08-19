@@ -47,7 +47,7 @@ def ablation_plots(
     xlabel,
     ylabel,
     filename,
-    model_dir,
+    model_dir: Path | None = None,
     log_scale=False,
 ):
     """
@@ -124,7 +124,16 @@ def ablation_plots(
     legend = ax.get_legend()
     if legend is not None:
         legend.remove()
-    plt.savefig(model_dir / f"scatter_{filename}.png", dpi=300)
+
+    if model_dir is None:
+        plt.show()
+    else:
+        plt.savefig(
+            model_dir / f"scatter_{filename}.png",
+            dpi=300,
+            bbox_inches="tight",
+            transparent=True,
+        )
 
     # Create a legend figure
     ax.legend(title="Layer")
@@ -156,5 +165,8 @@ def ablation_plots(
     xlabel.set_position((0.54, 0.05))
     axes[0].set_ylabel("# of Neurons", fontsize=24, labelpad=10)
     plt.tight_layout()
-    plt.savefig(model_dir / f"histo_{filename}.png", dpi=300)
-    plt.close()
+    if model_dir is None:
+        plt.show()
+    else:
+        plt.savefig(model_dir / f"histogram_{filename}.png", dpi=300)
+        plt.close()

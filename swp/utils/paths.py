@@ -126,3 +126,9 @@ def get_morphemes_dir() -> pathlib.Path:
     morphemes_dir = get_stimuli_dir() / "morphemes_data"
     morphemes_dir.mkdir(parents=True, exist_ok=True)
     return morphemes_dir
+
+
+def get_notebooks_dir() -> pathlib.Path:
+    notebooks_dir = repo_root / "notebooks"
+    notebooks_dir.mkdir(parents=True, exist_ok=True)
+    return notebooks_dir

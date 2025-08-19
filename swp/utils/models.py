@@ -37,10 +37,10 @@ def load_weights(
     """
     save_dir = get_weights_dir() / model_name / train_name
     model_path = save_dir / f"{checkpoint}.pth"
-    model.to(device)
     model.load_state_dict(
         torch.load(model_path, map_location=device, weights_only=True)
     )
+    model.to(device)
     model.bind()
 
 

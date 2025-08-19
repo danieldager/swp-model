@@ -172,14 +172,6 @@ if __name__ == "__main__":
                 h = h.unsqueeze(1)
                 c = c.unsqueeze(1)
 
-            # Pad output to allow for concatenation
-            if store_out:
-                out = out.detach().cpu().numpy()
-                B, T, H = out.shape
-                padded_out = np.zeros((B, MAX_PAD, H))
-                padded_out[:, :T, :] = out
-                embeddings["Out"].append(padded_out)
-
             h = h.squeeze(0)
             h = h.detach().cpu().numpy()
             embeddings["Hidden"].append(h)
@@ -187,6 +179,14 @@ if __name__ == "__main__":
             c = c.squeeze(0)
             c = c.detach().cpu().numpy()
             embeddings["Cell"].append(c)
+
+            # Pad output to allow for concatenation
+            if store_out:
+                out = out.detach().cpu().numpy()
+                B, T, H = out.shape
+                padded_out = np.zeros((B, MAX_PAD, H))
+                padded_out[:, :T, :] = out
+                embeddings["Out"].append(padded_out)
 
         return embeddings_LSTM_hook
 
@@ -217,10 +217,14 @@ if __name__ == "__main__":
         )
         num_layers = model.encoder.num_layers
 
-        embeddings = {"Out": [], "Hidden": [], "Cell": []}
+        embeddings = {"Hidden": [], "Cell": []}
+        if args.store_out:
+            embeddings["Out"] = []
         is_batched = True if args.batch_size > 1 else False
 
-        hook = create_embeddings_LSTM_hook(embeddings, is_batched, num_layers)
+        hook = create_embeddings_LSTM_hook(
+            embeddings, is_batched, num_layers, args.store_out
+        )
         hook_handle = model.encoder.recurrent.register_forward_hook(hook)
 
         ### ABLATIONS ###
@@ -285,7 +289,11 @@ if __name__ == "__main__":
             if args.store_out:
                 # if you want hidden state for each token in sequence
                 # use lengths to zero out hidden states for pad tokens
+                print(f"Shape of output embeddings: {embeddings['Out'][0].shape}")
+
                 o_emb = np.concat(embeddings["Out"])
+                print(f"Shape of output embeddings: {o_emb.shape}")
+
                 _, T, _ = o_emb.shape
                 lengths = results["Length"].to_numpy() + 1
                 mask = np.arange(T)[None, :] < lengths[:, None]
