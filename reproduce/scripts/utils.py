@@ -186,4 +186,3 @@ def parse_figsize(figsize_str: str) -> Tuple[float, float]:
         )
         raise ValueError(
             f"Invalid figsize format: {figsize_str}. Expected format: 'width,height'"
-        )
