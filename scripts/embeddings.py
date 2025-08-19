@@ -289,7 +289,8 @@ if __name__ == "__main__":
             if args.store_out:
                 # if you want hidden state for each token in sequence
                 # use lengths to zero out hidden states for pad tokens
-                print(f"Shape of output embeddings: {embeddings['Out'][0].shape}")
+                if args.verbose:
+                    print(f"Shape of output embeddings: {embeddings['Out'][0].shape}")
 
                 o_emb = np.concat(embeddings["Out"])
                 print(f"Shape of output embeddings: {o_emb.shape}")
