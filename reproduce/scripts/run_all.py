@@ -114,7 +114,7 @@ def main():
     # Run behavioral analysis (Figure 2)
     if not args.skip_behavioral:
         total_count += 1
-        print("\\n" + "=" * 50)
+        print("\n" + "=" * 50)
         print("RUNNING BEHAVIORAL ANALYSIS (FIGURE 2)")
         print("=" * 50)
 
