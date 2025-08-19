@@ -127,7 +127,7 @@ def main():
         data_dir=data_dir,
         figures_dir=figures_dir,
         figsize=figsize,
-    regenerate=args.regenerate,
+        regenerate=args.regenerate,
         seed=args.seed,
     )
 
