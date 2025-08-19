@@ -14,7 +14,7 @@ def test(
     device: str | torch.device,
     test_df: pd.DataFrame,
     test_loader: DataLoader,
-    include_stress: bool,
+    include_stress: bool = False,
     error_meter: Callable[[torch.Tensor, torch.Tensor], int] = classic_errors,
     verbose: bool = False,
 ) -> tuple[pd.DataFrame, float]:

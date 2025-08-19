@@ -5,7 +5,12 @@ from torch.utils.data import DataLoader
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.datasets import classify_error_positions, enrich_for_plotting
 from ..utils.metrics import calc_accuracy, calc_importance
+from ..utils.paths import get_notebooks_dir
 from .repetition import test
+
+notebooks_dir = get_notebooks_dir()
+ablation_dir = notebooks_dir / "ablations"
+ablation_dir.mkdir(parents=True, exist_ok=True)
 
 
 def cache_lstm_weights(layer):
@@ -53,10 +58,11 @@ def ablate(
     test_df: pd.DataFrame,
     test_loader: DataLoader,
     include_stress: bool,
+    print_progress: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Ablate each neuron in a network sequentially and compute the impact of 
+    """Ablate each neuron in a network sequentially and compute the impact of
     said ablation on the error rates for different types of stimuli."""
-    
+
     # Loop over layers and neurons for ablation.
     ablation_results = []
     fi_results = []
@@ -69,10 +75,11 @@ def ablate(
         original_weights = cache_lstm_weights(layer)
 
         for neuron_idx in range(num_neurons):
-            print(
-                f"Ablating neuron {neuron_idx+1}/{num_neurons} in {layer_name}    ",
-                end="\r",
-            )
+            if print_progress:
+                print(
+                    f"Ablating neuron {neuron_idx+1}/{num_neurons} in {layer_name}    ",
+                    end="\r",
+                )
             ablate_lstm_neuron(layer, neuron_idx, num_neurons)
             df, _ = test(
                 model=model,
@@ -83,6 +90,10 @@ def ablate(
             )
             restore_lstm_weights(layer, original_weights)
             df = enrich_for_plotting(df, include_stress)
+
+            # save to notebooks_dir / "ablations"
+            # df.to_csv(ablation_dir / f"{layer_name}_{neuron_idx}.csv")
+
             df = classify_error_positions(df)
 
             _, fi_len, fi_frq, fi_mor = calc_importance(df, mode="real")

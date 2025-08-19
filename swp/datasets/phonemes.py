@@ -486,7 +486,7 @@ def get_ngram_dataset(n: int, limit: int = 100000) -> pd.DataFrame:
 
 # Core datasets that take no extra args
 datasets = {
-    "phonemes": get_phoneme_dataset,
+    # "phonemes": get_phoneme_dataset,
     "bigrams": get_bigram_dataset,
     "trigrams": get_trigram_dataset,
     "sonority": get_sonority_dataset,

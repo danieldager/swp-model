@@ -227,10 +227,10 @@ if __name__ == "__main__":
             results_dir / "sonority.csv", index_col=0, converters=converters
         )
 
-        # plot_length_errors(test_results, figures_dir)
-        # plot_frequency_errors(test_results, figures_dir)
-        # plot_sonority_errors(ssp_results, figures_dir)
-        # plot_position_errors_smooth(test_results, figures_dir)
+        plot_length_errors(test_results, figures_dir)
+        plot_frequency_errors(test_results, figures_dir)
+        plot_sonority_errors(ssp_results, figures_dir)
+        plot_position_errors_smooth(test_results, figures_dir)
         # plot_position_errors_bins(test_results, figures_dir, num_bins=3)
         regression_plots(test_results, figures_dir, "real")
         regression_plots(test_results, figures_dir, "both")

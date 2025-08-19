@@ -86,8 +86,9 @@ def plot_position_errors(
 def plot_position_errors_smooth(
     df: pd.DataFrame,
     dir: pathlib.Path | None = None,
-    var: str = "ci",
+    var: str | None = None,
     multi: bool = False,
+    figsize: tuple[int, int] = (7, 6),
 ):
     """Plot smooth average edit distance by relative position within each sequence.
     Also does a subplot for every length.
@@ -186,7 +187,7 @@ def plot_position_errors_smooth(
             set_edge_ticks(ax, tick_fontsize=22, x_decimal_places=1, y_decimal_places=2)
     else:
         # plt.figure(figsize=(11, 6))
-        plt.figure(figsize=(7, 6))
+        plt.figure(figsize=figsize)
         ax = sns.lineplot(
             x="Position",
             y="Error_Rate",
@@ -205,7 +206,7 @@ def plot_position_errors_smooth(
 
     if dir:
         fig_path = dir / f"errors_pos{'_len' if multi else ''}.png"
-        plt.savefig(fig_path, bbox_inches="tight", dpi=300)
+        plt.savefig(fig_path, bbox_inches="tight", dpi=300, transparent=True)
         plt.close()
     else:
         plt.show()

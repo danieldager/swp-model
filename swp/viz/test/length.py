@@ -18,7 +18,8 @@ sns.set_palette("colorblind")
 def plot_length_errors(
     df: pd.DataFrame,
     dir: pathlib.Path | None = None,
-    var: str = "ci",
+    var: str | None = None,
+    figsize: tuple[int, int] = (7, 6),
 ):
     """Plot average edit distance by sequence length.
 
@@ -29,7 +30,7 @@ def plot_length_errors(
     """
     data = df.copy()
     # plt.figure(figsize=(11, 6))
-    plt.figure(figsize=(7, 6))
+    plt.figure(figsize=figsize)
     ax = sns.lineplot(
         data=data,
         x="Length",
@@ -40,7 +41,7 @@ def plot_length_errors(
         markersize=8,
         linewidth=3,
         palette={"real": "red", "pseudo": "blue"},
-        errorbar=None,
+        errorbar=var,
     )
     plt.xlabel("Length", fontsize=24, labelpad=-15)
     plt.ylabel("Edit Distance", fontsize=24, labelpad=-15)
@@ -79,7 +80,9 @@ def plot_length_errors(
     ax.grid(True)
 
     if dir:
-        plt.savefig(dir / f"errors_len.png", dpi=300, bbox_inches="tight")
+        plt.savefig(
+            dir / f"errors_len.png", dpi=300, bbox_inches="tight", transparent=True
+        )
         plt.close()
     else:
         plt.show()
