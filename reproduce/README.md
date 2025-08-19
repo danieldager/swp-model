@@ -12,7 +12,31 @@ This folder contains scripts and notebooks to reproduce the paper’s analyses a
 - `reproduce.ipynb` — End-to-end notebook version of the reproduction pipeline.
 - `paper.ipynb` — Paper-oriented narrative/figures (optional, may mirror sections of `reproduce.ipynb`).
 
-### Environment
+## Setup
+
+```bash
+git clone git@github.com:danieldager/single-word-processing-model.git
+cd single-word-processing-model
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python -m spacy download en_core_web_lg
+pip install git+https://github.com/LouisJalouzot/MLEM_minimal.git
+```
+
+Optional conda
+
+```bash
+conda create -n swpm python=3.11 -y
+conda activate swpm
+```
+
+Optional pyenv
+
+```bash
+pyenv install 3.11.0
+pyenv virtualenv 3.11.0 swpm
+pyenv activate swpm
+```
 
 Use the repository root environment. From the root:
 
@@ -121,3 +145,4 @@ python reproduce/scripts/univariate_analysis.py --model-name Ua_LSTM_h128_l1_v42
 # Behavioral only
 python reproduce/scripts/behavioral_analysis.py --model_name Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1 --weights_path weights/2048_75.pth
 ```
+
