@@ -326,11 +326,6 @@ def generate_feature_importance_analysis(
         # Extract embeddings
         print("Extracting embeddings...")
         embeddings = extract_embeddings(model, device, wfe_df, batch_size)
-        print(f"Embeddings shape: {embeddings.shape}")
-
-        # Debug: Check cleaned data
-        print("Data types after cleaning:\n")
-        print(wfe_df[features].dtypes + "\n")
 
         # Calculate feature importance
         print("Calculating feature importance...")

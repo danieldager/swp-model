@@ -2,6 +2,9 @@
 """
 Generate error type analysis across all neurons (Figure 15).
 Analyzes different types of errors produced by each neuron ablation.
+
+NOTE: not ready
+
 """
 
 import argparse

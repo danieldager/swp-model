@@ -4,7 +4,7 @@
 >
 > Word repetition — hearing a word and repeating it aloud — is a skill that takes years to develop in children, poses challenges for adults learning new languages, and can break down after brain damage. Cognitive science proposes a multi-component model for this task, but the underlying neural mechanisms remain unclear. To bridge this gap, we train deep neural networks on word repetition and probe them with tests inspired by human behavioral studies. We also simulate brain damage through ablation studies, creating “patient models” whose errors can be compared to clinical speech errors. Our results show that neural models can reproduce several human-like effects, while also diverging in important ways, pointing to both the promise and the challenges of developing biologically grounded models of language.
 
-Neural models for single-word processing with an auditory repetition pathway. This repo supports training from scratch, evaluation on controlled datasets, and reproducing the paper’s figures and analyses.
+Neural models for single-word processing with an auditory repetition pathway. This repo supports training from scratch, evaluation on controlled datasets, and reproducing the paper’s figures and analyses. (swp = single word processing)
 
 [![arXiv](https://img.shields.io/badge/arXiv-2506.13450-b31b1b.svg)](https://arxiv.org/abs/2506.13450)
 
@@ -22,8 +22,8 @@ Neural models for single-word processing with an auditory repetition pathway. Th
 ## Setup
 
 ```bash
-git clone git@github.com:danieldager/single-word-processing-model.git
-cd single-word-processing-model
+git clone git@github.com:danieldager/swp-model.git
+cd swp-model
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 python -m spacy download en_core_web_lg
@@ -65,7 +65,7 @@ python scripts/train_repetition.py \
 
 What gets saved where
 
-- Checkpoints after each epoch (and a few in the first epoch): `weights/<model_name>/<train_name>/<epoch>.pth`
+- Checkpoints after each epoch (and 10 checkpoints in the first epoch): `weights/<model_name>/<train_name>/<epoch>.pth`
 - Names are auto-generated for traceability:
   - `model_name` example: `Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1`
   - `train_name` example: `b1024_l0.001_fall_s42_sn_ec`
