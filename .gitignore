@@ -159,6 +159,7 @@ cython_debug/
 .DS_Store
 .vscode
 weights
+weights_old
 results
 stimuli/folds
 stimuli/phonemes
@@ -171,3 +172,4 @@ generated_scripts
 notebooks/data
 reproduce/data
 reproduce/figures
+!reproduce/weights
