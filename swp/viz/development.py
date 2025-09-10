@@ -9,34 +9,39 @@ import seaborn as sns
 
 # Define functions to assign properties based on the condition code
 def get_color(condition):
-    # Conditions starting with P are red.
-    if condition[0] == "P":
-        return "blue"
-    # Conditions starting with R: if ending with H, dark blue; if ending with L, light blue.
-    elif condition[0] == "R":
-        if condition[-1] == "H":
+    match condition[0], condition[-1]:
+        # Conditions starting with P are red.
+        case ("P", _):
+            return "blue"
+        # Conditions starting with R: if ending with H, dark blue; if ending with L, light blue.
+        case ("R", "H"):
             return "darkred"
-        elif condition[-1] == "L":
+        case ("R", "L"):
             return "red"
-    return "black"  # fallback
+        case _:
+            return "black"  # fallback
 
 
 def get_linewidth(condition):
     # Second character: L means thicker, S means thinner.
-    if condition[1] == "L":
-        return 3  # thicker
-    elif condition[1] == "S":
-        return 1  # thinner
-    return 2  # default
+    match condition[1]:
+        case "L":
+            return 3  # thicker
+        case "S":
+            return 1  # thinner
+        case _:
+            return 2  # default
 
 
 def get_linestyle(condition):
     # Third character: S means solid, C means dashed.
-    if condition[2] == "S":
-        return "-"  # solid/unbroken
-    elif condition[2] == "C":
-        return "--"  # dashed
-    return "-"  # default
+    match condition[2]:
+        case "S":
+            return "-"  # solid/unbroken
+        case "C":
+            return "--"  # dashed
+        case _:
+            return "-"  # default
 
 
 def development_plots(df: pd.DataFrame, figures_dir: pathlib.Path, mode: str) -> None:

@@ -67,10 +67,11 @@ def regression_plots(
         mode (int): Flag to indicate which subset of the data to use.
         var (str): Type of error bar to use. Defaults to "ci".
     """
-    if isinstance(dfs, pd.DataFrame):
-        dfs = [dfs]
-    elif isinstance(dfs, list) and not all(isinstance(df, pd.DataFrame) for df in dfs):
-        raise ValueError("All elements in the list must be DataFrames.")
+    match dfs:
+        case pd.DataFrame():
+            dfs = [dfs]
+        case list() if not all(isinstance(df, pd.DataFrame) for df in dfs):
+            raise ValueError("All elements in the list must be DataFrames.")
 
     data = {
         "Feature": [],

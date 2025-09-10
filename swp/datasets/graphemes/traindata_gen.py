@@ -66,12 +66,13 @@ def random_cartesian_product(
             spaces.append(spacing[id % len(spacing)])
             id //= len(spacing)
         items["spacing"] = spaces
-        if id % 3 == 0:
-            items["case"] = [True for _ in word]
-        elif id % 3 == 1:
-            items["case"] = [False for _ in word]
-        else:
-            items["case"] = [i == 0 for i in range(len(word))]
+        match id % 3:
+            case 0:
+                items["case"] = "upper"
+            case 1:
+                items["case"] = "lower"
+            case _:
+                items["case"] = "title"
         return items
 
     draws = generator.choice(amount, size=num_samples, replace=False)
@@ -111,13 +112,7 @@ def create_train_dataset(
                 f'{im_name}_charrot{"-".join(str(angle) for angle in arg["angles"])}'
             )
             im_name = f'{im_name}_sp{"-".join(str(space) for space in arg["spacing"])}'
-            if not arg["case"][0]:
-                case_name = "lowers"
-            elif arg["case"][-1]:
-                case_name = "uppers"
-            else:
-                case_name = "title"
-            im_name = f"{im_name}_{case_name}"
+            im_name = f"{im_name}_{arg["case"]}"
             im_name = f"{im_name}.jpg"
             im.save(word_dir / im_name)
 

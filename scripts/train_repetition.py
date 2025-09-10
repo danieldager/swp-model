@@ -187,12 +187,13 @@ if __name__ == "__main__":
         include_stress=include_stress,
     )
 
-    if args.loss == "classic":
-        criterion = AuditoryXENT()
-    elif args.loss == "first":
-        criterion = FirstErrorXENT()
-    else:
-        raise ValueError("Invalid loss function")
+    match args.loss:
+        case "classic":
+            criterion = AuditoryXENT()
+        case "first":
+            criterion = FirstErrorXENT()
+        case _:
+            raise ValueError("Invalid loss function")
 
     optimizer = optim.Adam(model.parameters(), lr=learn_rate)
     phoneme_to_id = get_phoneme_to_id(include_stress)

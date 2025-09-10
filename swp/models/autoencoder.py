@@ -123,15 +123,16 @@ class Bimodel(nn.Module):
     ) -> tuple[torch.Tensor, None | torch.Tensor]:
         # TODO find logic for multimodal input
         object_pred = None
-        if self.mode == "audio":
-            hidden = self.audit_encoder(inp)
-        elif self.mode == "visual":
-            object_pred, toreshape_hidden = self.visual_encoder(inp)
-            hidden = self.reshaper(to_reshape=toreshape_hidden)
-        else:
-            raise ValueError(
-                f"Model is made for modes audio and visual, current mode {self.mode} is not recognized"
-            )
+        match self.mode:
+            case "audio":
+                hidden = self.audit_encoder(inp)
+            case "visual":
+                object_pred, toreshape_hidden = self.visual_encoder(inp)
+                hidden = self.reshaper(to_reshape=toreshape_hidden)
+            case _:
+                raise ValueError(
+                    f"Model is made for modes audio and visual, current mode {self.mode} is not recognized"
+                )
         start = (
             torch.Tensor([self.start_token_id])
             .repeat((inp.size(0), 1))

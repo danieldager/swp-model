@@ -49,30 +49,32 @@ def text_to_grapheme(
     then this value will be used for all the spacings.
     """
 
-    if isinstance(spacing, int):
-        spacing = [spacing for _ in range(len(word) - 1)]
-    elif len(spacing) != len(word):
-        spacing = spacing[: (len(word) - 1)]
-        spacing += [0 for _ in range(len(word) - len(spacing))]
-    if isinstance(angles, int):
-        angles = [angles for _ in word]
-    elif len(angles) != len(word):
-        angles = angles[: (len(word))]
-        angles += [0 for _ in range(len(word) - len(angles))]
-    if isinstance(case, str):
-        if case == "upper":
+    match spacing:
+        case int():
+            spacing = [spacing for _ in range(len(word) - 1)]
+        case _ if len(spacing) != len(word):
+            spacing = spacing[: (len(word) - 1)]
+            spacing += [0 for _ in range(len(word) - len(spacing))]
+    match angles:
+        case int():
+            angles = [angles for _ in word]
+        case _ if len(angles) != len(word):
+            angles = angles[: (len(word))]
+            angles += [0 for _ in range(len(word) - len(angles))]
+    match case:
+        case "upper":
             case = [True for _ in word]
-        elif case == "lower":
+        case "lower":
             case = [False for _ in word]
-        elif case == "title":
+        case "title":
             case = [i == 0 for i in range(len(word))]
-        else:
+        case str():
             raise ValueError(
                 "Case string argument not recognized, try with upper, lower or title"
             )
-    elif len(case) != len(word):
-        case = case[: (len(word))]
-        case += [False for _ in range(len(word) - len(case))]
+        case _ if len(case) != len(word):
+            case = case[: (len(word))]
+            case += [False for _ in range(len(word) - len(case))]
     word = "".join(
         [word[i].upper() if case[i] else word[i].lower() for i in range(len(word))]
     )

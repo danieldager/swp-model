@@ -37,21 +37,20 @@ def trim(string: str) -> str:
 
 
 def slurm_partition_args(partition: str) -> tuple[str, str, str]:
-    if partition == "gpu_p5":
-        partition = "a100"
-        partition_type = "a100"
-    elif partition == "gpu_p6":
-        partition = "h100"
-        partition_type = "h100"
-    else:
-        partition_type = "v100"
     module_str = ""
+    match partition:
+        case "gpu_p5":
+            partition = "a100"
+            partition_type = "a100"
+        case "gpu_p6":
+            partition = "h100"
+            partition_type = "h100"
+        case _:
+            partition_type = "v100"
     if partition in {"a100", "h100", "v100-16g", "v100-32g"}:
         partition_str = f"-C {partition}"
-        if partition == "a100":
-            module_str = "arch/a100"
-        elif partition == "h100":
-            module_str = "arch/h100"
+        if partition in {"a100", "h100"}:
+            module_str = f"arch/{partition}"
     else:
         partition_str = f"--partition={partition}"
     return partition_str, module_str, partition_type

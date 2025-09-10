@@ -161,7 +161,7 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.Da
     if not include_stress:
         df["Phonemes"] = df["No_Stress"]
 
-    df = df[df["Phonemes"].apply(len) > 1].copy()
+    df = df[df["Phonemes"].apply(len) > 1].copy()  # TODO check why ?
 
     # stats_dir = get_stimuli_dir() / "statistics"
     # bfs = pd.read_csv(stats_dir / f"bigram_stats_{stress}.csv")

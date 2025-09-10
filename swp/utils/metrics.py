@@ -24,18 +24,19 @@ def calc_importance(
 
     # Prepare data
     df = df.copy()
-    if mode == "real":
-        df = df[df["Lexicality"] == "real"]
-        continuous_features = ["Length", "Zipf_Frequency"]
-        categorical_features = ["Morphology"]
-    elif mode == "both":
-        continuous_features = ["Length"]
-        categorical_features = ["Lexicality", "Morphology"]
-    elif mode == "forced":
-        continuous_features = ["Length", "Zipf_Frequency"]
-        categorical_features = ["Morphology"]
-    else:
-        raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
+    match mode:
+        case "real":
+            df = df[df["Lexicality"] == "real"]
+            continuous_features = ["Length", "Zipf_Frequency"]
+            categorical_features = ["Morphology"]
+        case "both":
+            continuous_features = ["Length"]
+            categorical_features = ["Lexicality", "Morphology"]
+        case "forced":
+            continuous_features = ["Length", "Zipf_Frequency"]
+            categorical_features = ["Morphology"]
+        case _:
+            raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
     X = df[continuous_features + categorical_features]
     y = df[y_column]
 

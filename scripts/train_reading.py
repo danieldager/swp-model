@@ -12,10 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from swp.datasets.graphemes.torchsets import (
-    get_grapheme_trainloader,
-    get_mixed_trainloader,
-)
+from swp.datasets.graphemes import get_grapheme_trainloader, get_mixed_trainloader
 from swp.models.autoencoder import Unimodel
 from swp.models.decoders import DecoderLSTM, DecoderRNN
 from swp.models.encoders import CorNetEncoder
@@ -149,6 +146,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Enable the program to requeue itself on SLURM clusters provided signal SIGUSR1 is sent early enough.",
     )
+    parser.add_argument(
+        "--train_part",
+        type=str,
+        help="Specifiy which part to train. Can be `all`, `hidden`, `encoder` or `decorder`. Hidden is included in encoder.",
+    )
     args = parser.parse_args()
     seed_everything()
     backend_setup()
@@ -166,6 +168,8 @@ if __name__ == "__main__":
         include_stress = args.include_stress
         loss = "classic"  # TODO add loss to arguments
         seed = args.seed
+        train_part = args.train_part.lower()
+        mixed = not args.grapheme_only
         train_name = get_train_name(
             batch_size,
             learn_rate,
@@ -174,6 +178,8 @@ if __name__ == "__main__":
             seed=seed,
             loss=loss,
             query=query,
+            train_part=train_part,
+            mixed=mixed,
         )
     else:
         train_name = args.train_name
@@ -185,6 +191,8 @@ if __name__ == "__main__":
         seed = train_args["seed"]
         loss = train_args["loss"]
         query = train_args["query"]
+        train_part = train_args["train_part"]
+        mixed = train_args["mixed"]
 
     phoneme_to_id = get_phoneme_to_id(include_stress)
 
@@ -223,16 +231,27 @@ if __name__ == "__main__":
         }
         model.decoder.load_state_dict(decoder_dict)
 
-    if loss == "classic":
-        auditory_loss = AuditoryXENT()
-    elif loss == "first":
-        auditory_loss = FirstErrorXENT()
-    else:
-        raise ValueError("Argument of loss isn't recognized, use `classic` or `first`")
+    match loss:
+        case "classic":
+            auditory_loss = AuditoryXENT()
+        case "first":
+            auditory_loss = FirstErrorXENT()
+        case _:
+            raise ValueError(
+                "Argument of loss isn't recognized, use `classic` or `first`"
+            )
 
-    optimizer = optim.Adam(
-        model.encoder.to_hidden.parameters(), lr=learn_rate
-    )  # can include encoder, decoder, or also encoder.cnn.decoder.linear
+    match train_part:
+        case "all":
+            optimizer = optim.Adam(model.parameters(), lr=learn_rate)
+        case "hidden":
+            optimizer = optim.Adam(model.encoder.to_hidden.parameters(), lr=learn_rate)
+        case "encoder":
+            optimizer = optim.Adam(model.encoder.parameters(), lr=learn_rate)
+        case "decoder":
+            optimizer = optim.Adam(model.decoder.parameters(), lr=learn_rate)
+        case _:
+            raise ValueError(f"Part to train {train_part} not recognized")
 
     sig_handler = None
     trainset_generator = None
@@ -257,7 +276,7 @@ if __name__ == "__main__":
         if args.verbose and last_epoch != 0:
             print(f"Successfully loaded training state at epoch {last_epoch}")
 
-    if args.grapheme_only:
+    if not mixed:
         train_loader = get_grapheme_trainloader(
             fold_id=fold_id,
             train=True,

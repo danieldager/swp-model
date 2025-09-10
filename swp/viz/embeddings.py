@@ -51,16 +51,19 @@ def dissim_matrix(
             ax_den.set_xticks([])
             ax_den.set_yticks([])
             order = den["leaves"]
+            if order is None:
+                raise RuntimeError("No leaf found in the dendrogram")
 
-            if dataset == "phoneme":
-                full = True
-                labels = [v[0] for v in df["No_Stress"].values[order]]
-            elif dataset == "bigram":
-                full = False
-                labels = ["-".join(v) for v in df["No_Stress"].values[order]]
-            elif dataset == "evaluation":
-                full = False
-                labels = [word for word in df["Word"].values[order]]
+            match dataset:
+                case "phoneme":
+                    full = True
+                    labels = [v[0] for v in df["No_Stress"].values[order]]
+                case "bigram":
+                    full = False
+                    labels = ["-".join(v) for v in df["No_Stress"].values[order]]
+                case "evaluation":
+                    full = False
+                    labels = [word for word in df["Word"].values[order]]
 
             ax_mat = plt.subplot(gs[1])
             mat = squareform(dis)[order, :][:, order][::-1, :]
@@ -181,23 +184,19 @@ def pca_mds(
     #     lambda x: "Vowel" if x[0] in "AEIOUY" else "Consonant"
     # )
 
-    for layer in range(1, num_layers + 1):
-        h_emb = np.array(df[f"H{layer}"].to_list())
-        c_emb = np.array(df[f"C{layer}"].to_list())
-        hc_emb = np.concatenate([h_emb, c_emb], axis=1)
-
-        if dataset == "phoneme":
+    match dataset:
+        case "phoneme":
             features = []
             figsize = (6, 6)
             labels = [v[0] for v in df["No_Stress"].values]
-        elif dataset == "bigram":
+        case "bigram":
             figsize = (12, 12)
             if last_token:
                 features = ["First Type", "Type"]
             else:
                 features = ["Place", "Height"]
             labels = ["-".join(v) for v in df["No_Stress"].values]
-        elif dataset == "evaluation":
+        case "evaluation":
             figsize = (12, 12)
             if last_token:
                 features = ["First Type", "Second Type"]
@@ -205,7 +204,7 @@ def pca_mds(
             else:
                 features = ["Length", "Lexicality"]
             labels = [word for word in df["Word"].values]
-        elif dataset == "trigram":
+        case "trigram":
             figsize = (12, 12)
             # figsize = (18, 18)
             # figsize = (36, 36)
@@ -219,8 +218,13 @@ def pca_mds(
             else:
                 labels = ["-".join(v) for v in df_subset["No_Stress"].values]
 
-        if features_list:
-            features = features_list
+    if features_list:
+        features = features_list
+
+    for layer in range(1, num_layers + 1):
+        h_emb = np.array(df[f"H{layer}"].to_list())
+        c_emb = np.array(df[f"C{layer}"].to_list())
+        hc_emb = np.concatenate([h_emb, c_emb], axis=1)
 
         # for name, emb in zip(["H", "C", "HC"], [h_emb, c_emb, hc_emb]):
         for name, emb in zip(["H"], [h_emb]):
@@ -613,10 +617,11 @@ def mlem_importance(
 
     drops = ["Phonemes", "No_Stress", "Prediction", "H1", "C1"]
 
-    if dataset == "phoneme":
-        drops += ["Included", "Dipthong"]
-    elif dataset == "evaluation":
-        drops += ["Word", "Condition", "Size", "Frequency", "Length"]
+    match dataset:
+        case "phoneme":
+            drops += ["Included", "Dipthong"]
+        case "evaluation":
+            drops += ["Word", "Condition", "Size", "Frequency", "Length"]
 
     features = df.drop(columns=drops)
     feat_dists = feature_distances(features, verbose=0)
@@ -717,12 +722,15 @@ def mlem_univariate(
     batch_size = emb.shape[0]
     num_neurons = emb.shape[-1]
 
-    if h_type == "H":
-        # use lengths to get final time step
-        lengths = df["Length"].to_numpy()
-        emb = emb[np.arange(batch_size), lengths, :]
-    elif h_type != "C":
-        raise ValueError(f"Unknown hidden type: {h_type}")
+    match h_type:
+        case "H":
+            # use lengths to get final time step
+            lengths = df["Length"].to_numpy()
+            emb = emb[np.arange(batch_size), lengths, :]
+        case "C":
+            pass
+        case _:
+            raise ValueError(f"Unknown hidden type: {h_type}")
 
     data = {"Neuron": [], "Feature": [], "Importance": [], "Spearman": []}
 

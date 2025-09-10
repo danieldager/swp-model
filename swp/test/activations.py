@@ -90,6 +90,7 @@ def get_activations(
     take_last: bool = False,
     layers: str = "all",
 ) -> tuple[np.ndarray, list[int]]:
+    # TODO docstring
     buffer = BufferDict({"activations": [], "is_batched": False})
     if include_cell:
         model.to_unroll()
@@ -154,7 +155,7 @@ def trajectories(
     take_last: bool = False,
     layers: str = "all",
 ):
-
+    # TODO docstring
     concat_act, length_to_split = get_activations(
         model=model,
         device=device,
@@ -165,16 +166,19 @@ def trajectories(
         take_last=take_last,
     )
 
-    if mode == "MDS":
-        embedder = MDS()
-        concat_act = concat_act.astype(np.float64)
-        # use precomputed matrix in float32, might be faster
-        # from scipy.spatial.distance import squareform,pdist
-        # similarities = squareform(pdist(data,'speuclidean'))
-    elif mode == "PCA":
-        embedder = PCA(n_components=2)
-    else:
-        raise ValueError(f"Mode {mode} is not recognized to embed trajectories in 2D")
+    match mode:
+        case "MDS":
+            embedder = MDS()
+            concat_act = concat_act.astype(np.float64)
+            # use precomputed matrix in float32, might be faster
+            # from scipy.spatial.distance import squareform,pdist
+            # similarities = squareform(pdist(data,'speuclidean'))
+        case "PCA":
+            embedder = PCA(n_components=2)
+        case _:
+            raise ValueError(
+                f"Mode {mode} is not recognized to embed trajectories in 2D"
+            )
     embedded_acts = embedder.fit_transform(concat_act)
     cumsum = 0
     cumsum_to_split = []
@@ -197,6 +201,7 @@ def neural_regressions(
     take_last: bool = True,
     layers: str = "encoder",
 ):
+    # TODO docstring
     concat_act, _ = get_activations(
         model=model,
         device=device,
@@ -213,22 +218,23 @@ def neural_regressions(
     # df[df["Lexicality"] == "pseudo"]["Zipf_Frequency"] = 0
 
     # Define features: include the continuous variables and the categorical one.
-    if mode == "real":
-        df = df[df["Lexicality"] == "real"]
-        continuous_features = ["Length", "Zipf_Frequency"]
-        categorical_features = ["Morphology"]
-        features = ["Len", "Fre", "Mor"]
-    elif mode == "both":
-        continuous_features = ["Length"]
-        categorical_features = ["Lexicality", "Morphology"]
-        features = ["Len", "Lex", "Mor"]
-    elif mode == "test":
-        continuous_features = ["Length", "Zipf_Frequency"]
-        categorical_features = ["Lexicality", "Morphology"]
-        features = ["Len", "Fre", "Lex", "Mor"]
+    match mode:
+        case "real":
+            df = df[df["Lexicality"] == "real"]
+            continuous_features = ["Length", "Zipf_Frequency"]
+            categorical_features = ["Morphology"]
+            features = ["Len", "Fre", "Mor"]
+        case "both":
+            continuous_features = ["Length"]
+            categorical_features = ["Lexicality", "Morphology"]
+            features = ["Len", "Lex", "Mor"]
+        case "test":
+            continuous_features = ["Length", "Zipf_Frequency"]
+            categorical_features = ["Lexicality", "Morphology"]
+            features = ["Len", "Fre", "Lex", "Mor"]
 
-    else:
-        raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
+        case _:
+            raise ValueError(f"Invalid mode: {mode}, should be 'real' or 'both'.")
 
     importances = {"neuron_idx": []}
     for feature in features:

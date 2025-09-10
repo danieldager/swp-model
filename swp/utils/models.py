@@ -83,16 +83,6 @@ class ModelArgs(TypedDict):
     cnn_args: CNNArgs | None
 
 
-class TrainArgs(TypedDict):
-    batch_size: int
-    learning_rate: float
-    fold_id: int | None
-    include_stress: bool
-    loss: str
-    query: str | None
-    seed: int
-
-
 def get_model_args(model_name: str) -> ModelArgs:
     r"""Create a dictionnary containing the necessary arguments to build a model
     from a `model_name`. See `ModelArgs` class for more information."""
@@ -134,16 +124,17 @@ def get_model(model_name: str) -> Unimodel | Bimodel:
     # TODO make modular with other CNN encoders
     model_args = get_model_args(model_name)
     recur_type = model_args["recur_type"].upper()
-    if recur_type == "LSTM":
-        audit_encoder_class = EncoderLSTM
-        decoder_class = DecoderLSTM
-    elif recur_type == "RNN":
-        audit_encoder_class = EncoderRNN
-        decoder_class = DecoderRNN
-    else:
-        raise NotImplementedError(
-            f"Recurrent type {recur_type} is not currently supported"
-        )
+    match recur_type:
+        case "LSTM":
+            audit_encoder_class = EncoderLSTM
+            decoder_class = DecoderLSTM
+        case "RNN":
+            audit_encoder_class = EncoderRNN
+            decoder_class = DecoderRNN
+        case _:
+            raise NotImplementedError(
+                f"Recurrent type {recur_type} is not currently supported"
+            )
     decoder = decoder_class(
         vocab_size=model_args["vocab_size"],
         hidden_size=model_args["hidden_size"],
@@ -152,77 +143,96 @@ def get_model(model_name: str) -> Unimodel | Bimodel:
         tf_ratio=model_args["tf_ratio"],
     )
     model_class = model_args["model_class"]
-    if model_class.startswith("U"):
-        if model_class[1] == "a":
-            encoder = audit_encoder_class(
+    match model_class:
+        case "Ua" | "Uv":
+            if model_class == "Ua":
+                encoder = audit_encoder_class(
+                    vocab_size=model_args["vocab_size"],
+                    hidden_size=model_args["hidden_size"],
+                    num_layers=model_args["num_layers"],
+                    dropout=model_args["droprate"],
+                )
+            else:
+                if model_args["cnn_args"] is None:
+                    raise ValueError(
+                        "No arguments corresponding to the visual encoder in a visual model"
+                    )
+                encoder = CorNetEncoder(
+                    hidden_size=model_args["cnn_args"]["hidden_size"],
+                    cornet_model=model_args["cnn_args"]["cnn_model"],
+                )
+            model = Unimodel(
+                encoder=encoder,
+                decoder=decoder,
+                start_token_id=model_args["start_token_id"],
+            )
+        case "B":
+            audit_encoder = audit_encoder_class(
                 vocab_size=model_args["vocab_size"],
                 hidden_size=model_args["hidden_size"],
                 num_layers=model_args["num_layers"],
                 dropout=model_args["droprate"],
             )
-        elif model_class[1] == "v":
             if model_args["cnn_args"] is None:
                 raise ValueError(
                     "No arguments corresponding to the visual encoder in a visual model"
                 )
-            encoder = CorNetEncoder(
+            visual_encoder = CorNetEncoder(
                 hidden_size=model_args["cnn_args"]["hidden_size"],
                 cornet_model=model_args["cnn_args"]["cnn_model"],
             )
-        else:
+            model = Bimodel(
+                audit_encoder=audit_encoder,
+                visual_encoder=visual_encoder,
+                decoder=decoder,
+                start_token_id=model_args["start_token_id"],
+            )
+        case _ if model_class.startswith("U"):
             raise ValueError(
                 f"Trying to name a Unimodel that is neither auditory nor visual, type : {model_class[1:]}"
             )
-        model = Unimodel(
-            encoder=encoder,
-            decoder=decoder,
-            start_token_id=model_args["start_token_id"],
-        )
-    elif model_class == "B":
-        audit_encoder = audit_encoder_class(
-            vocab_size=model_args["vocab_size"],
-            hidden_size=model_args["hidden_size"],
-            num_layers=model_args["num_layers"],
-            dropout=model_args["droprate"],
-        )
-        if model_args["cnn_args"] is None:
-            raise ValueError(
-                "No arguments corresponding to the visual encoder in a visual model"
-            )
-        visual_encoder = CorNetEncoder(
-            hidden_size=model_args["cnn_args"]["hidden_size"],
-            cornet_model=model_args["cnn_args"]["cnn_model"],
-        )
-        model = Bimodel(
-            audit_encoder=audit_encoder,
-            visual_encoder=visual_encoder,
-            decoder=decoder,
-            start_token_id=model_args["start_token_id"],
-        )
-    else:
-        raise ValueError(f"Model class not recognized : {model_class}")
+        case _:
+            raise ValueError(f"Model class not recognized : {model_class}")
     return model
 
 
 def get_model_name(model: Unimodel | Bimodel) -> str:
-    r"""Returns the codified `model_name` corresponding to the `model`"""
+    r"""Returns the codified `model_name` corresponding to the `model`.
+    Field keys in the name string are the following :
+    First field : model class
+    Second field : architecture of the recurrent part
+    - h : Hidden size
+    - l : number of Layers
+    - v : Vocabulary size
+    - d : Dropout rate
+    - t : Teacher forcing rate
+    - s : Start token id
+    CNN fields are separated by `__c`
+    - h : CNN Hidden size
+    - m : CNN Model
+    """
     # TODO make modular with other CNN encoders
     cnn_str = None
-    if isinstance(model, Unimodel):
-        if model.is_auditory:
+    match model:
+        case Unimodel(is_auditory=True):
             model_name = "Ua"
-        else:
+        case Unimodel():
             model_name = "Uv"
             cnn_str = f"h{model.encoder.hidden_size}_m{model.encoder.cnn_model}"
-    else:
-        model_name = "B"
-        cnn_str = (
-            f"h{model.visual_encoder.hidden_size}_m{model.visual_encoder.cnn_model}"
-        )
-    if isinstance(model.decoder, DecoderLSTM):
-        model_name = f"{model_name}_LSTM"
-    elif isinstance(model.decoder, DecoderRNN):
-        model_name = f"{model_name}_RNN"
+        case Bimodel():
+            model_name = "B"
+            cnn_str = (
+                f"h{model.visual_encoder.hidden_size}_m{model.visual_encoder.cnn_model}"
+            )
+        case _:
+            raise TypeError("Model type not supported.")
+    match model.decoder:
+        case DecoderLSTM():
+            model_name = f"{model_name}_LSTM"
+        case DecoderRNN():
+            model_name = f"{model_name}_RNN"
+        case _:
+            raise TypeError("Recurrent type of decoder not supported.")
     model_name = f"{model_name}_h{model.decoder.hidden_size}"
     model_name = f"{model_name}_l{model.decoder.num_layers}"
     model_name = f"{model_name}_v{model.decoder.vocab_size}"
@@ -261,6 +271,30 @@ def get_model_name_from_args(
     return model_name
 
 
+class TrainArgs(TypedDict):
+    r"""TypedDict containing values required to identify a training :
+    `batch_size` : batch size
+    `learning_rate` : learning rate
+    `fold_id` : fold used for training
+    `include_stress` : whether or not phoneme stress is used
+    `loss` : the type of loss used for training
+    `query` : query used for the data
+    `seed` : seed of the dataloaders
+    `train_part` : part of the model that is trained
+    `mixed` : if the dataset is homogeneous or mixed
+    """
+
+    batch_size: int
+    learning_rate: float
+    fold_id: int | None
+    include_stress: bool
+    loss: str
+    query: str | None
+    seed: int
+    train_part: str | None
+    mixed: bool
+
+
 def get_train_name(
     batch_size: int,
     learning_rate: float,
@@ -269,9 +303,22 @@ def get_train_name(
     seed: int,
     loss: str = "classic",
     query: str | None = None,
+    train_part: str | None = None,
+    mixed: bool = False,
     **kwargs,
 ) -> str:
-    r"""Generate the `train_name` from the training arguments."""
+    r"""Generate the `train_name` from the training arguments.
+    Field keys in the name string are the following :
+    - b : Batch size
+    - l : Learning rate
+    - f : dataset Fold
+    - g : Generator seed
+    - s : phoneme Stress
+    - e : Error function
+    - q : Query hash
+    - d : Dataset type
+    - p : trained Part
+    """
     fold_str = "all" if fold_id is None else fold_id
     train_name = f"b{batch_size}_l{learning_rate}_f{fold_str}_g{seed}"
     if include_stress:
@@ -279,40 +326,67 @@ def get_train_name(
     else:
         train_name = f"{train_name}_sn"
 
-    if loss == "classic":
-        train_name = f"{train_name}_ec"
-    elif loss == "first":
-        train_name = f"{train_name}_ef"
-    else:
-        raise NotImplementedError(
-            f"No support for loss {loss} is currently implemented"
-        )
+    match loss:
+        case "classic":
+            train_name = f"{train_name}_ec"
+        case "first":
+            train_name = f"{train_name}_ef"
+        case _:
+            raise NotImplementedError(
+                f"No support for loss {loss} is currently implemented"
+            )
     if query is not None:
         hashed = check_query(query=query)
         train_name = f"{train_name}_q{hashed}"
-    # TODO add support for visual dataset, mixed or not
+    if train_part is not None:
+        train_name = f"{train_name}_p{train_part[0]}"
+    if mixed:
+        train_name = f"{train_name}_dm"
+    else:
+        train_name = f"{train_name}_ds"
     return train_name
 
 
 def get_train_args(train_name: str) -> TrainArgs:
     r"""Returns a dictionnary containing the arguments corresponding to the `train_name`."""
-    # TODO add support for visual dataset, mixed or not
     str_args = {arg[0]: arg[1:] for arg in train_name.split("_")}
-    if str_args["s"] == "w":  # include_stress
-        include_stress = True
-    elif str_args["s"] == "n":
-        include_stress = False
-    else:
-        raise ValueError(f'Stress value not recognized : {str_args["s"]}')
-    if str_args["e"] == "c":
-        loss = "classic"
-    elif str_args["e"] == "f":
-        loss = "first"
-    else:
-        raise ValueError(f'Loss value not recognized : {str_args["e"]}')
+    match str_args["s"]:
+        case "w":  # include_stress
+            include_stress = True
+        case "n":
+            include_stress = False
+        case _:
+            raise ValueError(f'Stress value not recognized : {str_args["s"]}')
+    match str_args["e"]:
+        case "c":
+            loss = "classic"
+        case "f":
+            loss = "first"
+        case _:
+            raise ValueError(f'Loss value not recognized : {str_args["e"]}')
     query = None
     if "q" in str_args:
         query = unhash_query(str_args["q"])
+    train_part = None
+    if "p" in str_args:
+        match str_args["p"]:
+            case "a":
+                train_part = "all"
+            case "h":
+                train_part = "hidden"
+            case "e":
+                train_part = "encoder"
+            case "d":
+                train_part = "decoder"
+            case _:
+                raise ValueError(f'Part value not recognized : {str_args["p"]}')
+    match str_args["d"]:
+        case "m":
+            mixed = True
+        case "s":
+            mixed = False
+        case _:
+            raise ValueError(f'Dataset type value not recognized : {str_args["d"]}')
     train_args = TrainArgs(
         {
             "batch_size": int(str_args["b"]),
@@ -322,6 +396,8 @@ def get_train_args(train_name: str) -> TrainArgs:
             "loss": loss,
             "query": query,
             "seed": int(str_args["g"]),
+            "train_part": train_part,
+            "mixed": mixed,
         }
     )
     return train_args

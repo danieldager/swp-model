@@ -24,8 +24,39 @@ from .testdata_gen import check_test_dataset
 from .traindata_gen import check_train_dataset
 
 
-class RandomizedTensorRepetitionDataset(Dataset):
-    # TODO docstring
+class RandomizedTensorReadingDataset(Dataset):
+    r"""Dataset class to handle graphemes to phonemes dataset by loading the whole dataset in memory.
+    Will track sample ids corresponding to the sample in the corresponding fold and store them in `id_tensor` attribute.
+
+    Load the tensors located at `root`, and use `phoneme_to_id` for phoneme tokenization.
+
+    Training fold is used if ̀`train` is set to ̀`True`, validation otherwise.
+
+    Samples gotten from this dataset are randomized among the class they belong to.
+
+    Args :
+        `root` : root folder in which to look for class folders, containing sample images
+        `fold_id` : fold number to load classes from
+        `train` : return training split if set to `True`, validation split otherwise
+        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        `include_stress` : if set to `True`, the phonemes will include stress
+        `generator` : generator used to control random sampling. If `None`, then a generator is initialized deterministically.
+        `query` : query to use when getting the data
+        `sparse` : if set to `True`, will load the dataset as a sparse tensor
+
+    Attributes :
+        `img_tensor` : tensor containing all the image data
+        `fold_id` : index of loaded fold
+        `train` : bool indicating if it is training split
+        `index_converter` : dict mapping index in dataframe to word ids
+        `epoch_ids` : Array containing the class indices to go through over one epoch
+        `generator` : generator used to control random sampling
+        `query` : query used when getting the data
+        `is_sparse` : bool indicating if `img_tensor` is a sparse tensor
+        `phonemes` : dict mapping word ids to phoneme tokens tensors
+        `max_len` : maximum length of a tokenized word
+    """
+
     def __init__(
         self,
         root: Path,
@@ -67,9 +98,9 @@ class RandomizedTensorRepetitionDataset(Dataset):
         max_len = 0
         for index, row in data_df.iterrows():
             word_phonemes = row[phoneme_label]
-            tensor_id = word_to_id[row["Word"]]
-            self.index_converter[index] = tensor_id
-            self.phonemes[tensor_id] = torch.Tensor(
+            word_id = word_to_id[row["Word"]]
+            self.index_converter[index] = word_id
+            self.phonemes[word_id] = torch.Tensor(
                 [phoneme_to_id[phoneme] for phoneme in word_phonemes]
                 + [phoneme_to_id["<EOS>"]]
             )
@@ -81,12 +112,12 @@ class RandomizedTensorRepetitionDataset(Dataset):
             self.generator = torch.Generator().manual_seed(42)
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
-        tensor_index = self.index_converter[self.epoch_ids[index]]
+        word_id = self.index_converter[self.epoch_ids[index]]
         if self.is_sparse:
             img = (
                 1
                 - self.img_tensor[
-                    tensor_index,
+                    word_id,
                     int(
                         torch.randint(
                             self.img_tensor.size(1), (1,), generator=self.generator
@@ -96,22 +127,42 @@ class RandomizedTensorRepetitionDataset(Dataset):
             )
         else:
             img = self.img_tensor[
-                tensor_index,
+                word_id,
                 int(
                     torch.randint(
                         self.img_tensor.size(1), (1,), generator=self.generator
                     )
                 ),
             ]
-        gt = self.phonemes[tensor_index]
+        gt = self.phonemes[word_id]
         return img, gt
 
     def __len__(self) -> int:
         return len(self.epoch_ids)
 
 
-class TensorRepetitionDataset(Dataset):
-    # TODO docstring
+class TensorReadingDataset(Dataset):
+    r"""Dataset class to handle graphemes to phonemes dataset by loading the whole dataset in memory.
+    Load the tensors located at `root`, and use `phoneme_to_id` for phoneme tokenization.
+
+    Also implement a preprocessing for tokenizing the phonemes.
+
+    Args:
+        `root` : root folder in which to look for class folders, containing sample images
+        `phoneme_to_id` : dict mapping phonemes to int for tokenization
+        `include_stress` : if set to `True`, the phonemes will include stress
+        `query` : query to use when getting the data
+        `sparse` : if set to `True`, will load the dataset as a sparse tensor
+
+    Attributes:
+        `img_tensor` : tensor containing all the image data
+        `index_converter` : dict mapping index in dataframe to word ids
+        `phonemes` : dict mapping word ids to phoneme tokens tensors
+        `query` : query used when getting the data
+        `is_sparse` : bool indicating if `img_tensor` is a sparse tensor
+        `max_len` : maximum length of a tokenized word
+    """
+
     def __init__(
         self,
         root: Path,
@@ -139,10 +190,11 @@ class TensorRepetitionDataset(Dataset):
         self.index_converter = {}
         self.phonemes = {}
         max_len = 0
-        for _, row in data_df.iterrows():
+        for index, row in data_df.iterrows():
             word_phonemes = row[phoneme_label]
-            tensor_id = word_to_id[row["Word"]]
-            self.phonemes[tensor_id] = torch.Tensor(
+            word_id = word_to_id[row["Word"]]
+            self.index_converter[index] = word_id
+            self.phonemes[word_id] = torch.Tensor(
                 [phoneme_to_id[phoneme] for phoneme in word_phonemes]
                 + [phoneme_to_id["<EOS>"]]
             )
@@ -150,7 +202,8 @@ class TensorRepetitionDataset(Dataset):
         self.max_len = max_len
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
-        word_id = index // self.img_tensor.shape[1]
+        real_id = index // self.img_tensor.shape[1]
+        word_id = self.index_converter[real_id]
         img_id = index % self.img_tensor.shape[1]
         if self.is_sparse:
             img = 1 - self.img_tensor[word_id, img_id].to_dense()
@@ -160,10 +213,10 @@ class TensorRepetitionDataset(Dataset):
         return img, gt
 
     def __len__(self) -> int:
-        return self.img_tensor.shape[0] * self.img_tensor.shape[1]
+        return len(self.index_converter) * self.img_tensor.shape[1]
 
 
-class RepetitionDataset(ImageFolder):
+class ReadingDataset(ImageFolder):
     r"""Dataset class to handle graphemes to phonemes dataset.
     Load the images located at `root`, and use `phoneme_to_id` for phoneme tokenization.
 
@@ -173,11 +226,15 @@ class RepetitionDataset(ImageFolder):
 
     Args:
         `root` : root folder in which to look for class folders, containing sample images
+        `word_to_phoneme` : dict mapping words to list of phonemes
         `phoneme_to_id` : dict mapping phonemes to int for tokenization
         other args are passed to the `ImageFolder` parent class
 
     Attributes:
         `class_to_sample_id` : dict mapping a class name to the set of sample ids of this class
+        `max_len` : maximum length of a tokenized word
+        `tokenized` : tuple containing tensors representing tokenized words
+        Attributes from `ImageFolder` dataset class
     """
 
     # is map-style dataset
@@ -224,9 +281,9 @@ class RepetitionDataset(ImageFolder):
             )
 
 
-class RandomizedFoldRepetitionDataset(RepetitionDataset):
-    r"""Subclass of `RepetitionDataset` meant to handle folds.
-    Will track sample ids corresponding to the sample in the corresponding fold and store them in `id_tensor` attribute.
+class RandomizedFoldReadingDataset(ReadingDataset):
+    r"""Subclass of `ReadingDataset` meant to handle folds.
+    Stores a pairing between classes in the fold dataframe and image ids in `id_tensor` attribute.
 
     Training fold is used if ̀`train` is set to ̀`True`, validation otherwise.
 
@@ -242,13 +299,13 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         other args are passed to the `ImageFolder` parent class
 
     Attributes :
-        `class_to_sample_id` : dict mapping a class name to the set of sample ids of this class
         `fold_id` : index of loaded fold
         `train` : bool indicating if it is training split
         `id_tensor` : Tensor of size `[num_fold_classes, num_samples_per_class]` containing overall dataset index. First dim is indexed along the fold dataframe.
         `epoch_ids` : Array containing the class indices to go through over one epoch
         `generator` : generator used to control random sampling
         `query` : query used when getting the data
+        Attributes from `ReadingDataset` class
     """
 
     def __init__(
@@ -316,99 +373,6 @@ class RandomizedFoldRepetitionDataset(RepetitionDataset):
         return len(self.epoch_ids)
 
 
-def get_grapheme_trainloader(
-    fold_id: int | None,
-    train: bool,
-    batch_size: int,
-    include_stress: bool = False,
-    dataset_generator: torch.Generator | None = None,
-    dataloader_generator: torch.Generator | None = None,
-    query: str | None = None,
-    load_all: bool = False,
-) -> DataLoader:
-    r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
-    Shuffling is controlled by `dataloader_generator`. If `dataloader_generator` is None, it is deterministically instantiated.
-    `dataset_generator` is passed to the dataset to control random sampling outside of shuffle.
-
-    Return the corresponding training data if `train` is set to `True`.
-    Return the validation data otherwise.
-
-    Passing a `query` string gives a dataloader containing the corresponding queried dataset.
-    Setting `load_all` to True returns a dataset loading everything in memory, which is faster to use but might be memory heavy.
-    """
-    if load_all:
-        grapheme_set = RandomizedTensorRepetitionDataset(
-            root=get_graphemes_dir() / "train",
-            fold_id=fold_id,
-            train=train,
-            phoneme_to_id=get_phoneme_to_id(),
-            include_stress=include_stress,
-            generator=dataset_generator,
-            query=query,
-        )
-    else:
-        check_train_dataset(get_graphemes_dir())
-        grapheme_set = RandomizedFoldRepetitionDataset(
-            root=get_graphemes_dir() / "train",
-            fold_id=fold_id,
-            train=train,
-            phoneme_to_id=get_phoneme_to_id(),
-            include_stress=include_stress,
-            generator=dataset_generator,
-            transform=torchvision.transforms.ToTensor(),
-            query=query,
-        )
-    if dataloader_generator is None:
-        dataloader_generator = torch.Generator().manual_seed(42)
-    pad_value = get_phoneme_to_id()["<PAD>"]
-    my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
-    grapheme_loader = DataLoader(
-        grapheme_set,
-        batch_size,
-        shuffle=True,
-        generator=dataloader_generator,
-        collate_fn=my_collate,
-    )
-    return grapheme_loader
-
-
-def get_grapheme_testloader(
-    batch_size: int,
-    include_stress: bool = False,
-    query: str | None = None,
-    load_all: bool = False,
-) -> DataLoader:
-    r"""Return a dataloader containing the grapheme test data batched in size `batch_size`.
-    Passing a `query` string gives a dataloader containing the corresponding queried test set.
-    Setting `load_all` to True returns a dataset loading everything in memory, which is faster to use but might be memory heavy.
-    """
-    if load_all:
-        grapheme_set = TensorRepetitionDataset(
-            root=get_graphemes_dir() / "test",
-            phoneme_to_id=get_phoneme_to_id(),
-            include_stress=include_stress,
-            query=query,
-        )
-    else:
-        check_test_dataset(get_graphemes_dir())
-        if include_stress:
-            phoneme_label = "Phonemes"
-        else:
-            phoneme_label = "No_Stress"
-        test_df = get_evaluation_dataset(query=query)
-        word_to_phoneme = dict(zip(test_df["Word"], test_df[phoneme_label]))
-        grapheme_set = RepetitionDataset(
-            root=get_graphemes_dir() / "test",
-            word_to_phoneme=word_to_phoneme,
-            phoneme_to_id=get_phoneme_to_id(),
-            transform=torchvision.transforms.ToTensor(),
-        )
-    pad_value = get_phoneme_to_id()["<PAD>"]
-    my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
-    grapheme_loader = DataLoader(grapheme_set, batch_size, collate_fn=my_collate)
-    return grapheme_loader
-
-
 class IndicedConcatDataset(ConcatDataset):
     r"""Concatenate datasets. Resulting dataset yields tuple `(data, target, dataset_id)`."""
 
@@ -429,157 +393,3 @@ class IndicedConcatDataset(ConcatDataset):
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
         data, target = self.datasets[dataset_idx][sample_idx]
         return data, target, dataset_idx
-
-
-def task_collate_fn(
-    batch: list[tuple[Any, Any, int]], num_tasks: int
-) -> tuple[Any, tuple[list[Any], torch.Tensor]]:
-    r"""This collate function is made to collate target tensors along the dataset they come from.
-    It is meant to be used along the `IndicedConcacDataset` class.
-
-    Returns a tuple containing :
-      - a tensor of all the collated inputs
-      - a list of tensors containing the collated target per corresponding dataset
-      - a tensor containing the matching dataset id for the inputs
-    """
-    # TODO update to include nested tensors
-    batch_data = []
-    batch_targets = [[] for _ in range(num_tasks)]
-    task_ids = []
-    for sample in batch:
-        data, target, id = sample
-        batch_data.append(data)
-        batch_targets[id].append(target)
-        task_ids.append(id)
-    batched_data = default_collate(batch_data)
-    batched_targets = [default_collate(task_target) for task_target in batch_targets]
-    batched_ids = default_collate(task_ids)
-    return (batched_data, (batched_targets, batched_ids))
-
-
-def grapheme_collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value: int):
-    r"""A collate function that get tensors of different length from `batch`, then
-    batch them together by extending them to the max length, filling with `pad_value`"""
-    data, target = tuple(zip(*batch))
-    collated_data = default_collate(list(data))
-    nt_target = nested_tensor(list(target), dtype=torch.long)
-    padded_target = nt_target.to_padded_tensor(padding=pad_value)
-    return collated_data, padded_target
-
-
-def get_mixed_trainloader(
-    fold_id: int | None,
-    train: bool,
-    batch_size: int,
-    include_stress: bool = False,
-    dataset_generator: torch.Generator | None = None,
-    dataloader_generator: torch.Generator | None = None,
-    query: str | None = None,
-) -> DataLoader:
-    r"""Return a dataloader containing both the grapheme training data corresponding to the `fold_id` fold
-    and the ImageNet dataset, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
-    Shuffling is controlled by `dataloader_generator`. If `dataloader_generator` is None, it is deterministically instantiated.
-    `dataset_generator` is passed to the grapheme dataset to control random sampling outside of shuffle.
-
-    Return the corresponding training data if `train` is set to `True`.
-    Return the validation data otherwise.
-
-    Passing a `query` string gives a dataloader containing the corresponding queried grapheme dataset.
-    """
-    check_train_dataset(get_graphemes_dir())
-    grapheme_set = RandomizedFoldRepetitionDataset(
-        root=get_graphemes_dir() / "train",
-        fold_id=fold_id,
-        train=train,
-        phoneme_to_id=get_phoneme_to_id(),
-        include_stress=include_stress,
-        generator=dataset_generator,
-        transform=torchvision.transforms.ToTensor(),
-        query=query,
-    )
-    if train:
-        imagenet_split = "train"
-        # TODO can we control the randomness without machine state ?
-        imagenet_transform = torchvision.transforms.Compose(
-            [
-                torchvision.transforms.RandomResizedCrop(224),
-                torchvision.transforms.RandomHorizontalFlip(),
-                torchvision.transforms.ToTensor(),
-                torchvision.transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
-            ]
-        )
-    else:
-        imagenet_split = "val"
-        imagenet_transform = torchvision.transforms.Compose(
-            [
-                torchvision.transforms.Resize(256),
-                torchvision.transforms.CenterCrop(224),
-                torchvision.transforms.ToTensor(),
-                torchvision.transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
-            ]
-        )
-    imagenet_root = get_imagenet_dir()
-    imagenet_set = ImageNet(
-        imagenet_root,
-        split=imagenet_split,
-        transform=imagenet_transform,
-    )
-    concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
-    if dataloader_generator is None:
-        dataloader_generator = torch.Generator().manual_seed(42)
-    train_loader = DataLoader(
-        concat_dataset,
-        batch_size=batch_size,
-        collate_fn=lambda data: task_collate_fn(data, 2),
-        shuffle=True,
-        generator=dataloader_generator,
-    )
-    return train_loader
-
-
-def get_mixed_testloader(
-    batch_size: int,
-    include_stress: bool = False,
-    query: str | None = None,
-) -> DataLoader:
-    r"""Return a dataloader containing both the grapheme test data and the ImageNet
-    test data, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
-
-    Passing a `query` string gives a dataloader containing the corresponding queried grapheme dataset.
-    """
-    check_test_dataset(get_graphemes_dir())
-    if include_stress:
-        phoneme_label = "Phonemes"
-    else:
-        phoneme_label = "No_Stress"
-    test_df = get_evaluation_dataset(query=query)
-    word_to_phoneme = dict(zip(test_df["Word"], test_df[phoneme_label]))
-    grapheme_set = RepetitionDataset(
-        root=get_graphemes_dir() / "test",
-        word_to_phoneme=word_to_phoneme,
-        phoneme_to_id=get_phoneme_to_id(),
-        transform=torchvision.transforms.ToTensor(),
-    )
-    imagenet_transform = torchvision.transforms.Compose(
-        [
-            torchvision.transforms.Resize(256),
-            torchvision.transforms.CenterCrop(224),
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            ),
-        ]
-    )
-    imagenet_root = get_imagenet_dir()
-    imagenet_set = ImageNet(
-        imagenet_root,
-        split="val",
-        transform=imagenet_transform,
-    )
-    concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
-    test_loader = DataLoader(dataset=concat_dataset, batch_size=batch_size)
-    return test_loader

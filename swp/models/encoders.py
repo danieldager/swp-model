@@ -151,22 +151,23 @@ def cornet_loader(
 
     model_code = model_letter.upper()
     model_class: Union[Type[nn.Module], Callable[[], nn.Module]]
-    if model_code == "R":
-        model_class = CORnet_R
-        model_hash = HASH_R
-    elif model_code == "RT":
-        model_class = CORnet_RT
-        model_hash = HASH_RT
-    elif model_code == "S":
-        model_class = CORnet_S
-        model_hash = HASH_S
-    elif model_code == "Z":
-        model_class = CORnet_Z
-        model_hash = HASH_Z
-    else:
-        raise ValueError(
-            f"CORnet model letter(s) {model_letter} not recognized. Use R, RT, S or Z."
-        )
+    match model_code:
+        case "R":
+            model_class = CORnet_R
+            model_hash = HASH_R
+        case "RT":
+            model_class = CORnet_RT
+            model_hash = HASH_RT
+        case "S":
+            model_class = CORnet_S
+            model_hash = HASH_S
+        case "Z":
+            model_class = CORnet_Z
+            model_hash = HASH_Z
+        case _:
+            raise ValueError(
+                f"CORnet model letter(s) {model_letter} not recognized. Use R, RT, S or Z."
+            )
     model = model_class()
     if pretrained:
         file_name = f"cornet_{model_letter.lower()}-{model_hash}.pth"

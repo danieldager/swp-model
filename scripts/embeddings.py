@@ -225,27 +225,26 @@ if __name__ == "__main__":
 
         ### ABLATIONS ###
 
-        if args.ablate_layer is not None and args.ablate_neuron is not None:
-            layer_name = args.ablate_layer
-            neuron_idx = args.ablate_neuron
-            layers = {
-                "encoder": model.encoder.recurrent,
-                "decoder": model.decoder.recurrent,
-            }
-            layer = layers[layer_name]
-            num_neurons = layer.hidden_size
-            ablate_lstm_neuron(layer, neuron_idx, num_neurons)
-            results_dir = results_dir / f"{layer_name}_{neuron_idx}"
-            figures_dir = figures_dir / f"{layer_name}_{neuron_idx}"
-
-        elif args.ablate_layer is not None or args.ablate_neuron is not None:
-            raise ValueError(
-                "ablate_layer and ablate_neuron have to be passed together to run ablation"
-            )
-
-        else:
-            results_dir = results_dir / "control"
-            figures_dir = figures_dir / "control"
+        match args.ablate_layer, args.ablate_neuron:
+            case (None, None):
+                results_dir = results_dir / "control"
+                figures_dir = figures_dir / "control"
+            case (None, _) | (_, None):
+                raise ValueError(
+                    "ablate_layer and ablate_neuron have to be passed together to run ablation"
+                )
+            case _:
+                layer_name = args.ablate_layer
+                neuron_idx = args.ablate_neuron
+                layers = {
+                    "encoder": model.encoder.recurrent,
+                    "decoder": model.decoder.recurrent,
+                }
+                layer = layers[layer_name]
+                num_neurons = layer.hidden_size
+                ablate_lstm_neuron(layer, neuron_idx, num_neurons)
+                results_dir = results_dir / f"{layer_name}_{neuron_idx}"
+                figures_dir = figures_dir / f"{layer_name}_{neuron_idx}"
 
         results_dir.mkdir(exist_ok=True, parents=True)
         figures_dir.mkdir(exist_ok=True, parents=True)
@@ -258,18 +257,19 @@ if __name__ == "__main__":
 
         if args.retest or not h_path.exists():
 
-            if args.dataset == "phonemes":
-                test_df = get_handmade_dataset("phonemes")
-            elif args.dataset == "bigrams":
-                test_df = get_bigram_dataset()
-            elif args.dataset == "trigrams":
-                test_df = get_trigram_dataset()
-            elif args.dataset == "sonority":
-                test_df = get_sonority_dataset()
-            elif args.dataset == "evaluation":
-                test_df = get_evaluation_dataset()
-            elif args.dataset == "training":
-                test_df = get_train_dataset()
+            match args.dataset:
+                case "phonemes":
+                    test_df = get_handmade_dataset("phonemes")
+                case "bigrams":
+                    test_df = get_bigram_dataset()
+                case "trigrams":
+                    test_df = get_trigram_dataset()
+                case "sonority":
+                    test_df = get_sonority_dataset()
+                case "evaluation":
+                    test_df = get_evaluation_dataset()
+                case "training":
+                    test_df = get_train_dataset()
 
             test_loader = get_phoneme_testloader(
                 args.batch_size,

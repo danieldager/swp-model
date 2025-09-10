@@ -28,37 +28,38 @@ def get_traindata(
     mode: str,
 ) -> tuple[DataLoader, DataLoader]:
     # TODO code
-    if mode == "Audio":
-        train_loader = get_phoneme_trainloader(
-            fold_id=fold_id,
-            train=True,
-            batch_size=batch_size,
-            include_stress=include_stress,
-        )
-        valid_loader = get_phoneme_trainloader(
-            fold_id=fold_id,
-            train=False,
-            batch_size=batch_size,
-            include_stress=include_stress,
-        )
-    elif mode == "Visual":
-        # TODO support for object/grapheme mixed dataset
-        train_loader = get_grapheme_trainloader(
-            fold_id=fold_id,
-            train=True,
-            batch_size=batch_size,
-            include_stress=include_stress,
-        )
-        valid_loader = get_grapheme_trainloader(
-            fold_id=fold_id,
-            train=False,
-            batch_size=batch_size,
-            include_stress=include_stress,
-        )
-    # elif mode == "AugmentedVisual":
-    elif mode == "Mixed":
-        # TODO determine what it would look like
-        raise NotImplementedError
+    match mode:
+        case "Audio":
+            train_loader = get_phoneme_trainloader(
+                fold_id=fold_id,
+                train=True,
+                batch_size=batch_size,
+                include_stress=include_stress,
+            )
+            valid_loader = get_phoneme_trainloader(
+                fold_id=fold_id,
+                train=False,
+                batch_size=batch_size,
+                include_stress=include_stress,
+            )
+        case "Visual":
+            # TODO support for object/grapheme mixed dataset
+            train_loader = get_grapheme_trainloader(
+                fold_id=fold_id,
+                train=True,
+                batch_size=batch_size,
+                include_stress=include_stress,
+            )
+            valid_loader = get_grapheme_trainloader(
+                fold_id=fold_id,
+                train=False,
+                batch_size=batch_size,
+                include_stress=include_stress,
+            )
+        # elif mode == "AugmentedVisual":
+        case "Mixed":
+            # TODO determine what it would look like
+            raise NotImplementedError
     return train_loader, valid_loader
 
 
@@ -136,38 +137,39 @@ def build_model(
         phoneme_to_id = get_phoneme_to_id()
         start_token_id = phoneme_to_id["<SOS>"]
         vocab_size = len(phoneme_to_id)
-        if rec_type == "LSTM":
-            audit_encoder = EncoderLSTM(
-                vocab_size=vocab_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-            )
-            decoder = DecoderLSTM(
-                vocab_size=vocab_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-                tf_ratio=tf_ratio,
-            )
-        elif rec_type == "RNN":
-            audit_encoder = EncoderRNN(
-                vocab_size=vocab_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-            )
-            decoder = DecoderRNN(
-                vocab_size=vocab_size,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                dropout=dropout,
-                tf_ratio=tf_ratio,
-            )
-        else:
-            raise ValueError(
-                f"Recurrent subnetwork {rec_type} is not recognized. Try RNN or LSTM."
-            )
+        match rec_type:
+            case "LSTM":
+                audit_encoder = EncoderLSTM(
+                    vocab_size=vocab_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                )
+                decoder = DecoderLSTM(
+                    vocab_size=vocab_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    tf_ratio=tf_ratio,
+                )
+            case "RNN":
+                audit_encoder = EncoderRNN(
+                    vocab_size=vocab_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                )
+                decoder = DecoderRNN(
+                    vocab_size=vocab_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers,
+                    dropout=dropout,
+                    tf_ratio=tf_ratio,
+                )
+            case _:
+                raise ValueError(
+                    f"Recurrent subnetwork {rec_type} is not recognized. Try RNN or LSTM."
+                )
         if mode == "Audio":
             model = Unimodel(
                 encoder=audit_encoder,
@@ -183,22 +185,23 @@ def build_model(
                 cornet_model=cnn_args["cnn_model"],
                 hidden_size=cnn_args["hidden_size"],
             )
-            if mode == "Visual":
-                model = Unimodel(
-                    encoder=visual_encoder,
-                    decoder=decoder,
-                    start_token_id=start_token_id,
-                )
+            match mode:
+                case "Visual":
+                    model = Unimodel(
+                        encoder=visual_encoder,
+                        decoder=decoder,
+                        start_token_id=start_token_id,
+                    )
 
-            elif mode == "Mixed":
-                model = Bimodel(
-                    audit_encoder=audit_encoder,
-                    visual_encoder=visual_encoder,
-                    decoder=decoder,
-                    start_token_id=start_token_id,
-                )
-            else:
-                raise  # TODO error
+                case "Mixed":
+                    model = Bimodel(
+                        audit_encoder=audit_encoder,
+                        visual_encoder=visual_encoder,
+                        decoder=decoder,
+                        start_token_id=start_token_id,
+                    )
+                case _:
+                    raise  # TODO error
         model_name = get_model_name(model)
     else:
         # TODO warnings if some args are not None

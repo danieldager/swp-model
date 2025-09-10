@@ -135,17 +135,18 @@ if __name__ == "__main__":
         edits_by_condition[condition] = []
 
     # load dataset and dataloader
-    if args.dataset == "evaluation":
-        test_df = get_evaluation_dataset()
-        test_loader = get_phoneme_testloader(batch_size, include_stress)
-    elif args.dataset == "sonority":
-        test_df = get_sonority_dataset(include_stress=include_stress)
-        test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
-    elif args.dataset == "train":
-        test_df = get_train_dataset()
-        test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
-    else:
-        raise ValueError(f"Unsupported dataset: {args.dataset}")
+    match args.dataset:
+        case "evaluation":
+            test_df = get_evaluation_dataset()
+            test_loader = get_phoneme_testloader(batch_size, include_stress)
+        case "sonority":
+            test_df = get_sonority_dataset(include_stress=include_stress)
+            test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
+        case "train":
+            test_df = get_train_dataset()
+            test_loader = get_phoneme_testloader(batch_size, include_stress, test_df)
+        case _:
+            raise ValueError(f"Unsupported dataset: {args.dataset}")
 
     # testing loop
     weights_dir = get_weights_dir() / model_name / train_name
