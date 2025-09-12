@@ -306,6 +306,7 @@ if __name__ == "__main__":
             include_stress=include_stress,
             dataset_generator=trainset_generator,
             dataloader_generator=trainloader_generator,
+            query=query,
         )
         valid_loader = get_mixed_trainloader(
             fold_id=fold_id,
@@ -314,6 +315,7 @@ if __name__ == "__main__":
             include_stress=include_stress,
             dataset_generator=validset_generator,
             dataloader_generator=validloader_generator,
+            query=query,
         )
         criterion = TaskLosses([auditory_loss, nn.CrossEntropyLoss()])
 
