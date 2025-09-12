@@ -112,10 +112,9 @@ def get_python_scripts_dir() -> pathlib.Path:
 
 
 def get_imagenet_dir() -> pathlib.Path:
-    public_dataset_dir.mkdir(
-        parents=True, exist_ok=True
-    )  # TODO check it doesn't break JZ
-    return public_dataset_dir
+    imagenet_dir = public_dataset_dir / "ILSVRC2012"
+    imagenet_dir.mkdir(parents=True, exist_ok=True)
+    return imagenet_dir
 
 
 def get_ablations_dir() -> pathlib.Path:
