@@ -31,7 +31,7 @@ from swp.datasets.phonemes import (
     get_sonority_dataset,
     get_trigram_dataset,
 )
-from swp.models.metrics import classic_errors, free_gen_errors
+from swp.models.metrics import ClassicErrormeter, FreeGenErrormeter
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
 from swp.utils.datasets import (
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
     model_name = args.model_name
     train_name = args.train_name
-    error_meter = classic_errors
+    error_meter = ClassicErrormeter()
 
     backend_setup()
     seed_everything()
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 dataset_df=test_df,
             )
 
-            results, _ = test(
+            results = test(
                 model=model,
                 device=device,
                 test_df=test_df,

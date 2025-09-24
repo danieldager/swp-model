@@ -373,11 +373,15 @@ class RandomizedFoldReadingDataset(ReadingDataset):
         return len(self.epoch_ids)
 
 
-class IndicedConcatDataset(ConcatDataset):
-    r"""Concatenate datasets. Resulting dataset yields tuple `(data, target, dataset_id)`."""
+class TaskConcatDataset(ConcatDataset):
+    r"""Concatenate datasets with task names. Resulting dataset yields tuple `(data, target, task_name)`."""
 
-    def __init__(self, datasets: Iterable[Dataset]) -> None:
-        super().__init__(datasets)
+    def __init__(self, tasks: dict[str, Dataset]) -> None:
+        self.task_names = sorted(tasks.keys())
+        super().__init__([tasks[key] for key in self.task_names])
+        self.max_len = max(
+            [getattr(dataset, "max_len", 0) for dataset in self.datasets]
+        )
 
     def __getitem__(self, idx):
         if idx < 0:
@@ -392,4 +396,4 @@ class IndicedConcatDataset(ConcatDataset):
         else:
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
         data, target = self.datasets[dataset_idx][sample_idx]
-        return data, target, dataset_idx
+        return data, target, self.task_names[dataset_idx]

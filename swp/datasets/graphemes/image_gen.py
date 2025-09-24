@@ -186,7 +186,7 @@ def adaptive_get_max_width(
                 _font_angle_cache[key] = (r, theta)
             angles = np.array([theta + (angle / 180 * np.pi) for angle in rot])
             maximized_width = np.ceil(
-                r * np.max(np.abs(np.stack((np.cos(angles), np.cos(np.pi - angles)))))
+                r * np.max(np.abs(np.stack((np.cos(angles), np.cos(angles - np.pi)))))
             )
             cached_widths[key] = maximized_width
         width += maximized_width

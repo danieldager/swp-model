@@ -17,7 +17,7 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
-from swp.models.metrics import classic_errors, free_gen_errors
+from swp.models.metrics import ClassicErrormeter, FreeGenErrormeter
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
 from swp.utils.datasets import (
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     checkpoint = args.checkpoint
     include_stress = args.include_stress
-    error_meter = classic_errors
+    error_meter = ClassicErrormeter()
 
     seed_everything()
     backend_setup()
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         if args.retest or not (results_dir / f"{args.dataset}.csv").exists():
             test_df = get_evaluation_dataset()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
-            results, _ = test(
+            results = test(
                 model=model,
                 device=device,
                 test_df=test_df,

@@ -54,9 +54,9 @@ def ablate(
     test_loader: DataLoader,
     include_stress: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Ablate each neuron in a network sequentially and compute the impact of 
+    """Ablate each neuron in a network sequentially and compute the impact of
     said ablation on the error rates for different types of stimuli."""
-    
+
     # Loop over layers and neurons for ablation.
     ablation_results = []
     fi_results = []
@@ -74,7 +74,7 @@ def ablate(
                 end="\r",
             )
             ablate_lstm_neuron(layer, neuron_idx, num_neurons)
-            df, _ = test(
+            df = test(
                 model=model,
                 device=device,
                 test_df=test_df,

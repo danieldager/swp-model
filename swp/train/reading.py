@@ -1,4 +1,5 @@
 import time
+from textwrap import indent
 
 import torch
 import torch.nn as nn
@@ -6,8 +7,10 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
+from ..models.metrics import TaskErrormeter
 from ..utils.earlystop import SlurmHandler
 from ..utils.grid_search import grid_search_log
+from ..utils.metrics import compute_preds
 from ..utils.models import save_training_checkpoint, save_weights
 
 
@@ -22,9 +25,11 @@ def train(
     valid_loader: DataLoader,
     num_epochs: int,
     device: str | torch.device,
+    errormeter: TaskErrormeter,
     verbose: bool = False,
     sig_handler: SlurmHandler | None = None,
     from_epoch: int = 0,
+    optimize_memory: bool = False,
 ) -> None:
     r"""Trains the `model` up to epoch `num_epoch` from epoch `from_epoch` with the data contained in the `train_loader`,
     the `criterion` loss and the `optimizer` weight update method.
@@ -66,50 +71,49 @@ def train(
         ### TRAINING LOOP ###
         model.train()
         train_loss = 0
-        train_error = 0
+        errormeter.reset()
         checkpoint = 1
 
         ### Max size batch to allocate memory and avoid fragmentation ###
-        batch_size = train_loader.batch_size
-        if batch_size is not None:
-            data_buffer = torch.zeros((batch_size, 3, 224, 224), device=device)
-            target_buffer = torch.zeros(
-                (batch_size, train_loader.dataset.max_len),  # type: ignore
-                dtype=torch.long,
-                device=device,
-            )
-        else:
-            data_buffer = torch.zeros((3, 224, 224), device=device)
-            target_buffer = torch.zeros((train_loader.dataset.max_len), dtype=torch.long, device=device)  # type: ignore
+        if optimize_memory:
+            raise NotImplementedError("Memory optimization not implemented")
+            # batch_size = train_loader.batch_size
+            # if batch_size is not None:
+            #     data_buffer = torch.zeros((batch_size, 3, 224, 224), device=device)
+            #     target_buffer = torch.zeros(
+            #         (batch_size, train_loader.dataset.max_len),  # type: ignore
+            #         dtype=torch.long,
+            #         device=device,
+            #     )
+            # else:
+            #     data_buffer = torch.zeros((3, 224, 224), device=device)
+            #     target_buffer = torch.zeros((train_loader.dataset.max_len), dtype=torch.long, device=device)  # type: ignore
 
-        for i, (data, target) in enumerate(train_loader, 1):
+        for i, tensordict in enumerate(train_loader, 1):
             if verbose:
                 print(f"{i}/{len(train_loader)}", end="\n")
 
-            batch_len = len(data)
-            seq_len = target.size(-1)
-            data_dev = data_buffer[:batch_len].copy_(data)
-            target_dev = target_buffer[:batch_len, :seq_len].copy_(target)
+            if optimize_memory:
+                raise NotImplementedError("Memory optimization not implemented")
+                # batch_len = len(data)
+                # seq_len = target.size(-1)
+                # data_dev = data_buffer[:batch_len].copy_(data)
+                # target_dev = target_buffer[:batch_len, :seq_len].copy_(target)
+            tensordict = tensordict.to(device)
+
             optimizer.zero_grad()
 
             # Forward pass
-            output = model(data_dev, target_dev)
+            tensordict = model(tensordict)
 
             # Loss computation
-            loss = criterion(output, target_dev)
+            tensordict = criterion(tensordict)
+            loss = tensordict["loss"]
             train_loss += loss.detach().cpu().numpy()
 
             # Error computation
-            preds = torch.argmax(output[0], dim=-1)
-            mask = target_dev != phoneme_to_id["<PAD>"]
-            train_error += (
-                torch.any((preds != target_dev) * mask, dim=1)
-                .detach()
-                .cpu()
-                .numpy()
-                .sum()
-            )
-            # TODO add error computation for visual prediction
+            tensordict = compute_preds(tensordict)
+            errormeter.accumulate(tensordict)
 
             # Backward pass
             loss.backward()
@@ -123,61 +127,52 @@ def train(
 
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
-        train_errors.append(train_error)
+        train_errors.append(errormeter.get_errors())
         if verbose:
             if train_loss >= 0.001:
                 print(f"Train Loss: {train_loss:.3f}")
             else:
                 print(f"Train Loss: {train_loss:.2e}")
+            train_summary = errormeter.summary()
 
         ### VALIDATION LOOP ###
         model.eval()
         valid_loss = 0
-        valid_error = 0
+        errormeter.reset()
 
         with torch.no_grad():
-            for i, (data, target) in enumerate(valid_loader, 1):
+            for i, tensordict in enumerate(valid_loader, 1):
                 if verbose:
                     print(f"{i}/{len(valid_loader)}", end="\n")
 
-                data = data.to(device)
-                target = target.to(device)
-
                 # Forward pass
-                output = model(data, target)
+                tensordict = model(tensordict)
 
                 # Loss computation
-                loss = criterion(output, target)
-                valid_loss += loss.detach().cpu().numpy()
+                tensordict = criterion(tensordict)
+                valid_loss += tensordict["loss"].detach().cpu().numpy()
 
                 # Error computation
-                preds = torch.argmax(output[0], dim=-1)
-                mask = target != phoneme_to_id["<PAD>"]
-                valid_error += (
-                    torch.any((preds != target) * mask, dim=1)
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .sum()
-                )
-                # TODO add error computation for visual loss
+                tensordict = compute_preds(tensordict)
+                errormeter.accumulate(tensordict)
 
         valid_loss /= len(valid_loader)
         valid_losses.append(valid_loss)
-        valid_errors.append(valid_error)
+        valid_errors.append(errormeter.get_errors())
         if verbose:
             if valid_loss >= 0.001:
                 print(f"Valid Loss: {valid_loss:.3f}")
             else:
                 print(f"Valid Loss: {valid_loss:.2e}")
+            val_summary = errormeter.summary()
 
         ### POST TRAIN/VALID ###
         save_weights(model_name, train_name, model=model, epoch=epoch)
         epoch_time = time.time() - epoch_start
         epoch_times.append(epoch_time)
         if verbose:
-            print(f"Train Errors: {train_error}")
-            print(f"Valid Errors: {valid_error}")
+            print(f"Train Errors:\n{indent(train_summary, prefix='    ')}")
+            print(f"Valid Errors:\n{indent(val_summary, prefix='    ')}")
             h = epoch_time // 3600
             m = epoch_time % 3600 // 60
             s = epoch_time % 60

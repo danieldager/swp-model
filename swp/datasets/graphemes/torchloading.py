@@ -2,6 +2,7 @@ from typing import Any, Callable
 
 import torch
 import torchvision.transforms
+from tensordict.tensordict import TensorDict
 from torch.nested import nested_tensor
 from torch.utils.data import DataLoader, default_collate
 from torchvision.datasets.imagenet import ImageNet
@@ -10,10 +11,10 @@ from ...utils.datasets import get_evaluation_dataset, get_phoneme_to_id
 from ...utils.paths import get_graphemes_dir, get_imagenet_dir
 from .testdata_gen import check_test_dataset
 from .torchsets import (
-    IndicedConcatDataset,
     RandomizedFoldReadingDataset,
     RandomizedTensorReadingDataset,
     ReadingDataset,
+    TaskConcatDataset,
     TensorReadingDataset,
 )
 from .traindata_gen import check_train_dataset
@@ -21,14 +22,16 @@ from .traindata_gen import check_train_dataset
 
 def grapheme_collate_fn(
     batch: list[tuple[torch.Tensor, torch.Tensor]], pad_value: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> TensorDict:
     r"""A collate function that get tensors of different length from `batch`, then
     batch them together by extending them to the max length, filling with `pad_value`"""
+    batch_dict = {}
     data, target = tuple(zip(*batch))
-    collated_data = default_collate(list(data))
+    batch_dict["inputs"] = default_collate(list(data))
     nt_target = nested_tensor(list(target), dtype=torch.long)
     padded_target = nt_target.to_padded_tensor(padding=pad_value)
-    return collated_data, padded_target
+    batch_dict["reading"] = {"targets": padded_target}
+    return TensorDict(batch_dict)
 
 
 def get_grapheme_trainloader(
@@ -130,7 +133,7 @@ def phoneme_target_collate(targets: list[torch.Tensor], pad_value: int) -> torch
     return padded_target
 
 
-def auto_target_collate_assigner(dataset: IndicedConcatDataset) -> dict[int, Callable]:
+def auto_target_collate_assigner(dataset: TaskConcatDataset) -> dict[str, Callable]:
     target_collates = {}
     for i, sub_dataset in enumerate(dataset.datasets):
         if isinstance(
@@ -142,17 +145,18 @@ def auto_target_collate_assigner(dataset: IndicedConcatDataset) -> dict[int, Cal
                 TensorReadingDataset,
             ),
         ):
-            target_collates[i] = lambda targets: phoneme_target_collate(
-                targets, get_phoneme_to_id()["<PAD>"]
+            target_collates[dataset.task_names[i]] = (
+                lambda targets: phoneme_target_collate(
+                    targets, get_phoneme_to_id()["<PAD>"]
+                )
             )
     return target_collates
 
 
 def task_collate_fn(
-    batch: list[tuple[Any, Any, int]],
-    num_tasks: int,
-    target_collates: dict[int, Callable],
-) -> tuple[Any, tuple[list[Any], torch.Tensor]]:
+    batch: list[tuple[Any, Any, str]],
+    target_collates: dict[str, Callable],
+) -> TensorDict:
     r"""This collate function is made to collate target tensors along the dataset they come from.
     It is meant to be used along the `IndicedConcacDataset` class.
 
@@ -161,25 +165,24 @@ def task_collate_fn(
       - a list of tensors containing the collated target per corresponding dataset with the corresponding collate function
       - a tensor containing the matching dataset id for the inputs
     """
-    batch_data = []
-    batch_targets = [[] for _ in range(num_tasks)]
-    task_ids = []
-    for sample in batch:
-        data, target, id = sample
-        batch_data.append(data)
-        batch_targets[id].append(target)
-        task_ids.append(id)
-    batched_data = default_collate(batch_data)
-    batched_targets = [
-        (
-            target_collates[i](task_targets)
-            if i in target_collates
-            else default_collate(task_targets)
-        )
-        for i, task_targets in enumerate(batch_targets)
-    ]
-    batched_ids = default_collate(task_ids)
-    return (batched_data, (batched_targets, batched_ids))
+    batch_dict: dict[str, Any] = {"inputs": []}
+    for i, sample in enumerate(batch):
+        data, target, task_name = sample
+        batch_dict["inputs"].append(data)
+        batch_dict.setdefault(task_name, {}).setdefault("targets", []).append(target)
+        batch_dict[task_name].setdefault("ids", []).append(i)
+    batch_dict["inputs"] = default_collate(batch_dict["inputs"])
+    for key in batch_dict:
+        if key == "inputs":
+            pass
+        else:
+            batch_dict[key]["targets"] = (
+                target_collates[key](batch_dict[key]["targets"])
+                if i in target_collates
+                else default_collate(batch_dict[key]["targets"])
+            )
+            batch_dict[key]["ids"] = default_collate(batch_dict[key]["ids"])
+    return TensorDict(batch_dict)
 
 
 def get_mixed_trainloader(
@@ -243,14 +246,14 @@ def get_mixed_trainloader(
         split=imagenet_split,
         transform=imagenet_transform,
     )
-    concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
+    task_dataset = TaskConcatDataset({"reading": grapheme_set, "recog": imagenet_set})
     if dataloader_generator is None:
         dataloader_generator = torch.Generator().manual_seed(42)
-    target_collates = auto_target_collate_assigner(concat_dataset)
+    target_collates = auto_target_collate_assigner(task_dataset)
     train_loader = DataLoader(
-        concat_dataset,
+        task_dataset,
         batch_size=batch_size,
-        collate_fn=lambda data: task_collate_fn(data, 2, target_collates),
+        collate_fn=lambda data: task_collate_fn(data, target_collates),
         shuffle=True,
         generator=dataloader_generator,
     )
@@ -296,6 +299,11 @@ def get_mixed_testloader(
         split="val",
         transform=imagenet_transform,
     )
-    concat_dataset = IndicedConcatDataset([grapheme_set, imagenet_set])
-    test_loader = DataLoader(dataset=concat_dataset, batch_size=batch_size)
+    task_dataset = TaskConcatDataset({"reading": grapheme_set, "recog": imagenet_set})
+    target_collates = auto_target_collate_assigner(task_dataset)
+    test_loader = DataLoader(
+        dataset=task_dataset,
+        batch_size=batch_size,
+        collate_fn=lambda data: task_collate_fn(data, target_collates),
+    )
     return test_loader

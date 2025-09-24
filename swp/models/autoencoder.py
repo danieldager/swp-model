@@ -1,5 +1,10 @@
+from typing import cast
+
 import torch
 import torch.nn as nn
+from tensordict import NonTensorData
+from tensordict.nn import dispatch
+from tensordict.tensordict import TensorDict
 
 from ..utils.reshape import Reshaper
 from .decoders import PhonemeDecoder
@@ -48,26 +53,43 @@ class Unimodel(nn.Module):
         self.start_token_id = start_token_id
         self.bind()
 
-    def forward(
-        self, inp: torch.Tensor, target: torch.Tensor
-    ) -> tuple[torch.Tensor, None | torch.Tensor]:
-        object_pred = None
+    @dispatch(
+        source=["inp", ("reading", "target")],  #  type:ignore
+        dest=[("recog", "outputs"), ("reading", "outputs")],  #  type:ignore
+    )
+    def forward(self, tensordict: TensorDict) -> TensorDict:
+        inp = cast(torch.Tensor, tensordict["inp"])
         if isinstance(self.encoder, PhonemeEncoder):
+            tensordict["recog", "outputs"] = NonTensorData(None)
             hidden = self.encoder(inp)
         else:
-            object_pred, toreshape_hidden = self.encoder(inp)
+            tensordict["recog", "outputs"], toreshape_hidden = self.encoder(inp)
             hidden = self.reshaper(to_reshape=toreshape_hidden)
-        start = (
-            torch.Tensor([self.start_token_id])
-            .repeat((inp.size(0), 1))
-            .to(inp.device, dtype=torch.int)
-        )
-        phoneme_prediction = self.decoder(start, hidden, target)
-        return phoneme_prediction, object_pred
+            if ("recog", "ids") in tensordict.keys(include_nested=True):
+                tensordict["recog", "outputs"] = tensordict["recog", "outputs"][
+                    tensordict["recog", "ids"]
+                ]
+        if ("reading", "ids") in tensordict.keys(include_nested=True):
+            targets = tensordict["reading", "target"][tensordict["reading", "ids"]]
+            hidden = hidden[tensordict["reading", "ids"]]
+            start = (
+                torch.Tensor([self.start_token_id])
+                .repeat((len(tensordict["reading", "ids"]), 1))
+                .to(tensordict.device, dtype=torch.int)
+            )
+        else:
+            start = (
+                torch.Tensor([self.start_token_id])
+                .repeat((inp.size(0), 1))
+                .to(tensordict.device, dtype=torch.int)
+            )
+            targets = tensordict["reading", "target"]
+        tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
+        return tensordict
 
     def bind(self):
         if isinstance(self.encoder, PhonemeEncoder):
-            self.decoder.embedding = self.encoder.embedding
+            self.decoder.embedding.weight = self.encoder.embedding.weight
 
     def to_unroll(self):
         self.encoder.to_unroll()
@@ -118,31 +140,50 @@ class Bimodel(nn.Module):
         self.bind()
         self.mode = "audio"
 
-    def forward(
-        self, inp: torch.Tensor, target: torch.Tensor
-    ) -> tuple[torch.Tensor, None | torch.Tensor]:
+    @dispatch(
+        source=["inp", ("reading", "target")],  #  type:ignore
+        dest=[("recog", "outputs"), ("reading", "outputs")],  #  type:ignore
+    )
+    def forward(self, tensordict: TensorDict) -> TensorDict:
         # TODO find logic for multimodal input
-        object_pred = None
+        inp = cast(torch.Tensor, tensordict["inp"])
         match self.mode:
             case "audio":
+                tensordict["recog", "outputs"] = NonTensorData(None)
                 hidden = self.audit_encoder(inp)
             case "visual":
-                object_pred, toreshape_hidden = self.visual_encoder(inp)
+                tensordict["recog", "outputs"], toreshape_hidden = self.visual_encoder(
+                    inp
+                )
                 hidden = self.reshaper(to_reshape=toreshape_hidden)
+                if ("recog", "ids") in tensordict.keys(include_nested=True):
+                    tensordict["recog", "outputs"] = tensordict["recog", "outputs"][
+                        tensordict["recog", "ids"]
+                    ]
             case _:
                 raise ValueError(
                     f"Model is made for modes audio and visual, current mode {self.mode} is not recognized"
                 )
-        start = (
-            torch.Tensor([self.start_token_id])
-            .repeat((inp.size(0), 1))
-            .to(inp.device, dtype=torch.int)
-        )
-        out = self.decoder(start, hidden, target)
-        return out, object_pred
+        if ("reading", "ids") in tensordict.keys(include_nested=True):
+            targets = tensordict["reading", "target"][tensordict["reading", "ids"]]
+            hidden = hidden[tensordict["reading", "ids"]]
+            start = (
+                torch.Tensor([self.start_token_id])
+                .repeat((len(tensordict["reading", "ids"]), 1))
+                .to(tensordict.device, dtype=torch.int)
+            )
+        else:
+            start = (
+                torch.Tensor([self.start_token_id])
+                .repeat((inp.size(0), 1))
+                .to(tensordict.device, dtype=torch.int)
+            )
+            targets = tensordict["reading", "target"]
+        tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
+        return tensordict
 
     def bind(self):
-        self.decoder.embedding = self.audit_encoder.embedding
+        self.decoder.embedding.weight = self.audit_encoder.embedding.weight
 
     def to_audio(self):
         self.mode = "audio"

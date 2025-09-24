@@ -97,7 +97,9 @@ class PhonemeDecoder(nn.Module):
             else:
                 # probs = F.softmax(phoneme_pred, dim=2)
                 # curr = probs @ self.embedding.weight
-                curr = self.embedding(phoneme_pred.argmax(dim=-1))
+                curr = self.embedding(
+                    phoneme_pred.argmax(dim=-1)
+                )  # TODO use trick to enable gradients : hard - soft.detach() + soft
                 curr = self.dropout(curr)
 
             # Forward pass

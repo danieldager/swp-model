@@ -1,7 +1,9 @@
-from typing import Iterable, Sequence
+import warnings
+from typing import Sequence
 
 import torch
 import torch.nn as nn
+from tensordict.tensordict import TensorDict
 
 from ..utils.datasets import get_phoneme_to_id
 
@@ -91,31 +93,36 @@ class TaskLosses(nn.Module):
         `weights` : Tensor containing weights to apply when summing the losses
     """
 
+    # TODO rewrite docstring
+
     def __init__(
-        self, losses: Iterable[nn.Module], weights: torch.Tensor | None = None
+        self, losses: dict[str, nn.Module], weights: torch.Tensor | None = None
     ) -> None:
         super().__init__()
-        self.task_losses = nn.ModuleList(losses)
+        self.task_losses = nn.ModuleDict(losses)
         self.weights = weights
         if self.weights is not None and len(self.task_losses) != len(self.weights):
             raise ValueError("Number of losses and weights do not match")
 
-    def forward(
-        self,
-        preds: Sequence[torch.Tensor],
-        targets: tuple[Sequence[torch.Tensor], torch.Tensor],
-    ):
-        task_targets, task_ids = targets
+    def forward(self, tensordict: TensorDict) -> TensorDict:
         loss = 0
-        for i in range(len(task_targets)):
-            ith_task_loss = self.task_losses[i](
-                preds[i][task_ids == i], task_targets[i]
-            )
+        dict_keys = tensordict.keys(include_nested=True)
+        for i, (task_name, task_loss) in enumerate(self.task_losses.items()):
+            if (task_name, "outputs") not in dict_keys or (
+                task_name,
+                "targets",
+            ) not in dict_keys:
+                warnings.warn(f"Outputs or targets missing for task {task_name}")
+                continue
+            task_outs = tensordict[task_loss, "outputs"]
+            task_targets = tensordict[task_loss, "targets"]
+            ith_task_loss = task_loss(task_outs, task_targets)
+            tensordict[task_name, "loss"] = ith_task_loss
             if self.weights is not None:
                 loss += self.weights[i] * ith_task_loss
             else:
                 loss += ith_task_loss
-        return loss
+        return tensordict
 
 
 class AuditoryXENT(nn.CrossEntropyLoss):

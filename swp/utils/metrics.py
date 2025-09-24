@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from tensordict.tensordict import TensorDict
 
 
 def calc_accuracy(df: pd.DataFrame, error_condition, total_condition) -> float:
@@ -69,3 +70,15 @@ def calc_importance(
         fis.append(result.importances_mean[i])  #  type: ignore
 
     return pipeline, *fis
+
+
+def compute_preds(tensordict: TensorDict) -> TensorDict:
+    for key in tensordict.keys(include_nested=True):
+        match key:
+            case (*header, "outputs"):
+                tensordict[tuple((*header, "preds"))] = (
+                    tensordict[key].detach().argmax(dim=-1)
+                )
+            case _:
+                pass
+    return tensordict

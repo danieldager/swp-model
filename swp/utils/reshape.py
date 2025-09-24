@@ -1,4 +1,4 @@
-from typing import overload
+from typing import TYPE_CHECKING, cast, overload
 
 import torch
 from torch.nn import Module
@@ -125,7 +125,7 @@ class Reshaper(Module):
         is_batched = len(to_reshape.size()) == len(self.purged_init_shape) + 1
         if is_batched and self.init_permute is not None:
             # permute to batch first
-            batch_size: int = to_reshape.size(self.init_batch_dim)  #  type:ignore
+            batch_size = cast(int, to_reshape.size(self.init_batch_dim))
             permuted = to_reshape.permute(self.init_permute)
             # flatten data dimensions
             flattened = permuted.flatten(start_dim=1)
@@ -134,28 +134,36 @@ class Reshaper(Module):
 
         # if reshaping into only one tensor, convert easily
         if self.all_num_units is None:
-            purged_out_dims: torch.Size
-            out_permute: tuple[int, ...]
-            purged_out_dims, out_permute = self.out_data  #  type:ignore
+            if TYPE_CHECKING:
+                self.out_data = cast(
+                    tuple[torch.Size, tuple[int, ...] | None], self.out_data
+                )
+            purged_out_dims, out_permute = self.out_data
             if is_batched:
                 reshaped = flattened.reshape((batch_size, *purged_out_dims))
-                to_ret = reshaped.permute(out_permute)
+                to_ret = reshaped.permute(cast(tuple[int, ...], out_permute))
             else:
                 to_ret = to_reshape.reshape(purged_out_dims)
             return to_ret
         else:
-            splitted = torch.split(
-                flattened, self.all_num_units, dim=-1  #  type:ignore
-            )
+            if TYPE_CHECKING:
+                self.out_data = cast(
+                    tuple[tuple[torch.Size, tuple[int, ...] | None], ...], self.out_data
+                )
+            splitted = torch.split(flattened, self.all_num_units, dim=-1)  # type:ignore
             to_rets: list[torch.Tensor] = []
             if is_batched:
+                if TYPE_CHECKING:
+                    self.out_data = cast(
+                        tuple[tuple[torch.Size, tuple[int, ...]], ...], self.out_data
+                    )
                 for i, curr_flattened in enumerate(splitted):
-                    purged_out_dims, out_permute = self.out_data[i]  #  type:ignore
+                    purged_out_dims, out_permute = self.out_data[i]
                     reshaped = curr_flattened.reshape((batch_size, *purged_out_dims))
                     to_rets.append(reshaped.permute(out_permute))
             else:
                 for i, curr_flattened in enumerate(splitted):
-                    purged_out_dims, out_permute = self.out_data[i]  #  type:ignore
+                    purged_out_dims, out_permute = self.out_data[i]
                     to_rets.append(curr_flattened.reshape(purged_out_dims))
             return tuple(to_rets)
 

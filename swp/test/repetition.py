@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
-from ..models.metrics import classic_errors, free_gen_errors
+from ..models.metrics import ClassicErrormeter, ErrorMeter
 from ..utils.datasets import get_phoneme_to_id
 
 
@@ -15,9 +15,9 @@ def test(
     test_df: pd.DataFrame,
     test_loader: DataLoader,
     include_stress: bool,
-    error_meter: Callable[[torch.Tensor, torch.Tensor], int] = classic_errors,
+    error_meter: ErrorMeter = ClassicErrormeter(),
     verbose: bool = False,
-) -> tuple[pd.DataFrame, float]:
+) -> pd.DataFrame:
     r"""Takes any pd.df with Phonemes column, and return same df with corresponding phoneme preds"""
 
     if isinstance(model, Unimodel) and not model.is_auditory:
@@ -26,7 +26,7 @@ def test(
     if isinstance(model, Bimodel):
         model.to_audio()
 
-    test_error = 0
+    error_meter.reset()
     last_index = 0
     predictions = []
     phoneme_key = "Phonemes" if include_stress else "No_Stress"
@@ -49,7 +49,7 @@ def test(
             preds = torch.argmax(output[0], dim=-1)
 
             # Error computation
-            test_error += error_meter(preds, target)
+            error_meter.accumulate(preds, target)
 
             # Save predictions
             batch_size = target.shape[0]
@@ -62,6 +62,6 @@ def test(
     test_df["Prediction"] = predictions
 
     if verbose:
-        print(f"test error: {test_error}/{len(test_df)}")
+        print(f"test error: {error_meter.summary()}")
 
-    return test_df, test_error
+    return test_df

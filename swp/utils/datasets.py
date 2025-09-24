@@ -3,6 +3,7 @@ from ast import literal_eval
 from collections import Counter, defaultdict
 from hashlib import md5
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -182,10 +183,12 @@ def enrich_for_plotting(df: pd.DataFrame, include_stress: bool = False) -> pd.Da
         # avg_bigram_freq = sum(bigram_freqs) / len(bigram_freqs)
 
         # Tally edit operations and identify error indices
-        errors = editops(row.Phonemes, row.Prediction)  # type: ignore
+        phones = cast(list[str], row.Phonemes)
+        preds = cast(list[str], row.Prediction)
+        errors = editops(phones, preds)
         counts = Counter(op for op, _, _ in errors)
-        zipped = zip(row.Phonemes, row.Prediction)  # type: ignore
-        indices = [i + 1 for i, (a, b) in enumerate(zipped) if a != b]  # type: ignore
+        zipped = zip(phones, preds)
+        indices = [i + 1 for i, (a, b) in enumerate(zipped) if a != b]
 
         # Append results to the respective lists
         edit_distances.append(len(errors))
@@ -234,7 +237,7 @@ def enrich_for_ablations(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def enrich_for_mlem(df: pd.DataFrame) -> pd.DataFrame:  # type: ignore
+def enrich_for_mlem(df: pd.DataFrame) -> pd.DataFrame:
     r"""Enrich training data with features for metric learning."""
 
     # fmt: off

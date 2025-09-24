@@ -6,5 +6,5 @@ from .torchloading import (
     get_mixed_trainloader,
     task_collate_fn,
 )
-from .torchsets import IndicedConcatDataset
+from .torchsets import TaskConcatDataset
 from .traindata_gen import check_train_dataset, create_train_dataset

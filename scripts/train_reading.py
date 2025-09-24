@@ -17,6 +17,12 @@ from swp.models.autoencoder import Unimodel
 from swp.models.decoders import DecoderLSTM, DecoderRNN
 from swp.models.encoders import CorNetEncoder
 from swp.models.losses import AuditoryXENT, FirstErrorXENT, TaskLosses
+from swp.models.metrics import (
+    ClassicErrormeter,
+    FreeGenErrormeter,
+    ImageErrormeter,
+    TaskErrormeter,
+)
 from swp.train.reading import train
 from swp.utils.datasets import check_query, get_phoneme_to_id
 from swp.utils.earlystop import SlurmHandler
@@ -151,6 +157,11 @@ if __name__ == "__main__":
         type=str,
         help="Specifiy which part to train. Can be `all`, `hidden`, `encoder` or `decorder`. Hidden is included in encoder.",
     )
+    # parser.add_argument(
+    #     "--query",
+    #     type=str,
+    #     help="Specifiy a query to use when getting the dataset.",
+    # ) # TODO what about hashes ?
     args = parser.parse_args()
     seed_everything()
     backend_setup()
@@ -234,8 +245,10 @@ if __name__ == "__main__":
     match loss:
         case "classic":
             auditory_loss = AuditoryXENT()
+            auditory_errormeter = ClassicErrormeter()
         case "first":
             auditory_loss = FirstErrorXENT()
+            auditory_errormeter = FreeGenErrormeter()
         case _:
             raise ValueError(
                 "Argument of loss isn't recognized, use `classic` or `first`"
@@ -276,6 +289,8 @@ if __name__ == "__main__":
         if args.verbose and last_epoch != 0:
             print(f"Successfully loaded training state at epoch {last_epoch}")
 
+    criterion_dict = {}
+    errormeter_dict = {}
     if not mixed:
         train_loader = get_grapheme_trainloader(
             fold_id=fold_id,
@@ -287,7 +302,7 @@ if __name__ == "__main__":
             query=query,
             load_all=args.load_all,
         )
-        valid_loader = get_grapheme_trainloader(
+        valid_loadc = auditer = get_grapheme_trainloader(
             fold_id=fold_id,
             train=False,
             batch_size=batch_size,
@@ -297,7 +312,8 @@ if __name__ == "__main__":
             query=query,
             load_all=args.load_all,
         )
-        criterion = auditory_loss
+        criterion_dict["reading"] = auditory_loss
+        errormeter_dict["reading"] = auditory_errormeter
     else:
         train_loader = get_mixed_trainloader(
             fold_id=fold_id,
@@ -317,7 +333,12 @@ if __name__ == "__main__":
             dataloader_generator=validloader_generator,
             query=query,
         )
-        criterion = TaskLosses([auditory_loss, nn.CrossEntropyLoss()])
+        criterion_dict["reading"] = auditory_loss
+        criterion_dict["recog"] = nn.CrossEntropyLoss()
+        errormeter_dict["reading"] = auditory_errormeter
+        errormeter_dict["recog"] = ImageErrormeter()
+    criterion = TaskLosses(criterion_dict)
+    errormeter = TaskErrormeter(errormeter_dict)
 
     train(
         model=model,
@@ -333,6 +354,7 @@ if __name__ == "__main__":
         verbose=args.verbose,
         sig_handler=sig_handler,
         from_epoch=last_epoch,
+        errormeter=errormeter,
     )
     if sig_handler is not None:
         sig_handler.land()

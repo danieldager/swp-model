@@ -58,7 +58,7 @@ class PhonemeEncoder(nn.Module):
         self.droprate = dropout
 
         self.embedding = nn.Embedding(self.vocab_size, self.hidden_size)
-        self.recurrent: nn.RNNBase
+        self.recurrent: nn.RNNBase  # TODO fix to better definition
         self.dropout = nn.Dropout(self.droprate)
         self.unrolling = False
 

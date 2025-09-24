@@ -17,7 +17,7 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 from swp.datasets.phonemes import get_phoneme_testloader, get_sonority_dataset
-from swp.models.metrics import classic_errors, free_gen_errors
+from swp.models.metrics import ClassicErrormeter, FreeGenErrormeter
 from swp.test.ablations import ablate_lstm_neuron
 from swp.test.repetition import test
 from swp.utils.datasets import (
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     checkpoint = args.checkpoint
     include_stress = args.include_stress
-    error_meter = classic_errors
+    error_meter = ClassicErrormeter()
 
     seed_everything()
     backend_setup()
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         if args.retest or not (results_dir / "evaluation.csv").exists():
             test_df = get_evaluation_dataset()
             test_loader = get_phoneme_testloader(batch_size, include_stress)
-            test_results, _ = test(
+            test_results = test(
                 model=model,
                 device=device,
                 test_df=test_df,
@@ -179,7 +179,7 @@ if __name__ == "__main__":
         if args.retest or not (results_dir / f"sonority.csv").exists():
             ssp_df = get_sonority_dataset(include_stress=include_stress)
             ssp_loader = get_phoneme_testloader(batch_size, include_stress, ssp_df)
-            ssp_results, _ = test(
+            ssp_results = test(
                 model=model,
                 device=device,
                 test_df=ssp_df,
@@ -194,7 +194,7 @@ if __name__ == "__main__":
         if args.train and (args.retest or not (results_dir / f"train.csv").exists()):
             train_df = get_train_dataset()
             train_loader = get_phoneme_testloader(batch_size, include_stress, train_df)
-            train_results, train_error = test(
+            train_results = test(
                 model=model,
                 device=device,
                 test_df=train_df,
