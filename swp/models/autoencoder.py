@@ -6,7 +6,7 @@ from tensordict import NonTensorData
 from tensordict.nn import dispatch
 from tensordict.tensordict import TensorDict
 
-from ..utils.reshape import Reshaper
+from ..utils.reshape import Reshaper, iter_select
 from .decoders import PhonemeDecoder
 from .encoders import PhonemeEncoder, VisualEncoder
 
@@ -69,9 +69,9 @@ class Unimodel(nn.Module):
                 tensordict["recog", "outputs"] = tensordict["recog", "outputs"][
                     tensordict["recog", "ids"]
                 ]
+        targets = tensordict["reading", "targets"]
         if ("reading", "ids") in tensordict.keys(include_nested=True):
-            targets = tensordict["reading", "targets"][tensordict["reading", "ids"]]
-            hidden = hidden[tensordict["reading", "ids"]]
+            hidden = iter_select(hidden, tensordict["reading", "ids"])
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((len(tensordict["reading", "ids"]), 1))
@@ -83,7 +83,6 @@ class Unimodel(nn.Module):
                 .repeat((inp.size(0), 1))
                 .to(tensordict.device, dtype=torch.int)
             )
-            targets = tensordict["reading", "targets"]
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
 
@@ -164,9 +163,9 @@ class Bimodel(nn.Module):
                 raise ValueError(
                     f"Model is made for modes audio and visual, current mode {self.mode} is not recognized"
                 )
+        targets = tensordict["reading", "targets"]
         if ("reading", "ids") in tensordict.keys(include_nested=True):
-            targets = tensordict["reading", "targets"][tensordict["reading", "ids"]]
-            hidden = hidden[tensordict["reading", "ids"]]
+            hidden = iter_select(hidden, tensordict["reading", "ids"])
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((len(tensordict["reading", "ids"]), 1))
@@ -178,7 +177,6 @@ class Bimodel(nn.Module):
                 .repeat((inp.size(0), 1))
                 .to(tensordict.device, dtype=torch.int)
             )
-            targets = tensordict["reading", "targets"]
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
 

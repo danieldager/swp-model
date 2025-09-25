@@ -300,3 +300,22 @@ def reshape_magic(
             cumsum += length
         to_ret = tuple(to_ret)
     return to_ret
+
+
+@overload
+def iter_select(tens: torch.Tensor, selector: torch.Tensor) -> torch.Tensor: ...
+
+
+@overload
+def iter_select(
+    tens: tuple[torch.Tensor, ...], selector: torch.Tensor
+) -> tuple[torch.Tensor, ...]: ...
+
+
+def iter_select(
+    tens: torch.Tensor | tuple[torch.Tensor, ...], selector: torch.Tensor
+) -> torch.Tensor | tuple[torch.Tensor, ...]:
+    if isinstance(tens, tuple):
+        return tuple(ten[selector] for ten in tens)
+    else:
+        return tens[selector]
