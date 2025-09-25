@@ -18,6 +18,7 @@ pip install --upgrade --no-cache-dir g2p_en
 pip install --upgrade --no-cache-dir levenshtein
 pip install --upgrade --no-cache-dir morphemes
 pip install --upgrade --no-cache-dir spacy
+pip install --upgrade --no-cache-dir tensordict
 pip install --upgrade --no-cache-dir wordfreq
 
 if ! python -c "import spacy; spacy.load('en_core_web_lg')" 2>/dev/null; then

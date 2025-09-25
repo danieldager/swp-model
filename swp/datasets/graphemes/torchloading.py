@@ -178,7 +178,7 @@ def task_collate_fn(
         else:
             batch_dict[key]["targets"] = (
                 target_collates[key](batch_dict[key]["targets"])
-                if i in target_collates
+                if key in target_collates
                 else default_collate(batch_dict[key]["targets"])
             )
             batch_dict[key]["ids"] = default_collate(batch_dict[key]["ids"])
