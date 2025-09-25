@@ -54,7 +54,7 @@ class Unimodel(nn.Module):
         self.bind()
 
     @dispatch(
-        source=["inputs", ("reading", "target")],  #  type:ignore
+        source=["inputs", ("reading", "targets")],  #  type:ignore
         dest=[("recog", "outputs"), ("reading", "outputs")],  #  type:ignore
     )
     def forward(self, tensordict: TensorDict) -> TensorDict:
@@ -70,7 +70,7 @@ class Unimodel(nn.Module):
                     tensordict["recog", "ids"]
                 ]
         if ("reading", "ids") in tensordict.keys(include_nested=True):
-            targets = tensordict["reading", "target"][tensordict["reading", "ids"]]
+            targets = tensordict["reading", "targets"][tensordict["reading", "ids"]]
             hidden = hidden[tensordict["reading", "ids"]]
             start = (
                 torch.Tensor([self.start_token_id])
@@ -83,7 +83,7 @@ class Unimodel(nn.Module):
                 .repeat((inp.size(0), 1))
                 .to(tensordict.device, dtype=torch.int)
             )
-            targets = tensordict["reading", "target"]
+            targets = tensordict["reading", "targets"]
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
 
@@ -141,7 +141,7 @@ class Bimodel(nn.Module):
         self.mode = "audio"
 
     @dispatch(
-        source=["inputs", ("reading", "target")],  #  type:ignore
+        source=["inputs", ("reading", "targets")],  #  type:ignore
         dest=[("recog", "outputs"), ("reading", "outputs")],  #  type:ignore
     )
     def forward(self, tensordict: TensorDict) -> TensorDict:
@@ -165,7 +165,7 @@ class Bimodel(nn.Module):
                     f"Model is made for modes audio and visual, current mode {self.mode} is not recognized"
                 )
         if ("reading", "ids") in tensordict.keys(include_nested=True):
-            targets = tensordict["reading", "target"][tensordict["reading", "ids"]]
+            targets = tensordict["reading", "targets"][tensordict["reading", "ids"]]
             hidden = hidden[tensordict["reading", "ids"]]
             start = (
                 torch.Tensor([self.start_token_id])
@@ -178,7 +178,7 @@ class Bimodel(nn.Module):
                 .repeat((inp.size(0), 1))
                 .to(tensordict.device, dtype=torch.int)
             )
-            targets = tensordict["reading", "target"]
+            targets = tensordict["reading", "targets"]
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
 
