@@ -54,11 +54,11 @@ class Unimodel(nn.Module):
         self.bind()
 
     @dispatch(
-        source=["inp", ("reading", "target")],  #  type:ignore
+        source=["inputs", ("reading", "target")],  #  type:ignore
         dest=[("recog", "outputs"), ("reading", "outputs")],  #  type:ignore
     )
     def forward(self, tensordict: TensorDict) -> TensorDict:
-        inp = cast(torch.Tensor, tensordict["inp"])
+        inp = cast(torch.Tensor, tensordict["inputs"])
         if isinstance(self.encoder, PhonemeEncoder):
             tensordict["recog", "outputs"] = NonTensorData(None)
             hidden = self.encoder(inp)
@@ -141,12 +141,12 @@ class Bimodel(nn.Module):
         self.mode = "audio"
 
     @dispatch(
-        source=["inp", ("reading", "target")],  #  type:ignore
+        source=["inputs", ("reading", "target")],  #  type:ignore
         dest=[("recog", "outputs"), ("reading", "outputs")],  #  type:ignore
     )
     def forward(self, tensordict: TensorDict) -> TensorDict:
         # TODO find logic for multimodal input
-        inp = cast(torch.Tensor, tensordict["inp"])
+        inp = cast(torch.Tensor, tensordict["inputs"])
         match self.mode:
             case "audio":
                 tensordict["recog", "outputs"] = NonTensorData(None)
