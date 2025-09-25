@@ -140,6 +140,8 @@ class Reshaper(Module):
                 )
             purged_out_dims, out_permute = self.out_data
             if is_batched:
+                if TYPE_CHECKING:
+                    flattened = cast(torch.Tensor, flattened)
                 reshaped = flattened.reshape((batch_size, *purged_out_dims))
                 to_ret = reshaped.permute(cast(tuple[int, ...], out_permute))
             else:
@@ -302,20 +304,51 @@ def reshape_magic(
     return to_ret
 
 
-@overload
-def iter_select(tens: torch.Tensor, selector: torch.Tensor) -> torch.Tensor: ...
+class Sampler(Module):
+    # TODO docstring
+    def __init__(
+        self,
+        expected_shapes: torch.Size | tuple[torch.Size, ...],
+    ) -> None:
+        super(Sampler, self).__init__()
+        if isinstance(expected_shapes, torch.Size):
+            self.expected_batch_dims, _ = find_and_delete_batchdim(expected_shapes)
+        else:
+            dims = []
+            for shape in expected_shapes:
+                curr_dim, _ = find_and_delete_batchdim(shape)
+                dims.append(curr_dim)
+            self.expected_batch_dims = tuple(dims)
+            if None in self.expected_batch_dims:
+                self.expected_batch_dims = None
+
+    def forward(
+        self, to_sample: torch.Tensor | tuple[torch.Tensor, ...], ids: torch.Tensor
+    ) -> torch.Tensor | tuple[torch.Tensor, ...]:
+        if self.expected_batch_dims is not None:
+            if isinstance(to_sample, tuple):
+                if TYPE_CHECKING:
+                    self.expected_batch_dims = cast(
+                        tuple[int, ...], self.expected_batch_dims
+                    )
+                return tuple(
+                    get_along_dimn(ten, ids, self.expected_batch_dims[i])
+                    for i, ten in enumerate(to_sample)
+                )
+            else:
+                if TYPE_CHECKING:
+                    self.expected_batch_dims = cast(int, self.expected_batch_dims)
+                return get_along_dimn(to_sample, ids, self.expected_batch_dims)
+        else:
+            return to_sample
 
 
-@overload
-def iter_select(
-    tens: tuple[torch.Tensor, ...], selector: torch.Tensor
-) -> tuple[torch.Tensor, ...]: ...
+def get_along_dimn(data: torch.Tensor, ids: torch.Tensor, n: int) -> torch.Tensor:
+    shape = data.shape
 
+    expanded_ids = ids.view(
+        *(1 for _ in range(n)), -1, *(1 for _ in range(len(shape) - n - 1))
+    ).expand(*shape[:n], -1, *shape[n + 1 :])
+    sampled = data.gather(n, expanded_ids)
 
-def iter_select(
-    tens: torch.Tensor | tuple[torch.Tensor, ...], selector: torch.Tensor
-) -> torch.Tensor | tuple[torch.Tensor, ...]:
-    if isinstance(tens, tuple):
-        return tuple(ten[selector] for ten in tens)
-    else:
-        return tens[selector]
+    return sampled

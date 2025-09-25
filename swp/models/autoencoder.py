@@ -6,7 +6,7 @@ from tensordict import NonTensorData
 from tensordict.nn import dispatch
 from tensordict.tensordict import TensorDict
 
-from ..utils.reshape import Reshaper, iter_select
+from ..utils.reshape import Reshaper, Sampler
 from .decoders import PhonemeDecoder
 from .encoders import PhonemeEncoder, VisualEncoder
 
@@ -50,6 +50,7 @@ class Unimodel(nn.Module):
             self.reshaper = Reshaper(
                 self.encoder.hidden_shape, self.decoder.expected_hidden_shape
             )
+        self.sampler = Sampler(self.decoder.expected_hidden_shape)
         self.start_token_id = start_token_id
         self.bind()
 
@@ -71,17 +72,17 @@ class Unimodel(nn.Module):
                 ]
         targets = tensordict["reading", "targets"]
         if ("reading", "ids") in tensordict.keys(include_nested=True):
-            hidden = iter_select(hidden, tensordict["reading", "ids"])
+            hidden = self.sampler(hidden, tensordict["reading", "ids"])
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((len(tensordict["reading", "ids"]), 1))
-                .to(inp.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.long)
             )
         else:
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((inp.size(0), 1))
-                .to(inp.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.long)
             )
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
@@ -134,6 +135,7 @@ class Bimodel(nn.Module):
         self.reshaper = Reshaper(
             self.visual_encoder.hidden_shape, self.decoder.expected_hidden_shape
         )
+        self.sampler = Sampler(self.decoder.expected_hidden_shape)
         self.decoder = decoder
         self.start_token_id = start_token_id
         self.bind()
@@ -165,17 +167,17 @@ class Bimodel(nn.Module):
                 )
         targets = tensordict["reading", "targets"]
         if ("reading", "ids") in tensordict.keys(include_nested=True):
-            hidden = iter_select(hidden, tensordict["reading", "ids"])
+            hidden = self.sampler(hidden, tensordict["reading", "ids"])
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((len(tensordict["reading", "ids"]), 1))
-                .to(inp.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.long)
             )
         else:
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((inp.size(0), 1))
-                .to(inp.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.long)
             )
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
