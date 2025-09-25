@@ -75,13 +75,13 @@ class Unimodel(nn.Module):
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((len(tensordict["reading", "ids"]), 1))
-                .to(tensordict.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.int)
             )
         else:
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((inp.size(0), 1))
-                .to(tensordict.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.int)
             )
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
@@ -169,13 +169,13 @@ class Bimodel(nn.Module):
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((len(tensordict["reading", "ids"]), 1))
-                .to(tensordict.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.int)
             )
         else:
             start = (
                 torch.Tensor([self.start_token_id])
                 .repeat((inp.size(0), 1))
-                .to(tensordict.device, dtype=torch.int)
+                .to(inp.device, dtype=torch.int)
             )
         tensordict["reading", "outputs"] = self.decoder(start, hidden, targets)
         return tensordict
