@@ -114,8 +114,8 @@ class TaskLosses(nn.Module):
             ) not in dict_keys:
                 warnings.warn(f"Outputs or targets missing for task {task_name}")
                 continue
-            task_outs = tensordict[task_loss, "outputs"]
-            task_targets = tensordict[task_loss, "targets"]
+            task_outs = tensordict[task_name, "outputs"]
+            task_targets = tensordict[task_name, "targets"]
             ith_task_loss = task_loss(task_outs, task_targets)
             tensordict[task_name, "loss"] = ith_task_loss
             if self.weights is not None:
