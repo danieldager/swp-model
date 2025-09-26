@@ -122,6 +122,7 @@ class TaskLosses(nn.Module):
                 loss += self.weights[i] * ith_task_loss
             else:
                 loss += ith_task_loss
+        tensordict["loss"] = loss
         return tensordict
 
 
