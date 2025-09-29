@@ -73,7 +73,7 @@ def calc_importance(
 
 
 def compute_preds(tensordict: TensorDict) -> TensorDict:
-    for key in tensordict.keys(include_nested=True):
+    for key in list(tensordict.keys(include_nested=True)):
         match key:
             case (*header, "outputs"):
                 tensordict[tuple((*header, "preds"))] = (
