@@ -2,7 +2,7 @@ from typing import Callable
 
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..models.metrics import ClassicErrormeter, ErrorMeter
@@ -13,7 +13,7 @@ def test(
     model: Unimodel | Bimodel,
     device: str | torch.device,
     test_df: pd.DataFrame,
-    test_loader: DataLoader,
+    test_loader: StatefulDataLoader,
     include_stress: bool,
     error_meter: ErrorMeter = ClassicErrormeter(),
     verbose: bool = False,

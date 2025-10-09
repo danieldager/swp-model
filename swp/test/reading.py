@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 
 
 def test(
-    test_loader: DataLoader,
+    test_loader: StatefulDataLoader,
     model: Unimodel | Bimodel,
     device: str | torch.device,
     model_name: str,

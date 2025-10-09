@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.nested import nested_tensor
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from ..utils.datasets import (
     get_epoch_numpy,
@@ -90,7 +91,7 @@ def get_phoneme_trainloader(
     batch_size: int,
     generator: torch.Generator | None = None,
     include_stress: bool = False,
-) -> DataLoader:
+) -> StatefulDataLoader:
     r"""Return a dataloader containing the phoneme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
     Shuffling is controlled by `generator`. If `generator` is None, it is deterministically instantiated.
 
@@ -109,7 +110,7 @@ def get_phoneme_trainloader(
     )
     if generator is None:
         generator = torch.Generator().manual_seed(42)
-    phoneme_loader = DataLoader(
+    phoneme_loader = StatefulDataLoader(
         phoneme_set,
         batch_size,
         shuffle=True,
@@ -171,7 +172,7 @@ def get_phoneme_testloader(
     batch_size: int,
     include_stress: bool = False,
     dataset_df: pd.DataFrame | None = None,
-) -> DataLoader:
+) -> StatefulDataLoader:
     r"""Return a dataloader containing the phoneme test data batched in size `batch_size`.
     If `include_stress` is set to `True`, phonemes will include stress.
     Pass a dataframe as `override_data_df` to override the test data used.
@@ -182,7 +183,7 @@ def get_phoneme_testloader(
         include_stress=include_stress,
         dataset_df=dataset_df,
     )
-    phoneme_loader = DataLoader(
+    phoneme_loader = StatefulDataLoader(
         phoneme_set,
         batch_size,
         collate_fn=lambda batch: phoneme_collate_fn(

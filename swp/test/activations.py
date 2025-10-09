@@ -12,8 +12,8 @@ from sklearn.manifold import MDS
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from torch.utils.data import DataLoader
 from torch.utils.hooks import RemovableHandle
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from swp.models.autoencoder import Bimodel, Unimodel
 
@@ -84,7 +84,7 @@ def hook_model(
 def get_activations(
     model: Unimodel,
     device: str | torch.device,
-    test_loader: DataLoader,
+    test_loader: StatefulDataLoader,
     include_cell: bool,
     include_start: bool = True,
     take_last: bool = False,
@@ -148,7 +148,7 @@ def trajectories(
     model: Unimodel,
     device: str | torch.device,
     test_df: pd.DataFrame,
-    test_loader: DataLoader,
+    test_loader: StatefulDataLoader,
     mode: str,
     include_cell: bool,
     include_start: bool = True,
@@ -195,7 +195,7 @@ def neural_regressions(
     model: Unimodel,
     device: str | torch.device,
     test_df: pd.DataFrame,
-    test_loader: DataLoader,
+    test_loader: StatefulDataLoader,
     mode: str = "both",
     include_cell: bool = False,
     take_last: bool = True,

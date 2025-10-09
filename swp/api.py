@@ -1,7 +1,7 @@
 from typing import overload
 
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from .datasets.graphemes import get_grapheme_trainloader, get_mixed_trainloader
 from .datasets.phonemes import get_phoneme_trainloader
@@ -26,7 +26,7 @@ def get_traindata(
     fold_id: int,
     include_stress: bool,
     mode: str,
-) -> tuple[DataLoader, DataLoader]:
+) -> tuple[StatefulDataLoader, StatefulDataLoader]:
     # TODO code
     match mode:
         case "Audio":

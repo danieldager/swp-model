@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 
 import torch
-import torch.nn as nn
 from tensordict.nn import dispatch
 from tensordict.tensordict import TensorDict
+from torchdata.stateful_dataloader import Stateful
 
 from ..utils.datasets import get_phoneme_to_id
 
 
-class ErrorMeter(ABC):
+class ErrorMeter(ABC, Stateful):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.reset()
@@ -60,6 +60,13 @@ class FreeGenErrormeter(SimpleErrorMeter):
     def summary(self):
         return f"{self.errors}/{self.tot}"
 
+    def load_state_dict(self, state_dict):
+        self.errors = state_dict["errors"]
+        self.tot = state_dict["total"]
+
+    def state_dict(self):
+        return {"errors": self.errors, "total": self.tot}
+
 
 class ClassicErrormeter(SimpleErrorMeter):
     r"""
@@ -86,6 +93,13 @@ class ClassicErrormeter(SimpleErrorMeter):
     def summary(self):
         return f"{self.errors}/{self.tot}"
 
+    def load_state_dict(self, state_dict):
+        self.errors = state_dict["errors"]
+        self.tot = state_dict["total"]
+
+    def state_dict(self):
+        return {"errors": self.errors, "total": self.tot}
+
 
 class ImageErrormeter(SimpleErrorMeter):
     # TODO docstring
@@ -105,6 +119,13 @@ class ImageErrormeter(SimpleErrorMeter):
 
     def summary(self) -> str:
         return f"{self.errors}/{self.tot}"
+
+    def load_state_dict(self, state_dict):
+        self.errors = state_dict["errors"]
+        self.tot = state_dict["total"]
+
+    def state_dict(self):
+        return {"errors": self.errors, "total": self.tot}
 
 
 class TaskErrormeter(ErrorMeter):
@@ -136,3 +157,13 @@ class TaskErrormeter(ErrorMeter):
                 for task, sub_error_meter in self.sub_error_meters.items()
             ]
         )
+
+    def load_state_dict(self, state_dict):
+        for task_name, task_errormeter in self.sub_error_meters.items():
+            task_errormeter.load_state_dict(state_dict[task_name])
+
+    def state_dict(self):
+        state_dict = {}
+        for task_name, task_errormeter in self.sub_error_meters.items():
+            state_dict[task_name] = task_errormeter.state_dict()
+        return state_dict

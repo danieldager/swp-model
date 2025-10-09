@@ -1,6 +1,6 @@
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..utils.datasets import classify_error_positions, enrich_for_plotting
@@ -51,7 +51,7 @@ def ablate(
     model: Unimodel,
     device: str | torch.device,
     test_df: pd.DataFrame,
-    test_loader: DataLoader,
+    test_loader: StatefulDataLoader,
     include_stress: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Ablate each neuron in a network sequentially and compute the impact of

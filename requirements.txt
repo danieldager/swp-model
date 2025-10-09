@@ -16,3 +16,4 @@ nltk>=3.9.1
 statsmodels>=0.14.4
 mlem_minimal @ git+https://github.com/LouisJalouzot/MLEM_minimal@94c79a07e17e45fa736b900fbb861d6fbc7381ee
 tensordict
+torchdata

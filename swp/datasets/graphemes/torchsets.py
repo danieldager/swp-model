@@ -1,30 +1,24 @@
 import json
 from bisect import bisect_right
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import numpy as np
 import torch
-import torchvision.transforms
-from torch.nested import nested_tensor
-from torch.utils.data import ConcatDataset, DataLoader, Dataset, default_collate
+from torch.utils.data import ConcatDataset, Dataset
+from torchdata.stateful_dataloader import Stateful
 from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import default_loader
-from torchvision.datasets.imagenet import ImageNet
 
 from ...utils.datasets import (
     get_epoch_numpy,
     get_evaluation_dataset,
-    get_phoneme_to_id,
     get_train_fold,
     get_valid_fold,
 )
-from ...utils.paths import get_graphemes_dir, get_imagenet_dir
-from .testdata_gen import check_test_dataset
-from .traindata_gen import check_train_dataset
 
 
-class RandomizedTensorReadingDataset(Dataset):
+class RandomizedTensorReadingDataset(Dataset, Stateful):
     r"""Dataset class to handle graphemes to phonemes dataset by loading the whole dataset in memory.
     Will track sample ids corresponding to the sample in the corresponding fold and store them in `id_tensor` attribute.
 
@@ -139,6 +133,12 @@ class RandomizedTensorReadingDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.epoch_ids)
+
+    def load_state_dict(self, state_dict):
+        self.generator = self.generator.set_state(state_dict["rng"])
+
+    def state_dict(self):
+        return {"rng": self.generator.get_state()}
 
 
 class TensorReadingDataset(Dataset):
@@ -281,7 +281,7 @@ class ReadingDataset(ImageFolder):
             )
 
 
-class RandomizedFoldReadingDataset(ReadingDataset):
+class RandomizedFoldReadingDataset(ReadingDataset, Stateful):
     r"""Subclass of `ReadingDataset` meant to handle folds.
     Stores a pairing between classes in the fold dataframe and image ids in `id_tensor` attribute.
 
@@ -372,8 +372,14 @@ class RandomizedFoldReadingDataset(ReadingDataset):
     def __len__(self) -> int:
         return len(self.epoch_ids)
 
+    def load_state_dict(self, state_dict):
+        self.generator = self.generator.set_state(state_dict["rng"])
 
-class TaskConcatDataset(ConcatDataset):
+    def state_dict(self):
+        return {"rng": self.generator.get_state()}
+
+
+class TaskConcatDataset(ConcatDataset, Stateful):
     r"""Concatenate datasets with task names. Resulting dataset yields tuple `(data, target, task_name)`."""
 
     def __init__(self, tasks: dict[str, Dataset]) -> None:
@@ -397,3 +403,17 @@ class TaskConcatDataset(ConcatDataset):
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
         data, target = self.datasets[dataset_idx][sample_idx]
         return data, target, self.task_names[dataset_idx]
+
+    def load_state_dict(self, state_dict):
+        for i, dataset in enumerate(self.datasets):
+            if i in state_dict:
+                if TYPE_CHECKING:
+                    dataset = cast(Stateful, dataset)
+                dataset.load_state_dict(state_dict[i])
+
+    def state_dict(self):
+        state_dict = {}
+        for i, dataset in enumerate(self.datasets):
+            if isinstance(dataset, Stateful):
+                state_dict[i] = dataset.state_dict()
+        return state_dict

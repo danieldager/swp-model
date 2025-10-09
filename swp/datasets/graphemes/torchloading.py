@@ -4,7 +4,8 @@ import torch
 import torchvision.transforms
 from tensordict.tensordict import TensorDict
 from torch.nested import nested_tensor
-from torch.utils.data import DataLoader, default_collate
+from torch.utils.data import default_collate
+from torchdata.stateful_dataloader import StatefulDataLoader
 from torchvision.datasets.imagenet import ImageNet
 
 from ...utils.datasets import get_evaluation_dataset, get_phoneme_to_id
@@ -43,7 +44,8 @@ def get_grapheme_trainloader(
     dataloader_generator: torch.Generator | None = None,
     query: str | None = None,
     load_all: bool = False,
-) -> DataLoader:
+    num_workers: int = 0,
+) -> StatefulDataLoader:
     r"""Return a dataloader containing the grapheme training data corresponding to the `fold_id` fold, batched in size `batch_size`.
     Shuffling is controlled by `dataloader_generator`. If `dataloader_generator` is None, it is deterministically instantiated.
     `dataset_generator` is passed to the dataset to control random sampling outside of shuffle.
@@ -80,12 +82,14 @@ def get_grapheme_trainloader(
         dataloader_generator = torch.Generator().manual_seed(42)
     pad_value = get_phoneme_to_id()["<PAD>"]
     my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
-    grapheme_loader = DataLoader(
+    grapheme_loader = StatefulDataLoader(
         grapheme_set,
         batch_size,
         shuffle=True,
         generator=dataloader_generator,
         collate_fn=my_collate,
+        pin_memory=True,
+        num_workers=num_workers,
     )
     return grapheme_loader
 
@@ -95,7 +99,8 @@ def get_grapheme_testloader(
     include_stress: bool = False,
     query: str | None = None,
     load_all: bool = False,
-) -> DataLoader:
+    num_workers: int = 0,
+) -> StatefulDataLoader:
     r"""Return a dataloader containing the grapheme test data batched in size `batch_size`.
     Passing a `query` string gives a dataloader containing the corresponding queried test set.
     Setting `load_all` to True returns a dataset loading everything in memory, which is faster to use but might be memory heavy.
@@ -123,7 +128,13 @@ def get_grapheme_testloader(
         )
     pad_value = get_phoneme_to_id()["<PAD>"]
     my_collate = lambda batch: grapheme_collate_fn(batch, pad_value=pad_value)
-    grapheme_loader = DataLoader(grapheme_set, batch_size, collate_fn=my_collate)
+    grapheme_loader = StatefulDataLoader(
+        grapheme_set,
+        batch_size,
+        collate_fn=my_collate,
+        pin_memory=True,
+        num_workers=num_workers,
+    )
     return grapheme_loader
 
 
@@ -193,7 +204,8 @@ def get_mixed_trainloader(
     dataset_generator: torch.Generator | None = None,
     dataloader_generator: torch.Generator | None = None,
     query: str | None = None,
-) -> DataLoader:
+    num_workers: int = 0,
+) -> StatefulDataLoader:
     r"""Return a dataloader containing both the grapheme training data corresponding to the `fold_id` fold
     and the ImageNet dataset, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
     Shuffling is controlled by `dataloader_generator`. If `dataloader_generator` is None, it is deterministically instantiated.
@@ -250,12 +262,14 @@ def get_mixed_trainloader(
     if dataloader_generator is None:
         dataloader_generator = torch.Generator().manual_seed(42)
     target_collates = auto_target_collate_assigner(task_dataset)
-    train_loader = DataLoader(
+    train_loader = StatefulDataLoader(
         task_dataset,
         batch_size=batch_size,
         collate_fn=lambda data: task_collate_fn(data, target_collates),
         shuffle=True,
         generator=dataloader_generator,
+        pin_memory=True,
+        num_workers=num_workers,
     )
     return train_loader
 
@@ -264,7 +278,8 @@ def get_mixed_testloader(
     batch_size: int,
     include_stress: bool = False,
     query: str | None = None,
-) -> DataLoader:
+    num_workers: int = 0,
+) -> StatefulDataLoader:
     r"""Return a dataloader containing both the grapheme test data and the ImageNet
     test data, batched in size `batch_size`. Graphemes is the first dataset, ImageNet the second.
 
@@ -301,9 +316,11 @@ def get_mixed_testloader(
     )
     task_dataset = TaskConcatDataset({"reading": grapheme_set, "recog": imagenet_set})
     target_collates = auto_target_collate_assigner(task_dataset)
-    test_loader = DataLoader(
+    test_loader = StatefulDataLoader(
         dataset=task_dataset,
         batch_size=batch_size,
         collate_fn=lambda data: task_collate_fn(data, target_collates),
+        pin_memory=True,
+        num_workers=num_workers,
     )
     return test_loader

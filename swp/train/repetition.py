@@ -3,7 +3,7 @@ import time
 import torch
 import torch.nn as nn
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader
+from torchdata.stateful_dataloader import StatefulDataLoader
 
 from ..models.autoencoder import Bimodel, Unimodel
 from ..models.metrics import ClassicErrormeter, ErrorMeter
@@ -18,8 +18,8 @@ def train(
     criterion: nn.Module,
     optimizer: Optimizer,
     phoneme_to_id: dict[str, int],
-    train_loader: DataLoader,
-    valid_loader: DataLoader,
+    train_loader: StatefulDataLoader,
+    valid_loader: StatefulDataLoader,
     num_epochs: int,
     device: str | torch.device,
     error_meter: ErrorMeter = ClassicErrormeter(),

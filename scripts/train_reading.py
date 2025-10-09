@@ -167,6 +167,8 @@ if __name__ == "__main__":
     backend_setup()
     device = set_device()
 
+    num_workers = 0
+
     # TODO add query to args ?
     query = "(Word.str.len() < 11) & (Word.str.len() > 1)"
     if query is not None:
@@ -266,79 +268,79 @@ if __name__ == "__main__":
         case _:
             raise ValueError(f"Part to train {train_part} not recognized")
 
-    sig_handler = None
-    trainset_generator = None
-    trainloader_generator = None
-    validset_generator = None
-    validloader_generator = None
-    last_epoch = 0
-    if args.auto_requeue:
-        sig_handler = SlurmHandler()
-        (
-            trainset_generator,
-            trainloader_generator,
-            validset_generator,
-            validloader_generator,
-            last_epoch,
-        ) = load_last_training_checkpoint(
-            model=model,
-            optimizer=optimizer,
-            model_name=model_name,
-            train_name=train_name,
-        )
-        if args.verbose and last_epoch != 0:
-            print(f"Successfully loaded training state at epoch {last_epoch}")
-
     criterion_dict = {}
-    errormeter_dict = {}
+    train_errormeter_dict = {}
+    val_errormeter_dict = {}
     if not mixed:
         train_loader = get_grapheme_trainloader(
             fold_id=fold_id,
             train=True,
             batch_size=batch_size,
             include_stress=include_stress,
-            dataset_generator=trainset_generator,
-            dataloader_generator=trainloader_generator,
             query=query,
             load_all=args.load_all,
+            num_workers=num_workers,
         )
-        valid_loadc = auditer = get_grapheme_trainloader(
+        valid_loader = get_grapheme_trainloader(
             fold_id=fold_id,
             train=False,
             batch_size=batch_size,
             include_stress=include_stress,
-            dataset_generator=validset_generator,
-            dataloader_generator=validloader_generator,
             query=query,
             load_all=args.load_all,
+            num_workers=num_workers,
         )
         criterion_dict["reading"] = auditory_loss
-        errormeter_dict["reading"] = auditory_errormeter
+        train_errormeter_dict["reading"] = auditory_errormeter
+        val_errormeter_dict["reading"] = auditory_errormeter
     else:
         train_loader = get_mixed_trainloader(
             fold_id=fold_id,
             train=True,
             batch_size=batch_size,
             include_stress=include_stress,
-            dataset_generator=trainset_generator,
-            dataloader_generator=trainloader_generator,
             query=query,
+            num_workers=num_workers,
         )
         valid_loader = get_mixed_trainloader(
             fold_id=fold_id,
             train=False,
             batch_size=batch_size,
             include_stress=include_stress,
-            dataset_generator=validset_generator,
-            dataloader_generator=validloader_generator,
             query=query,
+            num_workers=num_workers,
         )
         criterion_dict["reading"] = auditory_loss
         criterion_dict["recog"] = nn.CrossEntropyLoss()
-        errormeter_dict["reading"] = auditory_errormeter
-        errormeter_dict["recog"] = ImageErrormeter()
+        train_errormeter_dict["reading"] = auditory_errormeter
+        train_errormeter_dict["recog"] = ImageErrormeter()
+        val_errormeter_dict["reading"] = auditory_errormeter
+        val_errormeter_dict["recog"] = ImageErrormeter()
+
     criterion = TaskLosses(criterion_dict)
-    errormeter = TaskErrormeter(errormeter_dict)
+    train_errormeter = TaskErrormeter(train_errormeter_dict)
+    val_errormeter = TaskErrormeter(val_errormeter_dict)
+
+    sig_handler = None
+    stop_point = None
+
+    if args.auto_requeue:
+        sig_handler = SlurmHandler()
+        stop_point = load_last_training_checkpoint(
+            model=model,
+            optimizer=optimizer,
+            model_name=model_name,
+            train_name=train_name,
+            train_loader=train_loader,
+            valid_loader=valid_loader,
+            train_errormeter=train_errormeter,
+            valid_errormeter=val_errormeter,
+        )
+        if args.verbose and stop_point is not None:
+            last_epoch, where, last_batch, _, _ = stop_point
+            print(
+                f"Successfully loaded training state at {where} of epoch {last_epoch}{f', batch {last_batch}' if last_batch is not None else ''}"
+            )
 
     train(
         model=model,
@@ -346,15 +348,15 @@ if __name__ == "__main__":
         train_name=train_name,
         criterion=criterion,
         optimizer=optimizer,
-        phoneme_to_id=phoneme_to_id,
         train_loader=train_loader,
         valid_loader=valid_loader,
         num_epochs=args.num_epochs,
         device=device,
         verbose=args.verbose,
         sig_handler=sig_handler,
-        from_epoch=last_epoch,
-        errormeter=errormeter,
+        resume_from=stop_point,
+        train_errormeter=train_errormeter,
+        valid_errormeter=val_errormeter,
     )
     if sig_handler is not None:
         sig_handler.land()
