@@ -362,7 +362,7 @@ def valid_epoch(
                 # seq_len = target.size(-1)
                 # data_dev = data_buffer[:batch_len].copy_(data)
                 # target_dev = target_buffer[:batch_len, :seq_len].copy_(target)
-            tensordict.to(device)
+            tensordict = tensordict.to(device)
 
             # Forward pass
             tensordict = model(tensordict)
