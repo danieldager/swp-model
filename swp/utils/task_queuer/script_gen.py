@@ -85,6 +85,7 @@ def base_slurm_file_generator(
     #!/bin/bash
     #SBATCH --job-name={job_name}
     #SBATCH {partition_str}
+    #SBATCH --open-mode=append
     #SBATCH -A {os.environ["IDRPROJ"]}@{partition_type}
     #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_%j.out
     #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_%j.err
@@ -142,6 +143,7 @@ def autoarg_slurmarray_file_generator(
     #!/bin/bash
     #SBATCH --job-name={job_name}
     #SBATCH {partition_str}
+    #SBATCH --open-mode=append
     #SBATCH -A {os.environ["IDRPROJ"]}@{partition_type}
     #SBATCH --output={str(slurm_directory.absolute())}/{job_name}_%A_%a.out
     #SBATCH --error={str(slurm_directory.absolute())}/{job_name}_%A_%a.err
