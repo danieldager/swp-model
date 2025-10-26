@@ -153,7 +153,7 @@ class TaskErrormeter(ErrorMeter):
     def summary(self):
         return "\n".join(
             [
-                f"{task} : {sub_error_meter.summary}"
+                f"{task} : {sub_error_meter.summary()}"
                 for task, sub_error_meter in self.sub_error_meters.items()
             ]
         )

@@ -208,18 +208,17 @@ def train(
         valid_errormeter.reset()
         train_errormeter.reset()
 
-    if not middle_broke:
-        grid_search_log(
-            train_losses,
-            valid_losses,
-            train_errors,
-            valid_errors,
-            model_name,
-            train_name,
-            epoch,
-            append=sig_handler is not None,
-            from_epoch=last_epoch,
-        )
+    grid_search_log(
+        train_losses,
+        valid_losses,
+        train_errors,
+        valid_errors,
+        model_name,
+        train_name,
+        epoch - 1 if middle_broke else epoch,
+        append=sig_handler is not None,
+        from_epoch=last_epoch,
+    )
 
 
 def train_epoch(
