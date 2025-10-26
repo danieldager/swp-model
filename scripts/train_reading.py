@@ -6,6 +6,7 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 import argparse
+import warnings
 from typing import Any
 
 import torch
@@ -34,6 +35,12 @@ from swp.utils.models import (
     load_last_training_checkpoint,
 )
 from swp.utils.setup import backend_setup, seed_everything, set_device
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="The PyTorch API of nested tensors is in prototype stage",
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
