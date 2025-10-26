@@ -56,7 +56,7 @@ def grid_search_log(
     logfile_path = get_train_dir() / f"{model_name}~{train_name}.csv"
     logfile_path.parent.mkdir(exist_ok=True, parents=True)
     log = None
-    if append and logfile_path.exists():
+    if append and from_epoch != 0 and logfile_path.exists():
         log = pd.read_csv(logfile_path, index_col=0)
     # Extract parameters from the model name
     model_args = get_model_args(model_name)
