@@ -173,3 +173,4 @@ notebooks/data
 reproduce/data
 reproduce/figures
 !reproduce/weights
+data/external/
