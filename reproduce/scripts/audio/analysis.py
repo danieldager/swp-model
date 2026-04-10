@@ -282,19 +282,20 @@ def main() -> None:
     n_nw = (df["lexicality"] == "nonword").sum()
     print(f"[analysis] Items     : {len(df)} ({n_words} words, {n_nw} nonwords)")
 
-    # Summary table
+    # Summary table — flat CSV with explicit columns
     summaries = []
     for factor in [*FACTORS_ALL, "frequency_bin"]:
         sub = df if factor != "frequency_bin" else df[df["frequency_bin"].notna()]
         s = group_summary(sub, factor)
-        s.index = pd.MultiIndex.from_tuples(
-            [(factor, str(v)) for v in s.index], names=["factor", "level"]
-        )
+        # Flatten multi-level columns: (metric, stat) → metric_stat
+        s.columns = ["_".join(col) for col in s.columns]
+        s = s.reset_index().rename(columns={factor: "level"})
+        s.insert(0, "factor", factor)
         summaries.append(s)
 
-    summary_df = pd.concat(summaries)
+    summary_df = pd.concat(summaries, ignore_index=True)
     summary_path = out_dir / "summary_by_factor.csv"
-    summary_df.to_csv(summary_path)
+    summary_df.to_csv(summary_path, index=False)
     print(f"[analysis] Written : {summary_path}")
 
     # Regression summary
