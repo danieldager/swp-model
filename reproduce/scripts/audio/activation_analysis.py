@@ -9,14 +9,24 @@ Layer types handled
 -------------------
 2D layers [C, T] — encoder_out, decoder_in:
     n_channels, n_frames, mean_norm, std_norm, max_norm, mean_abs,
-    var_over_time, trajectory_length, mean_step_distance
+    var_over_time, trajectory_length, trajectory_length_per_frame,
+    mean_step_distance
+
+    trajectory_length           = sum of L2 step distances in channel space
+    trajectory_length_per_frame = trajectory_length / n_frames  (duration-normalized)
+    mean_step_distance          = trajectory_length / (n_frames - 1)  (per-step average)
 
 Waveform-like layers [1, T] — decoder_out:
     n_samples, mean_abs, std_value, max_abs, rms
 
 Analyses (on encoder_out and decoder_in only):
     mean_norm and trajectory_length ~ each paradigm factor (OLS),
-    plus multivariate models.
+    plus frame-control regressions distinguishing duration effects from
+    genuine per-step latent dynamics:
+        trajectory_length ~ C(factor)              [baseline]
+        trajectory_length ~ C(factor) + n_frames   [frame-controlled]
+        trajectory_length_per_frame ~ C(factor)    [duration-normalized]
+        mean_step_distance ~ C(factor)             [per-step normalized]
 
 Usage:
     python reproduce/scripts/audio/activation_analysis.py \\
@@ -88,6 +98,8 @@ def summarize_2d(t: torch.Tensor) -> dict:
         trajectory_length = 0.0
         mean_step_distance = 0.0
 
+    trajectory_length_per_frame = trajectory_length / max(T, 1)
+
     return {
         "n_channels": int(C),
         "n_frames": int(T),
@@ -97,6 +109,7 @@ def summarize_2d(t: torch.Tensor) -> dict:
         "mean_abs": mean_abs,
         "var_over_time": var_over_time,
         "trajectory_length": trajectory_length,
+        "trajectory_length_per_frame": trajectory_length_per_frame,
         "mean_step_distance": mean_step_distance,
     }
 
@@ -232,9 +245,14 @@ def build_regression_summary(df: pd.DataFrame, run_id: str) -> str:
         "=" * 70,
         "",
         "Analyses restricted to 2D layers: encoder_out, decoder_in.",
-        "Features analyzed: mean_norm, trajectory_length.",
         "",
     ]
+
+    # ── Section 1: basic factor effects (mean_norm, trajectory_length) ─────────
+    blocks.append("SECTION 1 — Basic factor effects")
+    blocks.append("Features: mean_norm, trajectory_length")
+    blocks.append("=" * 70)
+    blocks.append("")
 
     for layer in ANALYSIS_LAYERS:
         sub = df[df["layer"] == layer].copy()
@@ -266,6 +284,64 @@ def build_regression_summary(df: pd.DataFrame, run_id: str) -> str:
                 words,
                 f"{feature} ~ C(length_bin) + C(frequency_bin) + C(morphology)",
             ))
+
+    # ── Section 2: frame-control models ────────────────────────────────────────
+    blocks.append("")
+    blocks.append("SECTION 2 — Frame-controlled trajectory analysis")
+    blocks.append(
+        "Purpose: test whether factor effects on trajectory_length persist after\n"
+        "         controlling for n_frames (i.e. whether effects are driven by\n"
+        "         sequence duration or by genuine per-step latent dynamics).\n"
+        "\n"
+        "  baseline  : trajectory_length ~ C(factor)\n"
+        "  controlled: trajectory_length ~ C(factor) + n_frames\n"
+        "  normalized: trajectory_length_per_frame ~ C(factor)\n"
+        "  per-step  : mean_step_distance ~ C(factor)"
+    )
+    blocks.append("=" * 70)
+    blocks.append("")
+
+    for layer in ANALYSIS_LAYERS:
+        sub = df[df["layer"] == layer].copy()
+        words = sub[sub["frequency_bin"].notna()].copy()
+
+        blocks.append("=" * 70)
+        blocks.append(f"LAYER: {layer}  (n={len(sub)})")
+        blocks.append("=" * 70)
+        blocks.append("")
+
+        for factor in [*FACTORS_ALL, "frequency_bin"]:
+            is_freq = factor == "frequency_bin"
+            data = words if is_freq else sub
+            label = f"(words only, n={len(data)})" if is_freq else f"(all, n={len(data)})"
+            blocks.append(f"── Factor: {factor}  {label} ──────────────────────")
+
+            blocks.append("baseline (confounded by duration):")
+            blocks.append(_ols_block(data, f"trajectory_length ~ C({factor})"))
+
+            blocks.append("frame-controlled (+ n_frames covariate):")
+            blocks.append(_ols_block(data, f"trajectory_length ~ C({factor}) + n_frames"))
+
+            blocks.append("duration-normalized (per-frame):")
+            blocks.append(_ols_block(data, f"trajectory_length_per_frame ~ C({factor})"))
+
+            blocks.append("per-step (mean_step_distance):")
+            blocks.append(_ols_block(data, f"mean_step_distance ~ C({factor})"))
+
+    # ── Section 3: layer comparison table ──────────────────────────────────────
+    blocks.append("")
+    blocks.append("SECTION 3 — Layer comparison (encoder_out vs decoder_in)")
+    blocks.append("=" * 70)
+    cmp_features = ["mean_norm", "trajectory_length", "trajectory_length_per_frame",
+                    "mean_step_distance"]
+    sub_2d = df[df["layer"].isin(ANALYSIS_LAYERS)].copy()
+    cmp_table = (
+        sub_2d.groupby("layer")[cmp_features]
+        .agg(["mean", "std"])
+    )
+    cmp_table.columns = ["_".join(c) for c in cmp_table.columns]
+    blocks.append(cmp_table.round(5).to_string())
+    blocks.append("")
 
     return "\n".join(blocks)
 
@@ -318,7 +394,7 @@ def save_figures(df: pd.DataFrame, out_dir: Path) -> None:
         )
         print(f"[activation_analysis] Written : {path}")
 
-    # 2. Optional: n_frames vs duration_s scatter for 2D layers
+    # 2. n_frames vs duration_s scatter for 2D layers
     sub_2d = df[df["layer"].isin(ANALYSIS_LAYERS) & df["n_frames"].notna()].copy()
     if "duration_s" in sub_2d.columns and len(sub_2d) > 0:
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -334,7 +410,7 @@ def save_figures(df: pd.DataFrame, out_dir: Path) -> None:
         plt.close(fig)
         print(f"[activation_analysis] Written : {path}")
 
-    # 3. Optional: encoder_out vs decoder_in mean_norm distribution
+    # 3. encoder_out vs decoder_in mean_norm distribution
     sub_cmp = df[df["layer"].isin(ANALYSIS_LAYERS)].copy()
     if len(sub_cmp) > 0:
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -346,6 +422,92 @@ def save_figures(df: pd.DataFrame, out_dir: Path) -> None:
         ax.legend()
         plt.tight_layout()
         path = out_dir / "mean_norm_distribution_by_layer.png"
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
+        print(f"[activation_analysis] Written : {path}")
+
+    # ── Step 6 additions ──────────────────────────────────────────────────────
+
+    # 4. trajectory_length vs n_frames scatter (both layers, colored by length_bin)
+    #    Visualises the core confound: does longer = more frames?
+    if len(sub_2d) > 0:
+        palette = sns.color_palette("colorblind", n_colors=2)
+        length_colors = {v: palette[i] for i, v in enumerate(sorted(sub_2d["length_bin"].unique()))}
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=False, sharey=False)
+        for ax, layer in zip(axes, ANALYSIS_LAYERS):
+            grp = sub_2d[sub_2d["layer"] == layer]
+            for lb, c in length_colors.items():
+                mask = grp["length_bin"] == lb
+                ax.scatter(grp.loc[mask, "n_frames"], grp.loc[mask, "trajectory_length"],
+                           color=c, label=lb, alpha=0.6, s=18)
+            ax.set_title(layer)
+            ax.set_xlabel("n_frames")
+            ax.set_ylabel("trajectory_length")
+            ax.legend(title="length_bin")
+        fig.suptitle("trajectory_length vs n_frames (by length_bin)", fontsize=11)
+        plt.tight_layout()
+        path = out_dir / "trajectory_length_vs_n_frames.png"
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
+        print(f"[activation_analysis] Written : {path}")
+
+    # 5. trajectory_length_per_frame by length_bin (2-panel, one per analysis layer)
+    if len(sub_2d) > 0 and "trajectory_length_per_frame" in sub_2d.columns:
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+        for ax, layer in zip(axes, ANALYSIS_LAYERS):
+            grp = sub_2d[sub_2d["layer"] == layer]
+            sns.barplot(data=grp, x="length_bin", y="trajectory_length_per_frame",
+                        ax=ax, errorbar="ci", capsize=0.12, err_kws={"linewidth": 1.5})
+            ax.set_title(layer)
+            ax.set_xlabel("length_bin")
+            ax.set_ylabel("trajectory_length_per_frame")
+        fig.suptitle("trajectory_length_per_frame by length_bin\n"
+                     "(duration-normalized — tests whether step size changes)", fontsize=10)
+        plt.tight_layout()
+        path = out_dir / "trajectory_length_per_frame_by_length_bin.png"
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
+        print(f"[activation_analysis] Written : {path}")
+
+    # 6. mean_step_distance by length_bin (2-panel)
+    if len(sub_2d) > 0 and "mean_step_distance" in sub_2d.columns:
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+        for ax, layer in zip(axes, ANALYSIS_LAYERS):
+            grp = sub_2d[sub_2d["layer"] == layer]
+            sns.barplot(data=grp, x="length_bin", y="mean_step_distance",
+                        ax=ax, errorbar="ci", capsize=0.12, err_kws={"linewidth": 1.5})
+            ax.set_title(layer)
+            ax.set_xlabel("length_bin")
+            ax.set_ylabel("mean_step_distance")
+        fig.suptitle("mean_step_distance by length_bin\n"
+                     "(per-step average — pure latent dynamics signal)", fontsize=10)
+        plt.tight_layout()
+        path = out_dir / "mean_step_distance_by_length_bin.png"
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
+        print(f"[activation_analysis] Written : {path}")
+
+    # 7. Layer comparison: grouped bars for mean_norm, traj_per_frame, mean_step_distance
+    if len(sub_cmp) > 0:
+        cmp_features = ["mean_norm", "trajectory_length_per_frame", "mean_step_distance"]
+        cmp_features = [f for f in cmp_features if f in sub_cmp.columns]
+        cmp_means = sub_cmp.groupby("layer")[cmp_features].mean()
+        # Normalise each feature to [0,1] for side-by-side visibility
+        cmp_norm = (cmp_means - cmp_means.min()) / (cmp_means.max() - cmp_means.min() + 1e-12)
+        x = range(len(cmp_features))
+        width = 0.35
+        fig, ax = plt.subplots(figsize=(7, 4))
+        for i, (layer, row) in enumerate(cmp_norm.iterrows()):
+            offset = (i - 0.5) * width
+            bars = ax.bar([xi + offset for xi in x], row.values, width, label=layer, alpha=0.8)
+        ax.set_xticks(list(x))
+        ax.set_xticklabels(cmp_features, rotation=15, ha="right")
+        ax.set_ylabel("normalised value (0–1 per feature)")
+        ax.set_title("Layer comparison: encoder_out vs decoder_in\n"
+                     "(features normalised independently for visual comparison)")
+        ax.legend()
+        plt.tight_layout()
+        path = out_dir / "layer_feature_comparison.png"
         fig.savefig(path, dpi=150)
         plt.close(fig)
         print(f"[activation_analysis] Written : {path}")
