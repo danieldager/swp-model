@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 
 import argparse
 
+import swp.audio.models.dac      # noqa: F401 — registers dac in the registry
 import swp.audio.models.encodec  # noqa: F401 — registers encodec in the registry
 from swp.audio.datasets.base import ParadigmDataset
 from swp.audio.models import get_model

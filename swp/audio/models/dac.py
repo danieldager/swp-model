@@ -11,28 +11,25 @@ from swp.audio.models.device import select_device
 from swp.audio.models.registry import register
 
 # Stable functional layer names exposed to callers.
-# Internal HF module paths are an implementation detail of this wrapper.
 _STABLE_LAYERS = ["encoder_out", "decoder_in", "decoder_out"]
 
-# Mapping: stable name → (hook_type, internal_attr_path, extractor_fn_or_None)
-# hook_type: "post" = forward hook, "pre" = forward pre-hook
-# internal_attr_path: dotted path relative to the HF EncodecModel instance
-# extractor_fn: callable to unwrap the relevant tensor, or None for raw output
+# Mapping: stable name → (hook_type, internal_attr_path, extractor_fn)
+# Mirrors the structure of encodec.py exactly.
 _LAYER_MAP: dict[str, tuple[str, str, Any]] = {
-    # Output of the encoder (before quantizer): [B, C, T_enc]
+    # Output of the DAC encoder (before quantizer): [B, D, T_enc]
     "encoder_out": (
         "post",
         "encoder",
         lambda mod, inp, out: out if isinstance(out, torch.Tensor) else out[0],
     ),
-    # Input to the decoder (= quantizer output): [B, C, T_enc]
-    # Captured via a pre-hook on the decoder so we see what the decoder receives.
+    # Input to the DAC decoder (= quantizer output z): [B, D, T_enc]
+    # Captured via a pre-hook on the decoder.
     "decoder_in": (
         "pre",
         "decoder",
         lambda mod, inp: inp[0] if isinstance(inp, (tuple, list)) else inp,
     ),
-    # Output of the decoder: [B, 1, T_audio]
+    # Output of the DAC decoder: [B, 1, T_audio]
     "decoder_out": (
         "post",
         "decoder",
@@ -40,44 +37,50 @@ _LAYER_MAP: dict[str, tuple[str, str, Any]] = {
     ),
 }
 
-
-def _get_submodule(model: nn.Module, dotted_path: str) -> nn.Module:
-    """Resolve a dotted attribute path to a submodule."""
-    parts = dotted_path.split(".")
-    m = model
-    for part in parts:
-        m = getattr(m, part)
-    return m
+# Maps model_type string → sample rate (Hz)
+_SAMPLE_RATES: dict[str, int] = {
+    "16khz": 16_000,
+    "24khz": 24_000,
+    "44khz": 44_100,
+}
 
 
-@register("encodec")
-class EnCodecModel:
-    """Wrapper around HuggingFace EnCodec (facebook/encodec_24khz).
+@register("dac")
+class DACModel:
+    """Wrapper around Descript Audio Codec (descript-audio-codec).
 
     Exposes stable functional layer names for activation extraction:
-        encoder_out  — encoder output, shape [B, C, T_enc]
-        decoder_in   — decoder input (quantizer output), shape [B, C, T_enc]
-        decoder_out  — decoder output (waveform), shape [B, 1, T_audio]
+        encoder_out  — encoder output, shape [D, T_enc]
+        decoder_in   — decoder input (quantizer output), shape [D, T_enc]
+        decoder_out  — decoder output (waveform), shape [1, T_audio]
 
     Args:
-        bandwidth: target bandwidth in kbps (default: 6.0).
-                   Valid values for encodec_24khz: 1.5, 3.0, 6.0, 12.0, 24.0
-        device:    torch device string ('cpu', 'cuda', 'mps'), or None to
-                   auto-select CUDA > MPS > CPU.
+        model_type: DAC model variant — '16khz', '24khz' (default), or '44khz'.
+        device:     torch device string ('cpu', 'cuda', 'mps'), or None to
+                    auto-select CUDA > MPS > CPU.
     """
 
-    name = "encodec"
-    sample_rate = 24_000
+    name = "dac"
 
-    def __init__(self, bandwidth: float = 6.0, device: str | None = None) -> None:
-        from transformers import EncodecModel as HFEncodecModel
+    def __init__(
+        self,
+        model_type: str = "24khz",
+        device: str | None = None,
+    ) -> None:
+        import dac as _dac
 
-        self.bandwidth = bandwidth
+        if model_type not in _SAMPLE_RATES:
+            raise ValueError(
+                f"Unknown model_type {model_type!r}. "
+                f"Available: {list(_SAMPLE_RATES)}"
+            )
+
+        self.model_type = model_type
+        self.sample_rate = _SAMPLE_RATES[model_type]
         self.device = select_device(device)
 
-        self._model: HFEncodecModel = HFEncodecModel.from_pretrained(
-            "facebook/encodec_24khz"
-        )
+        model_path = _dac.utils.download(model_type=model_type)
+        self._model: nn.Module = _dac.DAC.load(model_path)
         self._model.eval()
         self._model.to(self.device)
 
@@ -95,12 +98,9 @@ class EnCodecModel:
         """
         wav = self._prepare(waveform)
         with torch.no_grad():
-            out = self._model(
-                input_values=wav,
-                bandwidth=self.bandwidth,
-            )
-        # HF EnCodec output: audio_values shape [B, 1, T']
-        reconstructed = out.audio_values.squeeze(0)  # → [1, T']
+            z, *_ = self._model.encode(wav)
+            reconstructed = self._model.decode(z)  # [B, 1, T']
+        reconstructed = reconstructed.squeeze(0)    # → [1, T']
         return ReconstructionResult(
             original=waveform.cpu(),
             reconstructed=reconstructed.cpu(),
@@ -130,7 +130,7 @@ class EnCodecModel:
         try:
             for layer_name in layers:
                 hook_type, attr_path, extractor_fn = _LAYER_MAP[layer_name]
-                module = _get_submodule(self._model, attr_path)
+                module = getattr(self._model, attr_path)
                 if hook_type == "post":
                     manager.register_forward_hook(module, layer_name, extractor_fn)
                 else:
@@ -138,7 +138,8 @@ class EnCodecModel:
 
             wav = self._prepare(waveform)
             with torch.no_grad():
-                self._model(input_values=wav, bandwidth=self.bandwidth)
+                z, *_ = self._model.encode(wav)
+                self._model.decode(z)
 
             activations = manager.get_activations()
         finally:
@@ -149,7 +150,7 @@ class EnCodecModel:
         for name, tensor in activations.items():
             t = tensor.detach().cpu()
             if t.dim() == 3 and t.shape[0] == 1:
-                t = t.squeeze(0)  # [B, C, T] → [C, T]  or  [B, 1, T] → [1, T]
+                t = t.squeeze(0)  # [B, D, T] → [D, T]  or  [B, 1, T] → [1, T]
             result[name] = t
 
         return result
@@ -157,11 +158,15 @@ class EnCodecModel:
     # ── Internal helpers ─────────────────────────────────────────────────────
 
     def _prepare(self, waveform: torch.Tensor) -> torch.Tensor:
-        """Ensure waveform is [1, 1, T] (batch=1, channels=1) on the right device."""
+        """Normalise to [1, 1, T], move to device, preprocess for DAC.
+
+        DAC's preprocess() pads the waveform to a multiple of the hop length.
+        """
         wav = waveform.to(self.device)
         if wav.dim() == 1:
             wav = wav.unsqueeze(0).unsqueeze(0)   # [T] → [1, 1, T]
         elif wav.dim() == 2:
             wav = wav.unsqueeze(0)                 # [1, T] → [1, 1, T]
-        # wav is now [B, C, T] — already correct
+        # wav is now [1, 1, T]
+        wav = self._model.preprocess(wav, self.sample_rate)
         return wav

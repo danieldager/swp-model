@@ -16,3 +16,5 @@ nltk>=3.9.1
 statsmodels>=0.14.4
 torchaudio>=2.5.1
 transformers>=4.40.0
+descript-audio-codec
+descript-audiotools
