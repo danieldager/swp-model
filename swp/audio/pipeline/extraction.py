@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+import torchaudio
 
 from swp.audio.metrics.signal import compute_all
 
@@ -24,6 +25,7 @@ def run_extraction(
     dataset_path: str,
     model_kwargs: dict,
     regenerate: bool = False,
+    save_audio: bool = False,
 ) -> Path:
     """Run the extraction pipeline for a dataset.
 
@@ -35,6 +37,8 @@ def run_extraction(
       - ``manifest.json``   — run parameters + item → layer → relative path map
       - ``metrics.csv``     — one row per item: item_id, mel_distance, si_sdr
       - ``activations/``    — ``{item_id}__{layer_name}.pt`` files
+      - ``audio/``          — ``{item_id}__original.wav`` and ``{item_id}__reconstructed.wav``
+                              (only written when ``save_audio=True``)
 
     Args:
         model:        AudioModel instance (must implement reconstruct + extract_activations)
@@ -44,6 +48,7 @@ def run_extraction(
         dataset_path: repo-relative path to the processed CSV (for paramhash)
         model_kwargs: model constructor kwargs (for paramhash; e.g. ``{"bandwidth": 6.0}``)
         regenerate:   if True, overwrite an existing run; otherwise skip
+        save_audio:   if True, save original and reconstructed WAV files under audio/
 
     Returns:
         Path to the run output directory.
@@ -71,6 +76,10 @@ def run_extraction(
     act_dir = run_dir / "activations"
     act_dir.mkdir(parents=True, exist_ok=True)
 
+    if save_audio:
+        audio_dir = run_dir / "audio"
+        audio_dir.mkdir(exist_ok=True)
+
     metrics_rows: list[dict] = []
     manifest_items: dict[str, dict[str, str]] = {}
 
@@ -86,6 +95,19 @@ def run_extraction(
         result = model.reconstruct(waveform)
         metrics = compute_all(result["original"], result["reconstructed"], model.sample_rate)
         metrics_rows.append({"item_id": item_id, **metrics})
+
+        # Save audio if requested
+        if save_audio:
+            torchaudio.save(
+                str(audio_dir / f"{item_id}__original.wav"),
+                result["original"].cpu(),
+                model.sample_rate,
+            )
+            torchaudio.save(
+                str(audio_dir / f"{item_id}__reconstructed.wav"),
+                result["reconstructed"].cpu(),
+                model.sample_rate,
+            )
 
         # Activations
         activations = model.extract_activations(waveform, layers_sorted)

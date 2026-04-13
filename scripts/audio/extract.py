@@ -86,6 +86,12 @@ def main() -> None:
         action="store_true",
         help="Overwrite an existing run instead of skipping",
     )
+    parser.add_argument(
+        "--save-audio",
+        dest="save_audio",
+        action="store_true",
+        help="Save original and reconstructed WAV files under audio/ for listening comparison",
+    )
     args = parser.parse_args()
 
     model_kwargs = dict(_parse_model_arg(a) for a in args.model_args)
@@ -119,6 +125,7 @@ def main() -> None:
         dataset_path=dataset_rel,
         model_kwargs=model_kwargs,
         regenerate=args.regenerate,
+        save_audio=args.save_audio,
     )
 
 
