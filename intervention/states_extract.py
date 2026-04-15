@@ -3,9 +3,6 @@ import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics.pairwise import cosine_similarity
-from scipy.cluster.hierarchy import dendrogram, linkage
-from scipy.spatial.distance import squareform
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -74,7 +71,6 @@ class StatesDataset:
         extractor: StateExtractor,
         phoneme_col: str = "No_Stress",
         word_col: str = "Word",
-        condition_col: str = "Condition",
         append_eos: bool = True,
     ) -> "StatesDataset":
         """build dataset from DataFrame with phoneme sequences and conditions."""
@@ -100,7 +96,7 @@ class StatesDataset:
             for pos, phoneme in enumerate(phonemes):
                 all_meta_rows.append({
                     "seq_id": seq_id,
-                    "seq_condition": row[condition_col],
+                    "word": row[word_col],
                     "position": pos,
                     "phoneme": phoneme,
                 })

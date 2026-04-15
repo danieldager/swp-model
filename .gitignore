@@ -173,3 +173,9 @@ notebooks/data
 reproduce/data
 reproduce/figures
 !reproduce/weights
+
+junk
+plots
+datasets
+states_ds
+summary.md
