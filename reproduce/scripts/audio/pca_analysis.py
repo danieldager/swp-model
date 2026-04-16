@@ -41,12 +41,19 @@ point mode outputs:
     point_per_word_mean_short_only.png
     point_per_word_mean_long_only.png
 
-trajectory mode outputs:
+trajectory mode outputs (Cartesian):
     trajectory_condition_means.png
     trajectory_condition_means_with_examples.png
     trajectory_condition_means_summary.json
     trajectory_condition_means_centroids.csv
     trajectory_projected_items.csv
+
+trajectory mode outputs (polar — auto-generated alongside Cartesian):
+    trajectory_condition_means_polar.csv
+    trajectory_condition_means_polar_summary.json
+    trajectory_radius_over_time.png
+    trajectory_angle_over_time.png
+    trajectory_condition_means_polar.png
 
 Usage
 -----
@@ -764,6 +771,351 @@ def save_trajectory_figures(
     print(f"[pca_analysis] Written : {path}")
 
 
+# ── Polar trajectory analysis ────────────────────────────────────────────────
+
+
+def compute_polar_centroids(
+    centroids_df: pd.DataFrame,
+    run_id: str,
+    layer: str,
+) -> tuple[pd.DataFrame, float, float]:
+    """Convert condition-mean Cartesian trajectories to polar coordinates.
+
+    Polar origin definition
+    -----------------------
+    The reference center is the mean of the 4 condition trajectory starting
+    points (time_idx == 0).  Concretely:
+
+        center = mean over (lex, lb) of centroids_df[time_idx==0][[pc1, pc2]]
+
+    This grounds the origin in the data rather than in the arbitrary PCA (0,0).
+
+    Angle unwrapping
+    ----------------
+    Raw angles are computed with numpy.arctan2(pc2_centered, pc1_centered).
+    numpy.unwrap is then applied **per condition** so that each angle
+    trajectory is continuous (no ±π jumps across time steps).
+    Angles are stored in radians; degrees are added for convenience.
+
+    Args:
+        centroids_df: per-condition per-step DataFrame (from LayerTrajectoryResult).
+        run_id:       run identifier (written into every output row).
+        layer:        layer name (written into every output row).
+
+    Returns:
+        polar_df   — tidy DataFrame with all required polar columns.
+        center_pc1 — x coordinate of the common start center.
+        center_pc2 — y coordinate of the common start center.
+    """
+    # Common start center: mean of first normalized time step across all conditions
+    start_rows = centroids_df[centroids_df["time_idx"] == 0]
+    center_pc1 = float(start_rows["pc1"].mean())
+    center_pc2 = float(start_rows["pc2"].mean())
+
+    rows: list[dict] = []
+    for lex, lb in CONDITIONS:
+        sub = centroids_df[
+            (centroids_df["lexicality"] == lex) & (centroids_df["length_bin"] == lb)
+        ].sort_values("time_idx").copy()
+        if sub.empty:
+            continue
+
+        pc1_c = sub["pc1"].values - center_pc1
+        pc2_c = sub["pc2"].values - center_pc2
+        radius = np.sqrt(pc1_c ** 2 + pc2_c ** 2)
+
+        # Unwrap angle per condition for continuity
+        angle_raw = np.arctan2(pc2_c, pc1_c)
+        angle_unwrapped = np.unwrap(angle_raw)
+
+        n_items = int(sub["n_items_in_condition"].iloc[0])
+        for i, row in enumerate(sub.itertuples(index=False)):
+            rows.append({
+                "run_id": run_id,
+                "layer": layer,
+                "lexicality": lex,
+                "length_bin": lb,
+                "time_idx": int(row.time_idx),
+                "time_norm": float(row.time_norm),
+                "pc1": float(row.pc1),
+                "pc2": float(row.pc2),
+                "center_pc1": center_pc1,
+                "center_pc2": center_pc2,
+                "pc1_centered": float(pc1_c[i]),
+                "pc2_centered": float(pc2_c[i]),
+                "radius": float(radius[i]),
+                "angle_rad": float(angle_unwrapped[i]),
+                "angle_deg": float(np.degrees(angle_unwrapped[i])),
+                "n_items_in_condition": n_items,
+            })
+
+    col_order = [
+        "run_id", "layer", "lexicality", "length_bin",
+        "time_idx", "time_norm", "pc1", "pc2",
+        "center_pc1", "center_pc2", "pc1_centered", "pc2_centered",
+        "radius", "angle_rad", "angle_deg", "n_items_in_condition",
+    ]
+    return pd.DataFrame(rows)[col_order], center_pc1, center_pc2
+
+
+def _plot_polar_timeseries(
+    polar_df: pd.DataFrame,
+    y_col: str,
+    ylabel: str,
+    title: str,
+    out_path: Path,
+) -> None:
+    """Save a time-series line plot (x=time_norm, y=y_col) for all 4 conditions.
+
+    Args:
+        polar_df: DataFrame from compute_polar_centroids().
+        y_col:    column to plot on the y axis ('radius' or 'angle_rad').
+        ylabel:   y axis label string.
+        title:    plot title.
+        out_path: destination file path.
+    """
+    fig, ax = plt.subplots(figsize=(7, 4))
+    for lex, lb in CONDITIONS:
+        sub = polar_df[
+            (polar_df["lexicality"] == lex) & (polar_df["length_bin"] == lb)
+        ].sort_values("time_norm")
+        if sub.empty:
+            continue
+        color = _COND_COLORS.get((lex, lb), "#999999")
+        ls = _COND_LINESTYLES.get(lb, "-")
+        ax.plot(
+            sub["time_norm"], sub[y_col],
+            color=color, linestyle=ls, linewidth=2.2,
+            label=f"{lex} / {lb}",
+        )
+    ax.set_xlabel("Normalized time", fontsize=11)
+    ax.set_ylabel(ylabel, fontsize=11)
+    ax.set_title(title, fontsize=11)
+    ax.legend(fontsize=9, framealpha=0.8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    plt.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _plot_polar_projection(
+    polar_df: pd.DataFrame,
+    title: str,
+    out_path: Path,
+) -> None:
+    """Save a true polar (r, theta) projection of condition-mean trajectories.
+
+    Uses matplotlib's 'polar' subplot projection.  Start and end of each
+    condition trajectory are marked with circle and square respectively.
+
+    Args:
+        polar_df: DataFrame from compute_polar_centroids().
+        title:    plot title.
+        out_path: destination file path.
+    """
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw={"projection": "polar"})
+    for lex, lb in CONDITIONS:
+        sub = polar_df[
+            (polar_df["lexicality"] == lex) & (polar_df["length_bin"] == lb)
+        ].sort_values("time_norm")
+        if sub.empty:
+            continue
+        color = _COND_COLORS.get((lex, lb), "#999999")
+        ls = _COND_LINESTYLES.get(lb, "-")
+        theta = sub["angle_rad"].values
+        r = sub["radius"].values
+        ax.plot(theta, r, color=color, linestyle=ls, linewidth=2.2,
+                label=f"{lex} / {lb}")
+        # Start marker (circle)
+        ax.scatter(theta[0], r[0], color=color, marker="o", s=80, zorder=5,
+                   edgecolors="white", linewidths=1.2)
+        # End marker (square)
+        ax.scatter(theta[-1], r[-1], color=color, marker="s", s=80, zorder=5,
+                   edgecolors="white", linewidths=1.2)
+
+    ax.set_title(title, fontsize=10, pad=15)
+    ax.legend(fontsize=9, framealpha=0.8, loc="upper right",
+              bbox_to_anchor=(1.35, 1.1))
+    plt.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _compute_pca_origin_polar(polar_df: pd.DataFrame) -> pd.DataFrame:
+    """Compute polar coordinates relative to the raw PCA origin (0, 0).
+
+    Unlike the start-centered polar representation already stored in polar_df
+    (which is centered on the mean of condition start points), this function
+    uses the raw Cartesian PCA coordinates pc1 and pc2 directly.
+
+    For every row:
+        radius_pca_origin  = sqrt(pc1² + pc2²)
+        angle_pca_origin   = atan2(pc2, pc1)   [raw, NOT unwrapped]
+
+    No centering, no reference subtraction, no unwrapping — the angle is
+    simply the position angle in the original 2D PCA space.
+
+    Args:
+        polar_df: DataFrame from compute_polar_centroids(), which contains
+                  the raw 'pc1' and 'pc2' columns alongside the start-centered
+                  polar columns.
+
+    Returns:
+        New DataFrame with columns required for the PCA-origin CSV output.
+    """
+    df = polar_df.copy()
+    df["radius_pca_origin"] = np.sqrt(df["pc1"] ** 2 + df["pc2"] ** 2)
+    angle_rad = np.arctan2(df["pc2"].values, df["pc1"].values)
+    df["angle_pca_origin_rad"] = angle_rad
+    df["angle_pca_origin_deg"] = np.degrees(angle_rad)
+
+    col_order = [
+        "run_id", "layer", "lexicality", "length_bin",
+        "time_idx", "time_norm", "pc1", "pc2",
+        "radius_pca_origin", "angle_pca_origin_rad", "angle_pca_origin_deg",
+        "n_items_in_condition",
+    ]
+    return df[col_order]
+
+
+def _plot_polar_pca_origin(
+    pca_origin_df: pd.DataFrame,
+    title: str,
+    out_path: Path,
+) -> None:
+    """Save a full polar plot of condition-mean trajectories around the PCA origin.
+
+    Angles and radii are computed from raw (pc1, pc2) coordinates — no
+    centering or reference-angle subtraction is applied.  The full 360° polar
+    space is shown (no sector zoom).
+
+    Args:
+        pca_origin_df: DataFrame from _compute_pca_origin_polar().
+        title:         plot title.
+        out_path:      destination file path.
+    """
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw={"projection": "polar"})
+    for lex, lb in CONDITIONS:
+        sub = pca_origin_df[
+            (pca_origin_df["lexicality"] == lex) & (pca_origin_df["length_bin"] == lb)
+        ].sort_values("time_norm")
+        if sub.empty:
+            continue
+        color = _COND_COLORS.get((lex, lb), "#999999")
+        ls = _COND_LINESTYLES.get(lb, "-")
+        theta = sub["angle_pca_origin_rad"].values
+        r = sub["radius_pca_origin"].values
+        ax.plot(theta, r, color=color, linestyle=ls, linewidth=2.2,
+                label=f"{lex} / {lb}")
+        # Start marker (circle)
+        ax.scatter(theta[0], r[0], color=color, marker="o", s=80, zorder=5,
+                   edgecolors="white", linewidths=1.2)
+        # End marker (square)
+        ax.scatter(theta[-1], r[-1], color=color, marker="s", s=80, zorder=5,
+                   edgecolors="white", linewidths=1.2)
+
+    ax.set_title(title, fontsize=10, pad=15)
+    ax.legend(fontsize=9, framealpha=0.8, loc="upper right",
+              bbox_to_anchor=(1.35, 1.1))
+    plt.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def save_polar_figures(
+    polar_df: pd.DataFrame,
+    center_pc1: float,
+    center_pc2: float,
+    out_dir: Path,
+    run_id: str,
+    layer: str,
+    resample_steps: int,
+    condition_counts: dict,
+) -> None:
+    """Save all polar outputs for one (run_id, layer).
+
+    Files written:
+        trajectory_condition_means_polar.csv           — start-centered polar coords
+        trajectory_condition_means_polar_summary.json
+        trajectory_radius_over_time.png                — radius (start-centered) vs time
+        trajectory_angle_over_time.png                 — angle (start-centered) vs time
+        trajectory_condition_means_polar.png           — full polar, start-centered
+        trajectory_condition_means_polar_pca_origin.csv
+        trajectory_condition_means_polar_pca_origin.png — full polar, raw PCA origin (0,0)
+
+    Args:
+        polar_df:         DataFrame from compute_polar_centroids() — contains both
+                          raw pc1/pc2 and start-centered polar columns.
+        center_pc1/pc2:   coordinates of the common start center (for JSON).
+        out_dir:          destination directory (must already exist).
+        run_id:           used in plot titles and JSON.
+        layer:            used in plot titles and JSON.
+        resample_steps:   stored in the JSON summary.
+        condition_counts: dict of "lex/lb" → n_items (stored in the JSON summary).
+    """
+    base_title = f"{run_id} — {layer}  [polar]"
+
+    # Polar CSV
+    csv_path = out_dir / "trajectory_condition_means_polar.csv"
+    polar_df.to_csv(csv_path, index=False)
+    print(f"[pca_analysis] Written : {csv_path}")
+
+    # Polar summary JSON
+    summary = {
+        "run_id": run_id,
+        "layer": layer,
+        "center_definition": "mean_of_condition_start_points",
+        "center_pc1": center_pc1,
+        "center_pc2": center_pc2,
+        "resample_steps": resample_steps,
+        "condition_counts": condition_counts,
+    }
+    json_path = out_dir / "trajectory_condition_means_polar_summary.json"
+    json_path.write_text(json.dumps(summary, indent=2))
+    print(f"[pca_analysis] Written : {json_path}")
+
+    # Radius over normalized time
+    _plot_polar_timeseries(
+        polar_df,
+        y_col="radius",
+        ylabel="Radius (distance from start center)",
+        title=f"{base_title}\nRadius over normalized time",
+        out_path=out_dir / "trajectory_radius_over_time.png",
+    )
+    print(f"[pca_analysis] Written : {out_dir / 'trajectory_radius_over_time.png'}")
+
+    # Angle over normalized time (unwrapped, radians)
+    _plot_polar_timeseries(
+        polar_df,
+        y_col="angle_rad",
+        ylabel="Angle (radians, unwrapped)",
+        title=f"{base_title}\nAngle over normalized time (unwrapped)",
+        out_path=out_dir / "trajectory_angle_over_time.png",
+    )
+    print(f"[pca_analysis] Written : {out_dir / 'trajectory_angle_over_time.png'}")
+
+    # Full polar projection — start-centered coordinates
+    _plot_polar_projection(
+        polar_df,
+        title=base_title,
+        out_path=out_dir / "trajectory_condition_means_polar.png",
+    )
+    print(f"[pca_analysis] Written : {out_dir / 'trajectory_condition_means_polar.png'}")
+
+    # PCA-origin polar — raw (pc1, pc2) with no centering or reference subtraction
+    pca_origin_df = _compute_pca_origin_polar(polar_df)
+    pca_origin_csv = out_dir / "trajectory_condition_means_polar_pca_origin.csv"
+    pca_origin_df.to_csv(pca_origin_csv, index=False)
+    print(f"[pca_analysis] Written : {pca_origin_csv}")
+    _plot_polar_pca_origin(
+        pca_origin_df,
+        title=f"{run_id} — {layer}  [polar, PCA origin]",
+        out_path=out_dir / "trajectory_condition_means_polar_pca_origin.png",
+    )
+    print(f"[pca_analysis] Written : {out_dir / 'trajectory_condition_means_polar_pca_origin.png'}")
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 
@@ -956,10 +1308,26 @@ def main() -> None:
             json_path.write_text(json.dumps(summary, indent=2))
             print(f"[pca_analysis] Written : {json_path}")
 
-            # Figures
+            # Cartesian trajectory figures
             save_trajectory_figures(
                 traj_result, layer_out, run_id, layer,
                 overlay_per_condition=args.overlay_per_condition,
+            )
+
+            # Polar extension — runs automatically after Cartesian trajectory
+            print(f"[pca_analysis] [polar] Layer={layer} — computing polar coordinates …")
+            polar_df, center_pc1, center_pc2 = compute_polar_centroids(
+                traj_result.centroids_df, run_id, layer,
+            )
+            save_polar_figures(
+                polar_df=polar_df,
+                center_pc1=center_pc1,
+                center_pc2=center_pc2,
+                out_dir=layer_out,
+                run_id=run_id,
+                layer=layer,
+                resample_steps=traj_result.resample_steps,
+                condition_counts=cond_counts,
             )
 
     print(f"\n[pca_analysis] Done. All outputs under {out_root}")
