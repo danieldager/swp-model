@@ -1,6 +1,6 @@
 # Audio Codec Extension — Project State
 
-*Last updated: 2026-04-14 · Branch: `feat/paradigm-audio-codecs`*
+*Last updated: 2026-04-16 · Branch: `feat/audio-pca-visualization` (branched from `feat/paradigm-audio-codecs`)*
 
 ---
 
@@ -73,11 +73,17 @@ The processed CSV includes normalized columns:
 
 ---
 
-## 3. Branch overview: `feat/paradigm-audio-codecs`
+## 3. Branch overview
 
-This branch adds a self-contained audio sub-package (`swp/audio/`) on top of the existing
-SWP codebase. It does **not** modify any existing code in `swp/models/`, `swp/train/`,
-`swp/test/`, or the paper reproduction scripts.
+The audio work lives on two related branches:
+
+- **`feat/paradigm-audio-codecs`** — the stable base: extraction pipeline, signal analyses,
+  activation analyses (Steps 0–3).
+- **`feat/audio-pca-visualization`** (current) — adds PCA/geometry/distance visualization
+  (Step 4), branched from `feat/paradigm-audio-codecs`.
+
+Both branches add a self-contained audio sub-package (`swp/audio/`) and do **not** modify any
+existing code in `swp/models/`, `swp/train/`, `swp/test/`, or the paper reproduction scripts.
 
 ### New files on this branch
 
@@ -106,7 +112,8 @@ scripts/audio/
 
 reproduce/scripts/audio/
 ├── analysis.py          # Step 2: signal metric OLS + bar plots
-└── activation_analysis.py  # Step 3: latent activation OLS + trajectory plots
+├── activation_analysis.py  # Step 3: latent activation OLS + trajectory plots
+└── pca_analysis.py      # Step 4: PCA visualization (point + trajectory + distance)
 
 README_audio.md          # Detailed usage guide for the audio pipeline
 docs/audio_project_state.md  # This file
@@ -130,6 +137,8 @@ Step 1  extract.py             Codec forward pass → metrics.csv + activations/
 Step 2  analysis.py            metrics.csv → OLS regressions + bar plots (signal level)
            ↓
 Step 3  activation_analysis.py activations/*.pt → OLS regressions + plots (latent level)
+           ↓
+Step 4  pca_analysis.py        activations/*.pt → PCA geometry + condition distances
 ```
 
 ### Caching / idempotence
@@ -319,6 +328,118 @@ clear evidence for a dual-route-like lexical vs non-lexical separation.
 
 ---
 
+## 7a. PCA / visualization — current state (branch `feat/audio-pca-visualization`)
+
+### Script
+
+`reproduce/scripts/audio/pca_analysis.py`
+Runs per model, per layer (supports `encoder_out` and `decoder_in`).
+Outputs land under `reproduce/figures/audio/pca/<run_id>/<layer>/`.
+
+### Mode 1 — Static point PCA (`--mode point`, default)
+
+For each item, the `[C, T]` activation tensor is **mean-pooled over time** to produce one `[C]`
+vector. A 2-component PCA is fit on the `[n_items, C]` matrix (StandardScaler + PCA, random_state=0).
+
+Each item is plotted as one dot, color-coded by `(lexicality, length_bin)`:
+
+| Condition | Color |
+|---|---|
+| word / short | teal (#2EC4B6) |
+| word / long | navy blue (#1565C0) |
+| nonword / short | amber (#FFB703) |
+| nonword / long | crimson (#D62828) |
+
+Outputs: `point_per_word_mean.png`, `_short_only.png`, `_long_only.png`, `point_per_word_mean.csv`, `_summary.json`.
+
+**Interpretive status**: the static point PCA is the least informative of the three analysis
+modes. No clean lexicality or length separation is visible in mean-pooled item-level plots for
+either model or layer tested so far. Condition clusters largely overlap. The trajectory and
+distance-based analyses are more revealing.
+
+### Mode 2 — Frame-level trajectory PCA (`--mode trajectory`)
+
+All frames from all items are concatenated into a `[total_frames, C]` matrix.
+A shared 2-component PCA is fit on this matrix. Each item's frame sequence is then projected
+into the common 2D PCA space, giving a `[T, 2]` trajectory. Each trajectory is resampled to a
+fixed number of normalized time steps (default: 30) via linear interpolation **after projection**.
+Condition-mean trajectories are computed for the 4 `(lexicality × length_bin)` cells.
+
+Cartesian trajectory outputs:
+- `trajectory_condition_means.png` — condition mean trajectories, starts (●) and ends (■) marked
+- `trajectory_condition_means_with_examples.png` — same + α-blended individual trajectories
+- `trajectory_condition_means_centroids.csv`
+- `trajectory_projected_items.csv` — per-item per-frame projected coordinates (raw time)
+- `trajectory_condition_means_summary.json`
+
+Polar outputs (complementary / exploratory, auto-generated alongside Cartesian):
+- `trajectory_radius_over_time.png` — radial departure from common start over normalized time ★
+- `trajectory_angle_over_time.png` — angular direction over normalized time (unwrapped, radians) ★
+- `trajectory_condition_means_polar.png` — full polar plot, start-centered
+- `trajectory_condition_means_polar_pca_origin.png` — full polar plot, raw PCA origin (0,0)
+- associated CSVs and summary JSON
+
+(★ = primary interpretive polar plots)
+
+**Interpretive status**: the trajectory PCA reveals structured shared latent dynamics across
+conditions. Length structure is visible across model/layer combinations; the 4 condition mean
+trajectories show consistent length-related separation in their spatial paths.
+Lexicality is not absent but remains weaker and more local than length — visible as small
+directional offsets rather than a global split.
+EnCodec `decoder_in` is currently one of the more informative views, but still does not show
+a clean lexical separation.
+
+### Mode 3 — Condition-distance analysis (auto-runs with trajectory mode)
+
+At each normalized time step, the Euclidean distance between pairs of condition means in 2D PCA
+space is computed for 4 contrasts:
+
+| Contrast | Family | Pair |
+|---|---|---|
+| `lex_short` | lexicality | word/short vs nonword/short |
+| `lex_long` | lexicality | word/long vs nonword/long |
+| `len_word` | length | word/short vs word/long |
+| `len_nonword` | length | nonword/short vs nonword/long |
+
+AUC is computed via trapezoidal integration over normalized time.
+
+Outputs:
+- `trajectory_condition_distances_over_time.png` — 4 distance curves over time
+- `trajectory_condition_distances_over_time.csv` — long-format, one row per (contrast × step)
+- `trajectory_condition_distances_summary.csv` — per-contrast: mean, max, time_of_max, AUC
+
+**Interpretive status**: the distance plots are currently the clearest quantitative summary of
+condition divergence. Length contrasts (`len_word`, `len_nonword`) are consistently larger than
+lexicality contrasts (`lex_short`, `lex_long`) across model/layer combinations. Distance profiles
+often peak in mid-trajectory and partially reconverge near the end, suggesting that condition
+differences are not uniformly distributed over time. This is consistent with the activation-level
+OLS findings and adds a temporal dimension to that picture.
+
+### CLI reference (Step 4)
+
+```bash
+# Static point PCA (default)
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/
+
+# Trajectory + polar + distance (all in one call)
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --mode trajectory
+
+# Both point and trajectory
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --mode both
+
+# Single layer, custom resampling
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/dac__f104bbdd/ \
+    --mode trajectory --layers decoder_in --resample-steps 50
+```
+
+---
+
 ## 8. Current limitations
 
 - **Single speaker processed so far**: only the male speaker subset (`subset_male.csv`) has
@@ -326,9 +447,8 @@ clear evidence for a dual-route-like lexical vs non-lexical separation.
 - **No explicit cross-model comparison script yet**: EnCodec and DAC have both been analyzed,
   but comparison is still done manually across run outputs rather than through a dedicated
   joint analysis script.
-- **No PCA / geometry visualization yet**: the full temporal activation tensors are saved and
-  summary dynamics features are computed, but no PCA-based visualization of trajectories has
-  been implemented yet.
+- **PCA visualization is now implemented** (see Section 7a), but no cross-model comparison
+  panel yet (EnCodec and DAC are analyzed separately).
 - **No encoding-model format yet**: activations are stored as `.pt` tensors, but they have not
   yet been converted into a unified `(trials, time, neurons)` structure for univariate or
   multivariate encoding analyses.
@@ -349,22 +469,15 @@ The next steps were clarified after a meeting with Yair. Current priorities are:
 3. **Ablation study**
 4. **New stimuli**
 
-### Priority 1 — PCA / visualization
+### Priority 1 — PCA / visualization ✓ (implemented)
 
-Main idea:
-- visualize latent dynamics with PCA
-- compare **word vs pseudoword**
-- compare **short vs long**
-- do this **layerwise**
-- explore whether differences emerge more clearly in higher layers
+Static point PCA, frame-level trajectory PCA, polar complementary visualizations, and
+condition-distance-over-time plots are all implemented in `reproduce/scripts/audio/pca_analysis.py`.
+See Section 7a for details.
 
-Important notes from the meeting:
-- focus on **neural dynamics**
-- try to produce **one summary plot** that captures the main comparison
-- consider both:
-  - trajectory-based views
-  - "one point per word" summaries
-- be careful not to mix heterogeneous representations in misleading PCA projections
+Remaining PCA directions:
+- cross-model comparison panel (currently run separately per model)
+- explore whether lexicality effects are stronger in specific temporal windows
 
 ### Priority 2 — Multivariate and univariate analyses
 
@@ -451,6 +564,20 @@ python reproduce/scripts/audio/activation_analysis.py \
 
 python reproduce/scripts/audio/activation_analysis.py \
     --run reproduce/data/audio/dac__f104bbdd/
+
+# Step 4: PCA / geometry / distance (point PCA is the default)
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/
+
+# Trajectory + polar + distance (all in one call)
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --mode trajectory
+
+# Single layer, decoder_in only
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/dac__f104bbdd/ \
+    --mode trajectory --layers decoder_in
 ```
 
 ---
@@ -473,4 +600,6 @@ python reproduce/scripts/audio/activation_analysis.py \
 | Extraction CLI | `scripts/audio/extract.py` |
 | Signal analysis | `reproduce/scripts/audio/analysis.py` |
 | Activation analysis | `reproduce/scripts/audio/activation_analysis.py` |
+| PCA / geometry / distance | `reproduce/scripts/audio/pca_analysis.py` |
+| PCA figures | `reproduce/figures/audio/pca/<run_id>/<layer>/` |
 | Detailed usage README | `README_audio.md` |

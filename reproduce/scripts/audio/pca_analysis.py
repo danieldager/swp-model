@@ -1116,6 +1116,165 @@ def save_polar_figures(
     print(f"[pca_analysis] Written : {out_dir / 'trajectory_condition_means_polar_pca_origin.png'}")
 
 
+# ── Condition-distance analysis ───────────────────────────────────────────────
+
+# Named pairs: (label, contrast_family, cond_A, cond_B)
+_CONTRAST_PAIRS: list[tuple[str, str, tuple[str, str], tuple[str, str]]] = [
+    ("lex_short",   "lexicality", ("word", "short"),    ("nonword", "short")),
+    ("lex_long",    "lexicality", ("word", "long"),      ("nonword", "long")),
+    ("len_word",    "length",     ("word", "short"),     ("word", "long")),
+    ("len_nonword", "length",     ("nonword", "short"),  ("nonword", "long")),
+]
+
+
+def compute_condition_distances(
+    centroids_df: pd.DataFrame,
+    run_id: str,
+    layer: str,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compute Euclidean distances between condition-mean trajectories over time.
+
+    For each of the 4 named contrasts, at every normalized time step the
+    distance between the two condition means in 2D PCA space is:
+
+        distance(t) = sqrt((pc1_A(t) - pc1_B(t))² + (pc2_A(t) - pc2_B(t))²)
+
+    Contrasts:
+        lex_short   word/short vs nonword/short  (lexicality family)
+        lex_long    word/long  vs nonword/long   (lexicality family)
+        len_word    word/short vs word/long       (length family)
+        len_nonword nonword/short vs nonword/long (length family)
+
+    Args:
+        centroids_df: per-condition per-step DataFrame (from LayerTrajectoryResult).
+        run_id:       written into every output row.
+        layer:        written into every output row.
+
+    Returns:
+        dist_df    — long-format DataFrame with one row per (contrast × time_step).
+        summary_df — one row per contrast with aggregate metrics.
+    """
+    # Build a lookup: (lex, lb) → sorted DataFrame indexed by time_idx
+    traj: dict[tuple[str, str], pd.DataFrame] = {}
+    for lex, lb in CONDITIONS:
+        sub = centroids_df[
+            (centroids_df["lexicality"] == lex) & (centroids_df["length_bin"] == lb)
+        ].sort_values("time_idx").reset_index(drop=True)
+        traj[(lex, lb)] = sub
+
+    dist_rows: list[dict] = []
+    summary_rows: list[dict] = []
+
+    for contrast, family, cond_a, cond_b in _CONTRAST_PAIRS:
+        df_a = traj.get(cond_a)
+        df_b = traj.get(cond_b)
+        if df_a is None or df_b is None or df_a.empty or df_b.empty:
+            print(
+                f"[pca_analysis] WARNING: skipping contrast={contrast} "
+                f"— one or both conditions missing."
+            )
+            continue
+
+        d_pc1 = df_a["pc1"].values - df_b["pc1"].values
+        d_pc2 = df_a["pc2"].values - df_b["pc2"].values
+        distances = np.sqrt(d_pc1 ** 2 + d_pc2 ** 2)
+        time_norm = df_a["time_norm"].values
+        time_idx = df_a["time_idx"].values
+
+        for i in range(len(distances)):
+            dist_rows.append({
+                "run_id": run_id,
+                "layer": layer,
+                "contrast": contrast,
+                "contrast_family": family,
+                "time_idx": int(time_idx[i]),
+                "time_norm": float(time_norm[i]),
+                "distance": float(distances[i]),
+            })
+
+        # Summary metrics
+        idx_max = int(np.argmax(distances))
+        auc = float(np.trapezoid(distances, time_norm))
+        summary_rows.append({
+            "run_id": run_id,
+            "layer": layer,
+            "contrast": contrast,
+            "contrast_family": family,
+            "n_steps": len(distances),
+            "mean_distance": float(distances.mean()),
+            "max_distance": float(distances[idx_max]),
+            "time_idx_of_max": int(time_idx[idx_max]),
+            "time_norm_of_max": float(time_norm[idx_max]),
+            "auc_distance": auc,
+        })
+
+    dist_df = pd.DataFrame(dist_rows)
+    summary_df = pd.DataFrame(summary_rows)
+    return dist_df, summary_df
+
+
+def save_distance_figures(
+    dist_df: pd.DataFrame,
+    out_dir: Path,
+    run_id: str,
+    layer: str,
+) -> None:
+    """Save the condition-distance-over-time line plot.
+
+    Each of the 4 contrasts is shown as one curve.
+    Lexicality contrasts use solid lines; length contrasts use dashed lines.
+    Colors separate the two lexicality contrasts and two length contrasts.
+
+    Args:
+        dist_df:  long-format DataFrame from compute_condition_distances().
+        out_dir:  destination directory (must already exist).
+        run_id:   used in the plot title.
+        layer:    used in the plot title.
+    """
+    # Visual encoding: color by contrast_family, linestyle by specific contrast
+    _FAMILY_COLORS = {"lexicality": "#0072B2", "length": "#D62828"}
+    _CONTRAST_LS = {
+        "lex_short":   "-",
+        "lex_long":    "--",
+        "len_word":    "-",
+        "len_nonword": "--",
+    }
+    _CONTRAST_LABELS = {
+        "lex_short":   "lexicality @ short  (word vs nonword)",
+        "lex_long":    "lexicality @ long   (word vs nonword)",
+        "len_word":    "length @ word       (short vs long)",
+        "len_nonword": "length @ nonword    (short vs long)",
+    }
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for contrast, family, _, _ in _CONTRAST_PAIRS:
+        sub = dist_df[dist_df["contrast"] == contrast].sort_values("time_norm")
+        if sub.empty:
+            continue
+        ax.plot(
+            sub["time_norm"], sub["distance"],
+            color=_FAMILY_COLORS[family],
+            linestyle=_CONTRAST_LS[contrast],
+            linewidth=2.2,
+            label=_CONTRAST_LABELS[contrast],
+        )
+
+    ax.set_xlabel("Normalized time", fontsize=11)
+    ax.set_ylabel("Euclidean distance in PCA space", fontsize=11)
+    ax.set_title(
+        f"{run_id} — {layer}\nCondition-mean distances over normalized time",
+        fontsize=11,
+    )
+    ax.legend(fontsize=9, framealpha=0.8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    plt.tight_layout()
+    path = out_dir / "trajectory_condition_distances_over_time.png"
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    print(f"[pca_analysis] Written : {path}")
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 
@@ -1329,6 +1488,19 @@ def main() -> None:
                 resample_steps=traj_result.resample_steps,
                 condition_counts=cond_counts,
             )
+
+            # Condition-distance analysis
+            print(f"[pca_analysis] [distance] Layer={layer} — computing condition distances …")
+            dist_df, dist_summary_df = compute_condition_distances(
+                traj_result.centroids_df, run_id, layer,
+            )
+            dist_csv = layer_out / "trajectory_condition_distances_over_time.csv"
+            dist_df.to_csv(dist_csv, index=False)
+            print(f"[pca_analysis] Written : {dist_csv}")
+            dist_summary_csv = layer_out / "trajectory_condition_distances_summary.csv"
+            dist_summary_df.to_csv(dist_summary_csv, index=False)
+            print(f"[pca_analysis] Written : {dist_summary_csv}")
+            save_distance_figures(dist_df, layer_out, run_id, layer)
 
     print(f"\n[pca_analysis] Done. All outputs under {out_root}")
 
