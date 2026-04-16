@@ -103,10 +103,15 @@ SUPPORTED_LAYERS: list[str] = ["encoder_out", "decoder_in"]
 FACTOR_COLS: list[str] = ["lexicality", "length_bin", "morphology", "frequency_bin"]
 META_COLS: list[str] = ["speaker", "duration_s"]
 
-# Colorblind-safe palette (matches seaborn "colorblind" used elsewhere in repo)
-_LEX_COLORS: dict[str, str] = {"word": "#0072B2", "nonword": "#E69F00"}
-_LEN_MARKERS: dict[str, str] = {"short": "o", "long": "^"}
-_LEN_LINESTYLES: dict[str, str] = {"short": "-", "long": "--"}
+# One distinct color per (lexicality, length_bin) condition.
+# All four are clearly separable: teal, navy-blue, amber, crimson-red.
+_COND_COLORS: dict[tuple[str, str], str] = {
+    ("word",    "short"): "#2EC4B6",   # teal / turquoise
+    ("word",    "long"):  "#1565C0",   # strong blue
+    ("nonword", "short"): "#FFB703",   # amber / orange-yellow
+    ("nonword", "long"):  "#D62828",   # crimson red
+}
+_COND_LINESTYLES: dict[str, str] = {"short": "-", "long": "--"}
 
 # 4 condition cells for trajectory grouping
 CONDITIONS: list[tuple[str, str]] = [
@@ -561,65 +566,38 @@ def _scatter_pca(
     ev: list[float],
     out_path: Path,
     title: str,
-    by_length: bool,
 ) -> None:
     """Save a publication-style static PCA scatter plot.
 
+    Each (lexicality × length_bin) condition gets its own color from
+    _COND_COLORS. All points use a filled circle marker.  Group centroids
+    are shown as "+" crosses in the matching color.
+
     Args:
-        df:        DataFrame with pc1, pc2, lexicality, and (if by_length) length_bin.
-        ev:        [ev_pc1, ev_pc2] explained variance ratios.
-        out_path:  destination file path.
-        title:     plot title string.
-        by_length: if True, encode length_bin via marker shape in addition to color.
+        df:       DataFrame with columns pc1, pc2, lexicality, length_bin.
+        ev:       [ev_pc1, ev_pc2] explained variance ratios.
+        out_path: destination file path.
+        title:    plot title string.
     """
     fig, ax = plt.subplots(figsize=(6, 5))
 
-    lex_levels = sorted(df["lexicality"].dropna().unique())
-
-    if by_length:
-        length_levels = sorted(df["length_bin"].dropna().unique())
-        for lex in lex_levels:
-            for lb in length_levels:
-                mask = (df["lexicality"] == lex) & (df["length_bin"] == lb)
-                sub = df[mask]
-                if sub.empty:
-                    continue
-                ax.scatter(
-                    sub["pc1"], sub["pc2"],
-                    color=_LEX_COLORS.get(lex, "#999999"),
-                    marker=_LEN_MARKERS.get(lb, "s"),
-                    s=40, alpha=0.75, linewidths=0,
-                    label=f"{lex} / {lb}",
-                )
-        for lex in lex_levels:
-            for lb in length_levels:
-                mask = (df["lexicality"] == lex) & (df["length_bin"] == lb)
-                sub = df[mask]
-                if sub.empty:
-                    continue
-                ax.scatter(
-                    sub["pc1"].mean(), sub["pc2"].mean(),
-                    color=_LEX_COLORS.get(lex, "#999999"),
-                    marker="+", s=180, linewidths=2, zorder=5,
-                )
-    else:
-        for lex in lex_levels:
-            sub = df[df["lexicality"] == lex]
-            ax.scatter(
-                sub["pc1"], sub["pc2"],
-                color=_LEX_COLORS.get(lex, "#999999"),
-                s=40, alpha=0.75, linewidths=0,
-                label=lex,
-            )
-        for lex in lex_levels:
-            sub = df[df["lexicality"] == lex]
-            if sub.empty:
-                continue
-            ax.scatter(
-                sub["pc1"].mean(), sub["pc2"].mean(),
-                color=_LEX_COLORS.get(lex, "#999999"),
-                marker="+", s=180, linewidths=2, zorder=5,
-            )
+    for lex, lb in CONDITIONS:
+        mask = (df["lexicality"] == lex) & (df["length_bin"] == lb)
+        sub = df[mask]
+        if sub.empty:
+            continue
+        color = _COND_COLORS.get((lex, lb), "#999999")
+        ax.scatter(
+            sub["pc1"], sub["pc2"],
+            color=color, marker="o",
+            s=40, alpha=0.75, linewidths=0,
+            label=f"{lex} / {lb}",
+        )
+        # Group centroid
+        ax.scatter(
+            sub["pc1"].mean(), sub["pc2"].mean(),
+            color=color, marker="+", s=180, linewidths=2, zorder=5,
+        )
 
     ax.axhline(0, color="grey", linewidth=0.5, linestyle="--", alpha=0.4)
     ax.axvline(0, color="grey", linewidth=0.5, linestyle="--", alpha=0.4)
@@ -653,25 +631,17 @@ def save_point_figures(
     base_title = f"{run_id} — {layer}"
 
     path = out_dir / "point_per_word_mean.png"
-    _scatter_pca(df, ev, path, f"{base_title}\nAll items (n={len(df)})", by_length=True)
+    _scatter_pca(df, ev, path, f"{base_title}\nAll items (n={len(df)})")
     print(f"[pca_analysis] Written : {path}")
 
     short_df = df[df["length_bin"] == "short"]
     path = out_dir / "point_per_word_mean_short_only.png"
-    _scatter_pca(
-        short_df, ev, path,
-        f"{base_title}\nShort items only (n={len(short_df)})",
-        by_length=False,
-    )
+    _scatter_pca(short_df, ev, path, f"{base_title}\nShort items only (n={len(short_df)})")
     print(f"[pca_analysis] Written : {path}")
 
     long_df = df[df["length_bin"] == "long"]
     path = out_dir / "point_per_word_mean_long_only.png"
-    _scatter_pca(
-        long_df, ev, path,
-        f"{base_title}\nLong items only (n={len(long_df)})",
-        by_length=False,
-    )
+    _scatter_pca(long_df, ev, path, f"{base_title}\nLong items only (n={len(long_df)})")
     print(f"[pca_analysis] Written : {path}")
 
 
@@ -707,8 +677,8 @@ def _draw_trajectory_axes(
         if sub.empty:
             continue
 
-        color = _LEX_COLORS.get(lex, "#999999")
-        ls = _LEN_LINESTYLES.get(lb, "-")
+        color = _COND_COLORS.get((lex, lb), "#999999")
+        ls = _COND_LINESTYLES.get(lb, "-")
         label = _condition_label(lex, lb)
 
         ax.plot(sub["pc1"], sub["pc2"], color=color, linestyle=ls,
@@ -773,7 +743,7 @@ def save_trajectory_figures(
 
     # Draw individual trajectories first (background)
     for lex, lb in CONDITIONS:
-        color = _LEX_COLORS.get(lex, "#999999")
+        color = _COND_COLORS.get((lex, lb), "#999999")
         mask = (items_df["lexicality"] == lex) & (items_df["length_bin"] == lb)
         cond_items = items_df[mask]["item_id"].unique()
 
