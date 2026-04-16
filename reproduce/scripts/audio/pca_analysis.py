@@ -54,6 +54,13 @@ trajectory mode outputs (polar — auto-generated alongside Cartesian):
     trajectory_radius_over_time.png
     trajectory_angle_over_time.png
     trajectory_condition_means_polar.png
+    trajectory_condition_means_polar_pca_origin.csv
+    trajectory_condition_means_polar_pca_origin.png
+
+trajectory mode outputs (condition distances — auto-generated alongside Cartesian):
+    trajectory_condition_distances_over_time.png
+    trajectory_condition_distances_over_time.csv
+    trajectory_condition_distances_summary.csv
 
 Usage
 -----
