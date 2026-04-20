@@ -19,6 +19,8 @@ The pipeline has five sequential steps:
 | 1 | `scripts/audio/extract.py` | Reconstruction metrics + activation extraction |
 | 2 | `reproduce/scripts/audio/analysis.py` | Signal metric analysis (mel distance, SI-SDR) |
 | 3 | `reproduce/scripts/audio/activation_analysis.py` | Latent activation analysis (norms, trajectories) |
+| 4 | `reproduce/scripts/audio/pca_analysis.py` | PCA geometry + condition distance over time |
+| 5 | `scripts/audio/build_xarray.py` | Canonical xarray export `(trials, time, neurons)` |
 
 ---
 
@@ -89,6 +91,8 @@ Audio-specific packages added on this branch:
 - `transformers` — HuggingFace EnCodec
 - `descript-audio-codec` — DAC
 - `descript-audiotools` — required by DAC at runtime
+- `xarray` — N-dimensional labeled arrays (Step 5)
+- `h5netcdf` — NetCDF4 write backend (Step 5)
 
 Model weights are downloaded automatically on first use:
 - EnCodec: `facebook/encodec_24khz` cached by HuggingFace (`~/.cache/huggingface/`)
@@ -313,18 +317,56 @@ swp/audio/
 │   └── utils.py         # load_audio() helper
 ├── metrics/
 │   └── signal.py        # mel_distance(), si_sdr(), compute_all()
-└── pipeline/
-    └── extraction.py    # run_extraction() — ties everything together
+├── pipeline/
+│   └── extraction.py    # run_extraction() — ties everything together
+└── encoding/
+    └── xarray_builder.py  # Step 5: .pt → xarray.Dataset (trials, time, neurons)
 
 scripts/audio/
 ├── setup_paradigm.py    # Step 0: build processed CSV from raw data
 ├── sanity_check.py      # Smoke test for any registered model
-└── extract.py           # Step 1 CLI
+├── extract.py           # Step 1 CLI
+└── build_xarray.py      # Step 5 CLI: canonical xarray export
 
 reproduce/scripts/audio/
 ├── analysis.py          # Step 2: signal metric OLS + bar plots
-└── activation_analysis.py  # Step 3: activation feature OLS + trajectory plots
+├── activation_analysis.py  # Step 3: activation feature OLS + trajectory plots
+└── pca_analysis.py      # Step 4: PCA geometry + condition distances
 ```
+
+---
+
+## Step 5 — Canonical xarray export
+
+Builds `xarray.Dataset` files with dimensions `(trials, time, neurons)` from the
+`.pt` activation files produced by Step 1. Required for encoding-model analyses.
+
+Only `encoder_out` and `decoder_in` are supported. `decoder_out` is rejected.
+
+```bash
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --layers encoder_out decoder_in
+
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/dac__f104bbdd/ \
+    --layers encoder_out decoder_in
+```
+
+Outputs written to `{run}/xarray/`:
+
+| File | Content |
+|------|---------|
+| `encoder_out.nc` | `xr.Dataset(dims=(trials, time, neurons))` |
+| `encoder_out_qc.json` | QC report (n_trials, n_neurons, padding fraction, NaN checks) |
+| `decoder_in.nc` | idem |
+| `decoder_in_qc.json` | idem |
+| `metadata_trials.csv` | trial-level metadata, aligned with trials dimension |
+
+Time axis is in seconds from word onset. Padded positions are NaN in `activations`
+and False in `valid_time`. Activations are raw (no normalisation, no resampling).
+
+The script is idempotent: it refuses to overwrite without `--overwrite`.
 
 ---
 

@@ -1,6 +1,6 @@
 # Audio Codec Extension — Project State
 
-*Last updated: 2026-04-16 · Branch: `feat/audio-pca-visualization` (branched from `feat/paradigm-audio-codecs`)*
+*Last updated: 2026-04-20 · Branch: `feat/audio-encoding-analyses` (branched from `feat/audio-pca-visualization`)*
 
 ---
 
@@ -124,6 +124,8 @@ New dependencies added to `requirements.txt`:
 - `transformers` — HuggingFace EnCodec
 - `descript-audio-codec` — DAC native package
 - `descript-audiotools` — required at runtime by DAC
+- `xarray` — N-dimensional labeled arrays (Step 5 xarray export)
+- `h5netcdf` — NetCDF4 backend via HDF5, no system library required
 
 ---
 
@@ -139,6 +141,8 @@ Step 2  analysis.py            metrics.csv → OLS regressions + bar plots (sign
 Step 3  activation_analysis.py activations/*.pt → OLS regressions + plots (latent level)
            ↓
 Step 4  pca_analysis.py        activations/*.pt → PCA geometry + condition distances
+           ↓
+Step 5  build_xarray.py        activations/*.pt → canonical xarray (trials, time, neurons)
 ```
 
 ### Caching / idempotence
@@ -328,6 +332,63 @@ clear evidence for a dual-route-like lexical vs non-lexical separation.
 
 ---
 
+## 7b. Encoding analyses / xarray export (branch `feat/audio-encoding-analyses`)
+
+### Purpose
+
+Prepare activations in a canonical format compatible with encoding-model pipelines
+(univariate / multivariate analyses in the style of the Intracranial pipeline).
+
+Each xarray.Dataset represents one (run, layer) pair with dimensions `(trials, time, neurons)`,
+where neurons are the codec channels and time is in seconds from word onset.
+
+### Eligible layers
+
+Only `encoder_out` and `decoder_in` are included. `decoder_out` is a reconstructed waveform
+(`[1, T_audio]`) and is not a latent multi-unit layer; it is explicitly rejected.
+
+### Padding and masking
+
+Items have variable numbers of temporal frames. A single `T_max = max(n_frames)` is computed
+across all trials in the run. Positions beyond each trial's valid frames are set to NaN in
+`activations` and to `False` in `valid_time`. No trimming, interpolation, or normalisation
+is performed.
+
+### CLI (Step 5)
+
+```bash
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --layers encoder_out decoder_in
+
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/dac__f104bbdd/ \
+    --layers encoder_out decoder_in
+```
+
+Options: `--output-dir`, `--overwrite`, `--dtype float32|float64`.
+The script is idempotent: it refuses to overwrite without `--overwrite`.
+
+### Outputs
+
+Written to `{run}/xarray/` by default:
+
+| File | Content |
+|------|---------|
+| `encoder_out.nc` | `xr.Dataset(dims=(trials, time, neurons))` |
+| `encoder_out_qc.json` | QC report (n_trials, n_neurons, padding fraction, NaN checks, …) |
+| `decoder_in.nc` | idem |
+| `decoder_in_qc.json` | idem |
+| `metadata_trials.csv` | trial-level metadata aligned with the trials dimension |
+
+### Univariate / multivariate analyses
+
+Not yet implemented. The xarray format is the prerequisite for a future
+encoding-model pipeline (inspired by Malo Renaudin's univariate analyses
+and the Intracranial pipeline). This will be implemented in a subsequent phase.
+
+---
+
 ## 7a. PCA / visualization — current state (branch `feat/audio-pca-visualization`)
 
 ### Script
@@ -449,9 +510,9 @@ python reproduce/scripts/audio/pca_analysis.py \
   joint analysis script.
 - **PCA visualization is now implemented** (see Section 7a), but no cross-model comparison
   panel yet (EnCodec and DAC are analyzed separately).
-- **No encoding-model format yet**: activations are stored as `.pt` tensors, but they have not
-  yet been converted into a unified `(trials, time, neurons)` structure for univariate or
-  multivariate encoding analyses.
+- **Encoding-model format**: canonical xarray `(trials, time, neurons)` export implemented
+  (Step 5, `build_xarray.py`). Univariate and multivariate encoding analyses are not yet
+  implemented and will follow in a subsequent phase.
 - **No phoneme-level alignment**: the current analysis remains at the waveform / latent frame
   level and is not aligned to phoneme boundaries.
 - **No ablation pipeline yet**: hard and soft ablation studies are planned but not implemented.
@@ -478,6 +539,11 @@ See Section 7a for details.
 Remaining PCA directions:
 - cross-model comparison panel (currently run separately per model)
 - explore whether lexicality effects are stronger in specific temporal windows
+
+### Priority 1b — Encoding analyses / xarray export ✓ (Phase A implemented)
+
+Canonical xarray export (`build_xarray.py`) implemented. See Section 7b.
+Univariate and multivariate encoding analyses are the next step.
 
 ### Priority 2 — Multivariate and univariate analyses
 
