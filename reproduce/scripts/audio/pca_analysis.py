@@ -117,15 +117,16 @@ SUPPORTED_LAYERS: list[str] = ["encoder_out", "decoder_in"]
 FACTOR_COLS: list[str] = ["lexicality", "length_bin", "morphology", "frequency_bin"]
 META_COLS: list[str] = ["speaker", "duration_s"]
 
-# One distinct color per (lexicality, length_bin) condition.
-# All four are clearly separable: teal, navy-blue, amber, crimson-red.
-_COND_COLORS: dict[tuple[str, str], str] = {
-    ("word",    "short"): "#2EC4B6",   # teal / turquoise
-    ("word",    "long"):  "#1565C0",   # strong blue
-    ("nonword", "short"): "#FFB703",   # amber / orange-yellow
-    ("nonword", "long"):  "#D62828",   # crimson red
-}
+# Visual grammar: color = lexicality, marker/linestyle = length.
+# Colorblind-safe palette consistent with other audio scripts.
+_LEX_COLORS: dict[str, str] = {"word": "#0072B2", "nonword": "#ED2727"}
+_LEN_MARKERS: dict[str, str] = {"short": "o", "long": "^"}
 _COND_LINESTYLES: dict[str, str] = {"short": "-", "long": "--"}
+
+
+def _display_lex(lex: str) -> str:
+    """Map raw lexicality value to display label ('nonword' → 'pseudoword')."""
+    return "pseudoword" if lex == "nonword" else lex
 
 # 4 condition cells for trajectory grouping
 CONDITIONS: list[tuple[str, str]] = [
@@ -136,7 +137,7 @@ CONDITIONS: list[tuple[str, str]] = [
 ]
 
 
-# ── Shared data structures ────────────────────────────────────────────────────
+# ── Shared data structures ──�����────────────────────────────────────────────────
 
 
 class LayerPCAResult(NamedTuple):
@@ -583,9 +584,8 @@ def _scatter_pca(
 ) -> None:
     """Save a publication-style static PCA scatter plot.
 
-    Each (lexicality × length_bin) condition gets its own color from
-    _COND_COLORS. All points use a filled circle marker.  Group centroids
-    are shown as "+" crosses in the matching color.
+    Color encodes lexicality (_LEX_COLORS); marker shape encodes length_bin
+    (_LEN_MARKERS).  Group centroids are shown as "+" crosses.
 
     Args:
         df:       DataFrame with columns pc1, pc2, lexicality, length_bin.
@@ -600,12 +600,13 @@ def _scatter_pca(
         sub = df[mask]
         if sub.empty:
             continue
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
+        marker = _LEN_MARKERS.get(lb, "o")
         ax.scatter(
             sub["pc1"], sub["pc2"],
-            color=color, marker="o",
+            color=color, marker=marker,
             s=40, alpha=0.75, linewidths=0,
-            label=f"{lex} / {lb}",
+            label=f"{_display_lex(lex)} / {lb}",
         )
         # Group centroid
         ax.scatter(
@@ -642,7 +643,7 @@ def save_point_figures(
     """
     df = result.df
     ev = result.explained_variance
-    base_title = f"{run_id} — {layer}"
+    base_title = f"{run_id} — {layer}  [mean-pooled PCA]"
 
     path = out_dir / "point_per_word_mean.png"
     _scatter_pca(df, ev, path, f"{base_title}\nAll items (n={len(df)})")
@@ -663,7 +664,7 @@ def save_point_figures(
 
 
 def _condition_label(lex: str, lb: str) -> str:
-    return f"{lex} / {lb}"
+    return f"{_display_lex(lex)} / {lb}"
 
 
 def _draw_trajectory_axes(
@@ -691,7 +692,7 @@ def _draw_trajectory_axes(
         if sub.empty:
             continue
 
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
         ls = _COND_LINESTYLES.get(lb, "-")
         label = _condition_label(lex, lb)
 
@@ -740,7 +741,7 @@ def save_trajectory_figures(
     ev = result.explained_variance
     centroids_df = result.centroids_df
     items_df = result.items_df
-    base_title = f"{run_id} — {layer}  [trajectory PCA, T_norm={result.resample_steps}]"
+    base_title = f"{run_id} — {layer}  [trajectory PCA on raw frames, T_norm={result.resample_steps}]"
     rng = np.random.default_rng(rng_seed)
 
     # ── Figure 1: condition means only ───────────────────────────────────────
@@ -757,7 +758,7 @@ def save_trajectory_figures(
 
     # Draw individual trajectories first (background)
     for lex, lb in CONDITIONS:
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
         mask = (items_df["lexicality"] == lex) & (items_df["length_bin"] == lb)
         cond_items = items_df[mask]["item_id"].unique()
 
@@ -888,12 +889,12 @@ def _plot_polar_timeseries(
         ].sort_values("time_norm")
         if sub.empty:
             continue
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
         ls = _COND_LINESTYLES.get(lb, "-")
         ax.plot(
             sub["time_norm"], sub[y_col],
             color=color, linestyle=ls, linewidth=2.2,
-            label=f"{lex} / {lb}",
+            label=f"{_display_lex(lex)} / {lb}",
         )
     ax.set_xlabel("Normalized time", fontsize=11)
     ax.set_ylabel(ylabel, fontsize=11)
@@ -928,12 +929,12 @@ def _plot_polar_projection(
         ].sort_values("time_norm")
         if sub.empty:
             continue
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
         ls = _COND_LINESTYLES.get(lb, "-")
         theta = sub["angle_rad"].values
         r = sub["radius"].values
         ax.plot(theta, r, color=color, linestyle=ls, linewidth=2.2,
-                label=f"{lex} / {lb}")
+                label=f"{_display_lex(lex)} / {lb}")
         # Start marker (circle)
         ax.scatter(theta[0], r[0], color=color, marker="o", s=80, zorder=5,
                    edgecolors="white", linewidths=1.2)
@@ -1009,12 +1010,12 @@ def _plot_polar_pca_origin(
         ].sort_values("time_norm")
         if sub.empty:
             continue
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
         ls = _COND_LINESTYLES.get(lb, "-")
         theta = sub["angle_pca_origin_rad"].values
         r = sub["radius_pca_origin"].values
         ax.plot(theta, r, color=color, linestyle=ls, linewidth=2.2,
-                label=f"{lex} / {lb}")
+                label=f"{_display_lex(lex)} / {lb}")
         # Start marker (circle)
         ax.scatter(theta[0], r[0], color=color, marker="o", s=80, zorder=5,
                    edgecolors="white", linewidths=1.2)
@@ -1247,10 +1248,10 @@ def save_distance_figures(
         "len_nonword": "--",
     }
     _CONTRAST_LABELS = {
-        "lex_short":   "lexicality @ short  (word vs nonword)",
-        "lex_long":    "lexicality @ long   (word vs nonword)",
+        "lex_short":   "lexicality @ short  (word vs pseudoword)",
+        "lex_long":    "lexicality @ long   (word vs pseudoword)",
         "len_word":    "length @ word       (short vs long)",
-        "len_nonword": "length @ nonword    (short vs long)",
+        "len_nonword": "length @ pseudoword (short vs long)",
     }
 
     fig, ax = plt.subplots(figsize=(8, 4))

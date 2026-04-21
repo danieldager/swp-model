@@ -65,22 +65,23 @@ _CONDITIONS: list[tuple[str, str]] = [
     ("nonword", "long"),
 ]
 
-_COND_COLORS: dict[tuple[str, str], str] = {
-    ("word",    "short"): "#2EC4B6",
-    ("word",    "long"):  "#1565C0",
-    ("nonword", "short"): "#FFB703",
-    ("nonword", "long"):  "#D62828",
-}
+_LEX_COLORS: dict[str, str] = {"word": "#0072B2", "nonword": "#ED2727"}
+_LEN_MARKERS: dict[str, str] = {"short": "o", "long": "^"}
 _COND_LINESTYLES: dict[str, str] = {"short": "-", "long": "--"}
+
+
+def _display_lex(lex: str) -> str:
+    return "pseudoword" if lex == "nonword" else lex
+
 
 _CONTRAST_ORDER = ["lex_short", "lex_long", "len_word", "len_nonword"]
 _FAMILY_COLORS  = {"lexicality": "#0072B2", "length": "#D62828"}
 _CONTRAST_LS    = {"lex_short": "-", "lex_long": "--", "len_word": "-", "len_nonword": "--"}
 _CONTRAST_LABELS = {
-    "lex_short":   "lex @ short  (word vs nonword)",
-    "lex_long":    "lex @ long   (word vs nonword)",
-    "len_word":    "length @ word    (short vs long)",
-    "len_nonword": "length @ nonword (short vs long)",
+    "lex_short":   "lex @ short  (word vs pseudoword)",
+    "lex_long":    "lex @ long   (word vs pseudoword)",
+    "len_word":    "length @ word       (short vs long)",
+    "len_nonword": "length @ pseudoword (short vs long)",
 }
 
 # Friendly model labels for panel row titles
@@ -191,10 +192,10 @@ def _draw_trajectory_panel(
         ].sort_values("time_idx")
         if sub.empty:
             continue
-        color = _COND_COLORS.get((lex, lb), "#999999")
+        color = _LEX_COLORS.get(lex, "#999999")
         ls = _COND_LINESTYLES.get(lb, "-")
         ax.plot(sub["pc1"], sub["pc2"], color=color, linestyle=ls,
-                linewidth=1.8, label=f"{lex} / {lb}")
+                linewidth=1.8, label=f"{_display_lex(lex)} / {lb}")
         # Start (circle) and end (square) markers
         ax.scatter(sub["pc1"].iloc[0], sub["pc2"].iloc[0],
                    color=color, marker="o", s=50, zorder=5,
