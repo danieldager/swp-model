@@ -8,6 +8,7 @@ Public API
 plot_score_over_time(score_summary, metric, output_path) -> bool
 plot_weights_over_time(weight_summary, analysis_set, output_path)
 plot_global_feature_ranking(feature_ranking, output_path)
+plot_encoding_fi(fi_df, scores_df, layer, analysis_set, metric, output_path) -> bool
 """
 
 from __future__ import annotations
@@ -217,3 +218,131 @@ def plot_global_feature_ranking(
     fig.suptitle("Global feature ranking — mean |weight| over time × neurons", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
+
+
+# ── Figure 6 (optional, requires --compute-fi run) ───────────────────────────
+
+
+def plot_encoding_fi(
+    fi_df: pd.DataFrame,
+    scores_df: pd.DataFrame,
+    layer: str,
+    analysis_set: str,
+    metric: str,
+    output_path: Path,
+    aggregation: str = "mean",
+) -> bool:
+    """Dual-axis plot: permutation FI (left) + encoding score (right) over time.
+
+    Adapted from Intracranial Plotter.encoding_FI(). Instead of one electrode,
+    shows the population mean over all neurons in the layer.
+    Both Y axes are zero-aligned (convention from Intracranial).
+
+    Args:
+        fi_df:        feature_importance.csv from a run_univariate_encoding output dir.
+                      Columns: neuron, time_bin, relative_time, feature, fi_mean, fi_std.
+        scores_df:    scores.csv from the same run dir.
+                      Columns: neuron, time_bin, relative_time, metric, score_median, score_std.
+        layer:        e.g. 'encoder_out' or 'decoder_in'.
+        analysis_set: 'all_items' or 'words_only'.
+        metric:       'r2' or 'spearman'.
+        output_path:  Where to write the PNG.
+        aggregation:  Aggregation over neurons. Only 'mean' is supported in v1.
+
+    Returns:
+        True if figure was saved, False if no data for the requested combination.
+    """
+    fi_sub = fi_df[
+        (fi_df["layer"] == layer) & (fi_df["analysis_set"] == analysis_set)
+    ]
+    sc_sub = scores_df[
+        (scores_df["layer"] == layer) &
+        (scores_df["analysis_set"] == analysis_set) &
+        (scores_df["metric"] == metric)
+    ]
+
+    if fi_sub.empty or sc_sub.empty:
+        return False
+
+    n_neurons = int(fi_sub["neuron"].nunique())
+
+    # Mean FI over neurons, per (time_bin, feature)
+    fi_agg = (
+        fi_sub.groupby(["time_bin", "relative_time", "feature"])["fi_mean"]
+        .mean()
+        .reset_index()
+    )
+
+    # Mean ± std (cross-neuron) of score_median per time_bin
+    sc_agg = (
+        sc_sub.groupby(["time_bin", "relative_time"])["score_median"]
+        .agg(mean_score="mean", std_score="std")
+        .reset_index()
+        .sort_values("relative_time")
+    )
+
+    # Feature order: descending mean FI
+    feat_order = (
+        fi_agg.groupby("feature")["fi_mean"]
+        .mean()
+        .sort_values(ascending=False)
+        .index.tolist()
+    )
+
+    x  = sc_agg["relative_time"].values
+    ys = sc_agg["mean_score"].values
+    ss = sc_agg["std_score"].fillna(0).values
+
+    fig, ax1 = plt.subplots(figsize=(9, 4))
+
+    # Left axis: FI timecourses
+    for feat in feat_order:
+        sub = fi_agg[fi_agg["feature"] == feat].sort_values("relative_time")
+        if sub.empty:
+            continue
+        ax1.plot(
+            sub["relative_time"].values, sub["fi_mean"].values,
+            color=_FEAT_COLOR.get(feat), linewidth=1.8,
+            label=feat, marker="o", markersize=3,
+        )
+
+    ax1.axhline(0, color="gray", linewidth=0.6, linestyle=":", zorder=0)
+    ax1.set_xlabel("Relative time (bin centre)")
+    ax1.set_ylabel("Permutation importance (mean across neurons)", fontsize=9)
+    ax1.set_xlim(0, 1)
+
+    # Right axis: encoding score
+    ax2 = ax1.twinx()
+    ax2.plot(x, ys, color="black", linewidth=2.2, linestyle="--",
+             label=f"{metric.capitalize()}")
+    ax2.fill_between(x, ys - ss, ys + ss, color="black", alpha=0.10)
+    ax2.set_ylabel(f"{metric.capitalize()} (mean across neurons)", fontsize=9)
+
+    # Zero-align both axes (Intracranial convention)
+    for ax in (ax1, ax2):
+        lo, hi = ax.get_ylim()
+        absmax = max(abs(lo), abs(hi))
+        if absmax > 0:
+            ax.set_ylim(-absmax, absmax)
+
+    # Merged legend below figure
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(
+        lines1 + lines2, labels1 + labels2,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.18),
+        ncol=len(lines1 + lines2),
+        frameon=False,
+        fontsize=8,
+    )
+
+    ax1.set_title(
+        f"FI + {metric.capitalize()} — {layer} / {analysis_set} "
+        f"(mean over {n_neurons} neurons)",
+        fontsize=10,
+    )
+
+    fig.tight_layout()
+    _savefig(fig, output_path)
+    return True
