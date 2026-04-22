@@ -10,6 +10,7 @@ from swp.audio.encoding.univariate_plots import (
 from swp.audio.encoding.temporal_binning import build_binned_y, bin_centers
 from swp.audio.encoding.design_matrix import build_design_matrix
 from swp.audio.encoding.univariate_compare import compare as compare_univariate_codecs
+from swp.audio.encoding.unit_profiles import build_profiles as build_unit_profiles
 
 __all__ = [
     "export_layer",
@@ -25,4 +26,5 @@ __all__ = [
     "bin_centers",
     "build_design_matrix",
     "compare_univariate_codecs",
+    "build_unit_profiles",
 ]
