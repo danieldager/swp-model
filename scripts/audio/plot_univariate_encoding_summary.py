@@ -24,12 +24,15 @@ Usage — with encoding_FI figures (requires --compute-fi runs)
 
 Outputs (in --output directory)
 --------------------------------
-    score_over_time_r2.png
-    score_over_time_spearman.png                   (skipped with warning if metric absent)
-    weights_over_time_all_items.png
-    weights_over_time_words_only.png
-    global_feature_ranking.png
-    encoding_fi_{layer}_{analysis_set}_{metric}.png  (one per run dir in --fi-dirs, if feature_importance.csv present)
+    score_over_time_{model_name}_r2.png
+    score_over_time_{model_name}_spearman.png      (skipped with warning if metric absent)
+    weights_over_time_{model_name}_all_items.png
+    weights_over_time_{model_name}_words_only.png
+    global_feature_ranking_{model_name}.png
+    encoding_fi_{model_name}_{layer}_{analysis_set}_{metric}.png  (one per run dir in --fi-dirs, if feature_importance.csv present)
+
+model_name is extracted from the summary CSVs. If multiple model names are found in a
+single --summary-dir, the script exits with an error.
 """
 
 from __future__ import annotations
@@ -109,16 +112,30 @@ def main() -> None:
     weight_summary  = pd.read_csv(summary_dir / "weight_summary_by_feature_time.csv")
     feature_ranking = pd.read_csv(summary_dir / "global_feature_ranking.csv")
 
+    # ── Extract model_name — error if summary mixes multiple models ───────────
+
+    model_names = score_summary["model_name"].unique()
+    if len(model_names) > 1:
+        print(
+            f"[plot_univariate] ERROR: --summary-dir contains multiple model names: "
+            f"{sorted(model_names)}. Each summary directory must correspond to a "
+            "single model. Run summarize_univariate_encoding.py per model.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    model_name = str(model_names[0])
+    print(f"[plot_univariate] model_name  : {model_name}")
+
     # ── Validate output dir ────────────────────────────────────────────────────
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     expected_pngs = [
-        "score_over_time_r2.png",
-        "score_over_time_spearman.png",
-        "weights_over_time_all_items.png",
-        "weights_over_time_words_only.png",
-        "global_feature_ranking.png",
+        f"score_over_time_{model_name}_r2.png",
+        f"score_over_time_{model_name}_spearman.png",
+        f"weights_over_time_{model_name}_all_items.png",
+        f"weights_over_time_{model_name}_words_only.png",
+        f"global_feature_ranking_{model_name}.png",
     ]
     if not args.overwrite:
         existing = [output_dir / f for f in expected_pngs if (output_dir / f).exists()]
@@ -136,7 +153,7 @@ def main() -> None:
     # ── Figures 1 & 2: scores over time ───────────────────────────────────────
 
     for metric in ("r2", "spearman"):
-        fname = f"score_over_time_{metric}.png"
+        fname = f"score_over_time_{model_name}_{metric}.png"
         saved = plot_score_over_time(score_summary, metric, output_dir / fname)
         if saved:
             print(f"  saved  {fname}")
@@ -146,14 +163,15 @@ def main() -> None:
     # ── Figures 3 & 4: weights over time ──────────────────────────────────────
 
     for aset in ("all_items", "words_only"):
-        fname = f"weights_over_time_{aset}.png"
+        fname = f"weights_over_time_{model_name}_{aset}.png"
         plot_weights_over_time(weight_summary, aset, output_dir / fname)
         print(f"  saved  {fname}")
 
     # ── Figure 5: global feature ranking ──────────────────────────────────────
 
-    plot_global_feature_ranking(feature_ranking, output_dir / "global_feature_ranking.png")
-    print(f"  saved  global_feature_ranking.png")
+    fname = f"global_feature_ranking_{model_name}.png"
+    plot_global_feature_ranking(feature_ranking, output_dir / fname)
+    print(f"  saved  {fname}")
 
     # ── Figure 6+: encoding_FI (optional, requires --fi-dirs) ────────────────
 
@@ -178,26 +196,28 @@ def main() -> None:
             fi_df_run     = pd.read_csv(fi_path)
             scores_df_run = pd.read_csv(sc_path)
 
-            # Detect all (layer, analysis_set, metric) combos present in this run
+            # Detect all (run_id, model_name, layer, analysis_set, metric) combos
             combos = (
-                scores_df_run[["layer", "analysis_set", "metric"]]
+                scores_df_run[["run_id", "model_name", "layer", "analysis_set", "metric"]]
                 .drop_duplicates()
                 .values.tolist()
             )
-            for layer, analysis_set, metric in combos:
-                fname = f"encoding_fi_{layer}_{analysis_set}_{metric}.png"
+            for run_id, model_name, layer, analysis_set, metric in combos:
+                fname = f"encoding_fi_{model_name}_{layer}_{analysis_set}_{metric}.png"
                 saved = plot_encoding_fi(
                     fi_df_run, scores_df_run,
                     layer=layer,
                     analysis_set=analysis_set,
                     metric=metric,
                     output_path=output_dir / fname,
+                    model_name=model_name,
+                    run_id=run_id,
                 )
                 if saved:
                     print(f"  saved  {fname}")
                 else:
                     print(
-                        f"  [warning] no data for {layer}/{analysis_set}/{metric} "
+                        f"  [warning] no data for {model_name}/{layer}/{analysis_set}/{metric} "
                         f"in {fi_dir} — {fname} skipped"
                     )
 

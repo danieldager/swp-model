@@ -231,6 +231,8 @@ def plot_encoding_fi(
     metric: str,
     output_path: Path,
     aggregation: str = "mean",
+    model_name: str = "",
+    run_id: str = "",
 ) -> bool:
     """Dual-axis plot: permutation FI (left) + encoding score (right) over time.
 
@@ -248,6 +250,8 @@ def plot_encoding_fi(
         metric:       'r2' or 'spearman'.
         output_path:  Where to write the PNG.
         aggregation:  Aggregation over neurons. Only 'mean' is supported in v1.
+        model_name:   e.g. 'encodec' or 'dac' — shown in title.
+        run_id:       e.g. 'encodec__7f7d3b97' — shown as subtitle if provided.
 
     Returns:
         True if figure was saved, False if no data for the requested combination.
@@ -337,11 +341,10 @@ def plot_encoding_fi(
         fontsize=8,
     )
 
-    ax1.set_title(
-        f"FI + {metric.capitalize()} — {layer} / {analysis_set} "
-        f"(mean over {n_neurons} neurons)",
-        fontsize=10,
-    )
+    model_prefix = f"{model_name} / " if model_name else ""
+    title_line1  = f"FI + {metric.capitalize()} — {model_prefix}{layer} / {analysis_set}"
+    title_line2  = f"mean over {n_neurons} neurons" + (f" — run_id: {run_id}" if run_id else "")
+    ax1.set_title(f"{title_line1}\n{title_line2}", fontsize=10)
 
     fig.tight_layout()
     _savefig(fig, output_path)
