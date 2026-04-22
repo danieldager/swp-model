@@ -21,6 +21,11 @@ Outputs (in --output directory)
     weight_summary_by_feature_time.csv   Weight stats across neurons, per feature × time bin.
     top_units_by_feature.csv             Top-k neurons by max |weight| per feature.
     global_feature_ranking.csv           Feature ranking by mean |weight| over time and neurons.
+
+    (produced only when at least one input contains feature_importance.csv)
+    fi_summary_by_feature_time.csv       Permutation FI stats across neurons, per feature × time bin.
+    global_fi_ranking.csv                Feature ranking by mean FI over time and neurons.
+    top_units_by_fi.csv                  Top-k neurons by max FI per feature.
 """
 
 from __future__ import annotations
@@ -81,13 +86,20 @@ def main() -> None:
     weight_summary  = out["weight_summary"]
     top_units       = out["top_units"]
     feature_ranking = out["feature_ranking"]
+    fi_summary      = out["fi_summary"]
+    fi_ranking      = out["fi_ranking"]
+    top_units_fi    = out["top_units_fi"]
 
-    nan_checks = {
-        "score_summary/mean_score":               score_summary["mean_score"].isna().any(),
-        "weight_summary/mean_abs_weight":          weight_summary["mean_abs_weight"].isna().any(),
-        "top_units/max_abs_weight":                top_units["max_abs_weight"].isna().any(),
-        "feature_ranking/mean_abs_weight_…":       feature_ranking["mean_abs_weight_over_time_and_neurons"].isna().any(),
+    nan_checks: dict[str, bool] = {
+        "score_summary/mean_score":           score_summary["mean_score"].isna().any(),
+        "weight_summary/mean_abs_weight":     weight_summary["mean_abs_weight"].isna().any(),
+        "top_units/max_abs_weight":           top_units["max_abs_weight"].isna().any(),
+        "feature_ranking/mean_abs_weight_…":  feature_ranking["mean_abs_weight_over_time_and_neurons"].isna().any(),
     }
+    if fi_summary is not None:
+        nan_checks["fi_summary/mean_fi"]     = fi_summary["mean_fi"].isna().any()
+        nan_checks["fi_ranking/mean_fi_…"]   = fi_ranking["mean_fi_over_time_and_neurons"].isna().any()
+        nan_checks["top_units_fi/max_fi"]    = top_units_fi["max_fi"].isna().any()
 
     print("\n[summarize_univariate] NaN checks:")
     any_nan = False
@@ -101,9 +113,17 @@ def main() -> None:
     print(f"  weight_summary  : {weight_summary.shape}")
     print(f"  top_units       : {top_units.shape}")
     print(f"  feature_ranking : {feature_ranking.shape}")
+    if fi_summary is not None:
+        print(f"  fi_summary      : {fi_summary.shape}")
+        print(f"  fi_ranking      : {fi_ranking.shape}")
+        print(f"  top_units_fi    : {top_units_fi.shape}")
 
-    print(f"\n[summarize_univariate] global_feature_ranking.csv (first rows):")
+    print(f"\n[summarize_univariate] global_feature_ranking.csv:")
     print(feature_ranking.to_string(index=False))
+
+    if fi_ranking is not None:
+        print(f"\n[summarize_univariate] global_fi_ranking.csv:")
+        print(fi_ranking.to_string(index=False))
 
     print(f"\n[summarize_univariate] score_summary_by_time.csv (first 8 rows):")
     print(score_summary.head(8).to_string(index=False))

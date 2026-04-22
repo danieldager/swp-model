@@ -3,19 +3,18 @@
 Reads outputs from one or more run_univariate_encoding() output directories
 and produces aggregated CSVs. No statistical tests, no figures, no clustering.
 
-Four outputs
-------------
+Four base outputs (always produced)
+------------------------------------
 A. score_summary_by_time.csv
-   Predictive performance (score_median) aggregated across neurons, per time bin.
-
 B. weight_summary_by_feature_time.csv
-   Ridge weight magnitudes aggregated across neurons, per feature × time bin.
-
 C. top_units_by_feature.csv
-   Neurons with the largest max |weight| for each feature (top-k per feature).
-
 D. global_feature_ranking.csv
-   Feature-level: mean absolute weight across time and neurons, ranked.
+
+Three FI outputs (produced only when feature_importance.csv is present)
+------------------------------------------------------------------------
+E. fi_summary_by_feature_time.csv
+F. global_fi_ranking.csv
+G. top_units_by_fi.csv
 
 Main entry point: summarize()
 """
@@ -161,7 +160,7 @@ def compute_top_units_by_feature(weights: pd.DataFrame, top_k: int = 20) -> pd.D
     return result
 
 
-# ── Compute D ─────────────────────────────────────────────────────────────────
+# ── Compute C (weights) ───────────────────────────────────────────────────────
 
 
 def compute_global_feature_ranking(weights: pd.DataFrame) -> pd.DataFrame:
@@ -195,6 +194,120 @@ def compute_global_feature_ranking(weights: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+# ── Compute D (weights) ───────────────────────────────────────────────────────
+
+# (section header kept for symmetry — function below unchanged)
+
+
+# ── Compute E–G : FI summaries ────────────────────────────────────────────────
+
+
+def compute_fi_summary_by_feature_time(fi: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate fi_mean across neurons per (run, layer, analysis_set, feature, time_bin).
+
+    Returns one row per group with signed and absolute FI stats.
+    """
+    group_keys = [
+        "run_id", "model_name", "layer", "analysis_set",
+        "feature", "time_bin", "relative_time",
+    ]
+    tmp = fi.assign(
+        abs_fi=(fi["fi_mean"].abs()),
+        is_positive=(fi["fi_mean"] > 0).astype(float),
+    )
+    g     = tmp.groupby(group_keys)["fi_mean"]
+    g_abs = tmp.groupby(group_keys)["abs_fi"]
+    g_pos = tmp.groupby(group_keys)["is_positive"]
+
+    return pd.DataFrame({
+        "mean_fi":          g.mean(),
+        "median_fi":        g.median(),
+        "mean_abs_fi":      g_abs.mean(),
+        "median_abs_fi":    g_abs.median(),
+        "std_fi":           g.std(),
+        "q25_fi":           g.quantile(0.25),
+        "q75_fi":           g.quantile(0.75),
+        "frac_positive_fi": g_pos.mean(),
+    }).reset_index()
+
+
+def compute_global_fi_ranking(fi: pd.DataFrame) -> pd.DataFrame:
+    """Global summary per feature: mean/abs FI over time × neurons, ranked.
+
+    Two ranks:
+      rank_by_mean_fi      — descending by mean signed FI (rank 1 = highest)
+      rank_by_mean_abs_fi  — descending by mean |FI| (rank 1 = most important regardless of sign)
+    """
+    identity_keys = ["run_id", "model_name", "layer", "analysis_set"]
+    group_keys    = identity_keys + ["feature"]
+
+    tmp   = fi.assign(abs_fi=fi["fi_mean"].abs())
+    g     = tmp.groupby(group_keys)["fi_mean"]
+    g_abs = tmp.groupby(group_keys)["abs_fi"]
+
+    df = pd.DataFrame({
+        "mean_fi_over_time_and_neurons":      g.mean(),
+        "mean_abs_fi_over_time_and_neurons":  g_abs.mean(),
+        "median_fi_over_time_and_neurons":    g.median(),
+        "max_fi":                             g.max(),
+        "mean_signed_fi":                     g.mean(),   # alias of mean_fi; kept for spec compliance
+    }).reset_index()
+
+    df["rank_by_mean_fi"] = (
+        df.groupby(identity_keys)["mean_fi_over_time_and_neurons"]
+        .rank(ascending=False, method="min")
+        .astype(int)
+    )
+    df["rank_by_mean_abs_fi"] = (
+        df.groupby(identity_keys)["mean_abs_fi_over_time_and_neurons"]
+        .rank(ascending=False, method="min")
+        .astype(int)
+    )
+
+    return (
+        df.sort_values(identity_keys + ["rank_by_mean_fi"])
+        .reset_index(drop=True)
+    )
+
+
+def compute_top_units_by_fi(fi: pd.DataFrame, top_k: int = 20) -> pd.DataFrame:
+    """For each feature, return top-k neurons ranked by max fi_mean across time bins.
+
+    Columns:
+        run_id, model_name, layer, analysis_set, feature, neuron,
+        max_fi, time_bin_at_max, relative_time_at_max, signed_fi_at_max
+    """
+    identity_keys    = ["run_id", "model_name", "layer", "analysis_set"]
+    fi_neuron_keys   = identity_keys + ["feature", "neuron"]
+
+    idx_at_max = fi.groupby(fi_neuron_keys)["fi_mean"].idxmax()
+    peak = (
+        fi.loc[idx_at_max]
+        .rename(columns={
+            "fi_mean":       "max_fi",
+            "time_bin":      "time_bin_at_max",
+            "relative_time": "relative_time_at_max",
+        })
+    )
+    # signed_fi_at_max == max_fi (both are fi_mean at the peak time bin)
+    peak = peak.assign(signed_fi_at_max=peak["max_fi"])
+    peak = peak[
+        identity_keys + ["feature", "neuron",
+                          "max_fi", "time_bin_at_max",
+                          "relative_time_at_max", "signed_fi_at_max"]
+    ]
+
+    rank_keys = identity_keys + ["feature"]
+    return (
+        peak
+        .sort_values(rank_keys + ["max_fi"],
+                     ascending=[True] * len(rank_keys) + [False])
+        .groupby(rank_keys, sort=False)
+        .head(top_k)
+        .reset_index(drop=True)
+    )
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 
@@ -203,26 +316,44 @@ def summarize(
     output_dir: Path,
     top_k: int = 20,
     overwrite: bool = False,
-) -> dict[str, pd.DataFrame]:
-    """Load all input run directories, compute four summaries, write to output_dir.
+) -> dict[str, pd.DataFrame | None]:
+    """Load all input run directories, compute summaries, write to output_dir.
+
+    Always produces four base CSVs (A–D). Additionally produces three FI CSVs
+    (E–G) when feature_importance.csv is found in at least one input directory.
+    Inputs missing feature_importance.csv are skipped (with a warning) for FI
+    summaries only; their base data (scores, weights) is still included.
 
     Args:
         input_dirs: List of run_univariate_encoding() output directories.
-        output_dir: Directory where the 4 CSV files will be written.
-        top_k:      Number of neurons to keep per feature in top_units_by_feature.csv.
+        output_dir: Directory where CSV files will be written.
+        top_k:      Top-k neurons to keep per feature in top_units_*.csv.
         overwrite:  If False and any output file exists, raise FileExistsError.
 
     Returns:
-        dict with keys: 'score_summary', 'weight_summary', 'top_units', 'feature_ranking'.
+        dict with keys: 'score_summary', 'weight_summary', 'top_units',
+        'feature_ranking', 'fi_summary' (or None), 'fi_ranking' (or None),
+        'top_units_fi' (or None).
     """
     output_dir = Path(output_dir)
 
-    out_paths = {
+    # Probe which inputs have FI before loading anything
+    fi_present = {Path(d): (Path(d) / "feature_importance.csv").exists()
+                  for d in input_dirs}
+    any_fi = any(fi_present.values())
+
+    out_paths: dict[str, Path] = {
         "score_summary":   output_dir / "score_summary_by_time.csv",
         "weight_summary":  output_dir / "weight_summary_by_feature_time.csv",
         "top_units":       output_dir / "top_units_by_feature.csv",
         "feature_ranking": output_dir / "global_feature_ranking.csv",
     }
+    if any_fi:
+        out_paths.update({
+            "fi_summary":   output_dir / "fi_summary_by_feature_time.csv",
+            "fi_ranking":   output_dir / "global_fi_ranking.csv",
+            "top_units_fi": output_dir / "top_units_by_fi.csv",
+        })
 
     if not overwrite:
         existing = [p for p in out_paths.values() if p.exists()]
@@ -236,13 +367,27 @@ def summarize(
 
     all_scores:  list[pd.DataFrame] = []
     all_weights: list[pd.DataFrame] = []
-    loaded_configs: list[dict] = []
+    all_fi:      list[pd.DataFrame] = []
 
     for d in input_dirs:
-        scores, weights, config = load_run_dir(Path(d))
+        d = Path(d)
+        scores, weights, config = load_run_dir(d)
         all_scores.append(scores)
         all_weights.append(weights)
-        loaded_configs.append(config)
+
+        if fi_present[d]:
+            all_fi.append(pd.read_csv(d / "feature_importance.csv"))
+        elif any_fi:
+            print(
+                f"[summarize_univariate] WARNING: no feature_importance.csv in {d} "
+                "— excluded from FI summaries"
+            )
+
+    if not any_fi:
+        print(
+            "[summarize_univariate] No feature_importance.csv found in any input; "
+            "skipping FI summaries"
+        )
 
     scores_all  = pd.concat(all_scores,  ignore_index=True)
     weights_all = pd.concat(all_weights, ignore_index=True)
@@ -252,14 +397,29 @@ def summarize(
     top_units       = compute_top_units_by_feature(weights_all, top_k=top_k)
     feature_ranking = compute_global_feature_ranking(weights_all)
 
-    score_summary.to_csv(out_paths["score_summary"],   index=False)
-    weight_summary.to_csv(out_paths["weight_summary"], index=False)
-    top_units.to_csv(out_paths["top_units"],           index=False)
+    score_summary.to_csv(out_paths["score_summary"],     index=False)
+    weight_summary.to_csv(out_paths["weight_summary"],   index=False)
+    top_units.to_csv(out_paths["top_units"],             index=False)
     feature_ranking.to_csv(out_paths["feature_ranking"], index=False)
+
+    fi_summary = fi_ranking = top_units_fi = None
+
+    if all_fi:
+        fi_all      = pd.concat(all_fi, ignore_index=True)
+        fi_summary  = compute_fi_summary_by_feature_time(fi_all)
+        fi_ranking  = compute_global_fi_ranking(fi_all)
+        top_units_fi = compute_top_units_by_fi(fi_all, top_k=top_k)
+
+        fi_summary.to_csv(out_paths["fi_summary"],     index=False)
+        fi_ranking.to_csv(out_paths["fi_ranking"],     index=False)
+        top_units_fi.to_csv(out_paths["top_units_fi"], index=False)
 
     return {
         "score_summary":   score_summary,
         "weight_summary":  weight_summary,
         "top_units":       top_units,
         "feature_ranking": feature_ranking,
+        "fi_summary":      fi_summary,
+        "fi_ranking":      fi_ranking,
+        "top_units_fi":    top_units_fi,
     }

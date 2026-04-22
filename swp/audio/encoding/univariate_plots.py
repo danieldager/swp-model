@@ -50,6 +50,8 @@ def plot_score_over_time(
     score_summary: pd.DataFrame,
     metric: str,
     output_path: Path,
+    model_name: str = "",
+    run_id: str = "",
 ) -> bool:
     """Line plot of mean_score ± std_score over relative_time.
 
@@ -60,6 +62,8 @@ def plot_score_over_time(
         score_summary: DataFrame from score_summary_by_time.csv.
         metric:        'r2' or 'spearman'. If absent, returns False without saving.
         output_path:   Where to write the PNG.
+        model_name:    Shown in title (e.g. 'encodec').
+        run_id:        Shown as subtitle (e.g. 'encodec__7f7d3b97').
 
     Returns:
         True if figure was saved, False if metric not present in data.
@@ -93,7 +97,9 @@ def plot_score_over_time(
 
     ax.set_xlabel("Relative time (bin centre)")
     ax.set_ylabel(f"Mean {metric.capitalize()} score across neurons")
-    ax.set_title(f"Univariate encoding — {metric.capitalize()} over time")
+    _prefix = f" — {model_name}" if model_name else ""
+    _sub    = f"\nrun_id: {run_id}" if run_id else ""
+    ax.set_title(f"Univariate encoding{_prefix} — {metric.capitalize()} over time{_sub}")
     ax.legend(fontsize=8, loc="best")
     ax.set_xlim(0, 1)
     fig.tight_layout()
@@ -108,6 +114,8 @@ def plot_weights_over_time(
     weight_summary: pd.DataFrame,
     analysis_set: str,
     output_path: Path,
+    model_name: str = "",
+    run_id: str = "",
 ) -> None:
     """Two-panel plot of mean_abs_weight over relative_time, one panel per layer.
 
@@ -117,6 +125,8 @@ def plot_weights_over_time(
         weight_summary: DataFrame from weight_summary_by_feature_time.csv.
         analysis_set:   'all_items' or 'words_only'.
         output_path:    Where to write the PNG.
+        model_name:     Shown in suptitle.
+        run_id:         Shown as subtitle.
     """
     df = weight_summary[weight_summary["analysis_set"] == analysis_set]
     layers = [l for l in _LAYER_ORDER if l in df["layer"].unique()]
@@ -150,7 +160,9 @@ def plot_weights_over_time(
         ax.legend(fontsize=8, loc="best")
         ax.set_xlim(0, 1)
 
-    fig.suptitle(f"Feature weights over time — {analysis_set}", fontsize=11)
+    _prefix = f" — {model_name}" if model_name else ""
+    _sub    = f"\nrun_id: {run_id}" if run_id else ""
+    fig.suptitle(f"Feature weights over time{_prefix} — {analysis_set}{_sub}", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
 
@@ -161,6 +173,8 @@ def plot_weights_over_time(
 def plot_global_feature_ranking(
     feature_ranking: pd.DataFrame,
     output_path: Path,
+    model_name: str = "",
+    run_id: str = "",
 ) -> None:
     """2×2 bar plot of mean_abs_weight by feature, one panel per (layer × analysis_set).
 
@@ -169,6 +183,8 @@ def plot_global_feature_ranking(
     Args:
         feature_ranking: DataFrame from global_feature_ranking.csv.
         output_path:     Where to write the PNG.
+        model_name:      Shown in suptitle.
+        run_id:          Shown as subtitle.
     """
     layers = [l for l in _LAYER_ORDER if l in feature_ranking["layer"].unique()]
     asets  = [a for a in _ASET_ORDER  if a in feature_ranking["analysis_set"].unique()]
@@ -215,7 +231,9 @@ def plot_global_feature_ranking(
                     ha="center", va="bottom", fontsize=7,
                 )
 
-    fig.suptitle("Global feature ranking — mean |weight| over time × neurons", fontsize=11)
+    _prefix = f" — {model_name}" if model_name else ""
+    _sub    = f"\nrun_id: {run_id}" if run_id else ""
+    fig.suptitle(f"Global feature ranking{_prefix}\nmean |weight| over time × neurons{_sub}", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
 

@@ -126,6 +126,18 @@ def main() -> None:
     model_name = str(model_names[0])
     print(f"[plot_univariate] model_name  : {model_name}")
 
+    run_ids = score_summary["run_id"].unique()
+    if len(run_ids) > 1:
+        print(
+            f"[plot_univariate] ERROR: --summary-dir contains multiple run_ids: "
+            f"{sorted(run_ids)}. Each summary directory must correspond to a "
+            "single run. Run summarize_univariate_encoding.py per run.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    run_id = str(run_ids[0])
+    print(f"[plot_univariate] run_id      : {run_id}")
+
     # ── Validate output dir ────────────────────────────────────────────────────
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -154,7 +166,10 @@ def main() -> None:
 
     for metric in ("r2", "spearman"):
         fname = f"score_over_time_{model_name}_{metric}.png"
-        saved = plot_score_over_time(score_summary, metric, output_dir / fname)
+        saved = plot_score_over_time(
+            score_summary, metric, output_dir / fname,
+            model_name=model_name, run_id=run_id,
+        )
         if saved:
             print(f"  saved  {fname}")
         else:
@@ -164,13 +179,19 @@ def main() -> None:
 
     for aset in ("all_items", "words_only"):
         fname = f"weights_over_time_{model_name}_{aset}.png"
-        plot_weights_over_time(weight_summary, aset, output_dir / fname)
+        plot_weights_over_time(
+            weight_summary, aset, output_dir / fname,
+            model_name=model_name, run_id=run_id,
+        )
         print(f"  saved  {fname}")
 
     # ── Figure 5: global feature ranking ──────────────────────────────────────
 
     fname = f"global_feature_ranking_{model_name}.png"
-    plot_global_feature_ranking(feature_ranking, output_dir / fname)
+    plot_global_feature_ranking(
+        feature_ranking, output_dir / fname,
+        model_name=model_name, run_id=run_id,
+    )
     print(f"  saved  {fname}")
 
     # ── Figure 6+: encoding_FI (optional, requires --fi-dirs) ────────────────
