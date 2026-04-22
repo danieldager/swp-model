@@ -319,14 +319,15 @@ class AudioUnivariateEncoder:
             "all_folds": fold_fi,
         }
 
-    def fit_predict(self, X, y, electrode=None, compute_fi=False):
+    def fit_predict(self, X, y, electrode=None, compute_fi=False, fi_n_repeats=10):
         """Combined fit and predict for a single neuron / electrode.
 
         Args:
-            X          : (n_trials, n_features)
-            y          : (n_trials, n_bins) in prebinned mode
-            electrode  : optional name
-            compute_fi : whether to compute permutation importance
+            X            : (n_trials, n_features)
+            y            : (n_trials, n_bins) in prebinned mode
+            electrode    : optional name
+            compute_fi   : whether to compute permutation importance
+            fi_n_repeats : shuffles per feature in permutation importance
 
         Returns:
             results dict
@@ -335,7 +336,7 @@ class AudioUnivariateEncoder:
         results = self.predict(results)
         if compute_fi:
             results["fi"] = self.compute_permutation_importance(
-                results, electrode=electrode
+                results, electrode=electrode, n_repeats=fi_n_repeats
             )
         return results
 

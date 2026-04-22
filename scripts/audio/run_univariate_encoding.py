@@ -12,10 +12,11 @@ Usage
 
 Outputs (in --output directory)
 --------------------------------
-    scores.csv      run_id, model_name, layer, analysis_set, neuron, time_bin, metric, score_median, score_std
-    weights.csv     run_id, model_name, layer, analysis_set, neuron, time_bin, feature, weight_mean, weight_std
-    config.json     all run parameters
-    qc_check.json   basic sanity checks
+    scores.csv               run_id, model_name, layer, analysis_set, neuron, time_bin, relative_time, metric, score_median, score_std
+    weights.csv              run_id, model_name, layer, analysis_set, neuron, time_bin, relative_time, feature, weight_mean, weight_std
+    feature_importance.csv   (only if --compute-fi) neuron, time_bin, relative_time, feature, fi_mean, fi_std
+    config.json              all run parameters
+    qc_check.json            basic sanity checks
 """
 
 from __future__ import annotations
@@ -59,6 +60,11 @@ def _parse_args() -> argparse.Namespace:
         "--compute-fi", action="store_true",
         dest="compute_fi",
         help="Compute permutation feature importance (significantly slower).",
+    )
+    p.add_argument(
+        "--fi-n-repeats", type=int, default=10,
+        dest="fi_n_repeats",
+        help="Number of shuffles per feature in permutation importance.",
     )
     p.add_argument(
         "--n-jobs", type=int, default=1,
@@ -121,6 +127,7 @@ def main() -> None:
         n_bins=args.n_bins,
         metrics=tuple(args.metrics),
         compute_fi=args.compute_fi,
+        fi_n_repeats=args.fi_n_repeats,
         n_jobs=args.n_jobs,
         n_outer_splits=args.n_outer_splits,
         n_inner_splits=args.n_inner_splits,
@@ -132,16 +139,19 @@ def main() -> None:
     )
 
     qc = out["qc_check"]
+    fi_line = f"  NaN in FI         : {qc['nan_in_fi']}\n" if args.compute_fi else ""
     print(
         f"\n[run_univariate_encoding] Done.\n"
         f"  trials selected   : {qc['n_trials_selected']} / {qc['n_trials_total']}\n"
         f"  neurons processed : {qc['n_neurons_processed']} / {qc['n_neurons_total']}\n"
         f"  NaN in scores     : {qc['nan_in_scores']}\n"
         f"  NaN in weights    : {qc['nan_in_weights']}\n"
+        f"{fi_line}"
         f"  output            : {args.output}"
     )
 
-    if qc["nan_in_scores"] or qc["nan_in_weights"]:
+    nan_detected = qc["nan_in_scores"] or qc["nan_in_weights"] or bool(qc.get("nan_in_fi"))
+    if nan_detected:
         print(
             "[run_univariate_encoding] WARNING: NaN detected in outputs — "
             f"inspect {args.output / 'qc_check.json'}",
