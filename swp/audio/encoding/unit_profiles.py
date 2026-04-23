@@ -130,7 +130,11 @@ def build_unit_profile_wide(profile_long: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_unit_dominance(profile_long: pd.DataFrame) -> pd.DataFrame:
-    """Dominant feature, margins, and cross-feature ratios, one row per unit."""
+    """Dominant feature, margins, cross-feature ratios, and candidate scores.
+
+    candidate_score = mean_abs_fi * to_length_abs_ratio.  NaN when feature is
+    unavailable for a given analysis_set.
+    """
     rows = []
 
     for keys, grp in profile_long.groupby(_UNIT_COLS, sort=False):
@@ -171,6 +175,15 @@ def compute_unit_dominance(profile_long: pd.DataFrame) -> pd.DataFrame:
         other_mean     = float(np.mean(other_mean_vals)) if other_mean_vals else np.nan
         other_abs_mean = float(np.mean(other_abs_vals))  if other_abs_vals  else np.nan
 
+        # pre-compute per-feature abs values for candidate scores
+        lex_abs   = _get("lexicality",    "mean_abs_fi")
+        freq_abs  = _get("frequency_bin", "mean_abs_fi")
+        morph_abs = _get("morphology",    "mean_abs_fi")
+
+        lex_to_len_abs   = _ratio(lex_abs,   l_abs)
+        freq_to_len_abs  = _ratio(freq_abs,  l_abs)
+        morph_to_len_abs = _ratio(morph_abs, l_abs)
+
         rows.append({
             **unit_dict,
             "available_features":               grp["available_features"].iloc[0],
@@ -189,20 +202,23 @@ def compute_unit_dominance(profile_long: pd.DataFrame) -> pd.DataFrame:
             "length_to_other_ratio":        _ratio(l_mean, other_mean),
             "length_to_other_abs_ratio":    _ratio(l_abs,  other_abs_mean),
             "lexicality_mean_fi":           _get("lexicality", "mean_fi"),
-            "lexicality_mean_abs_fi":       _get("lexicality", "mean_abs_fi"),
+            "lexicality_mean_abs_fi":       lex_abs,
             "lexicality_max_fi":            _get("lexicality", "max_fi"),
-            "lexicality_to_length_ratio":     _ratio(_get("lexicality", "mean_fi"),     l_mean),
-            "lexicality_to_length_abs_ratio": _ratio(_get("lexicality", "mean_abs_fi"), l_abs),
+            "lexicality_to_length_ratio":     _ratio(_get("lexicality", "mean_fi"), l_mean),
+            "lexicality_to_length_abs_ratio": lex_to_len_abs,
+            "lexicality_candidate_score":     lex_abs * lex_to_len_abs if not (np.isnan(lex_abs) or np.isnan(lex_to_len_abs)) else np.nan,
             "frequency_mean_fi":            _get("frequency_bin", "mean_fi"),
-            "frequency_mean_abs_fi":        _get("frequency_bin", "mean_abs_fi"),
+            "frequency_mean_abs_fi":        freq_abs,
             "frequency_max_fi":             _get("frequency_bin", "max_fi"),
-            "frequency_to_length_ratio":      _ratio(_get("frequency_bin", "mean_fi"),     l_mean),
-            "frequency_to_length_abs_ratio":  _ratio(_get("frequency_bin", "mean_abs_fi"), l_abs),
+            "frequency_to_length_ratio":      _ratio(_get("frequency_bin", "mean_fi"), l_mean),
+            "frequency_to_length_abs_ratio":  freq_to_len_abs,
+            "frequency_candidate_score":      freq_abs * freq_to_len_abs if not (np.isnan(freq_abs) or np.isnan(freq_to_len_abs)) else np.nan,
             "morphology_mean_fi":           _get("morphology", "mean_fi"),
-            "morphology_mean_abs_fi":       _get("morphology", "mean_abs_fi"),
+            "morphology_mean_abs_fi":       morph_abs,
             "morphology_max_fi":            _get("morphology", "max_fi"),
-            "morphology_to_length_ratio":     _ratio(_get("morphology", "mean_fi"),     l_mean),
-            "morphology_to_length_abs_ratio": _ratio(_get("morphology", "mean_abs_fi"), l_abs),
+            "morphology_to_length_ratio":     _ratio(_get("morphology", "mean_fi"), l_mean),
+            "morphology_to_length_abs_ratio": morph_to_len_abs,
+            "morphology_candidate_score":     morph_abs * morph_to_len_abs if not (np.isnan(morph_abs) or np.isnan(morph_to_len_abs)) else np.nan,
         })
 
     return pd.DataFrame(rows)
@@ -248,6 +264,36 @@ def summarize_unit_dominance(unit_dominance: pd.DataFrame) -> pd.DataFrame:
         })
 
     return pd.DataFrame(rows)
+
+
+# ── grouped top-k helper ──────────────────────────────────────────────────────
+
+def _build_grouped_top_k(
+    dom: pd.DataFrame,
+    sort_cols: list[str],
+    analysis_sets: list[str] | None,
+    top_k: int,
+    output_cols: list[str],
+) -> pd.DataFrame:
+    """Top-k units per (model_name, run_id, layer, analysis_set) group."""
+    group_cols = ["model_name", "run_id", "layer", "analysis_set"]
+    sub = dom.copy()
+    if analysis_sets is not None:
+        sub = sub[sub["analysis_set"].isin(analysis_sets)]
+    valid_sort = [c for c in sort_cols if c in sub.columns]
+    if not valid_sort:
+        return pd.DataFrame()
+    sub = sub.dropna(subset=[valid_sort[0]])
+
+    parts = []
+    for _, grp in sub.groupby(group_cols, sort=True):
+        parts.append(grp.sort_values(valid_sort, ascending=False).head(top_k))
+
+    if not parts:
+        return pd.DataFrame()
+
+    result = pd.concat(parts, ignore_index=True)
+    return result[[c for c in output_cols if c in result.columns]]
 
 
 # ── private plot helpers ───────────────────────────────────────────────────────
@@ -297,13 +343,15 @@ def _plot_scatter_fi(
     analysis_set: str,
     output_path: Path,
     title: str,
+    use_abs: bool = False,
 ) -> None:
     sub = profile_wide[profile_wide["analysis_set"] == analysis_set].copy()
     if sub.empty:
         return
 
-    x_col = f"{x_feat}_mean_fi_over_time"
-    y_col = f"{y_feat}_mean_fi_over_time"
+    _sfx  = "mean_abs_fi_over_time" if use_abs else "mean_fi_over_time"
+    x_col = f"{x_feat}_{_sfx}"
+    y_col = f"{y_feat}_{_sfx}"
     if x_col not in sub.columns or y_col not in sub.columns:
         return
 
@@ -371,8 +419,8 @@ def _plot_peak_time_by_feature(profile_long: pd.DataFrame, output_path: Path) ->
             mask = (profile_long["model_name"] == model) & (profile_long["layer"] == layer)
             sub  = profile_long[mask]
 
-            feat_labels:   list[str]         = []
-            data_per_feat: list[np.ndarray]  = []
+            feat_labels:   list[str]        = []
+            data_per_feat: list[np.ndarray] = []
             for feat in sorted(sub["feature"].unique()):
                 vals = sub[sub["feature"] == feat]["relative_time_at_max_fi"].dropna().values
                 if len(vals) > 0:
@@ -399,6 +447,70 @@ def _plot_peak_time_by_feature(profile_long: pd.DataFrame, output_path: Path) ->
     plt.close(fig)
 
 
+def _plot_peak_time_by_feature_aset(
+    profile_long: pd.DataFrame,
+    time_col: str,
+    output_path: Path,
+    ylabel: str,
+    title: str,
+) -> None:
+    """Peak-time boxplots split by analysis_set × (model, layer)."""
+    if time_col not in profile_long.columns:
+        return
+
+    asets  = sorted(profile_long["analysis_set"].unique())
+    combos = sorted(set(zip(profile_long["model_name"], profile_long["layer"])))
+
+    n_rows = len(asets)
+    n_cols = len(combos)
+    if n_rows == 0 or n_cols == 0:
+        return
+
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(n_cols * 4, n_rows * 3.5),
+        squeeze=False,
+    )
+
+    for ri, aset in enumerate(asets):
+        for ci, (model, layer) in enumerate(combos):
+            ax   = axes[ri][ci]
+            mask = (
+                (profile_long["model_name"]   == model) &
+                (profile_long["layer"]         == layer) &
+                (profile_long["analysis_set"]  == aset)
+            )
+            sub = profile_long[mask]
+
+            feat_labels:   list[str]        = []
+            data_per_feat: list[np.ndarray] = []
+            for feat in sorted(sub["feature"].unique()):
+                vals = sub[sub["feature"] == feat][time_col].dropna().values
+                if len(vals) > 0:
+                    feat_labels.append(feat)
+                    data_per_feat.append(vals)
+
+            if not data_per_feat:
+                ax.set_visible(False)
+                continue
+
+            bp = ax.boxplot(data_per_feat, labels=feat_labels, patch_artist=True, notch=False)
+            for patch, feat in zip(bp["boxes"], feat_labels):
+                patch.set_facecolor(_FEAT_COLOR.get(feat, "#888"))
+                patch.set_alpha(0.7)
+
+            ax.set_ylim(0, 1)
+            ax.set_title(f"{model}/{layer}\n{aset}", fontsize=8)
+            ax.tick_params(axis="x", labelsize=6)
+            if ci == 0:
+                ax.set_ylabel(ylabel, fontsize=8)
+
+    fig.suptitle(title, fontsize=11)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=_DPI)
+    plt.close(fig)
+
+
 def _plot_top_lexicality_units(
     top_lex_df: pd.DataFrame,
     top_k: int,
@@ -419,7 +531,7 @@ def _plot_top_lexicality_units(
     ax.set_xticks(x)
     ax.set_xticklabels(df["unit_label"].values, rotation=45, ha="right", fontsize=7)
     ax.set_ylabel("lexicality max FI")
-    ax.set_title(f"Top-{top_k} lexicality-sensitive units (all_items)", fontsize=11)
+    ax.set_title(f"Top-{top_k} lexicality-sensitive units (all_items, global)", fontsize=11)
     ax.axhline(0, color="black", linewidth=0.5, linestyle="--")
 
     legend_elements = [
@@ -430,6 +542,68 @@ def _plot_top_lexicality_units(
     if legend_elements:
         ax.legend(handles=legend_elements, fontsize=8)
 
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=_DPI)
+    plt.close(fig)
+
+
+def _plot_top_units_by_group(
+    top_df: pd.DataFrame,
+    feat_col: str,
+    cap: int,
+    output_path: Path,
+    title: str,
+) -> None:
+    """One subplot per (model_name, layer, analysis_set), top-cap units per group."""
+    if top_df.empty or feat_col not in top_df.columns:
+        return
+
+    group_cols = ["model_name", "layer", "analysis_set"]
+    groups = [
+        (m, l, a)
+        for (m, l, a), _ in top_df.groupby(group_cols, sort=True)
+    ]
+    n_groups = len(groups)
+    if n_groups == 0:
+        return
+
+    n_cols = min(n_groups, 4)
+    n_rows = (n_groups + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(n_cols * 5, n_rows * 4),
+        squeeze=False,
+    )
+
+    for idx, (model, layer, aset) in enumerate(groups):
+        ri, ci = divmod(idx, n_cols)
+        ax     = axes[ri][ci]
+        mask   = (
+            (top_df["model_name"]  == model) &
+            (top_df["layer"]        == layer) &
+            (top_df["analysis_set"] == aset)
+        )
+        grp = top_df[mask].sort_values(feat_col, ascending=False).head(cap)
+        if grp.empty:
+            ax.set_visible(False)
+            continue
+
+        x      = np.arange(len(grp))
+        color  = _MODEL_COLOR.get(model, "#888")
+        ax.bar(x, grp[feat_col].values, color=color, alpha=0.85)
+        ax.set_xticks(x)
+        ax.set_xticklabels(grp["neuron"].astype(str).values,
+                           rotation=45, ha="right", fontsize=7)
+        ax.set_ylabel(feat_col, fontsize=8)
+        ax.axhline(0, color="black", linewidth=0.5, linestyle="--")
+        ax.set_title(f"{model} / {layer} / {aset}", fontsize=9)
+
+    for idx in range(n_groups, n_rows * n_cols):
+        ri, ci = divmod(idx, n_cols)
+        axes[ri][ci].set_visible(False)
+
+    fig.suptitle(title, fontsize=11)
     fig.tight_layout()
     fig.savefig(output_path, dpi=_DPI)
     plt.close(fig)
@@ -497,54 +671,99 @@ def build_profiles(
     def _select(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
         return df[[c for c in cols if c in df.columns]]
 
+    # ── global top-k (existing, unchanged) ────────────────────────────────
+    _LEX_COLS = _UNIT_COLS + [
+        "lexicality_mean_fi", "lexicality_mean_abs_fi", "lexicality_max_fi",
+        "lexicality_relative_time_at_max_fi", "length_mean_fi",
+        "lexicality_to_length_ratio", "lexicality_to_length_abs_ratio",
+    ]
+    _FREQ_COLS = _UNIT_COLS + [
+        "frequency_mean_fi", "frequency_mean_abs_fi", "frequency_max_fi",
+        "frequency_bin_relative_time_at_max_fi", "length_mean_fi",
+        "frequency_to_length_ratio", "frequency_to_length_abs_ratio",
+    ]
+    _MORPH_COLS = _UNIT_COLS + [
+        "morphology_mean_fi", "morphology_mean_abs_fi", "morphology_max_fi",
+        "morphology_relative_time_at_max_fi", "length_mean_fi",
+        "morphology_to_length_ratio", "morphology_to_length_abs_ratio",
+    ]
+
     top_lex = (
         dom[dom["analysis_set"] == "all_items"]
         .dropna(subset=["lexicality_max_fi"])
         .sort_values(["lexicality_max_fi", "lexicality_mean_fi"], ascending=False)
         .head(top_k)
-        .pipe(_select, _UNIT_COLS + [
-            "lexicality_mean_fi", "lexicality_mean_abs_fi", "lexicality_max_fi",
-            "lexicality_relative_time_at_max_fi",
-            "length_mean_fi",
-            "lexicality_to_length_ratio", "lexicality_to_length_abs_ratio",
-        ])
+        .pipe(_select, _LEX_COLS)
     )
-
     top_freq = (
         dom[dom["analysis_set"] == "words_only"]
         .dropna(subset=["frequency_max_fi"])
         .sort_values(["frequency_max_fi", "frequency_mean_fi"], ascending=False)
         .head(top_k)
-        .pipe(_select, _UNIT_COLS + [
-            "frequency_mean_fi", "frequency_mean_abs_fi", "frequency_max_fi",
-            "frequency_bin_relative_time_at_max_fi",
-            "length_mean_fi",
-            "frequency_to_length_ratio", "frequency_to_length_abs_ratio",
-        ])
+        .pipe(_select, _FREQ_COLS)
     )
-
     top_morph = (
         dom
         .dropna(subset=["morphology_max_fi"])
         .sort_values(["morphology_max_fi", "morphology_mean_fi"], ascending=False)
         .head(top_k)
-        .pipe(_select, _UNIT_COLS + [
-            "morphology_mean_fi", "morphology_mean_abs_fi", "morphology_max_fi",
-            "morphology_relative_time_at_max_fi",
-            "length_mean_fi",
-            "morphology_to_length_ratio", "morphology_to_length_abs_ratio",
-        ])
+        .pipe(_select, _MORPH_COLS)
+    )
+
+    # ── grouped top-k (new) ────────────────────────────────────────────────
+    _LEX_COLS_GRP = _UNIT_COLS + [
+        "lexicality_mean_fi", "lexicality_mean_abs_fi", "lexicality_max_fi",
+        "lexicality_relative_time_at_max_fi", "lexicality_candidate_score",
+        "length_mean_fi",
+        "lexicality_to_length_ratio", "lexicality_to_length_abs_ratio",
+    ]
+    _FREQ_COLS_GRP = _UNIT_COLS + [
+        "frequency_mean_fi", "frequency_mean_abs_fi", "frequency_max_fi",
+        "frequency_bin_relative_time_at_max_fi", "frequency_candidate_score",
+        "length_mean_fi",
+        "frequency_to_length_ratio", "frequency_to_length_abs_ratio",
+    ]
+    _MORPH_COLS_GRP = _UNIT_COLS + [
+        "morphology_mean_fi", "morphology_mean_abs_fi", "morphology_max_fi",
+        "morphology_relative_time_at_max_fi", "morphology_candidate_score",
+        "length_mean_fi",
+        "morphology_to_length_ratio", "morphology_to_length_abs_ratio",
+    ]
+
+    top_lex_by_group = _build_grouped_top_k(
+        dom,
+        sort_cols=["lexicality_max_fi", "lexicality_mean_abs_fi", "lexicality_mean_fi"],
+        analysis_sets=["all_items"],
+        top_k=top_k,
+        output_cols=_LEX_COLS_GRP,
+    )
+    top_freq_by_group = _build_grouped_top_k(
+        dom,
+        sort_cols=["frequency_max_fi", "frequency_mean_abs_fi", "frequency_mean_fi"],
+        analysis_sets=["words_only"],
+        top_k=top_k,
+        output_cols=_FREQ_COLS_GRP,
+    )
+    top_morph_by_group = _build_grouped_top_k(
+        dom,
+        sort_cols=["morphology_max_fi", "morphology_mean_abs_fi", "morphology_mean_fi"],
+        analysis_sets=None,
+        top_k=top_k,
+        output_cols=_MORPH_COLS_GRP,
     )
 
     # 4. Save CSVs
     csv_map = {
-        "unit_fi_profiles_long.csv":  profile_long,
-        "unit_fi_profiles_wide.csv":  profile_wide,
-        "unit_feature_dominance.csv": unit_dominance,
-        "unit_dominance_summary.csv": dominance_summary,
-        "top_lexicality_units.csv":   top_lex,
-        "top_frequency_units.csv":    top_freq,
-        "top_morphology_units.csv":   top_morph,
+        "unit_fi_profiles_long.csv":              profile_long,
+        "unit_fi_profiles_wide.csv":              profile_wide,
+        "unit_feature_dominance.csv":             unit_dominance,
+        "unit_dominance_summary.csv":             dominance_summary,
+        "top_lexicality_units.csv":               top_lex,
+        "top_frequency_units.csv":                top_freq,
+        "top_morphology_units.csv":               top_morph,
+        "top_lexicality_units_by_model_layer.csv":  top_lex_by_group,
+        "top_frequency_units_by_model_layer.csv":   top_freq_by_group,
+        "top_morphology_units_by_model_layer.csv":  top_morph_by_group,
     }
     for fname, df in csv_map.items():
         df.to_csv(output_dir / fname, index=False)
@@ -552,18 +771,73 @@ def build_profiles(
 
     # 5. Plots
     print("[unit_profiles] generating plots...")
+    _cap = min(top_k, 15)
+
     _plot_dominant_feature_counts(unit_dominance, output_dir / "dominant_feature_counts.png")
+
+    # signed scatter
     _plot_scatter_fi(
         profile_wide, "length_bin", "lexicality", "all_items",
         output_dir / "lexicality_vs_length_units.png",
-        "Lexicality vs Length mean FI per unit (all_items)",
+        "Lexicality vs Length mean FI per unit (all_items, signed)",
     )
     _plot_scatter_fi(
         profile_wide, "length_bin", "frequency_bin", "words_only",
         output_dir / "frequency_vs_length_units.png",
-        "Frequency_bin vs Length mean FI per unit (words_only)",
+        "Frequency_bin vs Length mean FI per unit (words_only, signed)",
     )
+
+    # absolute scatter (new)
+    _plot_scatter_fi(
+        profile_wide, "length_bin", "lexicality", "all_items",
+        output_dir / "lexicality_vs_length_units_abs.png",
+        "Lexicality vs Length mean |FI| per unit (all_items)",
+        use_abs=True,
+    )
+    _plot_scatter_fi(
+        profile_wide, "length_bin", "frequency_bin", "words_only",
+        output_dir / "frequency_vs_length_units_abs.png",
+        "Frequency_bin vs Length mean |FI| per unit (words_only)",
+        use_abs=True,
+    )
+
+    # original peak-time (existing)
     _plot_peak_time_by_feature(profile_long, output_dir / "peak_time_by_feature.png")
+
+    # peak-time split by analysis_set (new)
+    _plot_peak_time_by_feature_aset(
+        profile_long,
+        time_col="relative_time_at_max_fi",
+        output_path=output_dir / "peak_time_by_feature_analysis_set.png",
+        ylabel="Relative time at peak FI",
+        title="Peak FI time by feature and analysis set",
+    )
+    _plot_peak_time_by_feature_aset(
+        profile_long,
+        time_col="relative_time_at_max_abs_fi",
+        output_path=output_dir / "peak_abs_time_by_feature_analysis_set.png",
+        ylabel="Relative time at peak |FI|",
+        title="Peak |FI| time by feature and analysis set",
+    )
+
+    # global top-k bar (existing)
     _plot_top_lexicality_units(top_lex, top_k, output_dir / "lexicality_top_units_bar.png")
+
+    # grouped top-k bar (new)
+    _plot_top_units_by_group(
+        top_lex_by_group, "lexicality_max_fi", _cap,
+        output_dir / "lexicality_top_units_by_model_layer_bar.png",
+        f"Top-{_cap} lexicality units per model/layer (all_items)",
+    )
+    _plot_top_units_by_group(
+        top_freq_by_group, "frequency_max_fi", _cap,
+        output_dir / "frequency_top_units_by_model_layer_bar.png",
+        f"Top-{_cap} frequency units per model/layer (words_only)",
+    )
+    _plot_top_units_by_group(
+        top_morph_by_group, "morphology_max_fi", _cap,
+        output_dir / "morphology_top_units_by_model_layer_bar.png",
+        f"Top-{_cap} morphology units per model/layer",
+    )
 
     print(f"[unit_profiles] done — outputs in {output_dir}")
