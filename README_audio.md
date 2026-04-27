@@ -10,8 +10,6 @@ All commands are run from the **`swp-model/` repo root**.
 
 ## Overview
 
-The pipeline has five sequential steps:
-
 | Step | Script | What it does |
 |------|--------|-------------|
 | 0 | `scripts/audio/setup_paradigm.py` | Build normalized CSV from raw metadata + WAV files |
@@ -21,6 +19,11 @@ The pipeline has five sequential steps:
 | 3 | `reproduce/scripts/audio/activation_analysis.py` | Latent activation analysis (norms, trajectories) |
 | 4 | `reproduce/scripts/audio/pca_analysis.py` | PCA geometry + condition distance over time |
 | 5 | `scripts/audio/build_xarray.py` | Canonical xarray export `(trials, time, neurons)` |
+| 6 | `scripts/audio/run_univariate_encoding.py` | Per-neuron Ridge CV → scores / weights / FI CSVs |
+| 7 | `scripts/audio/summarize_univariate_encoding.py` | Aggregate summary CSVs from univariate outputs |
+| 8 | `scripts/audio/plot_univariate_encoding_summary.py` | Score / weight / FI figures |
+| 9 | `scripts/audio/compare_univariate_codecs.py` | Cross-codec comparison CSVs + figures |
+| 10 | `scripts/audio/build_unit_profiles.py` | Unit-level FI dominance profiles + figures |
 
 ---
 
@@ -320,13 +323,26 @@ swp/audio/
 ├── pipeline/
 │   └── extraction.py    # run_extraction() — ties everything together
 └── encoding/
-    └── xarray_builder.py  # Step 5: .pt → xarray.Dataset (trials, time, neurons)
+    ├── xarray_builder.py     # Step 5: .pt → xarray.Dataset (trials, time, neurons)
+    ├── temporal_binning.py   # relative-time binning for encoding analyses
+    ├── design_matrix.py      # effect-coded (−1/+1) design matrix from trial metadata
+    ├── univariate_encoder.py # AudioUnivariateEncoder — Ridge nested CV (from Intracranial/encoder.py)
+    ├── univariate.py         # orchestration: binning + design matrix + per-neuron Ridge CV
+    ├── univariate_summary.py # aggregate CSV summaries from univariate run outputs
+    ├── univariate_plots.py   # score / weight / FI figures
+    ├── univariate_compare.py # cross-codec comparison CSVs + figures
+    └── unit_profiles.py      # unit-level FI profiles, dominance, top-k tables + figures
 
 scripts/audio/
-├── setup_paradigm.py    # Step 0: build processed CSV from raw data
-├── sanity_check.py      # Smoke test for any registered model
-├── extract.py           # Step 1 CLI
-└── build_xarray.py      # Step 5 CLI: canonical xarray export
+├── setup_paradigm.py                # Step 0: build processed CSV from raw data
+├── sanity_check.py                  # Smoke test for any registered model
+├── extract.py                       # Step 1 CLI
+├── build_xarray.py                  # Step 5 CLI: canonical xarray export
+├── run_univariate_encoding.py       # Step 6 CLI: per-neuron Ridge CV
+├── summarize_univariate_encoding.py # Step 7 CLI: summary CSVs
+├── plot_univariate_encoding_summary.py  # Step 8 CLI: figures
+├── compare_univariate_codecs.py     # Step 9 CLI: cross-codec comparison
+└── build_unit_profiles.py           # Step 10 CLI: unit-level profiles
 
 reproduce/scripts/audio/
 ├── analysis.py          # Step 2: signal metric OLS + bar plots
@@ -370,28 +386,186 @@ The script is idempotent: it refuses to overwrite without `--overwrite`.
 
 ---
 
+---
+
+## Step 6 — Univariate encoding
+
+Per-neuron Ridge regression with nested 5×5 CV. Two analysis sets:
+`all_items` (lexicality, length_bin, morphology) and `words_only` (frequency_bin, length_bin, morphology).
+
+```bash
+python scripts/audio/run_univariate_encoding.py \
+    --xarray reproduce/data/audio/encodec__7f7d3b97/xarray/encoder_out.nc \
+    --analysis-set all_items \
+    --n-bins 10 --metrics r2 spearman \
+    --compute-fi --n-jobs -1 \
+    --output reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/
+```
+
+Key flags: `--n-bins` (default 10), `--compute-fi`, `--max-neurons` (for quick tests).
+Outputs: `scores.csv`, `weights.csv`, `feature_importance.csv` (if `--compute-fi`), `config.json`, `qc_check.json`.
+
+---
+
+## Step 7 — Summaries
+
+Aggregates per-neuron CSVs into population-level summary tables.
+
+```bash
+# Pass all run dirs for a codec in one call (--inputs accepts multiple paths)
+python scripts/audio/summarize_univariate_encoding.py \
+    --inputs \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
+    --output reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+    --overwrite
+```
+
+Outputs: `score_summary_by_time.csv`, `weight_summary_by_feature_time.csv`,
+`global_feature_ranking.csv`, `top_units_by_feature.csv`.
+FI outputs (`fi_summary_by_feature_time.csv`, `global_fi_ranking.csv`, `top_units_by_fi.csv`)
+are produced only when at least one input dir contains `feature_importance.csv`.
+
+---
+
+## Step 8 — Plots
+
+```bash
+# Base figures only
+python scripts/audio/plot_univariate_encoding_summary.py \
+    --summary-dir reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/plots/ \
+    --overwrite
+
+# With encoding_fi figures (add --fi-dirs)
+python scripts/audio/plot_univariate_encoding_summary.py \
+    --summary-dir reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/plots/ \
+    --fi-dirs \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
+    --overwrite
+```
+
+Key outputs: `score_over_time_*.png`, `weights_over_time_*.png`, `global_feature_ranking_*.png`.
+`encoding_fi_*.png` (FI over time + score, Intracranial-style) are produced only with `--fi-dirs`.
+
+---
+
+## Step 9 — Cross-codec comparison
+
+Compares EnCodec vs DAC on all summary outputs.
+
+```bash
+python scripts/audio/compare_univariate_codecs.py \
+    --summaries \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/univariate_summary/ \
+    --labels encodec dac \
+    --output reproduce/figures/audio/encoding/codec_comparison/ --overwrite
+```
+
+Outputs: `combined_*.csv`, `length_dominance_ratio.csv`, 8 comparison PNG figures.
+
+---
+
+## Step 10 — Unit profiles
+
+Builds per-unit FI profiles from `feature_importance.csv` outputs of Step 6.
+
+```bash
+python scripts/audio/build_unit_profiles.py \
+    --fi-dirs \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/decoder_in/univariate/words_only_fi/ \
+    --output reproduce/figures/audio/encoding/unit_profiles/ \
+    --top-k 30 --overwrite
+```
+
+Outputs: 10 CSV tables (long profile, wide profile, dominance, summary, top-k per feature × by-group),
+12 PNG figures (dominant feature counts, scatter plots, peak-time boxplots, top-unit bars).
+
+---
+
 ## Quick reference
 
 ```bash
-# Full pipeline — DAC 24 kHz
+# Steps 0–5: setup → extract → analysis → PCA → xarray
 python scripts/audio/setup_paradigm.py \
     --metadata data/external/paradigm/raw/metadata.csv \
     --wav-dir   data/external/paradigm/raw/wav \
     --filename-col Audio_Male \
     --output    data/external/paradigm/processed/subset_male.csv
 
-python scripts/audio/sanity_check.py --model dac --model-type 24khz
+python scripts/audio/sanity_check.py --model encodec
 
 python scripts/audio/extract.py \
-    --model dac --model-arg model_type=24khz \
+    --model encodec --model-arg bandwidth=6.0 \
     --dataset data/external/paradigm/processed/subset_male.csv \
     --layers encoder_out decoder_in decoder_out \
     --output reproduce/data/audio/
 
-# Replace dac__HASH with the actual run_id printed at the end of extract.py
 python reproduce/scripts/audio/analysis.py \
-    --results reproduce/data/audio/dac__HASH/metrics.csv
+    --results reproduce/data/audio/encodec__7f7d3b97/metrics.csv
 
 python reproduce/scripts/audio/activation_analysis.py \
-    --run reproduce/data/audio/dac__HASH/
+    --run reproduce/data/audio/encodec__7f7d3b97/
+
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ --mode trajectory
+
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --layers encoder_out decoder_in
+
+# Steps 6–10: univariate encoding pipeline (example: encodec encoder_out all_items)
+python scripts/audio/run_univariate_encoding.py \
+    --xarray reproduce/data/audio/encodec__7f7d3b97/xarray/encoder_out.nc \
+    --analysis-set all_items --n-bins 10 --metrics r2 spearman \
+    --compute-fi --n-jobs -1 \
+    --output reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/
+
+python scripts/audio/summarize_univariate_encoding.py \
+    --inputs \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
+    --output reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+    --overwrite
+
+python scripts/audio/plot_univariate_encoding_summary.py \
+    --summary-dir reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/plots/ \
+    --overwrite
+
+python scripts/audio/compare_univariate_codecs.py \
+    --summaries \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/univariate_summary/ \
+    --labels encodec dac \
+    --output reproduce/figures/audio/encoding/codec_comparison/ --overwrite
+
+python scripts/audio/build_unit_profiles.py \
+    --fi-dirs \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/encoder_out/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/encoder_out/univariate/words_only_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/decoder_in/univariate/all_items_fi/ \
+        reproduce/figures/audio/encoding/dac__f104bbdd/decoder_in/univariate/words_only_fi/ \
+    --output reproduce/figures/audio/encoding/unit_profiles/ \
+    --top-k 30 --overwrite
 ```
