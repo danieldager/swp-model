@@ -162,37 +162,82 @@ def main() -> None:
     print(f"[plot_univariate] summary_dir : {summary_dir}")
     print(f"[plot_univariate] output      : {output_dir}")
 
-    # ── Figures 1 & 2: scores over time ───────────────────────────────────────
+    # ── Figures 1–5: per-analysis_view or legacy aggregate ───────────────────
 
-    for metric in ("r2", "spearman"):
-        fname = f"score_over_time_{model_name}_{metric}.png"
-        saved = plot_score_over_time(
-            score_summary, metric, output_dir / fname,
-            model_name=model_name, run_id=run_id,
+    has_views = "analysis_view" in score_summary.columns
+
+    if has_views:
+        all_views = sorted(score_summary["analysis_view"].unique())
+        print(
+            f"\n[plot_univariate] analysis_view column detected "
+            f"({len(all_views)} view(s)) — skipping aggregate figures; "
+            "generating one set of figures per analysis_view."
         )
-        if saved:
+        for av in all_views:
+            print(f"\n[plot_univariate] ── view: {av}")
+            ss_v = score_summary[score_summary["analysis_view"] == av]
+            ws_v = weight_summary[weight_summary["analysis_view"] == av]
+            fr_v = feature_ranking[feature_ranking["analysis_view"] == av]
+
+            # Each analysis_view maps to exactly one analysis_set
+            aset = ws_v["analysis_set"].iloc[0] if not ws_v.empty else "all_items"
+
+            for metric in ("r2", "spearman"):
+                fname = f"score_over_time_{model_name}_{av}_{metric}.png"
+                saved = plot_score_over_time(
+                    ss_v, metric, output_dir / fname,
+                    model_name=model_name, run_id=run_id,
+                    analysis_view=av,
+                )
+                if saved:
+                    print(f"  saved  {fname}")
+                else:
+                    print(f"  [warning] metric '{metric}' not found for view '{av}' — skipped")
+
+            fname = f"weights_over_time_{model_name}_{av}.png"
+            plot_weights_over_time(
+                ws_v, aset, output_dir / fname,
+                model_name=model_name, run_id=run_id,
+                analysis_view=av,
+            )
             print(f"  saved  {fname}")
-        else:
-            print(f"  [warning] metric '{metric}' not found in score_summary — {fname} skipped")
 
-    # ── Figures 3 & 4: weights over time ──────────────────────────────────────
+            if not fr_v.empty:
+                fname = f"global_feature_ranking_{model_name}_{av}.png"
+                plot_global_feature_ranking(
+                    fr_v, output_dir / fname,
+                    model_name=model_name, run_id=run_id,
+                    analysis_view=av,
+                )
+                print(f"  saved  {fname}")
 
-    for aset in ("all_items", "words_only"):
-        fname = f"weights_over_time_{model_name}_{aset}.png"
-        plot_weights_over_time(
-            weight_summary, aset, output_dir / fname,
+    else:
+        # ── Legacy aggregate figures (summary has no analysis_view column) ────
+        for metric in ("r2", "spearman"):
+            fname = f"score_over_time_{model_name}_{metric}.png"
+            saved = plot_score_over_time(
+                score_summary, metric, output_dir / fname,
+                model_name=model_name, run_id=run_id,
+            )
+            if saved:
+                print(f"  saved  {fname}")
+            else:
+                print(f"  [warning] metric '{metric}' not found in score_summary — {fname} skipped")
+
+        for aset in ("all_items", "words_only"):
+            fname = f"weights_over_time_{model_name}_{aset}.png"
+            plot_weights_over_time(
+                weight_summary, aset, output_dir / fname,
+                model_name=model_name, run_id=run_id,
+            )
+            print(f"  saved  {fname}")
+
+        fname = f"global_feature_ranking_{model_name}.png"
+        plot_global_feature_ranking(
+            feature_ranking, output_dir / fname,
             model_name=model_name, run_id=run_id,
         )
         print(f"  saved  {fname}")
-
-    # ── Figure 5: global feature ranking ──────────────────────────────────────
-
-    fname = f"global_feature_ranking_{model_name}.png"
-    plot_global_feature_ranking(
-        feature_ranking, output_dir / fname,
-        model_name=model_name, run_id=run_id,
-    )
-    print(f"  saved  {fname}")
 
     # ── Figure 6+: encoding_FI (optional, requires --fi-dirs) ────────────────
 
@@ -217,6 +262,9 @@ def main() -> None:
             fi_df_run     = pd.read_csv(fi_path)
             scores_df_run = pd.read_csv(sc_path)
 
+            # analysis_view is the directory name (e.g. "all_items_short_only_speakerctrl")
+            analysis_view = fi_dir.name
+
             # Detect all (run_id, model_name, layer, analysis_set, metric) combos
             combos = (
                 scores_df_run[["run_id", "model_name", "layer", "analysis_set", "metric"]]
@@ -224,7 +272,7 @@ def main() -> None:
                 .values.tolist()
             )
             for run_id, model_name, layer, analysis_set, metric in combos:
-                fname = f"encoding_fi_{model_name}_{layer}_{analysis_set}_{metric}.png"
+                fname = f"encoding_fi_{model_name}_{layer}_{analysis_view}_{metric}.png"
                 saved = plot_encoding_fi(
                     fi_df_run, scores_df_run,
                     layer=layer,

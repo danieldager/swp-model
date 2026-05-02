@@ -52,6 +52,7 @@ def plot_score_over_time(
     output_path: Path,
     model_name: str = "",
     run_id: str = "",
+    analysis_view: str = "",
 ) -> bool:
     """Line plot of mean_score ± std_score over relative_time.
 
@@ -98,8 +99,9 @@ def plot_score_over_time(
     ax.set_xlabel("Relative time (bin centre)")
     ax.set_ylabel(f"Mean {metric.capitalize()} score across neurons")
     _prefix = f" — {model_name}" if model_name else ""
+    _view   = f" — {analysis_view}" if analysis_view else ""
     _sub    = f"\nrun_id: {run_id}" if run_id else ""
-    ax.set_title(f"Univariate encoding{_prefix} — {metric.capitalize()} over time{_sub}")
+    ax.set_title(f"Univariate encoding{_prefix}{_view} — {metric.capitalize()} over time{_sub}")
     ax.legend(fontsize=8, loc="best")
     ax.set_xlim(0, 1)
     fig.tight_layout()
@@ -116,6 +118,7 @@ def plot_weights_over_time(
     output_path: Path,
     model_name: str = "",
     run_id: str = "",
+    analysis_view: str = "",
 ) -> None:
     """Two-panel plot of mean_abs_weight over relative_time, one panel per layer.
 
@@ -161,8 +164,9 @@ def plot_weights_over_time(
         ax.set_xlim(0, 1)
 
     _prefix = f" — {model_name}" if model_name else ""
+    _label  = analysis_view if analysis_view else analysis_set
     _sub    = f"\nrun_id: {run_id}" if run_id else ""
-    fig.suptitle(f"Feature weights over time{_prefix} — {analysis_set}{_sub}", fontsize=11)
+    fig.suptitle(f"Feature weights over time{_prefix} — {_label}{_sub}", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
 
@@ -175,6 +179,7 @@ def plot_global_feature_ranking(
     output_path: Path,
     model_name: str = "",
     run_id: str = "",
+    analysis_view: str = "",
 ) -> None:
     """2×2 bar plot of mean_abs_weight by feature, one panel per (layer × analysis_set).
 
@@ -232,8 +237,9 @@ def plot_global_feature_ranking(
                 )
 
     _prefix = f" — {model_name}" if model_name else ""
+    _view   = f" — {analysis_view}" if analysis_view else ""
     _sub    = f"\nrun_id: {run_id}" if run_id else ""
-    fig.suptitle(f"Global feature ranking{_prefix}\nmean |weight| over time × neurons{_sub}", fontsize=11)
+    fig.suptitle(f"Global feature ranking{_prefix}{_view}\nmean |weight| over time × neurons{_sub}", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
 

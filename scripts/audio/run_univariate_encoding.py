@@ -106,20 +106,63 @@ def _parse_args() -> argparse.Namespace:
         "--overwrite", action="store_true",
         help="Overwrite existing outputs without error.",
     )
+    p.add_argument(
+        "--trial-filter",
+        nargs="+",
+        default=None,
+        dest="trial_filter",
+        metavar="KEY=VALUE",
+        help=(
+            "Restrict trials to those matching all KEY=VALUE pairs, applied on top "
+            "of the analysis_set mask. E.g. --trial-filter length_bin=short. "
+            "Constant features after filtering are dropped automatically with a warning."
+        ),
+    )
+    p.add_argument(
+        "--include-speaker-covariate",
+        action="store_true",
+        dest="speaker_covariate",
+        help=(
+            "Append 'speaker' as a nuisance regressor in the design matrix "
+            "(MALE=-1 / FEMALE=+1). Use only with the all-speakers dataset."
+        ),
+    )
     return p.parse_args()
+
+
+def _parse_filter(items: list[str] | None) -> dict[str, str] | None:
+    """Parse a list of 'KEY=VALUE' strings into a dict."""
+    if not items:
+        return None
+    result: dict[str, str] = {}
+    for item in items:
+        if "=" not in item:
+            print(
+                f"[run_univariate_encoding] ERROR: --trial-filter items must be "
+                f"KEY=VALUE, got: {item!r}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        key, val = item.split("=", 1)
+        result[key.strip()] = val.strip()
+    return result
 
 
 def main() -> None:
     args = _parse_args()
 
-    print(f"[run_univariate_encoding] xarray      : {args.xarray}")
-    print(f"[run_univariate_encoding] analysis_set: {args.analysis_set}")
-    print(f"[run_univariate_encoding] n_bins       : {args.n_bins}")
-    print(f"[run_univariate_encoding] metrics      : {args.metrics}")
-    print(f"[run_univariate_encoding] n_jobs       : {args.n_jobs}")
+    trial_filter = _parse_filter(args.trial_filter)
+
+    print(f"[run_univariate_encoding] xarray           : {args.xarray}")
+    print(f"[run_univariate_encoding] analysis_set     : {args.analysis_set}")
+    print(f"[run_univariate_encoding] trial_filter     : {trial_filter}")
+    print(f"[run_univariate_encoding] speaker_covariate: {args.speaker_covariate}")
+    print(f"[run_univariate_encoding] n_bins           : {args.n_bins}")
+    print(f"[run_univariate_encoding] metrics          : {args.metrics}")
+    print(f"[run_univariate_encoding] n_jobs           : {args.n_jobs}")
     if args.max_neurons is not None:
-        print(f"[run_univariate_encoding] max_neurons  : {args.max_neurons}")
-    print(f"[run_univariate_encoding] output       : {args.output}")
+        print(f"[run_univariate_encoding] max_neurons      : {args.max_neurons}")
+    print(f"[run_univariate_encoding] output           : {args.output}")
 
     out = run_univariate_encoding(
         xarray_path=args.xarray,
@@ -136,6 +179,8 @@ def main() -> None:
         max_neurons=args.max_neurons,
         output_dir=args.output,
         overwrite=args.overwrite,
+        trial_filter=trial_filter,
+        speaker_covariate=args.speaker_covariate,
     )
 
     qc = out["qc_check"]

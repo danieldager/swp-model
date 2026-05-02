@@ -31,11 +31,15 @@ import pandas as pd
 # ── I/O ───────────────────────────────────────────────────────────────────────
 
 
-def load_run_dir(run_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+def load_run_dir(run_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, dict, str]:
     """Load scores.csv, weights.csv, config.json from a run output directory.
 
+    Also derives analysis_view from the directory name (e.g. 'all_items_short_only').
+    This is the intended naming tag that distinguishes filter / speaker-covariate
+    variants that share the same analysis_set value in config.json.
+
     Raises FileNotFoundError if any expected file is absent.
-    Returns (scores_df, weights_df, config_dict).
+    Returns (scores_df, weights_df, config_dict, analysis_view).
     """
     run_dir = Path(run_dir)
     scores_path  = run_dir / "scores.csv"
@@ -54,7 +58,8 @@ def load_run_dir(run_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     with open(config_path) as f:
         config = json.load(f)
 
-    return scores, weights, config
+    analysis_view = run_dir.name   # e.g. "all_items_short_only_speakerctrl"
+    return scores, weights, config, analysis_view
 
 
 # ── Compute A ─────────────────────────────────────────────────────────────────
@@ -66,7 +71,7 @@ def compute_score_summary_by_time(scores: pd.DataFrame) -> pd.DataFrame:
     Returns one row per group with: mean, median, std, q25, q75, frac_positive.
     """
     group_keys = [
-        "run_id", "model_name", "layer", "analysis_set",
+        "run_id", "analysis_view", "model_name", "layer", "analysis_set",
         "metric", "time_bin", "relative_time",
     ]
     tmp = scores.assign(is_positive=(scores["score_median"] > 0).astype(float))
@@ -92,7 +97,7 @@ def compute_weight_summary_by_feature_time(weights: pd.DataFrame) -> pd.DataFram
     Returns one row per group with signed and absolute weight stats.
     """
     group_keys = [
-        "run_id", "model_name", "layer", "analysis_set",
+        "run_id", "analysis_view", "model_name", "layer", "analysis_set",
         "feature", "time_bin", "relative_time",
     ]
     tmp = weights.assign(
@@ -128,7 +133,7 @@ def compute_top_units_by_feature(weights: pd.DataFrame, top_k: int = 20) -> pd.D
         run_id, model_name, layer, analysis_set, feature, neuron,
         max_abs_weight, time_bin_at_max, relative_time_at_max, signed_weight_at_max
     """
-    identity_keys      = ["run_id", "model_name", "layer", "analysis_set"]
+    identity_keys      = ["run_id", "analysis_view", "model_name", "layer", "analysis_set"]
     feature_neuron_keys = identity_keys + ["feature", "neuron"]
 
     tmp = weights.assign(abs_weight=weights["weight_mean"].abs())
@@ -169,7 +174,7 @@ def compute_global_feature_ranking(weights: pd.DataFrame) -> pd.DataFrame:
     Rank is computed within each (run_id, model_name, layer, analysis_set) group,
     ascending from the feature with the highest mean absolute weight (rank 1).
     """
-    identity_keys = ["run_id", "model_name", "layer", "analysis_set"]
+    identity_keys = ["run_id", "analysis_view", "model_name", "layer", "analysis_set"]
     group_keys    = identity_keys + ["feature"]
 
     tmp   = weights.assign(abs_weight=weights["weight_mean"].abs())
@@ -208,7 +213,7 @@ def compute_fi_summary_by_feature_time(fi: pd.DataFrame) -> pd.DataFrame:
     Returns one row per group with signed and absolute FI stats.
     """
     group_keys = [
-        "run_id", "model_name", "layer", "analysis_set",
+        "run_id", "analysis_view", "model_name", "layer", "analysis_set",
         "feature", "time_bin", "relative_time",
     ]
     tmp = fi.assign(
@@ -238,7 +243,7 @@ def compute_global_fi_ranking(fi: pd.DataFrame) -> pd.DataFrame:
       rank_by_mean_fi      — descending by mean signed FI (rank 1 = highest)
       rank_by_mean_abs_fi  — descending by mean |FI| (rank 1 = most important regardless of sign)
     """
-    identity_keys = ["run_id", "model_name", "layer", "analysis_set"]
+    identity_keys = ["run_id", "analysis_view", "model_name", "layer", "analysis_set"]
     group_keys    = identity_keys + ["feature"]
 
     tmp   = fi.assign(abs_fi=fi["fi_mean"].abs())
@@ -277,7 +282,7 @@ def compute_top_units_by_fi(fi: pd.DataFrame, top_k: int = 20) -> pd.DataFrame:
         run_id, model_name, layer, analysis_set, feature, neuron,
         max_fi, time_bin_at_max, relative_time_at_max, signed_fi_at_max
     """
-    identity_keys    = ["run_id", "model_name", "layer", "analysis_set"]
+    identity_keys    = ["run_id", "analysis_view", "model_name", "layer", "analysis_set"]
     fi_neuron_keys   = identity_keys + ["feature", "neuron"]
 
     idx_at_max = fi.groupby(fi_neuron_keys)["fi_mean"].idxmax()
@@ -371,12 +376,16 @@ def summarize(
 
     for d in input_dirs:
         d = Path(d)
-        scores, weights, config = load_run_dir(d)
+        scores, weights, config, analysis_view = load_run_dir(d)
+        scores["analysis_view"]  = analysis_view
+        weights["analysis_view"] = analysis_view
         all_scores.append(scores)
         all_weights.append(weights)
 
         if fi_present[d]:
-            all_fi.append(pd.read_csv(d / "feature_importance.csv"))
+            fi_df = pd.read_csv(d / "feature_importance.csv")
+            fi_df["analysis_view"] = analysis_view
+            all_fi.append(fi_df)
         elif any_fi:
             print(
                 f"[summarize_univariate] WARNING: no feature_importance.csv in {d} "

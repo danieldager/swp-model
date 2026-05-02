@@ -25,7 +25,7 @@ from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
 from swp.audio.encoding.temporal_binning import build_binned_y, bin_centers
-from swp.audio.encoding.design_matrix import build_design_matrix, ENCODING_SCHEME
+from swp.audio.encoding.design_matrix import build_design_matrix, ENCODING_SCHEME, _ANALYSIS_FEATURES
 from swp.audio.encoding.univariate_encoder import AudioUnivariateEncoder
 
 
@@ -63,6 +63,8 @@ def run_univariate_encoding(
     max_neurons: int | None = None,
     output_dir: Path | None = None,
     overwrite: bool = False,
+    trial_filter: dict[str, str] | None = None,
+    speaker_covariate: bool = False,
 ) -> dict:
     """Run univariate Ridge encoding on prebinned audio activations.
 
@@ -124,7 +126,15 @@ def run_univariate_encoding(
 
     # ── Design matrix ─────────────────────────────────────────────────────────
 
-    X, feature_names, trial_mask = build_design_matrix(ds, analysis_set)
+    X, feature_names, trial_mask, dropped_features = build_design_matrix(
+        ds, analysis_set,
+        trial_filter=trial_filter,
+        speaker_covariate=speaker_covariate,
+    )
+    feature_names_requested = (
+        list(_ANALYSIS_FEATURES[analysis_set])
+        + (["speaker"] if speaker_covariate else [])
+    )
     y_binned_selected = y_binned[trial_mask]        # (n_selected, n_bins, n_neurons)
     n_selected = X.shape[0]
 
@@ -229,36 +239,43 @@ def run_univariate_encoding(
         "nan_in_scores":       bool(scores_df["score_median"].isna().any()),
         "nan_in_weights":      bool(weights_df["weight_mean"].isna().any()),
         # nan_in_fi is null when compute_fi=False
-        "nan_in_fi":           bool(fi_df["fi_mean"].isna().any()) if fi_df is not None else None,
-        "timestamp":           datetime.now().isoformat(timespec="seconds"),
+        "nan_in_fi":                   bool(fi_df["fi_mean"].isna().any()) if fi_df is not None else None,
+        "n_dropped_constant_features": len(dropped_features),
+        "dropped_constant_features":   [d["feature"] for d in dropped_features],
+        "timestamp":                   datetime.now().isoformat(timespec="seconds"),
     }
 
     # ── Config ────────────────────────────────────────────────────────────────
 
     config = {
-        "xarray_path":         str(xarray_path),
-        "analysis_set":        analysis_set,
-        "n_bins":              n_bins,
-        "metrics":             list(metrics),
-        "compute_fi":          compute_fi,
-        "fi_n_repeats":        fi_n_repeats,
+        "xarray_path":             str(xarray_path),
+        "analysis_set":            analysis_set,
+        "n_bins":                  n_bins,
+        "metrics":                 list(metrics),
+        "compute_fi":              compute_fi,
+        "fi_n_repeats":            fi_n_repeats,
         # FI uses the Ridge estimator's default score (R²) via sklearn permutation_importance
-        "fi_scoring":          "sklearn_permutation_importance_default_estimator_score",
-        "n_jobs":              n_jobs,
-        "n_outer_splits":      n_outer_splits,
-        "n_inner_splits":      n_inner_splits,
-        "alphas":              list(alphas),
-        "random_state":        random_state,
-        "max_neurons":         max_neurons,
-        "encoding_scheme":     ENCODING_SCHEME,
-        "feature_names":       feature_names,
-        "run_id":              run_id,
-        "model_name":          model_name,
-        "layer":               layer,
-        "n_trials_total":      n_trials_total,
-        "n_trials_selected":   int(n_selected),
-        "n_neurons_processed": n_neurons_process,
-        "n_features":          len(feature_names),
+        "fi_scoring":              "sklearn_permutation_importance_default_estimator_score",
+        "n_jobs":                  n_jobs,
+        "n_outer_splits":          n_outer_splits,
+        "n_inner_splits":          n_inner_splits,
+        "alphas":                  list(alphas),
+        "random_state":            random_state,
+        "max_neurons":             max_neurons,
+        "trial_filter":            trial_filter,
+        "speaker_covariate":       speaker_covariate,
+        "encoding_scheme":         ENCODING_SCHEME,
+        "feature_names_requested": feature_names_requested,
+        "feature_names_used":      feature_names,
+        "dropped_features":        dropped_features,
+        "run_id":                  run_id,
+        "model_name":              model_name,
+        "layer":                   layer,
+        "n_trials_total":          n_trials_total,
+        "n_trials_selected":       int(n_selected),
+        "n_neurons_processed":     n_neurons_process,
+        "n_features":              len(feature_names),
+        "n_features_requested":    len(feature_names_requested),
     }
 
     # ── Write outputs ─────────────────────────────────────────────────────────

@@ -538,6 +538,18 @@ def main() -> None:
         default=None,
         help="Repo root for resolving dataset path (default: auto-detected)",
     )
+    parser.add_argument(
+        "--filter",
+        nargs="+",
+        default=None,
+        metavar="KEY=VALUE",
+        help=(
+            "Restrict trials to those matching all KEY=VALUE pairs before running "
+            "OLS regressions and saving figures. "
+            "E.g. --filter length_bin=short. "
+            "Applied to the assembled activation summary DataFrame."
+        ),
+    )
     args = parser.parse_args()
 
     run_dir = Path(args.run).resolve()
@@ -562,6 +574,27 @@ def main() -> None:
 
     paradigm_df = load_paradigm_factors(manifest, repo_root)
     summary_df = build_activation_summary(manifest, run_dir, paradigm_df)
+
+    # ── Optional trial filter ─────────────────────────────────────────────────
+    if args.filter:
+        trial_filter: dict[str, str] = {}
+        for item in args.filter:
+            if "=" not in item:
+                print(
+                    f"[activation_analysis] ERROR: --filter items must be KEY=VALUE, "
+                    f"got: {item!r}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            key, val = item.split("=", 1)
+            trial_filter[key.strip()] = val.strip()
+        for col, val in trial_filter.items():
+            before = len(summary_df)
+            summary_df = summary_df[summary_df[col] == val].reset_index(drop=True)
+            print(
+                f"[activation_analysis] --filter {col}={val!r}: "
+                f"{before} → {len(summary_df)} rows"
+            )
 
     n_items = summary_df["item_id"].nunique()
     n_layers = summary_df["layer"].nunique()

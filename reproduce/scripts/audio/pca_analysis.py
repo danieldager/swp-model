@@ -1352,6 +1352,17 @@ def main() -> None:
         default=None,
         help="Repo root for resolving the dataset path from manifest (default: auto-detected).",
     )
+    parser.add_argument(
+        "--filter",
+        nargs="+",
+        default=None,
+        metavar="KEY=VALUE",
+        help=(
+            "Restrict items to those matching all KEY=VALUE pairs before running PCA. "
+            "E.g. --filter length_bin=short. "
+            "Applied to both the paradigm metadata and the manifest item list."
+        ),
+    )
     args = parser.parse_args()
 
     run_dir = Path(args.run).resolve()
@@ -1377,6 +1388,32 @@ def main() -> None:
     print(f"[pca_analysis] Output    : {out_root}")
 
     paradigm_df = load_paradigm_factors(manifest, repo_root)
+
+    # ── Optional trial filter ─────────────────────────────────────────────────
+    if args.filter:
+        trial_filter: dict[str, str] = {}
+        for item in args.filter:
+            if "=" not in item:
+                print(
+                    f"[pca_analysis] ERROR: --filter items must be KEY=VALUE, "
+                    f"got: {item!r}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            key, val = item.split("=", 1)
+            trial_filter[key.strip()] = val.strip()
+
+        n_before = len(paradigm_df)
+        for col, val in trial_filter.items():
+            paradigm_df = paradigm_df[paradigm_df[col] == val].reset_index(drop=True)
+        allowed_ids: set[str] = set(paradigm_df["item_id"].values)
+        manifest["items"] = {
+            k: v for k, v in manifest["items"].items() if k in allowed_ids
+        }
+        print(
+            f"[pca_analysis] --filter {trial_filter}: "
+            f"{n_before} → {len(paradigm_df)} items"
+        )
 
     plt.rcParams.update({
         "axes.grid": True,
