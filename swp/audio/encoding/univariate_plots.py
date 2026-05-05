@@ -70,6 +70,8 @@ def plot_score_over_time(
         True if figure was saved, False if metric not present in data.
     """
     df = score_summary[score_summary["metric"] == metric]
+    if analysis_view and "analysis_view" in df.columns:
+        df = df[df["analysis_view"] == analysis_view]
     if df.empty:
         return False
 
@@ -132,6 +134,8 @@ def plot_weights_over_time(
         run_id:         Shown as subtitle.
     """
     df = weight_summary[weight_summary["analysis_set"] == analysis_set]
+    if analysis_view and "analysis_view" in df.columns:
+        df = df[df["analysis_view"] == analysis_view]
     layers = [l for l in _LAYER_ORDER if l in df["layer"].unique()]
     n_panels = len(layers)
 
@@ -191,6 +195,8 @@ def plot_global_feature_ranking(
         model_name:      Shown in suptitle.
         run_id:          Shown as subtitle.
     """
+    if analysis_view and "analysis_view" in feature_ranking.columns:
+        feature_ranking = feature_ranking[feature_ranking["analysis_view"] == analysis_view]
     layers = [l for l in _LAYER_ORDER if l in feature_ranking["layer"].unique()]
     asets  = [a for a in _ASET_ORDER  if a in feature_ranking["analysis_set"].unique()]
 
@@ -257,6 +263,7 @@ def plot_encoding_fi(
     aggregation: str = "mean",
     model_name: str = "",
     run_id: str = "",
+    analysis_view: str = "",
 ) -> bool:
     """Dual-axis plot: permutation FI (left) + encoding score (right) over time.
 
@@ -283,11 +290,15 @@ def plot_encoding_fi(
     fi_sub = fi_df[
         (fi_df["layer"] == layer) & (fi_df["analysis_set"] == analysis_set)
     ]
+    if analysis_view and "analysis_view" in fi_sub.columns:
+        fi_sub = fi_sub[fi_sub["analysis_view"] == analysis_view]
     sc_sub = scores_df[
         (scores_df["layer"] == layer) &
         (scores_df["analysis_set"] == analysis_set) &
         (scores_df["metric"] == metric)
     ]
+    if analysis_view and "analysis_view" in sc_sub.columns:
+        sc_sub = sc_sub[sc_sub["analysis_view"] == analysis_view]
 
     if fi_sub.empty or sc_sub.empty:
         return False

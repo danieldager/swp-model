@@ -1,3 +1,7 @@
+# LEGACY — not analysis_view-safe.
+# Groups only by analysis_set; will silently mix all_items_short_only,
+# all_items_long_only, all_items_all_speakers etc. into the same rows.
+# Use summarize_length_controlled_encoding.py for cross-view comparisons.
 """Codec comparison figures and CSV summaries for univariate encoding results.
 
 Reads pre-computed summary directories produced by summarize_univariate_encoding.py

@@ -1,3 +1,8 @@
+# LEGACY — not analysis_view-safe.
+# _UNIT_COLS = ["run_id", "model_name", "layer", "analysis_set", "neuron"] lacks
+# analysis_view, so all analysis_views (short_only, long_only, all_speakers, …) are
+# collapsed into the same neuron row when multiple views are passed.
+# Use swp/audio/encoding/inspect_encoding_units.py logic instead.
 """Unit-level feature importance profiles from codec neural activations."""
 
 from __future__ import annotations

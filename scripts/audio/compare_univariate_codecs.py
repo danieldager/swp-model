@@ -1,3 +1,7 @@
+# LEGACY — not analysis_view-safe. Do not use with multi-view summaries.
+# univariate_compare.py groups only by analysis_set and will silently mix
+# all_items_short_only / all_items_long_only / all_items_all_speakers etc.
+# Use summarize_length_controlled_encoding.py for cross-view comparisons.
 """CLI for comparing univariate encoding summaries across codecs.
 
 Reads one summary directory per codec (produced by summarize_univariate_encoding.py)
@@ -33,6 +37,14 @@ Figures
 """
 
 from __future__ import annotations
+
+import warnings
+warnings.warn(
+    "compare_univariate_codecs.py is legacy and not analysis_view-safe. "
+    "Use summarize_length_controlled_encoding.py for cross-view comparisons.",
+    UserWarning,
+    stacklevel=1,
+)
 
 import argparse
 import sys

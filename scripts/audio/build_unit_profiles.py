@@ -1,5 +1,17 @@
 #!/usr/bin/env python
+# LEGACY — not analysis_view-safe. Do not use with multi-view summaries.
+# Use scripts/audio/inspect_encoding_units.py instead.
+# This script wraps unit_profiles.py which lacks analysis_view in _UNIT_COLS and will
+# silently collapse short_only / long_only / all_speakers views into the same neuron row.
 """CLI: build unit feature importance profiles from per-neuron FI run directories."""
+
+import warnings
+warnings.warn(
+    "build_unit_profiles.py is legacy and not analysis_view-safe. "
+    "Use inspect_encoding_units.py instead.",
+    UserWarning,
+    stacklevel=1,
+)
 
 import argparse
 import sys

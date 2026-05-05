@@ -24,8 +24,11 @@ Outputs
 -------
     fi_global_comparison.csv                Combined global FI ranking across all sources.
     fi_global_heatmap.png                   Heatmap: mean FI per (view × layer) row, feature column.
+    male_only_short_long_fi_summary.png     Bar chart: male-only short_only vs long_only FI contrast.
     short_only_morphology_vs_lexicality.png Bar chart: main residual effect after length control.
+    long_only_morphology_vs_lexicality.png  Bar chart: residual effects in long_only (weaker/mixed).
     temporal_fi_short_only.png              Temporal FI profiles (morphology/lexicality, short_only).
+    temporal_fi_long_only.png               Temporal FI profiles (morphology/lexicality, long_only).
     speaker_effect_summary.png              Speaker FI vs linguistic features in speakerctrl views.
     summary_readme.md                       Auto-generated summary report.
 """
@@ -241,19 +244,26 @@ def plot_fi_heatmap(combined: pd.DataFrame, output_dir: Path) -> None:
     print(f"[summarize_length_controlled] Written: {path}")
 
 
-# ── Output 3: short_only_morphology_vs_lexicality.png ────────────────────────
+# ── Outputs 3 & 4: morph vs lex bar charts ───────────────────────────────────
 
 
-def plot_short_only_morph_vs_lex(combined: pd.DataFrame, output_dir: Path) -> None:
+def _plot_morph_vs_lex(
+    combined: pd.DataFrame,
+    output_dir: Path,
+    analysis_view: str,
+    filename: str,
+    suptitle: str,
+) -> None:
+    """Shared bar-chart logic for morphology vs lexicality FI in a single analysis_view."""
     df = combined[
-        (combined["analysis_view"] == "all_items_short_only") &
+        (combined["analysis_view"] == analysis_view) &
         (combined["feature"].isin(["morphology", "lexicality"]))
     ].copy()
 
     if df.empty:
         print(
-            "[summarize_length_controlled] WARNING: no all_items_short_only data — "
-            "skipping short_only_morphology_vs_lexicality.png"
+            f"[summarize_length_controlled] WARNING: no {analysis_view} data — "
+            f"skipping {filename}"
         )
         return
 
@@ -269,7 +279,6 @@ def plot_short_only_morph_vs_lex(combined: pd.DataFrame, output_dir: Path) -> No
     for ax, model in zip(axes, models_present):
         sub = df[df["model_name"] == model]
 
-        # Groups: speaker_set × layer (only those with data)
         groups = [
             (sp, layer)
             for sp in _SPKSET_ORDER for layer in _LAYER_ORDER
@@ -305,36 +314,63 @@ def plot_short_only_morph_vs_lex(combined: pd.DataFrame, output_dir: Path) -> No
             ],
             fontsize=8,
         )
-        ax.set_title(f"{model.upper()} — all_items_short_only", fontsize=10)
+        ax.set_title(f"{model.upper()} — {analysis_view}", fontsize=10)
         ax.set_ylabel("Mean FI over time × neurons")
         ax.axhline(0, color="black", linewidth=0.6, linestyle=":")
         ax.legend(fontsize=8)
 
-    fig.suptitle(
-        "Morphology vs lexicality FI after length control (short_only)\n"
-        "Main residual psycholinguistic effects",
-        fontsize=11,
-    )
+    fig.suptitle(suptitle, fontsize=11)
     fig.tight_layout()
-    path = output_dir / "short_only_morphology_vs_lexicality.png"
+    path = output_dir / filename
     fig.savefig(path, dpi=_DPI, bbox_inches="tight")
     plt.close(fig)
     print(f"[summarize_length_controlled] Written: {path}")
 
 
-# ── Output 4: temporal_fi_short_only.png ─────────────────────────────────────
+def plot_short_only_morph_vs_lex(combined: pd.DataFrame, output_dir: Path) -> None:
+    _plot_morph_vs_lex(
+        combined, output_dir,
+        analysis_view="all_items_short_only",
+        filename="short_only_morphology_vs_lexicality.png",
+        suptitle=(
+            "Morphology vs lexicality FI after length control (short_only)\n"
+            "Main residual psycholinguistic effects"
+        ),
+    )
 
 
-def plot_temporal_fi_short_only(temporal: pd.DataFrame, output_dir: Path) -> None:
+def plot_long_only_morph_vs_lex(combined: pd.DataFrame, output_dir: Path) -> None:
+    _plot_morph_vs_lex(
+        combined, output_dir,
+        analysis_view="all_items_long_only",
+        filename="long_only_morphology_vs_lexicality.png",
+        suptitle=(
+            "Morphology vs lexicality FI after length control (long_only)\n"
+            "Residual effects are weaker/mixed; DAC shows small lexicality signal"
+        ),
+    )
+
+
+# ── Outputs 5 & 6: temporal FI profiles ──────────────────────────────────────
+
+
+def _plot_temporal_fi(
+    temporal: pd.DataFrame,
+    output_dir: Path,
+    analysis_view: str,
+    filename: str,
+    suptitle: str,
+) -> None:
+    """Shared temporal FI grid for morphology/lexicality in a single analysis_view."""
     df = temporal[
-        (temporal["analysis_view"] == "all_items_short_only") &
+        (temporal["analysis_view"] == analysis_view) &
         (temporal["feature"].isin(["morphology", "lexicality"]))
     ].copy()
 
     if df.empty:
         print(
-            "[summarize_length_controlled] WARNING: no temporal short_only data — "
-            "skipping temporal_fi_short_only.png"
+            f"[summarize_length_controlled] WARNING: no temporal {analysis_view} data — "
+            f"skipping {filename}"
         )
         return
 
@@ -370,10 +406,7 @@ def plot_temporal_fi_short_only(temporal: pd.DataFrame, output_dir: Path) -> Non
                     )
 
             ax.axhline(0, color="gray", linewidth=0.6, linestyle=":", zorder=0)
-            ax.set_title(
-                f"{model.upper()} / {layer.replace('_', ' ')}",
-                fontsize=9,
-            )
+            ax.set_title(f"{model.upper()} / {layer.replace('_', ' ')}", fontsize=9)
             ax.set_xlim(0, 1)
             if c == 0:
                 ax.set_ylabel("Mean FI", fontsize=8)
@@ -382,19 +415,133 @@ def plot_temporal_fi_short_only(temporal: pd.DataFrame, output_dir: Path) -> Non
             if r == 0 and c == len(layers_present) - 1:
                 ax.legend(fontsize=7, loc="upper right", framealpha=0.8)
 
-    fig.suptitle(
-        "Temporal FI profile — all_items_short_only\n"
-        "Solid: all-speakers  |  Dashed: male-only",
-        fontsize=11,
-    )
+    fig.suptitle(suptitle, fontsize=11)
     fig.tight_layout()
-    path = output_dir / "temporal_fi_short_only.png"
+    path = output_dir / filename
     fig.savefig(path, dpi=_DPI, bbox_inches="tight")
     plt.close(fig)
     print(f"[summarize_length_controlled] Written: {path}")
 
 
-# ── Output 5: speaker_effect_summary.png ─────────────────────────────────────
+def plot_temporal_fi_short_only(temporal: pd.DataFrame, output_dir: Path) -> None:
+    _plot_temporal_fi(
+        temporal, output_dir,
+        analysis_view="all_items_short_only",
+        filename="temporal_fi_short_only.png",
+        suptitle=(
+            "Temporal FI profile — all_items_short_only\n"
+            "Solid: all-speakers  |  Dashed: male-only"
+        ),
+    )
+
+
+def plot_temporal_fi_long_only(temporal: pd.DataFrame, output_dir: Path) -> None:
+    _plot_temporal_fi(
+        temporal, output_dir,
+        analysis_view="all_items_long_only",
+        filename="temporal_fi_long_only.png",
+        suptitle=(
+            "Temporal FI profile — all_items_long_only\n"
+            "Solid: all-speakers  |  Dashed: male-only"
+        ),
+    )
+
+
+# ── Output 7: male_only_short_long_fi_summary.png ────────────────────────────
+
+
+def plot_male_only_short_long_fi_summary(
+    combined: pd.DataFrame, output_dir: Path
+) -> None:
+    """Bar chart: male-only morphology + lexicality FI for short_only vs long_only.
+
+    Provides the male-only baseline to compare against all-speakers results.
+    One panel per model; bars grouped by length view, split by feature.
+    Separate bars per layer (encoder_out, decoder_in).
+    """
+    df = combined[
+        (combined["speaker_set"] == "male_only") &
+        (combined["analysis_view"].isin(["all_items_short_only", "all_items_long_only"])) &
+        (combined["feature"].isin(["morphology", "lexicality"]))
+    ].copy()
+
+    if df.empty:
+        print(
+            "[summarize_length_controlled] WARNING: no male_only short/long data — "
+            "skipping male_only_short_long_fi_summary.png"
+        )
+        return
+
+    models_present = [m for m in _MODEL_ORDER if m in df["model_name"].unique()]
+    layers_present = [l for l in _LAYER_ORDER if l in df["layer"].unique()]
+    views_order    = ["all_items_short_only", "all_items_long_only"]
+
+    fig, axes = plt.subplots(
+        1, len(models_present),
+        figsize=(7 * len(models_present), 5),
+        sharey=False,
+    )
+    if len(models_present) == 1:
+        axes = [axes]
+
+    for ax, model_name in zip(axes, models_present):
+        sub = df[df["model_name"] == model_name]
+
+        # Groups: view × layer
+        groups = [
+            (view, layer)
+            for view in views_order for layer in layers_present
+            if not sub[(sub["analysis_view"] == view) & (sub["layer"] == layer)].empty
+        ]
+
+        x     = np.arange(len(groups))
+        width = 0.38
+
+        for j, feat in enumerate(["morphology", "lexicality"]):
+            vals = []
+            for view, layer in groups:
+                row = sub[
+                    (sub["analysis_view"] == view) &
+                    (sub["layer"] == layer) &
+                    (sub["feature"] == feat)
+                ]
+                vals.append(
+                    float(row["mean_fi_over_time_and_neurons"].iloc[0])
+                    if not row.empty else 0.0
+                )
+            offset = (j - 0.5) * width
+            ax.bar(
+                x + offset, vals, width * 0.92,
+                label=feat, color=_FEAT_COLOR[feat], alpha=0.85,
+            )
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [
+                f"{view.replace('all_items_', '')}\n"
+                f"{layer.replace('encoder_out', 'enc_out').replace('decoder_in', 'dec_in')}"
+                for view, layer in groups
+            ],
+            fontsize=8,
+        )
+        ax.set_title(f"{model_name.upper()} — male_only", fontsize=10)
+        ax.set_ylabel("Mean FI over time × neurons")
+        ax.axhline(0, color="black", linewidth=0.6, linestyle=":")
+        ax.legend(fontsize=8)
+
+    fig.suptitle(
+        "Male-only baseline: morphology vs lexicality FI — short_only vs long_only\n"
+        "(length_bin dropped in both views as constant after filtering)",
+        fontsize=11,
+    )
+    fig.tight_layout()
+    path = output_dir / "male_only_short_long_fi_summary.png"
+    fig.savefig(path, dpi=_DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[summarize_length_controlled] Written: {path}")
+
+
+# ── Output 8: speaker_effect_summary.png ─────────────────────────────────────
 
 
 def plot_speaker_effect(combined: pd.DataFrame, output_dir: Path) -> None:
@@ -610,8 +757,11 @@ def main() -> None:
     _EXPECTED_OUTPUTS = [
         "fi_global_comparison.csv",
         "fi_global_heatmap.png",
+        "male_only_short_long_fi_summary.png",
         "short_only_morphology_vs_lexicality.png",
+        "long_only_morphology_vs_lexicality.png",
         "temporal_fi_short_only.png",
+        "temporal_fi_long_only.png",
         "speaker_effect_summary.png",
         "summary_readme.md",
     ]
@@ -635,12 +785,15 @@ def main() -> None:
 
     combined_global, combined_temporal = load_all_summaries(summaries)
 
-    write_comparison_csv(combined_global,              output_dir)
-    plot_fi_heatmap(combined_global,                   output_dir)
-    plot_short_only_morph_vs_lex(combined_global,      output_dir)
-    plot_temporal_fi_short_only(combined_temporal,     output_dir)
-    plot_speaker_effect(combined_global,               output_dir)
-    write_readme(combined_global, summaries,           output_dir)
+    write_comparison_csv(combined_global,                   output_dir)
+    plot_fi_heatmap(combined_global,                        output_dir)
+    plot_male_only_short_long_fi_summary(combined_global,   output_dir)
+    plot_short_only_morph_vs_lex(combined_global,           output_dir)
+    plot_long_only_morph_vs_lex(combined_global,            output_dir)
+    plot_temporal_fi_short_only(combined_temporal,          output_dir)
+    plot_temporal_fi_long_only(combined_temporal,           output_dir)
+    plot_speaker_effect(combined_global,                    output_dir)
+    write_readme(combined_global, summaries,                output_dir)
 
     print(f"\n[summarize_length_controlled] Done — all outputs in {output_dir}")
 

@@ -1,6 +1,6 @@
 # Audio Codec Extension — Project State
 
-*Last updated: 2026-04-27 · Branch: `feat/audio-encoding-analyses` (branched from `feat/audio-pca-visualization`)*
+*Last updated: 2026-05-05 · Branch: `feat/audio-encoding-analyses` (branched from `feat/audio-pca-visualization`)*
 
 ---
 
@@ -118,15 +118,19 @@ swp/audio/
     └── unit_profiles.py      # per-unit FI profiles, dominance, top-k tables + figures
 
 scripts/audio/
-├── setup_paradigm.py              # Step 0: build processed CSV from raw paradigm data
-├── sanity_check.py                # Smoke test for any registered model
-├── extract.py                     # Step 1 CLI: metrics + activation extraction
-├── build_xarray.py                # Step 5 CLI: canonical xarray export
-├── run_univariate_encoding.py     # Step 6 CLI: per-neuron Ridge CV
-├── summarize_univariate_encoding.py  # Step 7 CLI: aggregate summaries
-├── plot_univariate_encoding_summary.py  # Step 8 CLI: figures
-├── compare_univariate_codecs.py   # Step 9 CLI: cross-codec comparison
-└── build_unit_profiles.py         # Step 10 CLI: unit-level FI profiles
+├── setup_paradigm.py                        # Step 0: build processed CSV from raw paradigm data
+├── sanity_check.py                          # Smoke test for any registered model
+├── extract.py                               # Step 1 CLI: metrics + activation extraction
+├── build_xarray.py                          # Step 5 CLI: canonical xarray export
+├── run_univariate_encoding.py               # Step 6 CLI: per-neuron Ridge CV
+├── summarize_univariate_encoding.py         # Step 7 CLI: aggregate summaries (both layers in one call)
+├── plot_univariate_encoding_summary.py      # Step 8 CLI: per-view diagnostic plots
+├── summarize_length_controlled_encoding.py  # Step 9 CLI: cross-view canonical summary
+├── inspect_encoding_units.py               # Step 10 CLI: unit-level FI inspection
+├── build_final_encoding_report.py          # Step 11 CLI: assemble canonical figures + report.md
+├── PIPELINE.md                             # Technical step-by-step reference
+├── compare_univariate_codecs.py            # LEGACY — not analysis_view-safe
+└── build_unit_profiles.py                  # LEGACY — not analysis_view-safe
 
 reproduce/scripts/audio/
 ├── analysis.py          # Step 2: signal metric OLS + bar plots
@@ -150,28 +154,35 @@ New dependencies added to `requirements.txt`:
 ## 4. End-to-end pipeline
 
 ```
-Step 0  setup_paradigm.py                Raw WAVs + metadata.csv → processed/subset_male.csv
+Step 0  setup_paradigm.py                        Raw WAVs + metadata.csv → processed CSVs
            ↓
-Step 1  extract.py                       Codec forward pass → metrics.csv + activations/*.pt
+Step 1  extract.py                               Codec forward pass → metrics.csv + activations/*.pt
            ↓
-Step 2  analysis.py                      metrics.csv → OLS regressions + bar plots (signal level)
+Step 2  analysis.py                              metrics.csv → OLS regressions + bar plots (signal level)
            ↓
-Step 3  activation_analysis.py           activations/*.pt → OLS regressions + plots (latent level)
+Step 3  activation_analysis.py                   activations/*.pt → OLS regressions + plots (latent level)
            ↓
-Step 4  pca_analysis.py                  activations/*.pt → PCA geometry + condition distances
+Step 4  pca_analysis.py                          activations/*.pt → PCA geometry + condition distances
            ↓
-Step 5  build_xarray.py                  activations/*.pt → canonical xarray (trials, time, neurons)
+Step 5  build_xarray.py                          activations/*.pt → canonical xarray (trials, time, neurons)
            ↓
-Step 6  run_univariate_encoding.py       xarray → per-neuron Ridge CV → scores/weights/FI CSVs
+Step 6  run_univariate_encoding.py               xarray → per-neuron Ridge CV → scores/weights/FI CSVs
            ↓
-Step 7  summarize_univariate_encoding.py per-neuron CSVs → summary CSVs (global ranking, FI, scores)
+Step 7  summarize_univariate_encoding.py         per-neuron CSVs → summary CSVs (both layers, ONE call)
            ↓
-Step 8  plot_univariate_encoding_summary.py summary CSVs → score/weight/FI figures
+Step 8  plot_univariate_encoding_summary.py      summary CSVs → per-view diagnostic plots
            ↓
-Step 9  compare_univariate_codecs.py     summary dirs (×2) → cross-codec CSVs + figures
+Step 9  summarize_length_controlled_encoding.py  summary dirs → cross-view canonical figures
            ↓
-Step 10 build_unit_profiles.py           FI CSVs → unit-level dominance profiles + figures
+Step 10 inspect_encoding_units.py               FI CSVs (both layers) → unit-level inspection
+           ↓
+Step 11 build_final_encoding_report.py           collect canonical figures + write report.md
 ```
+
+> **Steps 9–10 are superseded.** The legacy scripts `compare_univariate_codecs.py` (old
+> Step 9) and `build_unit_profiles.py` (old Step 10) are not analysis_view-safe and should
+> not be used for current multi-view analyses. They are kept in the repo with `# LEGACY`
+> headers but should not appear in any new analysis workflow.
 
 ### Caching / idempotence
 
@@ -347,40 +358,38 @@ By contrast:
 - **lexicality effects do not survive frame-controlled analyses**
 - morphology and frequency effects are weaker, less consistent, and more model-dependent
 
-### Univariate encoding results (Steps 6–10)
+### Univariate encoding results — finalized (chantier 2.5)
 
-The univariate encoding analyses (Ridge regression, nested CV 5×5, permutation FI) were run
-for both codecs (`encoder_out` and `decoder_in`) and both analysis sets (`all_items`, `words_only`).
+The encoding analyses now include a two-speaker dataset (360 trials), length-filtered views,
+and an optional speaker covariate. See Section 7h for full details.
 
-Current descriptive findings:
+**Main findings:**
 
-- **Length dominates**: `length_bin` is consistently the feature with the highest FI across
-  codecs, layers, and analysis sets. This holds in both EnCodec (128 units) and DAC (1024 units).
-- **EnCodec FI is globally stronger** in absolute magnitude than DAC, but both models show the
-  same qualitative feature hierarchy: `length_bin` >> `morphology` > `lexicality` / `frequency_bin`.
-- **Lexicality is not a globally robust signal**: `lexicality` does not emerge as a strong
-  effect in either model's global FI ranking.
-- **Morphology and frequency are present but weak**: they appear in unit-level profiles but
-  do not dominate the FI distribution.
-- **Unit profiles** (Section 7f) suggest that sub-populations of units may be less purely
-  length-dominant, but no strong claim is made yet — this is a direction for clustering (Phase C).
+- **Full views dominated by `length_bin`**: `length_bin` is rank 1 for both EnCodec and DAC
+  across all layers in `all_items_all_speakers`. This holds for both speakers.
+- **Short-only: morphology robustly dominates lexicality** after length control. The effect is
+  consistent across both models and speaker sets. Lexicality remains weak at the population level.
+- **Long-only: effects are weaker and mixed.** DAC shows a small lexicality-leading signal in
+  some configurations, but this is not clearly robust across all-speakers and both models.
+- **Speaker identity is a very strong acoustic axis.** In speakerctrl views, speaker FI is
+  comparable to or exceeds `length_bin` in some configurations.
+- **Lexicality is sparse and localized at unit level.** It is not absent globally, but
+  concentrated in a small fraction of units — predominantly in DAC decoder_in short_only.
 
-These are descriptive observations from summary statistics. No formal inferential tests have
-been applied to the encoding model outputs.
+**Key caveats for interpretation:**
 
-### Current scientific interpretation
+- Permutation FI (`global_fi_ranking.csv`) is the canonical metric. Ridge regression weights
+  (`global_feature_ranking.csv`) are diagnostic only; weight and FI rankings can disagree
+  (seen in DAC long_only).
+- `speakerctrl` models speaker as a covariate in the Ridge design matrix; it does not remove
+  speaker information from the activations themselves.
+- Negative R² in per-neuron models means prediction is worse than the mean baseline — expected
+  when length is removed and residual factors explain little variance. It is not a regularization
+  artifact. Spearman is the preferred quality metric at the neuron level.
+- Unit-level inspection focuses on `all_items` views. `words_only`/frequency analyses are
+  available in per-run summaries but are not part of the canonical unit-level inspection.
 
-At this stage, the strongest conclusion is:
-
-> Across two quite different neural audio codecs, the most robust result is a latent length
-> effect. By contrast, lexicality does not currently show a robust signal in encoding analyses
-> or frame-controlled activation analyses.
-
-This is consistent with the PCA and OLS results from Steps 3–4, and is now additionally
-supported by the unit-level permutation FI from Steps 6–10.
-
-The codecs appear to strongly encode sequential/temporal load, but do not yet provide clear
-evidence for a dual-route-like lexical vs non-lexical separation.
+These are descriptive observations. No formal inferential tests have been applied.
 
 ---
 
@@ -529,43 +538,41 @@ python scripts/audio/summarize_univariate_encoding.py \
 
 ## 7d. Plots (Step 8)
 
-`plot_univariate_encoding_summary.py` reads summary CSVs and writes figures to `{summary_dir}/plots/`.
+`plot_univariate_encoding_summary.py` reads summary CSVs and writes **diagnostic** figures to
+`{summary_dir}/diagnostic_plots/`. These figures are useful for checking individual
+analysis_views but are not canonical — canonical figures come from Steps 9–11.
 
 | Figure | What it shows |
 |--------|--------------|
-| `score_over_time_{model}_r2.png` | R² over relative time, all layers, all analysis sets |
-| `score_over_time_{model}_spearman.png` | Same for Spearman ρ |
-| `weights_over_time_{model}_all_items.png` | Feature weights over time (all_items) |
-| `weights_over_time_{model}_words_only.png` | Feature weights over time (words_only) |
-| `global_feature_ranking_{model}.png` | Bar: mean \|weight\| over time × neurons, ranked |
-| `encoding_fi_{model}_{layer}_{analysis_set}_{metric}.png` | **FI over time + score superimposed.** Closest to the Intracranial-style figure. One panel per feature. |
+| `score_over_time_{model}_{view}_r2.png` | R² over relative time per analysis_view |
+| `score_over_time_{model}_{view}_spearman.png` | Same for Spearman ρ |
+| `weights_over_time_{model}_{view}.png` | Feature weights over time per analysis_view *(diagnostic)* |
+| `global_feature_ranking_{model}_{view}.png` | Mean \|weight\| ranked by feature *(weight-based; diagnostic)* |
+| `encoding_fi_{model}_{layer}_{view}_{metric}.png` | FI over time + score (Intracranial-style) |
 
 ```bash
-# Base figures (score, weights, global ranking)
+# Per-view diagnostic plots (output to diagnostic_plots/, NOT plots/)
 python scripts/audio/plot_univariate_encoding_summary.py \
     --summary-dir reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
-    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/plots/ \
-    --overwrite
-
-# With encoding_fi figures (requires --fi-dirs pointing to compute-fi run dirs)
-python scripts/audio/plot_univariate_encoding_summary.py \
-    --summary-dir reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
-    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/plots/ \
+    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/diagnostic_plots/ \
     --fi-dirs \
         reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
         reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
     --overwrite
 ```
 
 ---
 
-## 7e. Cross-codec comparison (Step 9)
+## 7e. Cross-codec comparison (Step 9) — LEGACY
+
+> **LEGACY — not analysis_view-safe.** `univariate_compare.py` groups only by
+> `analysis_set` and will silently mix all analysis_views (short_only, long_only,
+> all_speakers) into the same rows. Use `summarize_length_controlled_encoding.py`
+> (Step 9 in the finalized pipeline) for cross-view comparisons.
 
 Compares EnCodec vs DAC on all summary outputs.
 
-**Scripts:** `swp/audio/encoding/univariate_compare.py`, `scripts/audio/compare_univariate_codecs.py`
+**Scripts:** `swp/audio/encoding/univariate_compare.py` *(LEGACY)*, `scripts/audio/compare_univariate_codecs.py` *(LEGACY)*
 
 ### CSVs produced
 
@@ -598,7 +605,11 @@ Compares EnCodec vs DAC on all summary outputs.
 - `lexicality` and `frequency_bin` remain weak relative to `length_bin` in both models.
 - These are descriptive observations from summary statistics; no formal comparison test has been run.
 
+These commands are preserved only for historical reproducibility and should not be used for
+current results. Use `summarize_length_controlled_encoding.py` (Step 9) instead.
+
 ```bash
+# LEGACY ONLY — do not use for current analysis_view-safe pipeline
 python scripts/audio/compare_univariate_codecs.py \
     --summaries \
         reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
@@ -610,11 +621,17 @@ python scripts/audio/compare_univariate_codecs.py \
 
 ---
 
-## 7f. Unit profiles (Step 10)
+## 7f. Unit profiles (Step 10) — LEGACY
+
+> **LEGACY — not analysis_view-safe.** `unit_profiles.py` uses
+> `_UNIT_COLS = ["run_id", "model_name", "layer", "analysis_set", "neuron"]` without
+> `analysis_view`, so all views (short_only, long_only, all_speakers) are collapsed into
+> the same neuron row. Use `inspect_encoding_units.py` (Step 10 in the finalized pipeline)
+> for unit-level analyses.
 
 Per-unit feature importance profiles, built from `feature_importance.csv` outputs.
 
-**Scripts:** `swp/audio/encoding/unit_profiles.py`, `scripts/audio/build_unit_profiles.py`
+**Scripts:** `swp/audio/encoding/unit_profiles.py` *(LEGACY)*, `scripts/audio/build_unit_profiles.py` *(LEGACY)*
 
 ### Key concepts
 
@@ -660,7 +677,11 @@ Per-unit feature importance profiles, built from `feature_importance.csv` output
 | `frequency_top_units_by_model_layer_bar.png` | idem for frequency_bin |
 | `morphology_top_units_by_model_layer_bar.png` | idem for morphology |
 
+These commands are preserved only for historical reproducibility and should not be used for
+current results. Use `inspect_encoding_units.py` (Step 10) instead.
+
 ```bash
+# LEGACY ONLY — do not use for current analysis_view-safe pipeline
 python scripts/audio/build_unit_profiles.py \
     --fi-dirs \
         reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
@@ -707,6 +728,86 @@ Old-vs-new non-regression was validated with `np.allclose` across:
 `times`, `scores[*][median/std/all_folds]`, `weights[mean/all_folds]`, `fi[mean/std/all_folds]`.
 Results were bit-for-bit identical (prebinned mode: `y[:, w]` unchanged in both versions).
 Downstream smoke test (`run_univariate_encoding.py`, 3 neurons, 3 bins) passed.
+
+---
+
+## 7h. Length-controlled encoding analyses — finalized (chantier 2.5)
+
+### Motivation
+
+The original male-only analyses (180 trials) are dominated by `length_bin` at the
+population level. Chantier 2.5 adds:
+1. A two-speaker dataset (MALE + FEMALE, 360 trials), using `subset_all_speakers.csv`.
+2. Length-filtered analysis views (`short_only`, `long_only`) to test whether other
+   factors emerge once length variance is removed.
+3. An optional speaker covariate (`--include-speaker-covariate`) for nuisance control.
+4. Automatic constant-feature dropping with documentation in `config.json` and `qc_check.json`.
+
+### analysis_set vs analysis_view
+
+- **`analysis_set`**: feature family — `all_items` (lexicality, length_bin, morphology)
+  or `words_only` (frequency_bin, length_bin, morphology). Stored in output CSVs.
+- **`analysis_view`**: concrete experimental condition — derived from the output directory
+  name at summarize time. Examples: `all_items_short_only`, `all_items_all_speakers_speakerctrl`.
+  Never group summaries by `analysis_set` alone when multiple `analysis_view` values are present.
+
+### Run IDs
+
+| Dataset | Model | Run ID |
+|---|---|---|
+| all-speakers (360 trials) | EnCodec | `encodec__b429aeea` |
+| all-speakers (360 trials) | DAC | `dac__d466515b` |
+| male-only (180 trials) | EnCodec | `encodec__7f7d3b97` |
+| male-only (180 trials) | DAC | `dac__f104bbdd` |
+
+### Analysis views (canonical)
+
+| analysis_view | Trials | Features in X | Notes |
+|---|---|---|---|
+| `all_items_all_speakers` | 360 | lex, len, morph | Full dataset |
+| `all_items_all_speakers_speakerctrl` | 360 | lex, len, morph, speaker | Speaker as nuisance covariate |
+| `all_items_short_only` | 180 | lex, morph | `length_bin` dropped (constant after filter) |
+| `all_items_short_only_speakerctrl` | 180 | lex, morph, speaker | — |
+| `all_items_long_only` | 180 | lex, morph | `length_bin` dropped |
+| `all_items_long_only_speakerctrl` | 180 | lex, morph, speaker | — |
+| `words_only_all_speakers` | 180 | freq, len, morph | Words only |
+| `words_only_all_speakers_speakerctrl` | 180 | freq, len, morph, speaker | — |
+
+Male-only runs: `all_items_short_only` and `all_items_long_only` only (no speakerctrl;
+speaker is constant in male-only).
+
+### Finalized output structure
+
+```
+reproduce/figures/audio/encoding/
+
+  {run_id}/{layer}/univariate/{analysis_view}/   ← raw per-view outputs
+  {run_id}/univariate_summary/                   ← aggregated CSVs (all views + layers)
+    diagnostic_plots/                            ← per-view diagnostic PNGs (NOT canonical)
+    plots_aggregate_legacy/                      ← OLD plots mixing analysis_views (ignore)
+
+  length_controlled_summary/                     ← canonical cross-view summary figures
+  unit_inspection/                               ← canonical unit-level inspection
+  final/                                         ← 8 canonical figures + report.md
+```
+
+### Canonical final figures
+
+| # | Filename | Scientific message |
+|---|---|---|
+| 01 | `01_fi_global_heatmap.png` | Full picture: length dominates; morphology residual after control |
+| 02 | `02_male_only_short_long_fi_summary.png` | Male-only baseline: short_only vs long_only |
+| 03 | `03_short_only_morphology_vs_lexicality.png` | Morphology > lexicality after length control |
+| 04 | `04_long_only_morphology_vs_lexicality.png` | Long-only: weaker/mixed; small DAC lex signal |
+| 05 | `05_speaker_effect_summary.png` | Speaker identity is a strong acoustic axis |
+| 06 | `06_temporal_fi_short_only.png` | Temporal profile of residual factors in short_only |
+| 07 | `07_unit_dominance_counts.png` | Fraction of units per view dominated by each feature |
+| 08 | `08_lexicality_concentration.png` | Lexicality is sparse/localized at unit level |
+
+### Canonical scripts (Steps 9–11)
+
+See `README_audio.md` §"Steps 9–11 — Finalized encoding analysis pipeline" for exact
+commands and `scripts/audio/PIPELINE.md` for the detailed technical reference.
 
 ---
 
@@ -824,8 +925,12 @@ python reproduce/scripts/audio/pca_analysis.py \
 
 ## 8. Current limitations
 
-- **Single speaker processed so far**: only the male speaker subset (`subset_male.csv`) has
-  been used in the current validated runs.
+- **Speaker coverage**: The original extraction, signal-level, activation-level, and PCA
+  pipeline (Steps 1–4) was first validated on the male-only subset (`subset_male.csv`, 180
+  items, run IDs `encodec__7f7d3b97` and `dac__f104bbdd`). The finalized encoding analysis
+  (Steps 6–11, chantier 2.5) now uses all-speakers runs (`encodec__b429aeea`,
+  `dac__d466515b`, 360 trials). Signal-level and PCA outputs may still be male-only unless
+  explicitly rerun on all-speakers data.
 - **PCA cross-model comparison panel**: EnCodec and DAC PCA analyses run separately; no joint
   comparison panel.
 - **No multivariate encoding yet**: univariate Ridge is implemented; multivariate analyses
@@ -850,18 +955,25 @@ python reproduce/scripts/audio/pca_analysis.py \
 | PCA / visualization (Step 4) | ✓ implemented |
 | xarray export (Step 5) | ✓ implemented |
 | Univariate encoding + FI (Steps 6–7) | ✓ implemented and validated |
-| Summaries + plots (Steps 7–8) | ✓ implemented |
-| Cross-codec comparison (Step 9) | ✓ implemented |
-| Unit profiles (Step 10) | ✓ implemented |
+| Per-view diagnostic plots (Step 8) | ✓ implemented |
+| Cross-view compact summary (Step 9) | ✓ implemented (`summarize_length_controlled_encoding.py`) |
+| Unit-level FI inspection (Step 10) | ✓ implemented (`inspect_encoding_units.py`) |
+| Final encoding report (Step 11) | ✓ implemented (`build_final_encoding_report.py`) |
+| Length-controlled encoding analyses (chantier 2.5) | ✓ completed — all-speakers + short/long/speakerctrl views |
+
+> **Note:** The legacy cross-codec comparison (`compare_univariate_codecs.py`, old Step 9)
+> and unit profile scripts (`build_unit_profiles.py`, old Step 10) are superseded by the
+> above analysis_view-safe tools.
 
 ### Immediate next: clustering (Phase C)
 
-The unit profile features (`unit_feature_dominance.csv`, `unit_fi_profiles_wide.csv`) are ready
-to feed a clustering analysis. The goal is to identify groups of units with coherent FI profiles.
+Unit-level FI stats are available in `unit_inspection/unit_fi_stats.csv` and
+`unit_inspection/unit_dominance.csv`. These are ready to feed a clustering analysis
+targeting groups of units with coherent FI profiles.
 
 **The representation of a unit for clustering remains open**: candidate options include
-mean_fi vector over features, mean_abs_fi vector, temporal FI profile, candidate scores,
-or combinations. This choice should be motivated before implementing.
+max_fi_over_time vector over features, mean_fi_over_time vector, temporal FI profile, or
+combinations. This choice should be motivated before implementing.
 
 Contact: **Louis Jalouzot** for multivariate / clustering directions.
 
@@ -886,7 +998,7 @@ The clustering results will inform which units or groups to ablate.
 ## 10. How to run the full pipeline (quick reference)
 
 ```bash
-# Step 0: build processed CSV (one-time)
+# Step 0: build processed CSVs (one-time, per speaker)
 python scripts/audio/setup_paradigm.py \
     --metadata data/external/paradigm/raw/metadata.csv \
     --wav-dir   data/external/paradigm/raw/wav \
@@ -897,17 +1009,11 @@ python scripts/audio/setup_paradigm.py \
 python scripts/audio/sanity_check.py --model encodec
 python scripts/audio/sanity_check.py --model dac
 
-# Step 1: full extraction runs
+# Step 1: full extraction (example: male-only)
 python scripts/audio/extract.py \
     --model encodec --model-arg bandwidth=6.0 \
     --dataset data/external/paradigm/processed/subset_male.csv \
-    --layers encoder_out decoder_in decoder_out \
-    --output reproduce/data/audio/ --regenerate
-
-python scripts/audio/extract.py \
-    --model dac --model-arg model_type=24khz \
-    --dataset data/external/paradigm/processed/subset_male.csv \
-    --layers encoder_out decoder_in decoder_out \
+    --layers encoder_out decoder_in \
     --output reproduce/data/audio/ --regenerate
 
 # Step 2: signal-level analyses
@@ -924,38 +1030,90 @@ python reproduce/scripts/audio/pca_analysis.py \
 
 # Step 5: xarray export
 python scripts/audio/build_xarray.py \
-    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --run reproduce/data/audio/encodec__b429aeea/ \
     --layers encoder_out decoder_in
 
-python scripts/audio/build_xarray.py \
-    --run reproduce/data/audio/dac__f104bbdd/ \
-    --layers encoder_out decoder_in
-
-# Step 6: univariate encoding (example: encodec encoder_out all_items with FI)
+# Step 6: univariate encoding — one call per (analysis_view, layer)
+# Example: all-speakers run, encoder_out, short_only view
 python scripts/audio/run_univariate_encoding.py \
-    --xarray reproduce/data/audio/encodec__7f7d3b97/xarray/encoder_out.nc \
-    --analysis-set all_items \
-    --n-bins 10 --metrics r2 spearman \
-    --compute-fi --n-jobs -1 \
-    --output reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/
+    --xarray reproduce/data/audio/encodec__b429aeea/xarray/encoder_out.nc \
+    --analysis-set all_items --trial-filter length_bin=short \
+    --n-bins 10 --metrics r2 spearman --compute-fi --n-jobs -1 \
+    --output reproduce/figures/audio/encoding/encodec__b429aeea/encoder_out/univariate/all_items_short_only/
 
-# Step 7: summaries
+# Step 7: summaries — both layers in ONE call per run
+ENC=reproduce/figures/audio/encoding/encodec__b429aeea
 python scripts/audio/summarize_univariate_encoding.py \
     --inputs \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
-    --output reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
-    --overwrite
+        ${ENC}/encoder_out/univariate/all_items_all_speakers/ \
+        ${ENC}/encoder_out/univariate/all_items_short_only/ \
+        ${ENC}/encoder_out/univariate/all_items_long_only/ \
+        ${ENC}/encoder_out/univariate/words_only_all_speakers/ \
+        ${ENC}/decoder_in/univariate/all_items_all_speakers/ \
+        ${ENC}/decoder_in/univariate/all_items_short_only/ \
+        ${ENC}/decoder_in/univariate/all_items_long_only/ \
+        ${ENC}/decoder_in/univariate/words_only_all_speakers/ \
+    --output ${ENC}/univariate_summary/ --overwrite
 
-# Step 8: plots (add --fi-dirs for encoding_fi figures)
+# Step 8: per-view diagnostic plots (output to diagnostic_plots/, NOT canonical)
 python scripts/audio/plot_univariate_encoding_summary.py \
-    --summary-dir reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
-    --output      reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/plots/ \
+    --summary-dir ${ENC}/univariate_summary/ \
+    --output      ${ENC}/univariate_summary/diagnostic_plots/ \
     --overwrite
 
-# Step 9: cross-codec comparison
+# Step 9: cross-view compact summary (canonical figures)
+DAC=reproduce/figures/audio/encoding/dac__d466515b
+ENC_M=reproduce/figures/audio/encoding/encodec__7f7d3b97
+DAC_M=reproduce/figures/audio/encoding/dac__f104bbdd
+
+python scripts/audio/summarize_length_controlled_encoding.py \
+    --summaries \
+        all_speakers:${ENC}/univariate_summary/ \
+        all_speakers:${DAC}/univariate_summary/ \
+        male_only:${ENC_M}/univariate_summary_length_controlled/ \
+        male_only:${DAC_M}/univariate_summary_length_controlled/ \
+    --output reproduce/figures/audio/encoding/length_controlled_summary/ --overwrite
+
+# Step 10: unit-level FI inspection (both layers, EnCodec + DAC only)
+python scripts/audio/inspect_encoding_units.py \
+    --fi-dirs \
+        all_speakers:${ENC}/encoder_out/univariate/all_items_all_speakers/ \
+        all_speakers:${ENC}/encoder_out/univariate/all_items_short_only/ \
+        all_speakers:${ENC}/encoder_out/univariate/all_items_long_only/ \
+        all_speakers:${ENC}/decoder_in/univariate/all_items_all_speakers/ \
+        all_speakers:${ENC}/decoder_in/univariate/all_items_short_only/ \
+        all_speakers:${ENC}/decoder_in/univariate/all_items_long_only/ \
+        all_speakers:${DAC}/encoder_out/univariate/all_items_all_speakers/ \
+        all_speakers:${DAC}/encoder_out/univariate/all_items_short_only/ \
+        all_speakers:${DAC}/encoder_out/univariate/all_items_long_only/ \
+        all_speakers:${DAC}/decoder_in/univariate/all_items_all_speakers/ \
+        all_speakers:${DAC}/decoder_in/univariate/all_items_short_only/ \
+        all_speakers:${DAC}/decoder_in/univariate/all_items_long_only/ \
+        male_only:${ENC_M}/encoder_out/univariate/all_items_short_only/ \
+        male_only:${ENC_M}/decoder_in/univariate/all_items_short_only/ \
+        male_only:${ENC_M}/encoder_out/univariate/all_items_long_only/ \
+        male_only:${ENC_M}/decoder_in/univariate/all_items_long_only/ \
+        male_only:${DAC_M}/encoder_out/univariate/all_items_short_only/ \
+        male_only:${DAC_M}/decoder_in/univariate/all_items_short_only/ \
+        male_only:${DAC_M}/encoder_out/univariate/all_items_long_only/ \
+        male_only:${DAC_M}/decoder_in/univariate/all_items_long_only/ \
+    --output reproduce/figures/audio/encoding/unit_inspection/ \
+    --top-k 20 --min-fi-for-dominance 0.001 --min-dominance-margin 0.003 --overwrite
+
+# Step 11: final assembly
+python scripts/audio/build_final_encoding_report.py \
+    --length-controlled-summary reproduce/figures/audio/encoding/length_controlled_summary/ \
+    --unit-inspection reproduce/figures/audio/encoding/unit_inspection/ \
+    --output reproduce/figures/audio/encoding/final/ --overwrite
+```
+
+### Legacy commands — do not use for current analyses
+
+> These commands use scripts that are **not analysis_view-safe** and will silently mix
+> analysis_views. They are preserved for reference to earlier male-only analyses only.
+
+```bash
+# LEGACY Step 9: cross-codec comparison (old, superseded by Step 9 above)
 python scripts/audio/compare_univariate_codecs.py \
     --summaries \
         reproduce/figures/audio/encoding/encodec__7f7d3b97/univariate_summary/ \
@@ -963,17 +1121,11 @@ python scripts/audio/compare_univariate_codecs.py \
     --labels encodec dac \
     --output reproduce/figures/audio/encoding/codec_comparison/ --overwrite
 
-# Step 10: unit profiles
+# LEGACY Step 10: unit profiles (old, superseded by Step 10 above)
 python scripts/audio/build_unit_profiles.py \
     --fi-dirs \
         reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/encoder_out/univariate/words_only_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/encodec__7f7d3b97/decoder_in/univariate/words_only_fi/ \
         reproduce/figures/audio/encoding/dac__f104bbdd/encoder_out/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/dac__f104bbdd/encoder_out/univariate/words_only_fi/ \
-        reproduce/figures/audio/encoding/dac__f104bbdd/decoder_in/univariate/all_items_fi/ \
-        reproduce/figures/audio/encoding/dac__f104bbdd/decoder_in/univariate/words_only_fi/ \
     --output reproduce/figures/audio/encoding/unit_profiles/ \
     --top-k 30 --overwrite
 ```
@@ -1005,13 +1157,17 @@ python scripts/audio/build_unit_profiles.py \
 | Extraction CLI | `scripts/audio/extract.py` |
 | xarray export | `scripts/audio/build_xarray.py` |
 | Univariate encoding | `scripts/audio/run_univariate_encoding.py` |
-| Summaries | `scripts/audio/summarize_univariate_encoding.py` |
-| Plots | `scripts/audio/plot_univariate_encoding_summary.py` |
-| Cross-codec comparison | `scripts/audio/compare_univariate_codecs.py` |
-| Unit profiles | `scripts/audio/build_unit_profiles.py` |
+| Summaries (Step 7) | `scripts/audio/summarize_univariate_encoding.py` |
+| Diagnostic plots (Step 8) | `scripts/audio/plot_univariate_encoding_summary.py` |
+| Cross-view summary (Step 9) | `scripts/audio/summarize_length_controlled_encoding.py` |
+| Unit inspection (Step 10) | `scripts/audio/inspect_encoding_units.py` |
+| Final report (Step 11) | `scripts/audio/build_final_encoding_report.py` |
+| Pipeline reference | `scripts/audio/PIPELINE.md` |
 | Signal analysis | `reproduce/scripts/audio/analysis.py` |
 | Activation analysis | `reproduce/scripts/audio/activation_analysis.py` |
 | PCA | `reproduce/scripts/audio/pca_analysis.py` |
+| *(LEGACY)* Cross-codec compare | `scripts/audio/compare_univariate_codecs.py` |
+| *(LEGACY)* Unit profiles | `scripts/audio/build_unit_profiles.py` |
 
 ### Encoding modules
 
@@ -1023,9 +1179,9 @@ python scripts/audio/build_unit_profiles.py \
 | Encoder (Ridge CV) | `swp/audio/encoding/univariate_encoder.py` |
 | Orchestration | `swp/audio/encoding/univariate.py` |
 | Summary generation | `swp/audio/encoding/univariate_summary.py` |
-| Plots | `swp/audio/encoding/univariate_plots.py` |
-| Cross-codec compare | `swp/audio/encoding/univariate_compare.py` |
-| Unit profiles | `swp/audio/encoding/unit_profiles.py` |
+| Plots (diagnostic) | `swp/audio/encoding/univariate_plots.py` |
+| *(LEGACY)* Cross-codec compare | `swp/audio/encoding/univariate_compare.py` |
+| *(LEGACY)* Unit profiles | `swp/audio/encoding/unit_profiles.py` |
 
 ### Output directories
 
@@ -1033,10 +1189,13 @@ python scripts/audio/build_unit_profiles.py \
 |------|-------|
 | Extraction run | `reproduce/data/audio/{run_id}/` |
 | xarray files | `reproduce/data/audio/{run_id}/xarray/` |
-| Univariate results | `reproduce/figures/audio/encoding/{run_id}/{layer}/univariate/{analysis_set}/` |
+| Univariate results | `reproduce/figures/audio/encoding/{run_id}/{layer}/univariate/{analysis_view}/` |
 | Summaries | `reproduce/figures/audio/encoding/{run_id}/univariate_summary/` |
-| Plots | `reproduce/figures/audio/encoding/{run_id}/univariate_summary/plots/` |
-| Cross-codec | `reproduce/figures/audio/encoding/codec_comparison/` |
-| Unit profiles | `reproduce/figures/audio/encoding/unit_profiles/` |
+| Diagnostic plots | `reproduce/figures/audio/encoding/{run_id}/univariate_summary/diagnostic_plots/` |
+| *(legacy)* Old aggregate plots | `reproduce/figures/audio/encoding/{run_id}/univariate_summary/plots_aggregate_legacy/` |
+| Cross-view summary | `reproduce/figures/audio/encoding/length_controlled_summary/` |
+| Unit inspection | `reproduce/figures/audio/encoding/unit_inspection/` |
+| Final canonical figures | `reproduce/figures/audio/encoding/final/` |
 | PCA figures | `reproduce/figures/audio/pca/{run_id}/{layer}/` |
 | Detailed usage README | `README_audio.md` |
+| Step-by-step technical reference | `scripts/audio/PIPELINE.md` |
