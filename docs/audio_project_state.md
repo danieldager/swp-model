@@ -42,14 +42,17 @@ This is a direct bridge between the symbolic SWP model and raw acoustic processi
 ### What it is
 
 English words and pseudowords from the lab paradigm (`en_paradigm.csv`), recorded by a single
-speaker. 180 items total: words and nonwords balanced across four orthogonal factors:
+speaker. 180 items total: words and pseudowords balanced across four orthogonal factors:
 
-| Factor | Values | Applies to |
-|--------|--------|-----------|
-| `lexicality` | `word` / `nonword` | all items |
+| Factor | CSV values | Applies to |
+|--------|-----------|-----------|
+| `lexicality` | `word` / `nonword` *(displayed as "pseudoword")* | all items |
 | `length_bin` | `long` / `short` | all items |
-| `frequency_bin` | `high` / `low` | words only (NA for nonwords) |
+| `frequency_bin` | `high` / `low` | words only (NA for pseudowords) |
 | `morphology` | `complex` / `simple` | all items |
+
+> **Terminology note:** The raw CSV value for non-word items is `nonword`.
+> All scientific displays (figures, labels) use **pseudoword** instead.
 
 These are the **same factors** tested in the SWP behavioral analyses (Figure 2 of the paper).
 This is what makes the comparison meaningful.
@@ -135,7 +138,8 @@ scripts/audio/
 reproduce/scripts/audio/
 ├── analysis.py          # Step 2: signal metric OLS + bar plots
 ├── activation_analysis.py  # Step 3: latent activation OLS + trajectory plots
-└── pca_analysis.py      # Step 4: PCA visualization (point + trajectory + distance)
+├── pca_analysis.py      # Step 4: PCA visualization (point + trajectory + distance)
+└── pca_summary.py       # Step 4b: 2×2 cross-model/layer summary panels
 
 README_audio.md          # Detailed usage guide for the audio pipeline
 docs/audio_project_state.md  # This file
@@ -179,7 +183,7 @@ Step 10 inspect_encoding_units.py               FI CSVs (both layers) → unit-l
 Step 11 build_final_encoding_report.py           collect canonical figures + write report.md
 ```
 
-> **Steps 9–10 are superseded.** The legacy scripts `compare_univariate_codecs.py` (old
+> **Old Steps 9–10 are superseded.** The legacy scripts `compare_univariate_codecs.py` (old
 > Step 9) and `build_unit_profiles.py` (old Step 10) are not analysis_view-safe and should
 > not be used for current multi-view analyses. They are kept in the repo with `# LEGACY`
 > headers but should not appear in any new analysis workflow.
@@ -393,6 +397,138 @@ These are descriptive observations. No formal inferential tests have been applie
 
 ---
 
+## 7a. PCA / visualization — current state (branch `feat/audio-pca-visualization`)
+
+### Script
+
+`reproduce/scripts/audio/pca_analysis.py`
+Runs per model, per layer (supports `encoder_out` and `decoder_in`).
+Outputs land under `reproduce/figures/audio/pca/<run_id>/<layer>/`.
+
+### Mode 1 — Static point PCA (`--mode point`, default)
+
+For each item, the `[C, T]` activation tensor is **mean-pooled over time** to produce one `[C]`
+vector. A 2-component PCA is fit on the `[n_items, C]` matrix (StandardScaler + PCA, random_state=0).
+
+Each item is plotted with **color = lexicality** and **marker shape = length**:
+
+| Dimension | Value | Visual |
+|---|---|---|
+| lexicality | word | blue (#0072B2) |
+| lexicality | pseudoword | red (#ED2727) |
+| length | short | circle (○) |
+| length | long | triangle (△) |
+
+Outputs: `point_per_word_mean.png`, `_short_only.png`, `_long_only.png`, `point_per_word_mean.csv`, `_summary.json`.
+
+**Interpretive status**: the static point PCA is the least informative of the three analysis
+modes. No clean lexicality or length separation is visible in mean-pooled item-level plots for
+either model or layer tested so far. Condition clusters largely overlap. The trajectory and
+distance-based analyses are more revealing.
+
+### Mode 2 — Frame-level trajectory PCA (`--mode trajectory`)
+
+All frames from all items are concatenated into a `[total_frames, C]` matrix.
+A shared 2-component PCA is fit on this matrix. Each item's frame sequence is then projected
+into the common 2D PCA space, giving a `[T, 2]` trajectory. Each trajectory is resampled to a
+fixed number of normalized time steps (default: 30) via linear interpolation **after projection**.
+Condition-mean trajectories are computed for the 4 `(lexicality × length_bin)` cells.
+
+Cartesian trajectory outputs:
+- `trajectory_condition_means.png` — condition mean trajectories, starts (●) and ends (■) marked
+- `trajectory_condition_means_with_examples.png` — same + α-blended individual trajectories
+- `trajectory_condition_means_centroids.csv`
+- `trajectory_projected_items.csv` — per-item per-frame projected coordinates (raw time)
+- `trajectory_condition_means_summary.json`
+
+Polar outputs (complementary / exploratory, auto-generated alongside Cartesian):
+- `trajectory_radius_over_time.png` — radial departure from common start over normalized time ★
+- `trajectory_angle_over_time.png` — angular direction over normalized time (unwrapped, radians) ★
+- `trajectory_condition_means_polar.png` — full polar plot, start-centered
+- `trajectory_condition_means_polar_pca_origin.png` — full polar plot, raw PCA origin (0,0)
+- associated CSVs and summary JSON
+
+(★ = primary interpretive polar plots)
+
+**Interpretive status**: the trajectory PCA reveals structured shared latent dynamics across
+conditions. Length structure is visible across model/layer combinations; the 4 condition mean
+trajectories show consistent length-related separation in their spatial paths.
+Lexicality is not absent but remains weaker and more local than length — visible as small
+directional offsets rather than a global split.
+EnCodec `decoder_in` is currently one of the more informative views, but still does not show
+a clean lexical separation.
+
+### Mode 3 — Condition-distance analysis (auto-runs with trajectory mode)
+
+At each normalized time step, the Euclidean distance between pairs of condition means in 2D PCA
+space is computed for 4 contrasts:
+
+| Contrast | Family | Pair |
+|---|---|---|
+| `lex_short` | lexicality | word/short vs pseudoword/short |
+| `lex_long` | lexicality | word/long vs pseudoword/long |
+| `len_word` | length | word/short vs word/long |
+| `len_nonword` | length | pseudoword/short vs pseudoword/long |
+
+AUC is computed via trapezoidal integration over normalized time.
+
+Outputs:
+- `trajectory_condition_distances_over_time.png` — 4 distance curves over time
+- `trajectory_condition_distances_over_time.csv` — long-format, one row per (contrast × step)
+- `trajectory_condition_distances_summary.csv` — per-contrast: mean, max, time_of_max, AUC
+
+**Interpretive status**: the distance plots are currently the clearest quantitative summary of
+condition divergence. Length contrasts (`len_word`, `len_nonword`) are consistently larger than
+lexicality contrasts (`lex_short`, `lex_long`) across model/layer combinations. Distance profiles
+often peak in mid-trajectory and partially reconverge near the end, suggesting that condition
+differences are not uniformly distributed over time. This is consistent with the activation-level
+OLS findings and adds a temporal dimension to that picture.
+
+### CLI reference (Step 4)
+
+```bash
+# Static point PCA (default)
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/
+
+# Trajectory + polar + distance (all in one call)
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --mode trajectory
+
+# Both point and trajectory
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ \
+    --mode both
+
+# Single layer, custom resampling
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/dac__f104bbdd/ \
+    --mode trajectory --layers decoder_in --resample-steps 50
+```
+
+### Cross-model summary panels (Step 4b)
+
+`reproduce/scripts/audio/pca_summary.py` reads existing CSV outputs from
+`pca_analysis.py` and assembles 2×2 panels (rows = models, cols = layers)
+without recomputing any PCA.
+
+```bash
+# Default: EnCodec + DAC, encoder_out + decoder_in
+python reproduce/scripts/audio/pca_summary.py
+
+# Custom pca figure root or output directory
+python reproduce/scripts/audio/pca_summary.py \
+    --pca-root reproduce/figures/audio/pca/ \
+    --output   reproduce/figures/audio/pca/summary/
+```
+
+Outputs (under `reproduce/figures/audio/pca/summary/`):
+- `summary_condition_distances_2x2.png` — distance-over-time 2×2 panel
+- `summary_trajectory_means_2x2.png` — condition-mean trajectory 2×2 panel
+
+---
+
 ## 7b. Encoding analyses / xarray export (branch `feat/audio-encoding-analyses`)
 
 ### Purpose
@@ -563,12 +699,12 @@ python scripts/audio/plot_univariate_encoding_summary.py \
 
 ---
 
-## 7e. Cross-codec comparison (Step 9) — LEGACY
+## 7e. Cross-codec comparison (old Step 9) — LEGACY
 
 > **LEGACY — not analysis_view-safe.** `univariate_compare.py` groups only by
 > `analysis_set` and will silently mix all analysis_views (short_only, long_only,
 > all_speakers) into the same rows. Use `summarize_length_controlled_encoding.py`
-> (Step 9 in the finalized pipeline) for cross-view comparisons.
+> (canonical Step 9 in the finalized pipeline) for cross-view comparisons.
 
 Compares EnCodec vs DAC on all summary outputs.
 
@@ -621,13 +757,13 @@ python scripts/audio/compare_univariate_codecs.py \
 
 ---
 
-## 7f. Unit profiles (Step 10) — LEGACY
+## 7f. Unit profiles (old Step 10) — LEGACY
 
 > **LEGACY — not analysis_view-safe.** `unit_profiles.py` uses
 > `_UNIT_COLS = ["run_id", "model_name", "layer", "analysis_set", "neuron"]` without
 > `analysis_view`, so all views (short_only, long_only, all_speakers) are collapsed into
-> the same neuron row. Use `inspect_encoding_units.py` (Step 10 in the finalized pipeline)
-> for unit-level analyses.
+> the same neuron row. Use `inspect_encoding_units.py` (canonical Step 10 in the finalized
+> pipeline) for unit-level analyses.
 
 Per-unit feature importance profiles, built from `feature_importance.csv` outputs.
 
@@ -811,118 +947,6 @@ commands and `scripts/audio/PIPELINE.md` for the detailed technical reference.
 
 ---
 
-## 7a. PCA / visualization — current state (branch `feat/audio-pca-visualization`)
-
-### Script
-
-`reproduce/scripts/audio/pca_analysis.py`
-Runs per model, per layer (supports `encoder_out` and `decoder_in`).
-Outputs land under `reproduce/figures/audio/pca/<run_id>/<layer>/`.
-
-### Mode 1 — Static point PCA (`--mode point`, default)
-
-For each item, the `[C, T]` activation tensor is **mean-pooled over time** to produce one `[C]`
-vector. A 2-component PCA is fit on the `[n_items, C]` matrix (StandardScaler + PCA, random_state=0).
-
-Each item is plotted as one dot, color-coded by `(lexicality, length_bin)`:
-
-| Condition | Color |
-|---|---|
-| word / short | teal (#2EC4B6) |
-| word / long | navy blue (#1565C0) |
-| nonword / short | amber (#FFB703) |
-| nonword / long | crimson (#D62828) |
-
-Outputs: `point_per_word_mean.png`, `_short_only.png`, `_long_only.png`, `point_per_word_mean.csv`, `_summary.json`.
-
-**Interpretive status**: the static point PCA is the least informative of the three analysis
-modes. No clean lexicality or length separation is visible in mean-pooled item-level plots for
-either model or layer tested so far. Condition clusters largely overlap. The trajectory and
-distance-based analyses are more revealing.
-
-### Mode 2 — Frame-level trajectory PCA (`--mode trajectory`)
-
-All frames from all items are concatenated into a `[total_frames, C]` matrix.
-A shared 2-component PCA is fit on this matrix. Each item's frame sequence is then projected
-into the common 2D PCA space, giving a `[T, 2]` trajectory. Each trajectory is resampled to a
-fixed number of normalized time steps (default: 30) via linear interpolation **after projection**.
-Condition-mean trajectories are computed for the 4 `(lexicality × length_bin)` cells.
-
-Cartesian trajectory outputs:
-- `trajectory_condition_means.png` — condition mean trajectories, starts (●) and ends (■) marked
-- `trajectory_condition_means_with_examples.png` — same + α-blended individual trajectories
-- `trajectory_condition_means_centroids.csv`
-- `trajectory_projected_items.csv` — per-item per-frame projected coordinates (raw time)
-- `trajectory_condition_means_summary.json`
-
-Polar outputs (complementary / exploratory, auto-generated alongside Cartesian):
-- `trajectory_radius_over_time.png` — radial departure from common start over normalized time ★
-- `trajectory_angle_over_time.png` — angular direction over normalized time (unwrapped, radians) ★
-- `trajectory_condition_means_polar.png` — full polar plot, start-centered
-- `trajectory_condition_means_polar_pca_origin.png` — full polar plot, raw PCA origin (0,0)
-- associated CSVs and summary JSON
-
-(★ = primary interpretive polar plots)
-
-**Interpretive status**: the trajectory PCA reveals structured shared latent dynamics across
-conditions. Length structure is visible across model/layer combinations; the 4 condition mean
-trajectories show consistent length-related separation in their spatial paths.
-Lexicality is not absent but remains weaker and more local than length — visible as small
-directional offsets rather than a global split.
-EnCodec `decoder_in` is currently one of the more informative views, but still does not show
-a clean lexical separation.
-
-### Mode 3 — Condition-distance analysis (auto-runs with trajectory mode)
-
-At each normalized time step, the Euclidean distance between pairs of condition means in 2D PCA
-space is computed for 4 contrasts:
-
-| Contrast | Family | Pair |
-|---|---|---|
-| `lex_short` | lexicality | word/short vs nonword/short |
-| `lex_long` | lexicality | word/long vs nonword/long |
-| `len_word` | length | word/short vs word/long |
-| `len_nonword` | length | nonword/short vs nonword/long |
-
-AUC is computed via trapezoidal integration over normalized time.
-
-Outputs:
-- `trajectory_condition_distances_over_time.png` — 4 distance curves over time
-- `trajectory_condition_distances_over_time.csv` — long-format, one row per (contrast × step)
-- `trajectory_condition_distances_summary.csv` — per-contrast: mean, max, time_of_max, AUC
-
-**Interpretive status**: the distance plots are currently the clearest quantitative summary of
-condition divergence. Length contrasts (`len_word`, `len_nonword`) are consistently larger than
-lexicality contrasts (`lex_short`, `lex_long`) across model/layer combinations. Distance profiles
-often peak in mid-trajectory and partially reconverge near the end, suggesting that condition
-differences are not uniformly distributed over time. This is consistent with the activation-level
-OLS findings and adds a temporal dimension to that picture.
-
-### CLI reference (Step 4)
-
-```bash
-# Static point PCA (default)
-python reproduce/scripts/audio/pca_analysis.py \
-    --run reproduce/data/audio/encodec__7f7d3b97/
-
-# Trajectory + polar + distance (all in one call)
-python reproduce/scripts/audio/pca_analysis.py \
-    --run reproduce/data/audio/encodec__7f7d3b97/ \
-    --mode trajectory
-
-# Both point and trajectory
-python reproduce/scripts/audio/pca_analysis.py \
-    --run reproduce/data/audio/encodec__7f7d3b97/ \
-    --mode both
-
-# Single layer, custom resampling
-python reproduce/scripts/audio/pca_analysis.py \
-    --run reproduce/data/audio/dac__f104bbdd/ \
-    --mode trajectory --layers decoder_in --resample-steps 50
-```
-
----
-
 ## 8. Current limitations
 
 - **Speaker coverage**: The original extraction, signal-level, activation-level, and PCA
@@ -931,13 +955,12 @@ python reproduce/scripts/audio/pca_analysis.py \
   (Steps 6–11, chantier 2.5) now uses all-speakers runs (`encodec__b429aeea`,
   `dac__d466515b`, 360 trials). Signal-level and PCA outputs may still be male-only unless
   explicitly rerun on all-speakers data.
-- **PCA cross-model comparison panel**: EnCodec and DAC PCA analyses run separately; no joint
-  comparison panel.
+- **PCA cross-model comparison panel**: per-run analyses (`pca_analysis.py`) run separately;
+  2×2 summary panels across models and layers are assembled by `pca_summary.py`.
 - **No multivariate encoding yet**: univariate Ridge is implemented; multivariate analyses
   (e.g. multivariate regression, RSA) are not yet implemented.
-- **No clustering yet**: unit profile features are computed and ready; clustering of units by
-  FI profile is the next planned step (Phase C). The representation of a unit for clustering
-  remains to be defined.
+- **No clustering yet**: unit profile features are computed and ready in `unit_inspection/`;
+  clustering of units by FI profile is planned for a later stage.
 - **No phoneme-level alignment**: the current analysis remains at the waveform / latent frame
   level and is not aligned to phoneme boundaries.
 - **No ablation pipeline yet**: hard and soft ablation studies are planned but not implemented.
@@ -953,6 +976,7 @@ python reproduce/scripts/audio/pca_analysis.py \
 | Phase | Status |
 |-------|--------|
 | PCA / visualization (Step 4) | ✓ implemented |
+| PCA cross-model summary panels (Step 4b) | ✓ implemented (`pca_summary.py`) |
 | xarray export (Step 5) | ✓ implemented |
 | Univariate encoding + FI (Steps 6–7) | ✓ implemented and validated |
 | Per-view diagnostic plots (Step 8) | ✓ implemented |
@@ -965,7 +989,16 @@ python reproduce/scripts/audio/pca_analysis.py \
 > and unit profile scripts (`build_unit_profiles.py`, old Step 10) are superseded by the
 > above analysis_view-safe tools.
 
-### Immediate next: clustering (Phase C)
+### Next phase: compare other families of speech models
+
+The audio codec analyses are a validated exploratory baseline. The next stage of the project
+is to apply the same paradigm — signal metrics, activation encoding, PCA geometry — to other
+families of neural speech models that are more biologically plausible (e.g. models of speech
+perception, auditory cortex encoding models). The goal is to assess whether the same factors
+(length, lexicality, morphology) emerge differently across model families, and whether any
+family better accounts for the patterns observed in the SWP behavioral data.
+
+### Later: clustering of encoding units
 
 Unit-level FI stats are available in `unit_inspection/unit_fi_stats.csv` and
 `unit_inspection/unit_dominance.csv`. These are ready to feed a clustering analysis
@@ -975,8 +1008,6 @@ targeting groups of units with coherent FI profiles.
 max_fi_over_time vector over features, mean_fi_over_time vector, temporal FI profile, or
 combinations. This choice should be motivated before implementing.
 
-Contact: **Louis Jalouzot** for multivariate / clustering directions.
-
 ### Later: multivariate analyses
 
 Multivariate encoding models (e.g. linear regression on unit populations, RSA) are not yet
@@ -985,7 +1016,7 @@ implemented. Will build on the xarray format and may require input from Louis Ja
 ### Later: ablation study
 
 Hard ablation (zero out units/layers) and soft ablation (Gaussian noise injection) are planned.
-The clustering results will inform which units or groups to ablate.
+Clustering results will inform which units or groups to ablate.
 
 ### Longer-term: new stimuli
 
@@ -1013,7 +1044,7 @@ python scripts/audio/sanity_check.py --model dac
 python scripts/audio/extract.py \
     --model encodec --model-arg bandwidth=6.0 \
     --dataset data/external/paradigm/processed/subset_male.csv \
-    --layers encoder_out decoder_in \
+    --layers encoder_out decoder_in decoder_out \
     --output reproduce/data/audio/ --regenerate
 
 # Step 2: signal-level analyses
@@ -1165,7 +1196,8 @@ python scripts/audio/build_unit_profiles.py \
 | Pipeline reference | `scripts/audio/PIPELINE.md` |
 | Signal analysis | `reproduce/scripts/audio/analysis.py` |
 | Activation analysis | `reproduce/scripts/audio/activation_analysis.py` |
-| PCA | `reproduce/scripts/audio/pca_analysis.py` |
+| PCA (per run) | `reproduce/scripts/audio/pca_analysis.py` |
+| PCA summary panels | `reproduce/scripts/audio/pca_summary.py` |
 | *(LEGACY)* Cross-codec compare | `scripts/audio/compare_univariate_codecs.py` |
 | *(LEGACY)* Unit profiles | `scripts/audio/build_unit_profiles.py` |
 
@@ -1196,6 +1228,7 @@ python scripts/audio/build_unit_profiles.py \
 | Cross-view summary | `reproduce/figures/audio/encoding/length_controlled_summary/` |
 | Unit inspection | `reproduce/figures/audio/encoding/unit_inspection/` |
 | Final canonical figures | `reproduce/figures/audio/encoding/final/` |
-| PCA figures | `reproduce/figures/audio/pca/{run_id}/{layer}/` |
+| PCA figures (per run) | `reproduce/figures/audio/pca/{run_id}/{layer}/` |
+| PCA summary panels | `reproduce/figures/audio/pca/summary/` |
 | Detailed usage README | `README_audio.md` |
 | Step-by-step technical reference | `scripts/audio/PIPELINE.md` |

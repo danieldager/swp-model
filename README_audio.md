@@ -1,4 +1,4 @@
-# Audio Codec Benchmark — `feat/paradigm-audio-codecs`
+# Audio Codec Benchmark
 
 End-to-end pipeline for running neural audio codecs on the lab paradigm
 stimulus set, extracting encoder/decoder activations, computing signal
@@ -18,6 +18,7 @@ All commands are run from the **`swp-model/` repo root**.
 | 2 | `reproduce/scripts/audio/analysis.py` | Signal metric analysis (mel distance, SI-SDR) |
 | 3 | `reproduce/scripts/audio/activation_analysis.py` | Latent activation analysis (norms, trajectories) |
 | 4 | `reproduce/scripts/audio/pca_analysis.py` | PCA geometry + condition distance over time |
+| 4b | `reproduce/scripts/audio/pca_summary.py` | 2×2 cross-model/layer summary panels |
 | 5 | `scripts/audio/build_xarray.py` | Canonical xarray export `(trials, time, neurons)` |
 | 6 | `scripts/audio/run_univariate_encoding.py` | Per-neuron Ridge CV → scores / weights / FI CSVs |
 | 7 | `scripts/audio/summarize_univariate_encoding.py` | Aggregate summary CSVs (both layers in ONE call) |
@@ -41,18 +42,21 @@ Items are single words or pseudowords recorded by a single speaker.
 
 Each item is characterized by four factors:
 
-| Factor | Values | Applies to |
-|--------|--------|-----------|
-| `lexicality` | `word` / `nonword` | all items |
+| Factor | CSV values | Applies to |
+|--------|-----------|-----------|
+| `lexicality` | `word` / `nonword` *(displayed as "pseudoword")* | all items |
 | `length_bin` | `long` / `short` | all items |
-| `frequency_bin` | `high` / `low` | words only (NA for nonwords) |
+| `frequency_bin` | `high` / `low` | words only (NA for pseudowords) |
 | `morphology` | `complex` / `simple` | all items |
+
+> **Terminology note:** The raw CSV value for non-word items is `nonword`.
+> All scientific displays (figures, labels) use **pseudoword** instead.
 
 Condition codes in the raw CSV encode these factors:
 - Words (4-char): `R` + length (`L`/`S`) + frequency (`H`/`L`) + morphology (`C`/`S`)
   — e.g. `RLLC` = word, long, low-freq, complex
 - Pseudowords (3-char): `P` + length (`L`/`S`) + morphology (`C`/`S`)
-  — e.g. `PLC` = nonword, long, complex
+  — e.g. `PLC` = pseudoword, long, complex
 
 ### Raw files (not versioned)
 
@@ -276,6 +280,36 @@ Plus `mean_norm ~ C(factor)` and a cross-layer comparison table.
 
 ---
 
+## Step 4 — PCA geometry
+
+Fits a 2-component PCA on codec activations per (run, layer). Supports three modes:
+`point` (mean-pooled per item), `trajectory` (frame-level), and `both`.
+
+```bash
+# Point + trajectory for all layers
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/encodec__7f7d3b97/ --mode both
+
+# Trajectory only, single layer
+python reproduce/scripts/audio/pca_analysis.py \
+    --run reproduce/data/audio/dac__f104bbdd/ \
+    --mode trajectory --layers decoder_in
+```
+
+Outputs to `reproduce/figures/audio/pca/{run_id}/{layer}/`.
+Visual grammar: **color = lexicality** (word=blue, pseudoword=red), **marker/linestyle = length** (short=○/solid, long=△/dashed).
+Trajectory mode also produces polar plots and condition-distance curves over normalized time.
+
+```bash
+# 2×2 cross-model/layer summary panels (reads existing CSVs, no recomputation)
+python reproduce/scripts/audio/pca_summary.py
+# Output: reproduce/figures/audio/pca/summary/
+```
+
+See `docs/audio_project_state.md` §7a for full interpretive notes.
+
+---
+
 ## Models
 
 ### EnCodec (`encodec`)
@@ -356,7 +390,8 @@ scripts/audio/
 reproduce/scripts/audio/
 ├── analysis.py          # Step 2: signal metric OLS + bar plots
 ├── activation_analysis.py  # Step 3: activation feature OLS + trajectory plots
-└── pca_analysis.py      # Step 4: PCA geometry + condition distances
+├── pca_analysis.py      # Step 4: PCA geometry + condition distances
+└── pca_summary.py       # Step 4b: 2×2 cross-model/layer summary panels
 ```
 
 ---
@@ -392,8 +427,6 @@ Time axis is in seconds from word onset. Padded positions are NaN in `activation
 and False in `valid_time`. Activations are raw (no normalisation, no resampling).
 
 The script is idempotent: it refuses to overwrite without `--overwrite`.
-
----
 
 ---
 
