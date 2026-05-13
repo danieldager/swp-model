@@ -1,7 +1,7 @@
 # AuriStream Setup Notes
 
-*Branch: `feat/auristream-setup` · Last updated: 2026-05-13*
-*Status: research complete, smoke test NOT yet executed (models gated — see §Access)*
+*Last updated: 2026-05-13*
+*Status: setup complete, smoke tests passed, extraction branch implemented and validated — see §7 and §10*
 
 ---
 
@@ -429,32 +429,41 @@ is recommended before treating token indices as exact frame boundaries.
 
 ---
 
-## 10. Next steps — extraction branch (`feat/auristream-extract-hidden-states`)
+## 10. Extraction branch — implemented and validated
 
-**Smoke tests passed.** The setup branch is complete. The next branch should be
-`feat/auristream-extract-hidden-states`, branched from `feat/auristream-setup`.
+**Branch:** `feat/auristream-extract-hidden-states` — **COMPLETE**
 
-Minimal changes needed for a proper extraction branch:
+### Files implemented
 
-1. **Create `swp/audio/models/auristream.py`** implementing the `AudioModel` Protocol:
-   - `__init__`: load WavCoch + AuriStream, store device
-   - `sample_rate = 16_000`
-   - `available_layers()`: return block index strings `"embedding"`, `"block_1"` …
-     `"block_N"` (where N = `n_layer`); `"final"` as alias for `"block_N"`
-   - `extract_activations(waveform, layers)`: resample to 16 kHz → tokenize (WavCoch)
-     → forward with `output_hidden_states=True` → select requested layers
-     → return `{layer: tensor of shape (D, L)}` (transposed from `(1, L, D)` to
-     match the existing `[D, T]` convention of EnCodec/DAC wrappers)
-   - No padding needed — WavCoch handles variable-length input natively
-   - `reconstruct()`: not applicable; raise `NotImplementedError`
+| File | Role |
+|---|---|
+| `swp/audio/models/auristream.py` | AuriStream + WavCoch wrapper (`@register("auristream")`) |
+| `swp/audio/pipeline/representation_extraction.py` | `run_representation_extraction()` — extraction-only pipeline (no signal metrics) |
+| `scripts/audio/extract_representations.py` | CLI entry point |
 
-2. **Register under `"auristream"`** in the model registry.
+### Validated full run
 
-3. **Update `sanity_check.py`** to accept `--model auristream`.
+```bash
+python scripts/audio/extract_representations.py \
+    --model auristream \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --layers embedding block_12 block_24 block_36 block_48 \
+    --output reproduce/data/audio/
+```
 
-4. **Document layer naming convention** — unlike EnCodec/DAC (3 stable layers),
-   AuriStream exposes `n_layer + 1` hidden states. For 1B: 49 layers. Decide
-   whether to extract all or only selected layers (e.g. every 6th block for 1B).
+- **Run ID:** `auristream__9d3f269f`
+- **Items:** 180 (full `subset_male.csv`)
+- **Layers:** `embedding`, `block_12`, `block_24`, `block_36`, `block_48`
+- **Tensor shape:** `[1280, L]` float32 CPU; L ∈ [119, 237], mean ≈ 168.5 tokens
+- **Trailing samples:** max 78 (< 1 step = 5 ms; dropped by floor rounding, as expected)
 
-5. **Verify exact WavCoch window alignment** from `modeling_wavcoch.py` remote code
-   before treating token indices as precise frame boundaries.
+### Remaining open question
+
+Exact internal WavCoch cochleagram window alignment (§8 Q7) is still unverified from
+`modeling_wavcoch.py` remote code. For the phoneme-embedding analysis, the practical
+rule `token i → [i*5ms, (i+1)*5ms)` is sufficient until finer alignment is needed.
+
+### Next step
+
+Phoneme boundaries (MFA / forced alignment) → mean-pool hidden states per phoneme
+interval → PCA / norm analyses. On a dedicated future branch.

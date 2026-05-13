@@ -340,6 +340,45 @@ universal audio codec.
 
 Both models auto-select device: CUDA > MPS > CPU.
 
+### AuriStream (`auristream`)
+
+Biologically inspired speech language model (Tuckute et al., Interspeech 2025).
+Converts waveforms to cochlear token IDs (WavCoch) then extracts layer-wise
+continuous hidden states from a GPT-style transformer.
+
+**This is a representation-only model.** It does not reconstruct audio and
+produces no signal metrics (mel distance, SI-SDR). Use
+`scripts/audio/extract_representations.py` — not `extract.py`.
+
+| Parameter | Value |
+|---|---|
+| Sample rate | 16 000 Hz, mono |
+| Token rate | 200 Hz (5 ms per token) |
+| Token count | `L = floor(n_samples / 80)` |
+| Hidden dim | 1 280 (AuriStream-1B) |
+| Layers | `embedding`, `block_01` … `block_48` |
+
+```bash
+python scripts/audio/extract_representations.py \
+    --model auristream \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --layers embedding block_12 block_24 block_36 block_48 \
+    --output reproduce/data/audio/
+```
+
+Output: `reproduce/data/audio/auristream__{hash}/`
+- `manifest.json` — run params (token_rate_hz, hop_length, transformers_version, …)
+- `extraction_summary.csv` — per-item n_tokens, trailing_samples, represented_duration_s
+- `activations/{item_id}__{layer}.pt` — shape `[1280, L]` float32
+
+**Requires** HuggingFace login and acceptance of gated-model terms:
+```bash
+huggingface-cli login
+```
+
+See `docs/auristream_setup.md` for setup history and `docs/audio_project_state.md`
+for scientific context and validated run IDs.
+
 ---
 
 ## Package structure
@@ -351,7 +390,8 @@ swp/audio/
 │   ├── registry.py      # @register / get_model() lazy registry
 │   ├── device.py        # select_device() — CUDA > MPS > CPU fallback
 │   ├── encodec.py       # EnCodecModel wrapper (HuggingFace)
-│   └── dac.py           # DACModel wrapper (descript-audio-codec)
+│   ├── dac.py           # DACModel wrapper (descript-audio-codec)
+│   └── auristream.py    # AuriStreamModel wrapper (WavCoch + AuriStream-1B)
 ├── hooks/
 │   └── manager.py       # HookManager — forward hooks + pre-hooks + extractor_fn
 ├── datasets/
@@ -360,7 +400,8 @@ swp/audio/
 ├── metrics/
 │   └── signal.py        # mel_distance(), si_sdr(), compute_all()
 ├── pipeline/
-│   └── extraction.py    # run_extraction() — ties everything together
+│   ├── extraction.py               # run_extraction() — codec reconstruction + activations
+│   └── representation_extraction.py  # run_representation_extraction() — hidden states only
 └── encoding/
     ├── xarray_builder.py     # Step 5: .pt → xarray.Dataset (trials, time, neurons)
     ├── temporal_binning.py   # relative-time binning for encoding analyses
@@ -375,7 +416,8 @@ swp/audio/
 scripts/audio/
 ├── setup_paradigm.py                          # Step 0: build processed CSV from raw data
 ├── sanity_check.py                            # Smoke test for any registered model
-├── extract.py                                 # Step 1 CLI
+├── extract.py                                 # Step 1 CLI (codec reconstruction + activations)
+├── extract_representations.py                 # Representation-only extraction CLI (AuriStream, …)
 ├── build_xarray.py                            # Step 5 CLI: canonical xarray export
 ├── run_univariate_encoding.py                 # Step 6 CLI: per-neuron Ridge CV
 ├── summarize_univariate_encoding.py           # Step 7 CLI: summary CSVs (both layers in ONE call)

@@ -1,6 +1,6 @@
 # Audio Codec Extension — Project State
 
-*Last updated: 2026-05-05 · Branch: `feat/audio-encoding-analyses` (branched from `feat/audio-pca-visualization`)*
+*Last updated: 2026-05-13 · Current work: `feat/auristream-extract-hidden-states`*
 
 ---
 
@@ -84,13 +84,19 @@ The audio work lives on three branches in chain:
   activation analyses (Steps 0–3).
 - **`feat/audio-pca-visualization`** — adds PCA/geometry/distance visualization (Step 4),
   branched from `feat/paradigm-audio-codecs`.
-- **`feat/audio-encoding-analyses`** (current) — adds xarray export (Step 5) and the full
+- **`feat/audio-encoding-analyses`** — adds xarray export (Step 5) and the full
   univariate encoding pipeline (Steps 6–10), branched from `feat/audio-pca-visualization`.
+- **`feat/auristream-setup` / `feat/auristream-extract-hidden-states`** — AuriStream
+  hidden-state extraction (see §9 for details).
 
 All three branches add only to the `swp/audio/` sub-package and do **not** modify any
 existing code in `swp/models/`, `swp/train/`, `swp/test/`, or the paper reproduction scripts.
 
-### New files on this branch
+### Audio infrastructure (codec + encoding pipeline)
+
+*AuriStream-specific files (`swp/audio/models/auristream.py`,
+`swp/audio/pipeline/representation_extraction.py`,
+`scripts/audio/extract_representations.py`) are listed in §9.*
 
 ```
 swp/audio/
@@ -996,19 +1002,20 @@ use **AuriStream continuous hidden states** (Tuckute et al., Interspeech 2025),
 identify phoneme boundaries for each stimulus, average hidden states within each phoneme,
 then analyze phoneme embeddings with PCA and norm as a function of phoneme position.
 
-**AuriStream setup — in progress (branch `feat/auristream-setup`):**
+**AuriStream — setup and extraction complete:**
 - Source: HuggingFace `TuKoResearch/` org — see `docs/auristream_setup.md`
-- Install: no new packages beyond existing `requirements.txt`
-- **Synthetic + real-audio smoke tests: PASSED** (2026-05-13, `transformers==4.57.6`)
-- `requirements.txt` pinned to `transformers>=4.40.0,<5`
-- WavCoch (`TuKoResearch/WavCochV8192`) and AuriStream-1B (`AuriStream1B_librilight_ckpt500k`) load on MPS
+- `requirements.txt` pinned to `transformers>=4.40.0,<5` (`transformers==4.57.6` tested)
 - AuriStream-1B confirmed: `n_layer=48`, `n_head=16`, `n_embd=1280`, `vocab=8192`
-- Hidden states: **49 tensors `(1, L, 1280)`** per stimulus via `output_hidden_states=True`, no hooks
-- Short clips accepted natively; **floor rounding confirmed** (L = T // 80 = 200 Hz grid)
-- Real paradigm WAVs tested: Press_FEMALE_C (163 tok), Press_MALE_D (168 tok), abosh_FEMALE_C (167 tok)
-- **Primary extraction target:** full temporal hidden-state sequence per layer; phoneme mean-pooling later, after MFA
-- Remaining caveat: exact WavCoch internal window alignment unverified from remote code
-- **Setup branch complete.** Next: `feat/auristream-extract-hidden-states`
+- Token grid: 200 Hz, `L = T // 80`; short clips accepted natively; floor rounding confirmed
+- **Full extraction run** (branch `feat/auristream-extract-hidden-states`):
+  - Run ID: `auristream__9d3f269f` (`reproduce/data/audio/auristream__9d3f269f/`)
+  - Dataset: `subset_male.csv`, 180 items, 5 layers: `embedding block_12 block_24 block_36 block_48`
+  - Activation tensors: `[1280, L]` float32 CPU; mean L ≈ 168.5 tokens (119–237 range)
+  - Extraction pipeline is **separate from codec reconstruction** — no signal metrics produced
+  - New files: `swp/audio/models/auristream.py`, `swp/audio/pipeline/representation_extraction.py`,
+    `scripts/audio/extract_representations.py`
+- **Next step:** phoneme boundaries (MFA) → phoneme mean-pooling → PCA/norm analyses
+  (on a dedicated future branch, not this one)
 
 ### Next phase (original): compare other families of speech models
 
