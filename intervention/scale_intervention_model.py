@@ -79,6 +79,10 @@ class ScaleIntervention(nn.Module):
         elif self.scale_param == "linear":
             self.beta = nn.Parameter(torch.zeros(self.state_dim))
             self.b = nn.Parameter(torch.zeros(self.state_dim))
+        # elif self.scale_param == "spiral":
+        #     self.base_scale = nn.Parameter(torch.randn(self.state_dim))
+        #     self.decay_rate = nn.Parameter(torch.tensor(-0.1)) # For convergence
+        #     self.angle_rate = nn.Parameter(torch.tensor(0.5)) # Controls rotation speed
         else:
             raise ValueError("scale_param must be one of 'per_pos', 'onion', 'linear', or 'one_scale'")
 
@@ -94,6 +98,8 @@ class ScaleIntervention(nn.Module):
         if self.scale_param == "one_scale":
             weight = self.position_weight[position]
             return self.scale * weight
+        # if self.scale_param == "spiral":
+        #     return  torch.exp(pos * self.decay_rate) * self._rotate(self.base_scale, pos * self.angle_rate)
         raise ValueError("scale_param must be one of 'per_pos', 'onion', 'linear', or 'one_scale'")
 
     def _apply_state(

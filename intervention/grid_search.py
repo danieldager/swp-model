@@ -5,19 +5,15 @@ from dataclasses import asdict, dataclass
 from itertools import product
 from pathlib import Path
 from typing import Iterable
-from ast import literal_eval
 
 import pandas as pd
-import torch
 from joblib import Parallel, delayed
-from sklearn.model_selection import train_test_split
-from swp.datasets.phonemes import get_phoneme_to_id
-from swp.utils.datasets import get_train_dataset
-from swp.utils.models import get_model
-from swp.utils.setup import set_device as get_device
+from tqdm import tqdm
+from tqdm_joblib import tqdm_joblib
 
-from analysis import plot_run_summary
-from intervention_core import ScaleIntervention, create_dataloader, InterventionTrainer
+from intervention.experiment import run_experiment
+
+SUMMARY_FILENAME = "grid_search_summary.csv"
 
 
 @dataclass
@@ -41,294 +37,165 @@ class InterventionConfig:
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
+    def should_skip_config(self) -> bool:
+        return self.pretrained_embedding is False and self.freeze_embedding is True
 
-def save_experiment_config(config: InterventionConfig, save_dir: Path) -> None:
-    save_dir.mkdir(parents=True, exist_ok=True)
-    with open(save_dir / "config.json", "w", encoding="utf-8") as f:
-        json.dump(config.to_dict(), f, indent=2)
+    def save_experiment_config(self, save_dir: Path) -> None:
+        save_dir.mkdir(parents=True, exist_ok=True)
+        with open(save_dir / "config.json", "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, indent=2)
 
 
 def save_history_csv(history: dict[str, list[float]], save_dir: Path) -> None:
     save_dir.mkdir(parents=True, exist_ok=True)
-    rows: list[dict[str, object]] = []
-    num_epochs = len(history["train_loss"])
-
-    for epoch in range(num_epochs):
-        rows.append(
-            {
-                "epoch": epoch,
-                "train_loss": history["train_loss"][epoch],
-                "train_acc": history["train_acc"][epoch],
-                "val_loss": history["val_loss"][epoch],
-                "val_acc": history["val_acc"][epoch],
-                "test_loss": history["test_loss"][epoch] if history.get("test_loss") else None,
-                "test_acc": history["test_acc"][epoch] if history.get("test_acc") else None,
-            }
-        )
-
-    pd.DataFrame(rows).to_csv(save_dir / "history.csv", index=False)
+    pd.DataFrame(history).to_csv(save_dir / "history.csv", index=False)
 
 
 def make_run_name(config: InterventionConfig) -> str:
     parts = [
-        f"scale_model={config.scale_param}",
-        f"state={config.state_mode}",
-        f"pretrained_embedding={int(config.pretrained_embedding)}",
-        f"freeze_embedding={int(config.freeze_embedding)}",
+        f"{config.scale_param}",
+        f"state_{config.state_mode}",
+        "load_embed" if config.pretrained_embedding else None,
+        "train_embed" if not config.freeze_embedding else None,
     ]
-    return "~".join(parts)
+    return "-".join(part for part in parts if part is not None)
 
 
-def should_skip_config(config: InterventionConfig) -> bool:
-    return config.pretrained_embedding is False and config.freeze_embedding is True
-
-
-def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = False) -> dict[str, object]:
-    save_dir.mkdir(parents=True, exist_ok=True)
-    torch.manual_seed(config.seed)
-
-    device = get_device()
-    model = get_model(config.model_name)
-    state_dict = torch.load(config.weights_path, map_location=device)
-    model.load_state_dict(state_dict)
-    model.to(device)
-    model.eval()
-
-    phoneme_to_id = get_phoneme_to_id()
-    id_to_phoneme = {v: k for k, v in phoneme_to_id.items()}
-
-    pad_id = phoneme_to_id["<PAD>"]
-    eos_id = phoneme_to_id["<EOS>"]
-    sos_id = phoneme_to_id["<SOS>"]
-
-    train_df_all = get_train_dataset()
-    wfe_df = pd.read_csv(
-        "datasets/wfe_with_repetition.csv",
-        converters={"Phonemes": literal_eval, "No_Stress": literal_eval},
-    )
-
-    train_df_all = train_df_all[~train_df_all["Word"].isin(wfe_df["Word"])].copy()
-    train_df_all["Length"] = train_df_all["No_Stress"].apply(len)
-    max_position = int(train_df_all["Length"].max())
-
-    train_df, val_df = train_test_split(
-        train_df_all,
-        test_size=config.val_ratio,
-        random_state=config.seed,
-        shuffle=True,
-        stratify=train_df_all["Length"],
-    )
-
-    test_df = wfe_df[wfe_df["can_repeat"] == True]
-
-    train_loader = create_dataloader(
-        train_df,
-        "No_Stress",
-        phoneme_to_id,
-        batch_size=config.batch_size,
-        shuffle=True,
-        max_len=config.max_seq_len,
-        max_pos=max_position,
-        random_replace_pos=True,
-    )
-    val_loader = create_dataloader(
-        val_df,
-        "No_Stress",
-        phoneme_to_id,
-        batch_size=config.batch_size,
-        shuffle=False,
-        max_len=config.max_seq_len,
-        max_pos=max_position,
-        random_replace_pos=False,
-        test_run=False,
-    )
-    test_loader = create_dataloader(
-        test_df,
-        "No_Stress",
-        phoneme_to_id,
-        batch_size=config.batch_size,
-        shuffle=False,
-        max_len=config.max_seq_len,
-        max_pos=max_position,
-        random_replace_pos=False,
-        test_run=False,
-    )
-
-    intervention = ScaleIntervention(
-        hidden_size=config.hidden_size,
-        vocab_size=len(phoneme_to_id),
-        state_mode=config.state_mode,
-        scale_param=config.scale_param,
-        max_position=max_position,
-        pretrained_embedding=model.encoder.embedding if config.pretrained_embedding else None,
-        freeze_embedding=config.freeze_embedding,
-    ).to(device)
-
-    optimizer = torch.optim.Adam(intervention.parameters(), lr=config.learning_rate)
-    trainer = InterventionTrainer(model, intervention, optimizer, device, pad_id)
-    run_name = make_run_name(config)
-    
-    print(f"Starting training : {run_name}")
-    history = trainer.fit(
-        train_loader,
-        val_loader,
-        num_epochs=config.num_epochs,
-        patience=config.patience,
-        min_delta=config.min_delta,
-        test_loader=test_loader,
-        verbose=verbose,
-    )
-    # final evaluation on test set
-    final_test_loss, final_test_acc = trainer.evaluate(test_loader)
-    print(f"{run_name}")
-    print(f"Final Test Accuracy: {final_test_acc:.4f}, Final Test Loss: {final_test_loss:.4f}")
-
-    save_experiment_config(config, save_dir)
-    save_history_csv(history, save_dir)
-    predictions = trainer.evaluate_with_predictions(test_loader, id_to_phoneme)
-    predictions.to_csv(save_dir / "predictions.csv", index=False)
-    trainer.save_scale_params(save_dir)
-    torch.save(intervention.state_dict(), save_dir / "intervention_model.pth")
-    plot_run_summary(
-        save_dir,
-        feature_cols=["position","Lexicality", "Size", "Morphology", "type-change", "Condition"],
-    )
-
-    return {
-        "run_dir": str(save_dir),
-        "state_mode": config.state_mode,
-        "scale_param": config.scale_param,
-        "train_loss": history["train_loss"],
-        "val_loss": history["val_loss"],
-        "test_loss": history.get("test_loss"),
-        "train_acc": history["train_acc"],
-        "val_acc": history["val_acc"],
-        "test_acc": history.get("test_acc"),
-    }
-
-
-
-
-def run_grid_search(grid: dict[str, list[object]] | Path, base_save_dir: Path) -> None:
-    if isinstance(grid, Path):
-        grid = load_grid_from_json(grid)
-
-    base_save_dir.mkdir(parents=True, exist_ok=True)
-    base_config = {
-        "model_name": "Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1",
-        "weights_path": str(Path("../reproduce/weights/1024_75.pth")),
-    }
-
-    summary_rows: list[dict[str, object]] = []
-    for config_dict in grid_iter(grid):
-        config = InterventionConfig(**{**base_config, **config_dict})
-        if should_skip_config(config):
-            print(f"Skipping invalid config: {make_run_name(config)}")
-            continue
-
-        run_dir = base_save_dir / make_run_name(config)
-        if run_dir.exists() and (run_dir / "history.csv").exists():
-            summary_rows.append(load_run_summary_row(config, run_dir))
-            continue
-
-        history = run_experiment(config, run_dir, verbose=False)
-        summary_rows.append(make_summary_row(config, run_dir, history))
-
-    save_grid_summary(summary_rows, base_save_dir)
-
-
-def _run_grid_item(config_dict: dict[str, object], base_save_dir: Path, base_config: dict[str, object]) -> dict[str, object] | None:
-    config = InterventionConfig(**{**base_config, **config_dict})
-    if should_skip_config(config):
+def _run_config(config_dict: dict[str, object], base_save_dir: Path, skip_existing: bool) -> dict[str, object] | None:
+    config = InterventionConfig(**config_dict)
+    if config.should_skip_config():
         return None
 
     run_dir = base_save_dir / make_run_name(config)
-    if run_dir.exists() and (run_dir / "history.csv").exists():
+    if skip_existing and run_dir.exists() and (run_dir / "history.csv").exists():
         return load_run_summary_row(config, run_dir)
 
     history = run_experiment(config, run_dir, verbose=False)
     return make_summary_row(config, run_dir, history)
 
 
+def run_grid_search(
+    grid: dict[str, list[object]] | Path,
+    base_save_dir: Path,
+    skip_existing: bool = True,
+) -> list[dict[str, object]]:
+    if isinstance(grid, Path):
+        grid = load_grid_from_json(grid)
+
+    base_save_dir.mkdir(parents=True, exist_ok=True)
+    summary_rows: list[dict[str, object]] = []
+
+    for config_dict in grid_iter(grid):
+        row = _run_config(config_dict, base_save_dir, skip_existing)
+        if row is not None:
+            summary_rows.append(row)
+
+    save_grid_summary(summary_rows, base_save_dir)
+    return summary_rows
+
+
 def run_grid_search_parallel(
     grid: dict[str, list[object]] | Path,
     base_save_dir: Path,
+    skip_existing: bool = True,
     n_jobs: int = -1,
 ) -> list[dict[str, object]]:
     if isinstance(grid, Path):
         grid = load_grid_from_json(grid)
 
     base_save_dir.mkdir(parents=True, exist_ok=True)
-    base_config = {
-        "model_name": "Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1",
-        "weights_path": str(Path("../reproduce/weights/1024_75.pth")),
-    }
-
     jobs = list(grid_iter(grid))
-    summary_rows = Parallel(n_jobs=n_jobs)(
-        delayed(_run_grid_item)(config_dict, base_save_dir, base_config)
-        for config_dict in jobs
-    )
+
+    with tqdm_joblib(tqdm(desc="grid search", total=len(jobs))) as progress_bar:
+        summary_rows = Parallel(n_jobs=n_jobs)(
+            delayed(_run_config)(config_dict, base_save_dir, skip_existing)
+            for config_dict in jobs
+        )
+
     summary_rows = [row for row in summary_rows if row is not None]
     save_grid_summary(summary_rows, base_save_dir)
     return summary_rows
 
 
-def make_summary_row(config: InterventionConfig, run_dir: Path, history: dict[str, list[float]]) -> dict[str, object]:
+def _last(list_or_none: list[object] | object | None):
+    if list_or_none is None:
+        return None
+    if isinstance(list_or_none, list):
+        return list_or_none[-1] if list_or_none else None
+    return list_or_none
+
+
+def _history_stats(history: dict[str, list[float] | float]) -> dict[str, object]:
+    last_epoch = len(history["val_loss"])
+    best_epoch = int(min(range(last_epoch), key=lambda i: history["val_loss"][i]))
+
+    return {
+        "epochs": last_epoch,
+        "best_epoch": best_epoch,
+        "train_loss": _last(history.get("train_loss")),
+        "train_acc": _last(history.get("train_acc")),
+        "val_loss": _last(history.get("val_loss")),
+        "val_acc": _last(history.get("val_acc")),
+        "final_test_loss": _last(history.get("final_test_loss")) or _last(history.get("test_loss")),
+        "final_test_acc": _last(history.get("final_test_acc")) or _last(history.get("test_acc")),
+    }
+
+
+def _history_stats_from_df(history_df: pd.DataFrame) -> dict[str, object]:
+    last_row = history_df.iloc[-1]
+    return {
+        "epochs": len(history_df),
+        "best_epoch": int(history_df["val_loss"].idxmin()),
+        "train_loss": float(last_row["train_loss"]),
+        "train_acc": float(last_row["train_acc"]),
+        "val_loss": float(last_row["val_loss"]),
+        "val_acc": float(last_row["val_acc"]),
+        "final_test_loss": float(last_row["test_loss"]) if "test_loss" in history_df.columns else None,
+        "final_test_acc": float(last_row["test_acc"]) if "test_acc" in history_df.columns else None,
+    }
+
+
+def _base_summary(config: InterventionConfig, run_dir: Path) -> dict[str, object]:
     return {
         "run_dir": str(run_dir),
         "state_mode": config.state_mode,
         "scale_param": config.scale_param,
         "pretrained_embedding": config.pretrained_embedding,
         "freeze_embedding": config.freeze_embedding,
-        "learning_rate": config.learning_rate,
-        "batch_size": config.batch_size,
         "hidden_size": config.hidden_size,
-        "num_epochs": config.num_epochs,
-        "patience": config.patience,
-        "min_delta": config.min_delta,
-        "max_seq_len": config.max_seq_len,
-        "val_ratio": config.val_ratio,
-        "seed": config.seed,
-        "train_loss": history["train_loss"][-1],
-        "val_loss": history["val_loss"][-1],
-        "test_loss": history["test_loss"][-1] if history.get("test_loss") else None,
-        "train_acc": history["train_acc"][-1],
-        "val_acc": history["val_acc"][-1],
-        "test_acc": history["test_acc"][-1] if history.get("test_acc") else None,
     }
+
+
+def make_summary_row(config: InterventionConfig, run_dir: Path, history: dict[str, list[float]]) -> dict[str, object]:
+    return {**_base_summary(config, run_dir), **_history_stats(history)}
 
 
 def load_run_summary_row(config: InterventionConfig, run_dir: Path) -> dict[str, object]:
     history_df = pd.read_csv(run_dir / "history.csv")
-    return {
-        "run_dir": str(run_dir),
-        "state_mode": config.state_mode,
-        "scale_param": config.scale_param,
-        "pretrained_embedding": config.pretrained_embedding,
-        "freeze_embedding": config.freeze_embedding,
-        "learning_rate": config.learning_rate,
-        "batch_size": config.batch_size,
-        "hidden_size": config.hidden_size,
-        "num_epochs": config.num_epochs,
-        "patience": config.patience,
-        "min_delta": config.min_delta,
-        "max_seq_len": config.max_seq_len,
-        "val_ratio": config.val_ratio,
-        "seed": config.seed,
-        "train_loss": history_df["train_loss"].iloc[-1],
-        "val_loss": history_df["val_loss"].iloc[-1],
-        "test_loss": history_df["test_loss"].iloc[-1] if "test_loss" in history_df.columns else None,
-        "train_acc": history_df["train_acc"].iloc[-1],
-        "val_acc": history_df["val_acc"].iloc[-1],
-        "test_acc": history_df["test_acc"].iloc[-1] if "test_acc" in history_df.columns else None,
-    }
+    return {**_base_summary(config, run_dir), **_history_stats_from_df(history_df)}
 
 
 def save_grid_summary(rows: list[dict[str, object]], save_dir: Path) -> None:
     if not rows:
         return
-    pd.DataFrame(rows).to_csv(save_dir / "grid_search_summary.csv", index=False)
+
+    save_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = save_dir / SUMMARY_FILENAME
+    new_df = pd.DataFrame(rows)
+
+    if summary_path.exists():
+        old_df = pd.read_csv(summary_path)
+        old_df = old_df.reindex(columns=new_df.columns)
+        combined = pd.concat([old_df, new_df], ignore_index=True)
+        combined = combined.drop_duplicates(subset=["run_dir"], keep="last")
+    else:
+        combined = new_df
+
+    combined.to_csv(summary_path, index=False)
+
+
+def update_grid_summary_row(row: dict[str, object], save_dir: Path) -> None:
+    save_grid_summary([row], save_dir)
 
 
 def grid_iter(grid: dict[str, Iterable[int | str | float | bool | None]]):

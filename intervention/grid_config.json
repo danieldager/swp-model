@@ -1,17 +1,18 @@
 {
   "model_name": ["Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"],
   "weights_path": ["../reproduce/weights/1024_75.pth"],
-  "state_mode": ["both", "concat", "h", "c"],
-  "scale_param": [ "one_scale","linear","per_pos","onion"],
+  "state_mode": [ "concat", "both","c"],
+  "scale_param":[ "one_scale","linear", "onion", "per_pos"], 
   "pretrained_embedding": [false, true],
   "freeze_embedding": [false, true],
   "learning_rate": [0.001],
   "batch_size": [32],
   "hidden_size": [128],
-  "num_epochs": [5],
-  "patience": [7],
-  "min_delta": [0.0001],
+  "num_epochs": [200],
+  "patience": [5],
+  "min_delta": [0.00001],
   "max_seq_len": [20],
   "val_ratio": [0.05],
   "seed": [42]
 }
+

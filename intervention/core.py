@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import copy
 import torch.nn.functional as F
-from scale_intervention import ScaleIntervention
+from intervention.scale_intervention_model import ScaleIntervention
 
 def create_dataloader(
     df: pd.DataFrame,
@@ -71,14 +71,12 @@ class InterventionDataset(Dataset):
         self.examples: list[dict[str, int | list[int]]] = []
         for seq in phoneme_sequences:
             seq = seq.copy()
-            if seq[-1] != self.eos_id:
-                seq.append(self.eos_id)
 
             if self.random_replace_pos:
-                replace_pos = np.random.randint(0, min(self.max_pos, len(seq) - 1))
+                replace_pos = np.random.randint(0, min(self.max_pos, len(seq)))
                 pos_list = [replace_pos]
             else:
-                pos_list = list(range(min(self.max_pos, len(seq) - 1)))
+                pos_list = list(range(min(self.max_pos, len(seq))))
 
             for replace_pos in pos_list:
                 old_token = seq[replace_pos]
@@ -109,8 +107,8 @@ class InterventionDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         example = self.examples[idx]
-        seq = example["seq"]
-        modified_seq = example["modified_seq"]
+        seq = example["seq"] + [self.eos_id]
+        modified_seq = example["modified_seq"] + [self.eos_id]
 
         input_padded = seq + [self.pad_id] * max(0, self.max_len - len(seq))
         target_padded = modified_seq + [self.pad_id] * max(0, self.max_len - len(modified_seq))
@@ -216,7 +214,7 @@ class InterventionTrainer:
             self.intervention.train()
         else:
             self.intervention.eval()
-            self.model.eval()
+        self.model.eval()
 
         total_loss = 0.0
         total_acc = 0.0
@@ -297,6 +295,7 @@ class InterventionTrainer:
         }
 
         best_val_loss = float("inf")
+        best_epoch = 0
         best_state = copy.deepcopy(self.intervention.state_dict())
         epochs_without_improvement = 0
 
@@ -324,6 +323,7 @@ class InterventionTrainer:
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_state = copy.deepcopy(self.intervention.state_dict())
+            best_epoch = 0
 
         for epoch in range(1, num_epochs + 1):
             train_loss, train_acc = self.train_epoch(train_loader)
@@ -350,6 +350,7 @@ class InterventionTrainer:
             if val_loss + min_delta < best_val_loss:
                 best_val_loss = val_loss
                 best_state = copy.deepcopy(self.intervention.state_dict())
+                best_epoch = epoch
                 epochs_without_improvement = 0
             else:
                 epochs_without_improvement += 1
@@ -362,9 +363,12 @@ class InterventionTrainer:
                 break
 
         self.intervention.load_state_dict(best_state)
+        if verbose:
+            print(f"Loaded best intervention state from epoch {best_epoch} with val_loss={best_val_loss:.4f}")
         return self.history
 
     def save_scale_params(self, save_dir: Path) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
         params = self.intervention.scale_parameters()
         np.savez(save_dir / "scale_params.npz", **params)
+
