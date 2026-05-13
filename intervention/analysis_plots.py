@@ -296,7 +296,7 @@ def plot_run_summary(run_dir: Path, feature_cols: list[str] | None = None, phone
     config = load_run_config(run_dir)
     title = (
         f"scale_param={config.get('scale_param')} | state_mode={config.get('state_mode')} | "
-        f"load_embed={config.get('pretrained_embedding')} | train_embed={not config.get('freeze_embedding', False)}"
+        f"load_embed={config.get('pretrained_embedding')} | train_embed={ config.get('train_embedding', False)}"
     )
 
     plot_training_history(load_history(run_dir), run_dir, title=title)

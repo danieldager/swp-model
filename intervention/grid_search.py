@@ -32,13 +32,15 @@ class InterventionConfig:
     max_seq_len: int
     val_ratio: float
     seed: int
-    freeze_embedding: bool
+    train_embedding: bool
+    teacher_forcing: bool
+    train_all_pos: bool
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
     def should_skip_config(self) -> bool:
-        return self.pretrained_embedding is False and self.freeze_embedding is True
+        return self.pretrained_embedding is False and self.train_embedding is False
 
     def save_experiment_config(self, save_dir: Path) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
@@ -56,7 +58,8 @@ def make_run_name(config: InterventionConfig) -> str:
         f"{config.scale_param}",
         f"state_{config.state_mode}",
         "load_embed" if config.pretrained_embedding else None,
-        "train_embed" if not config.freeze_embedding else None,
+        "train_embed" if config.train_embedding else None,
+        "teacher_forcing" if config.teacher_forcing else None,
     ]
     return "-".join(part for part in parts if part is not None)
 
@@ -161,7 +164,9 @@ def _base_summary(config: InterventionConfig, run_dir: Path) -> dict[str, object
         "state_mode": config.state_mode,
         "scale_param": config.scale_param,
         "pretrained_embedding": config.pretrained_embedding,
-        "freeze_embedding": config.freeze_embedding,
+        "train_embedding": config.train_embedding,
+        "teacher_forcing": config.teacher_forcing,
+        "train_all_pos": config.train_all_pos,
         "hidden_size": config.hidden_size,
     }
 

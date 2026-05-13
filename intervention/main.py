@@ -18,12 +18,14 @@ from grid_search import InterventionConfig, load_grid_from_json, run_grid_search
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Intervention experiment runner")
     parser.add_argument("--mode", choices=["single", "grid"], default="grid")
+    parser.add_argument("--save_dir", type=str, default="results/grid_search")
     return parser.parse_args()
 
 
 def main() -> None:
-    output_dir = Path("results/grid_search")
+    
     args = parse_args()
+    output_dir = Path(args.save_dir)
     if args.mode == "grid":
         grid = load_grid_from_json(ROOT / "grid_config.json")
         run_grid_search_parallel(grid, output_dir, skip_existing=False, n_jobs=-1)
@@ -33,11 +35,13 @@ def main() -> None:
         model_name="Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1",
         weights_path=str(Path("../reproduce/weights/1024_75.pth")),
         state_mode='c',
-        scale_param='one_scale',
+        scale_param='per_pos',
         pretrained_embedding=True,
-        freeze_embedding=False,
+        train_embedding=True,
+        teacher_forcing=False,
+        train_all_pos=False,
         learning_rate=1e-3,
-        batch_size=32,
+        batch_size=128,
         hidden_size=128,
         num_epochs=200,
         patience=7,

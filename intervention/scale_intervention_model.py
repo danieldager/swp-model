@@ -28,7 +28,7 @@ class ScaleIntervention(nn.Module):
         scale_param: str = "onion",
         max_position: int = 15,
         pretrained_embedding: nn.Embedding | None = None,
-        freeze_embedding: bool = False,
+        train_embedding: bool = False,
     ):
         super().__init__()
         self.hidden_size = hidden_size
@@ -37,7 +37,7 @@ class ScaleIntervention(nn.Module):
         self.max_position = max_position
         self.state_dim = hidden_size * 2 if self.state_mode == "concat" else hidden_size
 
-        self.embedding = self._build_embedding(vocab_size, pretrained_embedding, freeze_embedding)
+        self.embedding = self._build_embedding(vocab_size, pretrained_embedding, train_embedding)
         self.token_proj = self._build_token_projection(pretrained_embedding)
         self._build_scale_parameters()
 
@@ -45,7 +45,7 @@ class ScaleIntervention(nn.Module):
         self,
         vocab_size: int,
         pretrained_embedding: nn.Embedding | None,
-        freeze_embedding: bool,
+        train_embedding: bool,
     ) -> nn.Embedding:
         if pretrained_embedding is None:
             embedding = nn.Embedding(vocab_size, self.state_dim)
@@ -53,7 +53,7 @@ class ScaleIntervention(nn.Module):
             embed_dim = pretrained_embedding.embedding_dim
             embedding = nn.Embedding(vocab_size, embed_dim)
             embedding.weight.data.copy_(pretrained_embedding.weight.data)
-        embedding.weight.requires_grad = not freeze_embedding 
+        embedding.weight.requires_grad = train_embedding
         return embedding
 
     def _build_token_projection(self, pretrained_embedding: nn.Embedding | None) -> nn.Module:
@@ -73,11 +73,11 @@ class ScaleIntervention(nn.Module):
             self.position_weight = nn.Parameter(torch.ones(self.max_position, 1))
         elif self.scale_param == "onion":
             self.gamma = nn.Parameter(torch.ones(self.state_dim) * 0.9)
-            self.beta = nn.Parameter(torch.zeros(self.state_dim))
+            self.beta = nn.Parameter(torch.ones(self.state_dim))
             self.g = nn.Parameter(torch.ones(self.state_dim))
             self.b = nn.Parameter(torch.zeros(self.state_dim))
         elif self.scale_param == "linear":
-            self.beta = nn.Parameter(torch.zeros(self.state_dim))
+            self.beta = nn.Parameter(torch.ones(self.state_dim))
             self.b = nn.Parameter(torch.zeros(self.state_dim))
         # elif self.scale_param == "spiral":
         #     self.base_scale = nn.Parameter(torch.randn(self.state_dim))

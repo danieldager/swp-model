@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
-from intervention.test.onion_rep_intervention import make_run_name
+
 from swp.datasets.phonemes import get_phoneme_to_id
 from swp.utils.datasets import get_train_dataset
 from swp.utils.models import get_model
 from swp.utils.setup import set_device as get_device
 
 from intervention.analysis_plots import plot_run_summary
-from core import ScaleIntervention, create_dataloader, InterventionTrainer
+from intervention.core import ScaleIntervention, create_dataloader, InterventionTrainer
 
 if TYPE_CHECKING:
     from intervention.grid_search import InterventionConfig
@@ -65,7 +65,7 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         shuffle=True,
         max_len=config.max_seq_len,
         max_pos=max_position,
-        random_replace_pos=True,
+        random_replace_pos= not config.train_all_pos,
     )
     val_loader = create_dataloader(
         val_df,
@@ -95,11 +95,13 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         scale_param=config.scale_param,
         max_position=max_position,
         pretrained_embedding=model.encoder.embedding if config.pretrained_embedding else None,
-        freeze_embedding=config.freeze_embedding,
+        train_embedding=config.train_embedding,
     ).to(device)
 
     optimizer = torch.optim.Adam(intervention.parameters(), lr=config.learning_rate)
-    trainer = InterventionTrainer(model, intervention, optimizer, device, pad_id)
+    trainer = InterventionTrainer(model, intervention, optimizer, device, pad_id, config.teacher_forcing)
+
+    from intervention.grid_search import make_run_name
     run_name = make_run_name(config)
 
     history = trainer.fit(

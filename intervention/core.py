@@ -178,9 +178,11 @@ class InterventionTrainer:
         optimizer: torch.optim.Optimizer,
         device: torch.device,
         pad_id: int,
+        teacher_forcing: bool = False,
     ):
         self.model = model
         self.intervention = intervention
+        self.teacher_forcing = teacher_forcing
         self.optimizer = optimizer
         self.device = device
         self.pad_id = pad_id
@@ -203,7 +205,7 @@ class InterventionTrainer:
 
         h, c = get_encoder_hidden(self.model, input_ids, self.device)
         h_mod, c_mod = self.intervention.intervene(h, c, old_token, new_token, position)
-        logits = decode_with_hidden(self.model, h_mod, c_mod, target_ids, self.device)
+        logits = decode_with_hidden(self.model, h_mod, c_mod, target_ids, self.device, self.teacher_forcing)
 
         loss = self._compute_loss(logits, target_ids)
         preds = logits.argmax(dim=-1)
