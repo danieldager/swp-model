@@ -15,7 +15,7 @@ eng_to_ipa>=0.0.2
 nltk>=3.9.1
 statsmodels>=0.14.4
 torchaudio>=2.5.1
-transformers>=4.40.0
+transformers>=4.40.0,<5
 descript-audio-codec
 descript-audiotools
 xarray>=2024.1.0

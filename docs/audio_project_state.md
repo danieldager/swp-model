@@ -989,7 +989,28 @@ commands and `scripts/audio/PIPELINE.md` for the detailed technical reference.
 > and unit profile scripts (`build_unit_profiles.py`, old Step 10) are superseded by the
 > above analysis_view-safe tools.
 
-### Next phase: compare other families of speech models
+### Next phase: AuriStream phoneme embedding pipeline
+
+The codec analyses are a validated baseline. Yair Lakretz validated the next step:
+use **AuriStream continuous hidden states** (Tuckute et al., Interspeech 2025),
+identify phoneme boundaries for each stimulus, average hidden states within each phoneme,
+then analyze phoneme embeddings with PCA and norm as a function of phoneme position.
+
+**AuriStream setup — in progress (branch `feat/auristream-setup`):**
+- Source: HuggingFace `TuKoResearch/` org — see `docs/auristream_setup.md`
+- Install: no new packages beyond existing `requirements.txt`
+- **Synthetic + real-audio smoke tests: PASSED** (2026-05-13, `transformers==4.57.6`)
+- `requirements.txt` pinned to `transformers>=4.40.0,<5`
+- WavCoch (`TuKoResearch/WavCochV8192`) and AuriStream-1B (`AuriStream1B_librilight_ckpt500k`) load on MPS
+- AuriStream-1B confirmed: `n_layer=48`, `n_head=16`, `n_embd=1280`, `vocab=8192`
+- Hidden states: **49 tensors `(1, L, 1280)`** per stimulus via `output_hidden_states=True`, no hooks
+- Short clips accepted natively; **floor rounding confirmed** (L = T // 80 = 200 Hz grid)
+- Real paradigm WAVs tested: Press_FEMALE_C (163 tok), Press_MALE_D (168 tok), abosh_FEMALE_C (167 tok)
+- **Primary extraction target:** full temporal hidden-state sequence per layer; phoneme mean-pooling later, after MFA
+- Remaining caveat: exact WavCoch internal window alignment unverified from remote code
+- **Setup branch complete.** Next: `feat/auristream-extract-hidden-states`
+
+### Next phase (original): compare other families of speech models
 
 The audio codec analyses are a validated exploratory baseline. The next stage of the project
 is to apply the same paradigm — signal metrics, activation encoding, PCA geometry — to other
