@@ -381,6 +381,103 @@ for scientific context and validated run IDs.
 
 ---
 
+## AuriStream phoneme embeddings
+
+Builds phoneme-level AuriStream embeddings by mean-pooling the saved temporal
+hidden states over phoneme boundary intervals from MFA forced alignment.
+
+This is a four-step pipeline. Steps 1 and 3–4 are run from the `swpm` conda
+environment; step 2 is run in a separate MFA conda environment.
+
+### Step A — Prepare MFA corpus
+
+```bash
+python scripts/audio/prepare_mfa_corpus.py \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --output  data/external/paradigm/mfa/subset_male_corpus
+```
+
+Creates `{item_id}.wav` + `{item_id}.txt` pairs. The transcript is inferred
+from the item_id by default (e.g. `infertile_MALE_D` → `infertile`).
+
+### Step B — Run MFA forced alignment (user-run, separate environment)
+
+```bash
+# Activate your MFA environment, then run:
+# (model names are examples — confirm with `mfa model list` in your installation)
+
+# mfa model download acoustic <english_acoustic_model>
+# mfa model download g2p      <english_g2p_model>
+
+# mfa g2p \
+#     data/external/paradigm/mfa/subset_male_corpus \
+#     <english_g2p_model> \
+#     data/external/paradigm/mfa/subset_male_pronunciation.dict
+
+# mfa align \
+#     data/external/paradigm/mfa/subset_male_corpus \
+#     data/external/paradigm/mfa/subset_male_pronunciation.dict \
+#     <english_acoustic_model> \
+#     data/external/paradigm/mfa/subset_male_aligned
+```
+
+See `scripts/audio/run_mfa_alignment_template.sh` for the full annotated template.
+
+### Step C — Convert TextGrids to boundary CSV
+
+```bash
+python scripts/audio/textgrid_to_phoneme_boundaries.py \
+    --dataset      data/external/paradigm/processed/subset_male.csv \
+    --textgrid-dir data/external/paradigm/mfa/subset_male_aligned \
+    --output       data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv
+```
+
+Output: `data/external/paradigm/processed/phoneme_boundaries_mfa_{dataset_name}.csv`
+with columns: `item_id, phoneme, phoneme_index, start_s, end_s, duration_s, word, tier, textgrid_path`
+
+**Dataset naming convention:** the boundary CSV is named after the dataset stem so that
+multiple datasets can coexist:
+- `phoneme_boundaries_mfa_subset_male.csv`
+- `phoneme_boundaries_mfa_subset_female.csv`
+- `phoneme_boundaries_mfa_subset_all_speakers.csv`
+
+The boundary CSV must match the dataset used for the AuriStream extraction run it
+will be paired with (e.g. `auristream__9d3f269f` was extracted from `subset_male.csv`).
+
+### Step D — Build phoneme embeddings
+
+```bash
+python scripts/audio/build_phoneme_embeddings.py \
+    --run        reproduce/data/audio/auristream__9d3f269f \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers     embedding block_12 block_24 block_36 block_48
+```
+
+Smoke test (3 items):
+
+```bash
+python scripts/audio/build_phoneme_embeddings.py \
+    --run        reproduce/data/audio/auristream__9d3f269f \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers     embedding block_12 block_48 \
+    --max-items  3
+```
+
+Output: `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/`
+- `metadata_phonemes.csv` — one row per phoneme, aligned with tensors
+- `embeddings_{layer}.pt` — shape `[n_phonemes, 1280]` float32
+- `manifest.json` — provenance, boundary hash, token selection rule
+
+**Validated run (2026-05-15, `subset_male`):**
+1055 phonemes, 180 items, 5 layers, `[1055, 1280]` float32, zero zero-token rows,
+token_selection=center. Source run: `auristream__9d3f269f`.
+
+> **Note:** Generated data files are not committed:
+> `data/external/paradigm/mfa/`, `phoneme_boundaries_mfa_*.csv`,
+> `reproduce/data/audio/*/phoneme_embeddings/`
+
+---
+
 ## Package structure
 
 ```
@@ -402,6 +499,9 @@ swp/audio/
 ├── pipeline/
 │   ├── extraction.py               # run_extraction() — codec reconstruction + activations
 │   └── representation_extraction.py  # run_representation_extraction() — hidden states only
+├── phonemes/
+│   ├── boundaries.py               # load_boundaries(), SILENCE_LABELS, REQUIRED_COLUMNS
+│   └── pooling.py                  # tokens_for_phoneme(), pool_phoneme(), build_phoneme_embeddings()
 └── encoding/
     ├── xarray_builder.py     # Step 5: .pt → xarray.Dataset (trials, time, neurons)
     ├── temporal_binning.py   # relative-time binning for encoding analyses
@@ -418,6 +518,10 @@ scripts/audio/
 ├── sanity_check.py                            # Smoke test for any registered model
 ├── extract.py                                 # Step 1 CLI (codec reconstruction + activations)
 ├── extract_representations.py                 # Representation-only extraction CLI (AuriStream, …)
+├── prepare_mfa_corpus.py                      # Step A: prepare MFA corpus from paradigm CSV
+├── textgrid_to_phoneme_boundaries.py          # Step C: TextGrid → phoneme boundary CSV
+├── build_phoneme_embeddings.py                # Step D: mean-pool hidden states → phoneme embeddings
+├── run_mfa_alignment_template.sh              # Step B: MFA alignment template (not executable)
 ├── build_xarray.py                            # Step 5 CLI: canonical xarray export
 ├── run_univariate_encoding.py                 # Step 6 CLI: per-neuron Ridge CV
 ├── summarize_univariate_encoding.py           # Step 7 CLI: summary CSVs (both layers in ONE call)

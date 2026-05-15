@@ -1,6 +1,6 @@
 # Audio Codec Extension — Project State
 
-*Last updated: 2026-05-13 · Current work: `feat/auristream-extract-hidden-states`*
+*Last updated: 2026-05-15 · Current work: `feat/auristream-build-phoneme-embeddings`*
 
 ---
 
@@ -967,8 +967,10 @@ commands and `scripts/audio/PIPELINE.md` for the detailed technical reference.
   (e.g. multivariate regression, RSA) are not yet implemented.
 - **No clustering yet**: unit profile features are computed and ready in `unit_inspection/`;
   clustering of units by FI profile is planned for a later stage.
-- **No phoneme-level alignment**: the current analysis remains at the waveform / latent frame
-  level and is not aligned to phoneme boundaries.
+- **Phoneme-level alignment implemented for `subset_male`**: MFA forced alignment, TextGrid
+  → boundary CSV, and AuriStream phoneme embeddings (mean-pooled per phoneme, 5 layers,
+  `[1055, 1280]`) are complete. PCA and norm analyses as a function of phoneme position
+  are not yet implemented.
 - **No ablation pipeline yet**: hard and soft ablation studies are planned but not implemented.
 - **No new stimuli yet**: current results are based only on the existing English paradigm
   stimuli (male speaker).
@@ -1014,8 +1016,18 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   - Extraction pipeline is **separate from codec reconstruction** — no signal metrics produced
   - New files: `swp/audio/models/auristream.py`, `swp/audio/pipeline/representation_extraction.py`,
     `scripts/audio/extract_representations.py`
-- **Next step:** phoneme boundaries (MFA) → phoneme mean-pooling → PCA/norm analyses
-  (on a dedicated future branch, not this one)
+- **MFA phoneme embedding pipeline — complete** (branch `feat/auristream-build-phoneme-embeddings`):
+  - MFA corpus prepared (`prepare_mfa_corpus.py`): 180 WAV/TXT pairs
+  - MFA aligned: 180 TextGrid files in `data/external/paradigm/mfa/subset_male_aligned/`
+  - Boundary CSV: `data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv`
+    — 1055 rows, 180 items, ~5.9 phonemes/item (min 3, max 10); zero silent/zero-token rows
+  - Phoneme embeddings: `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/`
+    — shape `[1055, 1280]` float32 per layer; 5 layers; token_selection_rule = center
+  - New files: `swp/audio/phonemes/`, `scripts/audio/{prepare_mfa_corpus,textgrid_to_phoneme_boundaries,build_phoneme_embeddings}.py`
+  - **Not committed:** `data/external/paradigm/mfa/`, `phoneme_boundaries_mfa_subset_male.csv`,
+    `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/` (generated data, not versioned)
+- **Next step:** PCA and norm analyses on phoneme embeddings as a function of position
+  (on a dedicated future branch)
 
 ### Next phase (original): compare other families of speech models
 
