@@ -476,6 +476,34 @@ token_selection=center. Source run: `auristream__9d3f269f`.
 > `data/external/paradigm/mfa/`, `phoneme_boundaries_mfa_*.csv`,
 > `reproduce/data/audio/*/phoneme_embeddings/`
 
+### Step E — Analyse phoneme embeddings: PCA + norm by position
+
+```bash
+python scripts/audio/auristream_phoneme_pca_norm.py \
+    --embeddings-dir reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/ \
+    --dataset        data/external/paradigm/processed/subset_male.csv \
+    --layers         embedding block_12 block_24 block_36 block_48 \
+    --overwrite
+```
+
+Output: `reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/`
+
+Per layer: PCA scatter plots (by position, lexicality, phone label), norm-by-position
+curves (from start / from end, split by lexicality and length), and aligned CSVs.
+
+**Validated run (2026-05-17, `subset_male`, 5 layers):**
+
+| Layer | PC1 | PC2 | n |
+|---|---|---|---|
+| `embedding` | 14.4 % | 9.6 % | 1055 |
+| `block_12` | 11.5 % | 6.9 % | 1055 |
+| `block_24` | 12.6 % | 7.9 % | 1055 |
+| `block_36` | 11.6 % | 7.7 % | 1055 |
+| `block_48` | 82.9 % | 2.9 % | 1055 |
+
+Note: `block_48` PC1 dominance (82.9 %) is striking and warrants inspection before
+drawing scientific conclusions.
+
 ---
 
 ## Package structure
@@ -521,6 +549,7 @@ scripts/audio/
 ├── prepare_mfa_corpus.py                      # Step A: prepare MFA corpus from paradigm CSV
 ├── textgrid_to_phoneme_boundaries.py          # Step C: TextGrid → phoneme boundary CSV
 ├── build_phoneme_embeddings.py                # Step D: mean-pool hidden states → phoneme embeddings
+├── auristream_phoneme_pca_norm.py             # Step E: PCA + norm-by-position analysis of phoneme embeddings
 ├── run_mfa_alignment_template.sh              # Step B: MFA alignment template (not executable)
 ├── build_xarray.py                            # Step 5 CLI: canonical xarray export
 ├── run_univariate_encoding.py                 # Step 6 CLI: per-neuron Ridge CV

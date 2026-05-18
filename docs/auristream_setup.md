@@ -1,7 +1,7 @@
 # AuriStream Setup Notes
 
-*Last updated: 2026-05-13*
-*Status: setup complete, smoke tests passed, extraction branch implemented and validated — see §7 and §10*
+*Last updated: 2026-05-17*
+*Status: setup complete; downstream pipeline fully implemented through PCA/norm analysis — see §7 and §10*
 
 ---
 
@@ -234,25 +234,26 @@ offset observed in the empirical output. The ~31 ms offset derived from the pape
 cochleagram window (1001 samples / 2) does not match the HF model's effective grid;
 see §8 Q7 for the open question on exact internal alignment.
 
-### Primary phoneme embedding strategy (mean pooling)
+### Primary phoneme embedding strategy (mean pooling, center-based selection)
 
-Once phoneme boundaries are available from forced alignment (e.g. MFA), the
-phoneme embedding for phoneme `p` at layer `k` is computed as:
+The validated pipeline (`build_phoneme_embeddings.py`, default `--token-selection center`)
+uses **center-based token selection**: token `i` is included if its center time falls
+within the phoneme interval.
 
 ```
-tokens_in_p = {i : i * 0.005 >= phoneme_start_s
-                   AND i * 0.005 < phoneme_end_s}
+token_center_s(i) = (i + 0.5) / 200
+
+tokens_in_p = {i : phoneme_start_s <= token_center_s(i) < phoneme_end_s}
 
 phoneme_embedding[p, k] = mean over i in tokens_in_p of all_hidden[k][0, i, :]
                          # shape: (D,)
 ```
 
-This gives one `(D,)`-vector per (stimulus, phoneme, layer). All tokens whose
-window-start falls within the phoneme interval are included; the hidden-state
-values are averaged across that time span.
+This gives one `(D,)`-vector per (stimulus, phoneme, layer).
 
-This is the primary representation strategy. It is not computed during this
-setup/feasibility branch — it requires phoneme boundaries from a forced aligner.
+Start-based selection (`--token-selection start`, using `i * 0.005` as the criterion)
+is available as an alternative for reproducibility or causal-control comparisons,
+but is not the default.
 
 ### Secondary analysis: last-token causal control (optional)
 
@@ -415,9 +416,10 @@ is recommended before treating token indices as exact frame boundaries.
 3. **Non-multiple-of-80 inputs — RESOLVED.** WavCoch uses floor rounding: trailing
    samples shorter than one 5 ms step are dropped. The last partial step before a
    phoneme boundary may therefore be absent from the token sequence. For phoneme-
-   boundary alignment, the practical rule is that token index `i` nominally covers
-   `[i * 5ms, (i+1) * 5ms)`, and tokens whose window-start is within the phoneme
-   interval are included in the mean pool.
+   boundary alignment, the validated pipeline uses **center-based token selection**
+   by default: token `i` is included if its center `(i + 0.5) / 200` falls within
+   the phoneme interval `[start_s, end_s)`. Start-based selection (window-start
+   within the interval) is available as an alternative/control via `--token-selection start`.
 
 4. **HF custom code stability** — `trust_remote_code=True` means the model code
    may change across commits. Pin to a specific revision once a working version
@@ -466,4 +468,17 @@ rule `token i → [i*5ms, (i+1)*5ms)` is sufficient until finer alignment is nee
 ### Next step
 
 Phoneme boundaries (MFA / forced alignment) → mean-pool hidden states per phoneme
-interval → PCA / norm analyses. On a dedicated future branch.
+interval → PCA / norm analyses.
+
+**Downstream status (2026-05-17):** the full pipeline is implemented and validated
+for `subset_male` across three branches:
+
+| Step | Script |
+|---|---|
+| Hidden-state extraction | `scripts/audio/extract_representations.py` |
+| MFA corpus + TextGrid → boundary CSV | `scripts/audio/prepare_mfa_corpus.py`, `textgrid_to_phoneme_boundaries.py` |
+| Mean-pool → phoneme embeddings | `scripts/audio/build_phoneme_embeddings.py` |
+| PCA + norm-by-position analysis | `scripts/audio/auristream_phoneme_pca_norm.py` |
+
+See `docs/audio_project_state.md` §9 for validated run statistics and current
+scientific status.

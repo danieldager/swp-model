@@ -1,6 +1,6 @@
 # Audio Codec Extension — Project State
 
-*Last updated: 2026-05-15 · Current work: `feat/auristream-build-phoneme-embeddings`*
+*Last updated: 2026-05-17 · Current work: `feat/auristream-phoneme-pca-norm`*
 
 ---
 
@@ -967,10 +967,11 @@ commands and `scripts/audio/PIPELINE.md` for the detailed technical reference.
   (e.g. multivariate regression, RSA) are not yet implemented.
 - **No clustering yet**: unit profile features are computed and ready in `unit_inspection/`;
   clustering of units by FI profile is planned for a later stage.
-- **Phoneme-level alignment implemented for `subset_male`**: MFA forced alignment, TextGrid
-  → boundary CSV, and AuriStream phoneme embeddings (mean-pooled per phoneme, 5 layers,
-  `[1055, 1280]`) are complete. PCA and norm analyses as a function of phoneme position
-  are not yet implemented.
+- **AuriStream phoneme pipeline implemented for `subset_male`**: MFA alignment, phoneme
+  embeddings (center-based mean-pool, 5 layers, `[1055, 1280]`), and first PCA/norm-by-position
+  analyses are complete. Remaining limitations: results are currently `subset_male` only;
+  findings are descriptive (plots need manual inspection); no inferential or statistical
+  follow-up has been performed yet.
 - **No ablation pipeline yet**: hard and soft ablation studies are planned but not implemented.
 - **No new stimuli yet**: current results are based only on the existing English paradigm
   stimuli (male speaker).
@@ -1026,8 +1027,26 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   - New files: `swp/audio/phonemes/`, `scripts/audio/{prepare_mfa_corpus,textgrid_to_phoneme_boundaries,build_phoneme_embeddings}.py`
   - **Not committed:** `data/external/paradigm/mfa/`, `phoneme_boundaries_mfa_subset_male.csv`,
     `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/` (generated data, not versioned)
-- **Next step:** PCA and norm analyses on phoneme embeddings as a function of position
-  (on a dedicated future branch)
+- **PCA + norm analysis — implemented and validated** (branch `feat/auristream-phoneme-pca-norm`):
+  - Script: `scripts/audio/auristream_phoneme_pca_norm.py`
+  - Output: `reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/`
+  - Per layer: PCA scatter (by position, lexicality, phone) + norm-by-position curves (± SEM)
+  - All 5 layers, n=1055 phonemes:
+
+  | Layer | PC1 | PC2 |
+  |---|---|---|
+  | `embedding` | 14.4 % | 9.6 % |
+  | `block_12` | 11.5 % | 6.9 % |
+  | `block_24` | 12.6 % | 7.9 % |
+  | `block_36` | 11.6 % | 7.7 % |
+  | `block_48` | **82.9 %** | 2.9 % |
+
+  **Caution:** `block_48` PC1 explains 82.9 % of variance, far above the other layers.
+  This is a striking result but requires qualitative plot inspection before scientific
+  interpretation — it may reflect a model-internal regularization or representation
+  structure at the final transformer block. No inferential claims should be drawn yet.
+- **Next step:** Manual inspection of the PCA/norm plots; decide whether summary panels
+  or further quantification are needed before drawing scientific conclusions.
 
 ### Next phase (original): compare other families of speech models
 
