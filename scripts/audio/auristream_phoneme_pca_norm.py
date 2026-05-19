@@ -70,6 +70,17 @@ _DATASET_COLS = [
 _LEX_COLORS: dict[str, str] = {"word": "#0072B2", "nonword": "#ED2727"}
 _LEN_COLORS: dict[str, str] = {"short": "#009E73", "long": "#E69F00"}
 
+_ARPABET_VOWELS: frozenset[str] = frozenset({
+    "AA", "AE", "AH", "AO", "AW", "AY",
+    "EH", "ER", "EY", "IH", "IY",
+    "OW", "OY", "UH", "UW",
+})
+_TYPE_COLORS: dict[str, str] = {
+    "vowel":     "#E69F00",
+    "consonant": "#56B4E9",
+    "other":     "#999999",
+}
+
 
 def _display_lex(lex: str) -> str:
     """Map raw CSV value to display label: 'nonword' → 'pseudoword'."""
@@ -84,6 +95,20 @@ def _layer_sort_key(name: str) -> tuple:
     if m:
         return (1, int(m.group(1)))
     return (2, name)
+
+
+def _add_phoneme_type(df: pd.DataFrame) -> pd.DataFrame:
+    """Add phoneme_base (stress-digit stripped) and phoneme_type columns."""
+    df = df.copy()
+    df["phoneme_base"] = df["phoneme"].str.replace(r"\d+$", "", regex=True).str.upper()
+
+    def _classify(base: str) -> str:
+        if base in _ARPABET_VOWELS:
+            return "vowel"
+        return "consonant" if base.isalpha() else "other"
+
+    df["phoneme_type"] = df["phoneme_base"].map(_classify)
+    return df
 
 
 # ── Data loading ──────────────────────────────────────────────────────────────
@@ -129,6 +154,7 @@ def load_data(
     available_cols = [c for c in _DATASET_COLS if c in ds.columns and c != "item_id"]
     ds_subset = ds[["item_id"] + available_cols].drop_duplicates("item_id")
     meta_df = meta_df.merge(ds_subset, on="item_id", how="left")
+    meta_df = _add_phoneme_type(meta_df)
 
     return meta_df, embeddings
 
@@ -237,6 +263,78 @@ def plot_pca_by_phone(
     plt.close(fig)
 
 
+def plot_pca_by_phoneme_type(
+    scores: np.ndarray,
+    meta: pd.DataFrame,
+    ev: list[float],
+    layer: str,
+    out_path: Path,
+) -> None:
+    """PCA scatter coloured by phoneme type (vowel / consonant / other)."""
+    fig, ax = plt.subplots(figsize=(6, 5))
+    for ptype, color in _TYPE_COLORS.items():
+        sel = meta["phoneme_type"] == ptype
+        if not sel.any():
+            continue
+        ax.scatter(scores[sel, 0], scores[sel, 1], c=color, label=ptype, s=6, alpha=0.6)
+    _scatter_base(ax, scores[:, 0], scores[:, 1], ev)
+    ax.legend(markerscale=2)
+    ax.set_title(f"PCA by phoneme type — {layer}")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
+
+
+def plot_pca_focus_phone(
+    scores: np.ndarray,
+    meta: pd.DataFrame,
+    ev: list[float],
+    layer: str,
+    phone: str,
+    out_path: Path,
+) -> bool:
+    """PCA scatter for one base phone using global coords, coloured by position."""
+    sel = meta["phoneme_base"] == phone
+    if not sel.any():
+        return False
+    pos = meta.loc[sel, "phoneme_position_from_start"].values
+    fig, ax = plt.subplots(figsize=(6, 5))
+    sc = ax.scatter(scores[sel, 0], scores[sel, 1], c=pos, cmap="viridis", s=12, alpha=0.8)
+    plt.colorbar(sc, ax=ax, label="phoneme position (from start)")
+    _scatter_base(ax, scores[:, 0], scores[:, 1], ev)
+    ax.set_title(f"PCA (global coords) — /{phone}/ only — {layer}")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
+    return True
+
+
+def plot_pca_focus_phone_refit(
+    X: np.ndarray,
+    meta: pd.DataFrame,
+    layer: str,
+    phone: str,
+    out_path: Path,
+    n_components: int,
+) -> bool:
+    """PCA refitted on rows matching base phone, coloured by position."""
+    sel = meta["phoneme_base"] == phone
+    if sel.sum() < n_components + 1:
+        return False
+    X_sub = X[sel.values]
+    scores_refit, ev_refit, _ = run_pca(X_sub, n_components)
+    pos = meta.loc[sel, "phoneme_position_from_start"].values
+    fig, ax = plt.subplots(figsize=(6, 5))
+    sc = ax.scatter(scores_refit[:, 0], scores_refit[:, 1], c=pos, cmap="viridis", s=12, alpha=0.8)
+    plt.colorbar(sc, ax=ax, label="phoneme position (from start)")
+    _scatter_base(ax, scores_refit[:, 0], scores_refit[:, 1], ev_refit)
+    ax.set_title(f"PCA (refit on /{phone}/) by position — {layer}")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
+    return True
+
+
 # ── Norm ─────────────────────────────────────────────────────────────────────
 
 
@@ -326,6 +424,8 @@ def process_layer(
     output_dir: Path,
     n_components: int,
     top_phones: int,
+    focus_phones: list[str] | None = None,
+    refit_focus_pca: bool = False,
 ) -> dict:
     """Run PCA + norm analyses for one layer. Returns dict of created files."""
     layer_dir = output_dir / layer
@@ -375,6 +475,21 @@ def process_layer(
     p = layer_dir / f"pca_{layer}_by_phone.png"
     plot_pca_by_phone(scores, meta, ev_ratio, layer, p, top_n=top_phones)
     created.append(str(p.relative_to(output_dir)))
+
+    p = layer_dir / f"pca_{layer}_by_phoneme_type.png"
+    plot_pca_by_phoneme_type(scores, meta, ev_ratio, layer, p)
+    created.append(str(p.relative_to(output_dir)))
+
+    for phone in (focus_phones or []):
+        p = layer_dir / f"pca_{layer}_phone_{phone}_by_position.png"
+        ok = plot_pca_focus_phone(scores, meta, ev_ratio, layer, phone, p)
+        if ok:
+            created.append(str(p.relative_to(output_dir)))
+        if refit_focus_pca:
+            p_refit = layer_dir / f"pca_{layer}_phone_{phone}_by_position_refit.png"
+            ok_r = plot_pca_focus_phone_refit(X, meta, layer, phone, p_refit, n_components)
+            if ok_r:
+                created.append(str(p_refit.relative_to(output_dir)))
 
     # ── Norms ────────────────────────────────────────────────────────────────
     norms = compute_norms(X)
@@ -502,6 +617,22 @@ def main() -> None:
         help="Number of most-frequent phone labels to colour individually (default: 15).",
     )
     parser.add_argument(
+        "--focus-phones", nargs="+", default=[], dest="focus_phones",
+        metavar="PHONE",
+        help=(
+            "Base ARPAbet phones to plot individually in global PCA space, "
+            "coloured by position (stress digits stripped automatically). "
+            "E.g. --focus-phones AH IH ER"
+        ),
+    )
+    parser.add_argument(
+        "--focus-phone-refit-pca", action="store_true", dest="refit_focus_pca",
+        help=(
+            "Also refit PCA on each focus-phone subset and save a _refit.png variant "
+            "(closer to Nafis-style per-phoneme PCA)."
+        ),
+    )
+    parser.add_argument(
         "--overwrite", action="store_true",
         help="Overwrite an existing output directory.",
     )
@@ -576,6 +707,8 @@ def main() -> None:
             output_dir=output_dir,
             n_components=args.n_components,
             top_phones=args.top_phones,
+            focus_phones=args.focus_phones,
+            refit_focus_pca=args.refit_focus_pca,
         )
         layer_results.append(result)
 
@@ -587,6 +720,8 @@ def main() -> None:
         "layers": layers,
         "n_components": args.n_components,
         "top_phones": args.top_phones,
+        "focus_phones": args.focus_phones,
+        "refit_focus_pca": args.refit_focus_pca,
         "source_run_id": source_run_id,
         "token_selection_rule": emb_manifest.get("token_selection_rule", "unknown"),
         "n_phonemes_total": n_total,

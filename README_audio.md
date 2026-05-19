@@ -479,17 +479,28 @@ token_selection=center. Source run: `auristream__9d3f269f`.
 ### Step E — Analyse phoneme embeddings: PCA + norm by position
 
 ```bash
+# Full run — all 5 layers, with Nafis-comparable focus-phone plots
 python scripts/audio/auristream_phoneme_pca_norm.py \
     --embeddings-dir reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/ \
     --dataset        data/external/paradigm/processed/subset_male.csv \
     --layers         embedding block_12 block_24 block_36 block_48 \
+    --focus-phones   AH IH ER \
     --overwrite
 ```
 
+Add `--focus-phone-refit-pca` to also refit PCA on each focus-phone subset
+(closer to Nafis's per-phoneme PCA plots).
+
 Output: `reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/`
 
-Per layer: PCA scatter plots (by position, lexicality, phone label), norm-by-position
-curves (from start / from end, split by lexicality and length), and aligned CSVs.
+Per layer: PCA scatter plots (by position, lexicality, phone label, **phoneme type**:
+vowel / consonant / other), **per-phone focus plots** in global PCA space (one per
+`--focus-phones` entry, coloured by position), norm-by-position curves (from start / from end,
+split by lexicality and length), and aligned CSVs.
+
+Phoneme type is ARPAbet-based: `phoneme_base` strips trailing stress digits (e.g. `AH1` → `AH`);
+15-vowel set: AA AE AH AO AW AY EH ER EY IH IY OW OY UH UW. `phoneme_base` and `phoneme_type`
+are written into all per-layer CSVs automatically.
 
 **Validated run (2026-05-17, `subset_male`, 5 layers):**
 
@@ -501,8 +512,51 @@ curves (from start / from end, split by lexicality and length), and aligned CSVs
 | `block_36` | 11.6 % | 7.7 % | 1055 |
 | `block_48` | 82.9 % | 2.9 % | 1055 |
 
-Note: `block_48` PC1 dominance (82.9 %) is striking and warrants inspection before
-drawing scientific conclusions.
+Note: `block_48` PC1 dominance (82.9 %) is a vector-magnitude effect — see Step G
+(`auristream_block48_diagnostics.py`) for full diagnostics.
+
+### Step F — Cross-layer summary panels
+
+Assembles side-by-side comparison panels from the per-layer CSVs produced in Step E.
+
+```bash
+python scripts/audio/auristream_phoneme_summary_panels.py \
+    --figures-dir reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/ \
+    --overwrite
+```
+
+Output: `{figures-dir}/summary_panels/`
+
+| Panel | Description |
+|---|---|
+| `summary_pca_by_phoneme_type_all_layers.png` | PCA: vowel / consonant / other across all layers |
+| `summary_pca_by_position_all_layers.png` | PCA by phoneme position across all layers |
+| `summary_pca_by_lexicality_all_layers.png` | PCA by lexicality across all layers |
+| `summary_norm_by_position_start_all_layers.png` | Norm by position, shared y-axis |
+| `summary_norm_by_position_start_all_layers_free_y.png` | Norm by position, free y-axis (compare shape) |
+| `summary_norm_by_position_start_all_layers_normalized.png` | Norm normalised to position 0 |
+| `summary_norm_by_position_lexicality_all_layers.png` | Norm by position × lexicality |
+
+### Step G — block_48 PC1 diagnostics
+
+Investigates why `block_48` PC1 explains 82.9 % of variance (vs. 11–13 % for other layers).
+
+```bash
+python scripts/audio/auristream_block48_diagnostics.py \
+    --figures-dir    reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/ \
+    --embeddings-dir reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/ \
+    --layer          block_48
+```
+
+**Validated findings (2026-05-18):**
+- PC1 ~ L2 norm: Pearson r = 1.000, Spearman ρ = 1.000 — PC1 is the norm axis
+- After L2-normalising embeddings: PC1 drops from 82.9 % → 12.8 % (in line with other layers)
+- Interpretation: `block_48` PC1 reflects embedding magnitude. For geometric analyses
+  (phoneme type, position), use L2-normalised embeddings or PC2+.
+
+Outputs: `{layer}_pc1_diagnostics.csv`, `{layer}_pc1_correlations.csv`,
+`{layer}_normalized_pca_comparison.json`, and three scatter PNGs (PC1 vs norm / position / n_tokens).
+The `--layer` flag accepts any layer name; `block_48` is the default.
 
 ---
 
@@ -550,6 +604,8 @@ scripts/audio/
 ├── textgrid_to_phoneme_boundaries.py          # Step C: TextGrid → phoneme boundary CSV
 ├── build_phoneme_embeddings.py                # Step D: mean-pool hidden states → phoneme embeddings
 ├── auristream_phoneme_pca_norm.py             # Step E: PCA + norm-by-position analysis of phoneme embeddings
+├── auristream_block48_diagnostics.py          # PC1 diagnostics for a specific layer (block_48 focus)
+├── auristream_phoneme_summary_panels.py       # Cross-layer summary panels from per-layer CSVs
 ├── run_mfa_alignment_template.sh              # Step B: MFA alignment template (not executable)
 ├── build_xarray.py                            # Step 5 CLI: canonical xarray export
 ├── run_univariate_encoding.py                 # Step 6 CLI: per-neuron Ridge CV
