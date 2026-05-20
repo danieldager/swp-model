@@ -120,13 +120,18 @@ Causal autoregressive transformer predicting next cochlear token.
 | Hidden dim (`n_embd`) | 784* | 1 280 |
 | Vocab | 8 192 | 8 192 |
 | Context window | 4 096 tokens (~20 s) | 4 096 tokens |
-| Position encoding | RoPE | RoPE |
+| Position encoding | Learned absolute PE (`wpe`)† | Learned absolute PE (`wpe`)† |
 | Normalization | RMSNorm (pre-norm) | RMSNorm |
 | Activation | SiLU | SiLU |
 
 *The paper reports 784 for 100M; the `AuriStreamConfig` default is 768. The actual
 value in `config.json` of any specific checkpoint overrides this and must be verified
 after loading (see §8 Unresolved questions).
+
+†`use_rope=False` is the `AuriStreamConfig` default and is **confirmed for the 1B checkpoint**
+(`lm.config.use_rope = False`). When False, the model creates `wpe = nn.Embedding(seq_len, n_embd)`
+(learned absolute positional embeddings) and sets `self.rotary = None` in every attention block.
+RoPE is fully disabled. The 100M checkpoint is untested (gated access required).
 
 ---
 
@@ -204,9 +209,12 @@ with torch.no_grad():
     out = lm(token_ids, output_hidden_states=True)
 
 # out.hidden_states : tuple of n_layer+1 tensors, each (B, L, D)
-#   index 0 : initial token embedding
-#   index k : hidden state after transformer block k  (k = 1 … n_layer)
-#   index -1 : final hidden state (after last block + RMSNorm)
+#   index 0  : wte(token_id) + wpe(position)  — NOT a pure token embedding; see §11
+#   index k  : output of block k−1 = input to block k  (k = 1 … 47)
+#   index 48 : output of block 47 (last block), BEFORE final RMSNorm (ln_f); see §11
+#
+# WARNING: hidden_states[-1] is NOT post-ln_f. Apply manually if needed:
+#   lm.transformer.ln_f(out.hidden_states[48])
 #
 # out.logits : (B, L, 8192)  — only if output_logits=True
 
@@ -398,7 +406,7 @@ is recommended before treating token indices as exact frame boundaries.
 | 2 | Exact `n_embd` for AuriStream-100M | HIGH | **RESOLVED for 1B**: n_embd=1280 confirmed. 100M untested (still needs gated access) |
 | 3 | Correct WavCoch model name: `WavCochV8192` vs `WavCochCausalV8192`? | MEDIUM | Open — `WavCochV8192` used successfully |
 | 4 | Is `WavCochCausalV8192` the right variant for our use? | MEDIUM | Open |
-| 5 | Does `output_hidden_states` index 0 = token embedding? | LOW | **RESOLVED** — confirmed: index 0 is the embedding layer, indices 1–N_layer are block outputs |
+| 5 | Does `output_hidden_states` index 0 = token embedding? | LOW | **RESOLVED** — index 0 is `wte(token) + wpe(position)`, not a pure token embedding. Index 48 is raw output of last block **before** `ln_f`. See §11. |
 | 6 | Alignment artifacts between WavCoch tokens and AuriStream hidden states? | LOW | Open — needs verification from real stimuli |
 | 7 | Why does the empirical token count (L = T//80 = 1000 for 5 s) differ from the paper formula (988)? Exact internal WavCoch cochleagram alignment? | MEDIUM | Open — verify from `modeling_wavcoch.py` remote code |
 | 8 | Token count for T not a multiple of 80 samples: floor or ceiling? | MEDIUM | **RESOLVED** — floor confirmed on real paradigm WAVs (13056→163, 13399→167) |
@@ -482,3 +490,109 @@ for `subset_male` across three branches:
 
 See `docs/audio_project_state.md` §9 for validated run statistics and current
 scientific status.
+
+---
+
+## 11. Embedding-layer and final-norm sanity checks
+
+**Script:** `scripts/audio/auristream_embedding_sanity_checks.py`
+
+Verified on `AuriStream1B_librilight_ckpt500k` using a synthetic repeated-token sequence
+(token ID 42, length 64). No real audio required.
+
+### What `hidden_states[0]` actually contains
+
+For this checkpoint (`use_rope=False`, `dropout=0.0`), the identity holds exactly:
+
+```
+hidden_states[0][0, p, :] = wte.weight[token_id] + wpe.weight[p]
+```
+
+`wpe` is a **learned absolute positional embedding** (`nn.Embedding(4096, 1280)`). With
+`dropout=0.0` there is no further transformation — the max abs error over 64 positions is < 1e-6.
+
+**Consequence:** the layer currently called `embedding` is not a pure token representation.
+It mixes token identity with absolute position, and norm variation across positions can be
+driven directly by `||wpe(p)||`.
+
+### Positional norm effect in the embedding layer
+
+| Metric | Value |
+|---|---|
+| Pearson(‖wpe(p)‖, ‖hidden_states[0][p]‖) over 64 positions | **0.9959** |
+| wte norm (single vector) | ≈ 30.2 |
+| wpe norm range (positions 0–63) | ≈ 30–40 |
+| h0 norm range | ≈ 42–50 |
+
+Near-perfect correlation: positional norm variation in the `embedding` layer is dominated
+by the learned positional embeddings.
+
+### `hidden_states[48]` is before `ln_f`
+
+When calling `lm(seq, output_hidden_states=True)` without `output_logits=True`, the model
+returns before applying `ln_f`. Therefore:
+
+- `out.hidden_states[48]` = raw output of block 47 (last transformer block), **before** the
+  final RMSNorm
+- Apply `ln_f` manually if needed: `lm.transformer.ln_f(out.hidden_states[48])`
+
+Effect of `ln_f` on `hidden_states[48]`:
+
+| Metric | Raw `h48` | After `ln_f(h48)` |
+|---|---|---|
+| Norm spread (max − min over 64 positions) | **199.2** | **1.4** |
+| Mean cosine similarity (raw vs post-ln_f) | — | **0.9974** |
+
+`ln_f` strongly collapses norm variance while preserving direction (cosine > 0.997).
+
+### Interpretation consequences
+
+- **Raw `embedding` analyses** reflect a mix of token identity and absolute position. To
+  isolate token-only representations, subtract `wpe.weight[p]` or compare tokens at
+  identical positions.
+- **Raw `block_48` analyses** include large magnitude effects that `ln_f` would neutralize.
+  For norm-based analyses, distinguish between raw `h48` and `ln_f(h48)`. For geometric
+  analyses (PCA, RSA), the two are nearly equivalent (cosine ≈ 0.997).
+
+### Phoneme-level diagnostic (`--phoneme-diagnostics`)
+
+The script accepts `--phoneme-diagnostics` to run a second analysis on the real phoneme
+embeddings, testing whether phoneme-level embedding norms are driven by `wpe` rather than
+by acoustic token content.
+
+```bash
+# Synthetic checks only (checks 1–4):
+python scripts/audio/auristream_embedding_sanity_checks.py
+
+# Synthetic checks + phoneme-level diagnostic:
+python scripts/audio/auristream_embedding_sanity_checks.py --phoneme-diagnostics
+```
+
+For each valid non-silence phoneme, it computes from saved activations (no re-extraction,
+no re-tokenization with WavCoch):
+
+| Column | Definition |
+|---|---|
+| `embedding_norm` | ‖mean_pool(h0)‖ — norm of the phoneme-level mean-pooled embedding |
+| `mean_wpe_norm` | mean ‖wpe[p]‖ over token positions p inside the phoneme |
+| `mean_wte_norm` | mean ‖h0[:,p] − wpe[p]‖ ≈ mean ‖wte[token_id_p]‖ |
+| `mean_h0_tok_norm` | mean ‖h0[:,p]‖ over token positions p inside the phoneme |
+| `mean_wte_wpe_cos` | mean cosine_similarity(wte[p], wpe[p]) per token, then averaged |
+
+`mean_wte_norm` uses the algebraic identity `wte[token_id_p] = h0[:,p] − wpe[p]`, which
+holds exactly (`dropout=0.0`, confirmed by check 2).
+
+**Outputs** (default `reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/`):
+
+| File | Content |
+|---|---|
+| `embedding_position_norm_diagnostics.csv` | Per-phoneme CSV with all columns above + metadata |
+| `embedding_position_norm_summary.json` | Pearson + Spearman correlations, mean/std per norm |
+| `embedding_position_norm_diagnostics.png` | Left: 3-curve norm-by-position (embedding, wpe, wte); Right: scatter |
+
+**Interpretation**: If `Pearson(embedding_norm, mean_wpe_norm)` is substantially higher than
+`Pearson(embedding_norm, mean_wte_norm)` and `mean_wte_norm` is approximately flat with
+phoneme position, then the position-dependent norm effect in the `embedding` layer is a
+signature of learned positional embeddings, not acoustic content. The `mean_wte_wpe_cos`
+column further tests whether `wte` and `wpe` are aligned (positive cosine amplifies
+‖wte + wpe‖ beyond each component alone).

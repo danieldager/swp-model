@@ -1027,6 +1027,11 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   - New files: `swp/audio/phonemes/`, `scripts/audio/{prepare_mfa_corpus,textgrid_to_phoneme_boundaries,build_phoneme_embeddings}.py`
   - **Not committed:** `data/external/paradigm/mfa/`, `phoneme_boundaries_mfa_subset_male.csv`,
     `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/` (generated data, not versioned)
+- **Embedding and norm sanity checks + phoneme diagnostic** (`scripts/audio/auristream_embedding_sanity_checks.py`):
+  4 synthetic checks confirmed `hidden_states[0] = wte + wpe` exactly (Pearson‖wpe‖/‖h0‖ = 0.9959);
+  `hidden_states[48]` is before `ln_f` (norm spread 199 → 1.4; cosine ≈ 0.997). `--phoneme-diagnostics`
+  adds per-phoneme `embedding_norm`, `mean_wpe_norm`, `mean_wte_norm` (derived via `wte = h0 − wpe`),
+  `mean_wte_wpe_cos`; outputs CSV + JSON + plot. See §11 of `auristream_setup.md`.
 - **PCA + norm analysis — implemented and validated** (branch `feat/auristream-phoneme-pca-norm`):
   - Script: `scripts/audio/auristream_phoneme_pca_norm.py`
   - Output: `reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/`
