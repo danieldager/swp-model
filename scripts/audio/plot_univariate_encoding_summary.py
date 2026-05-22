@@ -195,21 +195,23 @@ def main() -> None:
                     print(f"  [warning] metric '{metric}' not found for view '{av}' — skipped")
 
             fname = f"weights_over_time_{model_name}_{av}.png"
-            plot_weights_over_time(
+            saved = plot_weights_over_time(
                 ws_v, aset, output_dir / fname,
                 model_name=model_name, run_id=run_id,
                 analysis_view=av,
             )
-            print(f"  saved  {fname}")
+            if saved:
+                print(f"  saved  {fname}")
 
             if not fr_v.empty:
                 fname = f"global_feature_ranking_{model_name}_{av}.png"
-                plot_global_feature_ranking(
+                saved = plot_global_feature_ranking(
                     fr_v, output_dir / fname,
                     model_name=model_name, run_id=run_id,
                     analysis_view=av,
                 )
-                print(f"  saved  {fname}")
+                if saved:
+                    print(f"  saved  {fname}")
 
     else:
         # ── Legacy aggregate figures (summary has no analysis_view column) ────
@@ -226,18 +228,20 @@ def main() -> None:
 
         for aset in ("all_items", "words_only"):
             fname = f"weights_over_time_{model_name}_{aset}.png"
-            plot_weights_over_time(
+            saved = plot_weights_over_time(
                 weight_summary, aset, output_dir / fname,
                 model_name=model_name, run_id=run_id,
             )
-            print(f"  saved  {fname}")
+            if saved:
+                print(f"  saved  {fname}")
 
         fname = f"global_feature_ranking_{model_name}.png"
-        plot_global_feature_ranking(
+        saved = plot_global_feature_ranking(
             feature_ranking, output_dir / fname,
             model_name=model_name, run_id=run_id,
         )
-        print(f"  saved  {fname}")
+        if saved:
+            print(f"  saved  {fname}")
 
     # ── Figure 6+: encoding_FI (optional, requires --fi-dirs) ────────────────
 

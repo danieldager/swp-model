@@ -78,8 +78,13 @@ def plot_score_over_time(
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.axhline(0, color="black", linewidth=0.8, linestyle=":", zorder=0)
 
+    # Prefer ordered codec names; fall back to whatever layers are in the data
     layers = [l for l in _LAYER_ORDER if l in df["layer"].unique()]
-    asets  = [a for a in _ASET_ORDER  if a in df["analysis_set"].unique()]
+    if not layers:
+        layers = sorted(df["layer"].unique())
+    asets = [a for a in _ASET_ORDER if a in df["analysis_set"].unique()]
+    if not asets:
+        asets = sorted(df["analysis_set"].unique())
 
     for layer in layers:
         for aset in asets:
@@ -104,7 +109,9 @@ def plot_score_over_time(
     _view   = f" — {analysis_view}" if analysis_view else ""
     _sub    = f"\nrun_id: {run_id}" if run_id else ""
     ax.set_title(f"Univariate encoding{_prefix}{_view} — {metric.capitalize()} over time{_sub}")
-    ax.legend(fontsize=8, loc="best")
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        ax.legend(fontsize=8, loc="best")
     ax.set_xlim(0, 1)
     fig.tight_layout()
     _savefig(fig, output_path)
@@ -121,7 +128,7 @@ def plot_weights_over_time(
     model_name: str = "",
     run_id: str = "",
     analysis_view: str = "",
-) -> None:
+) -> bool:
     """Two-panel plot of mean_abs_weight over relative_time, one panel per layer.
 
     Each panel shows one curve per feature. Y axes are shared across panels.
@@ -132,12 +139,27 @@ def plot_weights_over_time(
         output_path:    Where to write the PNG.
         model_name:     Shown in suptitle.
         run_id:         Shown as subtitle.
+
+    Returns:
+        True if figure was saved, False if no data after filtering.
     """
     df = weight_summary[weight_summary["analysis_set"] == analysis_set]
     if analysis_view and "analysis_view" in df.columns:
         df = df[df["analysis_view"] == analysis_view]
+
+    # Prefer ordered codec names; fall back to whatever layers are in the data
     layers = [l for l in _LAYER_ORDER if l in df["layer"].unique()]
+    if not layers:
+        layers = sorted(df["layer"].unique())
     n_panels = len(layers)
+
+    if n_panels == 0:
+        _view_tag = f", view='{analysis_view}'" if analysis_view else ""
+        print(
+            f"  [warning] Skipping {output_path.name}: "
+            f"no weight data for analysis_set='{analysis_set}'{_view_tag}"
+        )
+        return False
 
     fig, axes = plt.subplots(1, n_panels, figsize=(5 * n_panels, 4), sharey=True)
     if n_panels == 1:
@@ -145,7 +167,6 @@ def plot_weights_over_time(
 
     for ax, layer in zip(axes, layers):
         sub_layer = df[df["layer"] == layer]
-        # Consistent feature order: sort by overall mean desc for readability
         feat_order = (
             sub_layer.groupby("feature")["mean_abs_weight"].mean()
             .sort_values(ascending=False).index.tolist()
@@ -164,7 +185,9 @@ def plot_weights_over_time(
         ax.set_xlabel("Relative time (bin centre)")
         if ax is axes[0]:
             ax.set_ylabel("Mean |weight| across neurons")
-        ax.legend(fontsize=8, loc="best")
+        handles, labels = ax.get_legend_handles_labels()
+        if handles:
+            ax.legend(fontsize=8, loc="best")
         ax.set_xlim(0, 1)
 
     _prefix = f" — {model_name}" if model_name else ""
@@ -173,6 +196,7 @@ def plot_weights_over_time(
     fig.suptitle(f"Feature weights over time{_prefix} — {_label}{_sub}", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
+    return True
 
 
 # ── Figure 5 ─────────────────────────────────────────────────────────────────
@@ -184,7 +208,7 @@ def plot_global_feature_ranking(
     model_name: str = "",
     run_id: str = "",
     analysis_view: str = "",
-) -> None:
+) -> bool:
     """2×2 bar plot of mean_abs_weight by feature, one panel per (layer × analysis_set).
 
     Bars are labelled with their numeric value. Features are ordered by rank.
@@ -194,13 +218,30 @@ def plot_global_feature_ranking(
         output_path:     Where to write the PNG.
         model_name:      Shown in suptitle.
         run_id:          Shown as subtitle.
+
+    Returns:
+        True if figure was saved, False if no data after filtering.
     """
     if analysis_view and "analysis_view" in feature_ranking.columns:
         feature_ranking = feature_ranking[feature_ranking["analysis_view"] == analysis_view]
+
+    # Prefer ordered codec names; fall back to whatever is in the data
     layers = [l for l in _LAYER_ORDER if l in feature_ranking["layer"].unique()]
-    asets  = [a for a in _ASET_ORDER  if a in feature_ranking["analysis_set"].unique()]
+    if not layers:
+        layers = sorted(feature_ranking["layer"].unique())
+    asets = [a for a in _ASET_ORDER if a in feature_ranking["analysis_set"].unique()]
+    if not asets:
+        asets = sorted(feature_ranking["analysis_set"].unique())
 
     n_rows, n_cols = len(asets), len(layers)
+    if n_rows == 0 or n_cols == 0:
+        _view_tag = f", view='{analysis_view}'" if analysis_view else ""
+        print(
+            f"  [warning] Skipping {output_path.name}: "
+            f"no feature ranking data after filtering{_view_tag}"
+        )
+        return False
+
     fig, axes = plt.subplots(
         n_rows, n_cols, figsize=(4.5 * n_cols, 3.5 * n_rows), sharey=False
     )
@@ -248,6 +289,7 @@ def plot_global_feature_ranking(
     fig.suptitle(f"Global feature ranking{_prefix}{_view}\nmean |weight| over time × neurons{_sub}", fontsize=11)
     fig.tight_layout()
     _savefig(fig, output_path)
+    return True
 
 
 # ── Figure 6 (optional, requires --compute-fi run) ───────────────────────────
