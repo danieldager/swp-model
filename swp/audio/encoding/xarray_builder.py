@@ -1,15 +1,16 @@
-"""Canonical xarray export for audio codec activations.
+"""Canonical xarray export for audio model activations.
 
 Converts per-item per-layer .pt activation tensors from a Step 1 extraction
 run into a canonical xarray.Dataset with dimensions (trials, time, neurons).
 
-Design rules (Phase A)
-----------------------
+Design rules
+------------
 - Activations are stored raw, without normalisation, z-scoring, or resampling.
 - Padding is applied only at the end of the time axis.
 - Padded positions carry NaN in `activations` and False in `valid_time`.
 - Missing .pt files and n_neurons mismatches cause hard failures.
-- Only 'encoder_out' and 'decoder_in' are eligible; 'decoder_out' is rejected.
+- Any layer producing a latent [D, T] tensor is eligible.
+- WAVEFORM_LAYERS (e.g. 'decoder_out') are explicitly rejected.
 """
 
 from __future__ import annotations
@@ -23,11 +24,13 @@ import torch
 import xarray as xr
 
 
-# Layers containing latent representations — eligible for xarray export
+# Codec latent layer names, kept for reference only — no longer used for validation.
 LATENT_LAYERS: frozenset[str] = frozenset({"encoder_out", "decoder_in"})
 
-# Waveform layer — rejected by this module
-WAVEFORM_LAYER = "decoder_out"
+# Layers containing reconstructed waveforms — always rejected.
+# Any [D, T] latent layer is accepted; only waveform outputs are blocked.
+WAVEFORM_LAYER = "decoder_out"  # kept for backward-compat imports
+WAVEFORM_LAYERS: frozenset[str] = frozenset({"decoder_out"})
 
 # Columns loaded from the dataset CSV
 _META_COLS = [
@@ -152,28 +155,23 @@ def validate_and_load_layer(
     Args:
         manifest: loaded manifest dict
         run_dir:  extraction run directory
-        layer:    layer name (must be in LATENT_LAYERS)
+        layer:    layer name; any name is accepted except WAVEFORM_LAYERS
 
     Returns:
         item_ids: list of item IDs in manifest order
-        tensors:  list of float32 tensors, shape [C, T] each
+        tensors:  list of float32 tensors, shape [D, T] each
 
     Raises:
-        ValueError         if layer is 'decoder_out' or not in LATENT_LAYERS
+        ValueError         if layer is in WAVEFORM_LAYERS ('decoder_out', …)
         FileNotFoundError  if any .pt file is missing
-        ValueError         if any tensor has a mismatched n_neurons (C dimension)
+        ValueError         if any tensor has a mismatched n_neurons (D dimension)
         ValueError         if any tensor is not 2D
     """
-    if layer == WAVEFORM_LAYER:
+    if layer in WAVEFORM_LAYERS:
         raise ValueError(
             f"Layer '{layer}' is a reconstructed waveform (shape [1, T_audio]) "
             "and is not eligible for the canonical xarray export. "
-            "Only 'encoder_out' and 'decoder_in' are supported in Phase A."
-        )
-    if layer not in LATENT_LAYERS:
-        raise ValueError(
-            f"Unknown layer '{layer}'. "
-            f"Eligible layers for xarray export: {sorted(LATENT_LAYERS)}."
+            "Remove it from the list of requested layers."
         )
 
     items = manifest["items"]
@@ -429,7 +427,7 @@ def export_layer(
 
     Args:
         run_dir:    path to the extraction run directory
-        layer:      layer name (must be in LATENT_LAYERS)
+        layer:      layer name; any latent [D, T] layer is accepted except WAVEFORM_LAYERS
         repo_root:  repo root, used to resolve dataset_path from manifest
         output_dir: where to write outputs (default: run_dir/xarray/)
         dtype:      numpy dtype for the padded activations (default float32)
@@ -440,7 +438,7 @@ def export_layer(
         qc:  QC report dict
 
     Raises:
-        ValueError       if layer is 'decoder_out' or not in LATENT_LAYERS
+        ValueError       if layer is in WAVEFORM_LAYERS
         FileExistsError  if nc_path already exists and overwrite=False
         FileNotFoundError if any activation .pt file is missing
         ValueError       if n_neurons is inconsistent across items

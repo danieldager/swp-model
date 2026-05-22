@@ -1,30 +1,34 @@
 #!/usr/bin/env python3
-"""Build canonical xarray .nc files from audio codec activation runs.
+"""Build canonical xarray .nc files from audio model activation runs.
 
-Converts per-item per-layer .pt activation tensors from a Step 1 extraction
-run into xarray.Dataset files with dimensions (trials, time, neurons).
+Converts per-item per-layer .pt activation tensors from an extraction run
+into xarray.Dataset files with dimensions (trials, time, neurons).
 
-Only 'encoder_out' and 'decoder_in' are supported. 'decoder_out' (waveform)
-is rejected with a clear error.
+Any latent [D, T] layer is accepted. 'decoder_out' (waveform) is rejected.
+If --layers is not specified, all eligible layers from the run manifest are used.
 
 Usage
 -----
+# Codec runs (explicit layers)
 python scripts/audio/build_xarray.py \\
     --run reproduce/data/audio/encodec__7f7d3b97/ \\
     --layers encoder_out decoder_in
 
+# AuriStream run (explicit layers)
 python scripts/audio/build_xarray.py \\
-    --run reproduce/data/audio/dac__f104bbdd/ \\
-    --layers encoder_out decoder_in \\
+    --run reproduce/data/audio/auristream__6ee9aeb6/ \\
+    --layers embedding block_01 block_24 block_48_lnf
+
+# Any run — all eligible layers from manifest (no --layers needed)
+python scripts/audio/build_xarray.py \\
+    --run reproduce/data/audio/auristream__6ee9aeb6/ \\
     --overwrite
 
 Outputs (written to {run}/xarray/ by default)
 ---------------------------------------------
-    encoder_out.nc          xarray.Dataset with dims (trials, time, neurons)
-    encoder_out_qc.json     QC report
-    decoder_in.nc
-    decoder_in_qc.json
-    metadata_trials.csv     trial-level metadata, ordered as in manifest.items
+    {layer}.nc          xarray.Dataset with dims (trials, time, neurons)
+    {layer}_qc.json     QC report
+    metadata_trials.csv trial-level metadata, ordered as in manifest.items
 """
 
 from __future__ import annotations
@@ -40,14 +44,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from swp.audio.encoding.xarray_builder import (
-    LATENT_LAYERS,
-    WAVEFORM_LAYER,
+    WAVEFORM_LAYERS,
     export_layer,
     load_manifest,
     load_trial_metadata,
 )
-
-DEFAULT_LAYERS = ("encoder_out", "decoder_in")
 
 
 def main() -> None:
@@ -68,12 +69,12 @@ def main() -> None:
     parser.add_argument(
         "--layers",
         nargs="+",
-        default=list(DEFAULT_LAYERS),
+        default=None,
         metavar="LAYER",
         help=(
-            f"Layers to export (default: {list(DEFAULT_LAYERS)}). "
-            f"Eligible: {sorted(LATENT_LAYERS)}. "
-            f"'{WAVEFORM_LAYER}' is not supported and will cause an error."
+            "Layers to export. If not specified, all eligible layers from the "
+            "run manifest are used (excluding waveform outputs such as 'decoder_out'). "
+            "Example: --layers encoder_out decoder_in  or  --layers block_24 block_48_lnf"
         ),
     )
     parser.add_argument(
@@ -116,39 +117,48 @@ def main() -> None:
         Path(args.output_dir).resolve() if args.output_dir else run_dir / "xarray"
     )
 
-    # Validate layer names before doing any work
-    for layer in args.layers:
-        if layer == WAVEFORM_LAYER:
-            print(
-                f"[build_xarray] ERROR: Layer '{layer}' is a reconstructed waveform "
-                "and is not supported by the xarray export. "
-                "Only 'encoder_out' and 'decoder_in' are supported in Phase A.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        if layer not in LATENT_LAYERS:
-            print(
-                f"[build_xarray] ERROR: Unknown layer '{layer}'. "
-                f"Eligible layers: {sorted(LATENT_LAYERS)}.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
     manifest = load_manifest(run_dir)
     run_id = manifest["run_id"]
     n_items = len(manifest["items"])
 
+    # Determine layers to export
+    if args.layers is not None:
+        layers = args.layers
+    else:
+        # Infer from manifest: use all extracted layers, excluding waveform outputs
+        available = manifest["run_params"].get("layers", [])
+        layers = [la for la in available if la not in WAVEFORM_LAYERS]
+        if not layers:
+            print(
+                "[build_xarray] ERROR: No eligible layers found in manifest. "
+                "Pass --layers explicitly.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        print(f"[build_xarray] --layers not specified; using layers from manifest: {layers}")
+
+    # Reject waveform layers early with a clear message
+    for layer in layers:
+        if layer in WAVEFORM_LAYERS:
+            print(
+                f"[build_xarray] ERROR: Layer '{layer}' is a reconstructed waveform "
+                "and cannot be exported as a latent representation. "
+                "Remove it from --layers.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
     print(f"[build_xarray] Run dir  : {run_dir}")
     print(f"[build_xarray] Run ID   : {run_id}")
     print(f"[build_xarray] Items    : {n_items}")
-    print(f"[build_xarray] Layers   : {args.layers}")
+    print(f"[build_xarray] Layers   : {layers}")
     print(f"[build_xarray] Output   : {output_dir}")
     print(f"[build_xarray] Overwrite: {args.overwrite}")
     print()
 
     qc_reports: dict[str, dict] = {}
 
-    for layer in args.layers:
+    for layer in layers:
         print(f"[build_xarray] ── Layer: {layer} ──────────────────────────────")
         ds, qc = export_layer(
             run_dir=run_dir,
