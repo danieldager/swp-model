@@ -467,6 +467,38 @@ python scripts/audio/extract_representations.py \
 - **Tensor shape:** `[1280, L]` float32 CPU; L ∈ [119, 237], mean ≈ 168.5 tokens
 - **Trailing samples:** max 78 (< 1 step = 5 ms; dropped by floor rounding, as expected)
 
+### Extended run — `block_01`, `block_47`, `block_48_lnf` added
+
+```bash
+python scripts/audio/extract_representations.py \
+    --model auristream \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --layers embedding block_01 block_12 block_24 block_36 block_47 block_48 block_48_lnf \
+    --output reproduce/data/audio/
+```
+
+- **Run ID:** `auristream__6ee9aeb6`
+- **Items:** 180 (`subset_male.csv`)
+- **Layers:** `embedding`, `block_01`, `block_12`, `block_24`, `block_36`, `block_47`, `block_48`, `block_48_lnf`
+- **Phoneme embeddings:** 1055 phonemes × 8 layers, shape `[1055, 1280]` per layer
+
+PCA results (phoneme-level, n = 1055):
+
+| Layer | PC1 | PC2 |
+|---|---|---|
+| `embedding` | 14.4 % | 9.6 % |
+| `block_01` | 16.6 % | 9.6 % |
+| `block_12` | 11.5 % | 6.9 % |
+| `block_24` | 12.6 % | 7.9 % |
+| `block_36` | 11.6 % | 7.7 % |
+| `block_47` | 11.9 % | 5.9 % |
+| `block_48` | **82.9 %** | 2.9 % |
+| `block_48_lnf` | 12.6 % | 5.6 % |
+
+`block_48` PC1 = norm (r = 1.000, ρ = 1.000) — drops to 12.8 % after L2-normalization.
+`block_48_lnf` PC1 not dominated by norm (r ≈ 0.355); L2-normalization leaves structure unchanged.
+See §11 for full diagnostic.
+
 ### Remaining open question
 
 Exact internal WavCoch cochleagram window alignment (§8 Q7) is still unverified from
@@ -509,50 +541,104 @@ hidden_states[0][0, p, :] = wte.weight[token_id] + wpe.weight[p]
 ```
 
 `wpe` is a **learned absolute positional embedding** (`nn.Embedding(4096, 1280)`). With
-`dropout=0.0` there is no further transformation — the max abs error over 64 positions is < 1e-6.
+`dropout=0.0` there is no further transformation — the max abs error over 64 positions = **0.00e+00**.
 
-**Consequence:** the layer currently called `embedding` is not a pure token representation.
-It mixes token identity with absolute position, and norm variation across positions can be
-driven directly by `||wpe(p)||`.
+**Consequence:** the layer called `embedding` in our pipeline is not a pure token representation.
+It mixes token identity with absolute position, and norm variation across positions is
+driven primarily by `||wpe(p)||`.
 
 ### Positional norm effect in the embedding layer
 
+**Synthetic check** (same token repeated, 64 positions):
+
 | Metric | Value |
 |---|---|
-| Pearson(‖wpe(p)‖, ‖hidden_states[0][p]‖) over 64 positions | **0.9959** |
+| Pearson(‖wpe(p)‖, ‖hidden_states[0][p]‖) | **0.9959** |
 | wte norm (single vector) | ≈ 30.2 |
 | wpe norm range (positions 0–63) | ≈ 30–40 |
 | h0 norm range | ≈ 42–50 |
 
-Near-perfect correlation: positional norm variation in the `embedding` layer is dominated
-by the learned positional embeddings.
+**Confirmed on real phoneme embeddings** (`--phoneme-diagnostics`, run `auristream__6ee9aeb6`, 1055 phonemes):
 
-### `hidden_states[48]` is before `ln_f`
+| Correlation | Pearson r | Spearman ρ |
+|---|---|---|
+| `embedding_norm` vs `mean_wpe_norm` | **0.734** | **0.786** |
+| `embedding_norm` vs `mean_wte_norm` | 0.264 | — |
+| `embedding_norm` vs `mean_wte_wpe_cos` | 0.099 | — |
+
+`mean_wte_norm` (≈ ‖wte[token_id_p]‖ averaged over the phoneme) is approximately flat across
+phoneme positions. `mean_wpe_norm` follows the norm-by-position slope observed in `embedding_norm`.
+
+**Conclusion:** norm variation in the `embedding` layer is primarily a signature of learned
+positional embeddings (`wpe`), not of acoustic or phonemic token content.
+
+### `hidden_states[48]` is before `ln_f` — and `block_48_lnf`
 
 When calling `lm(seq, output_hidden_states=True)` without `output_logits=True`, the model
-returns before applying `ln_f`. Therefore:
+returns before applying `ln_f`. The full forward is:
 
-- `out.hidden_states[48]` = raw output of block 47 (last transformer block), **before** the
-  final RMSNorm
-- Apply `ln_f` manually if needed: `lm.transformer.ln_f(out.hidden_states[48])`
+```
+hidden_states[48]  →  ln_f  →  coch_head  →  logits
+```
 
-Effect of `ln_f` on `hidden_states[48]`:
+Therefore:
 
-| Metric | Raw `h48` | After `ln_f(h48)` |
+- `out.hidden_states[48]` (`block_48`) = raw output of the last block, **before** `ln_f`
+- `ln_f(out.hidden_states[48])` (`block_48_lnf`) = representation actually passed to `coch_head`
+
+Effect of `ln_f` on `hidden_states[48]` (synthetic, 64 positions):
+
+| Metric | Raw `block_48` | `block_48_lnf` |
 |---|---|---|
-| Norm spread (max − min over 64 positions) | **199.2** | **1.4** |
+| Norm spread (max − min) | **199.2** | **1.4** |
 | Mean cosine similarity (raw vs post-ln_f) | — | **0.9974** |
 
-`ln_f` strongly collapses norm variance while preserving direction (cosine > 0.997).
+`ln_f` strongly collapses norm variance while preserving direction.
+
+### `block_48_lnf` in the extraction wrapper
+
+`block_48_lnf` is exposed as a named layer in `swp/audio/models/auristream.py`
+and returned by `available_layers()`. It is computed at token level inside the forward pass:
+
+```python
+# in extract_activations():
+h = self._lm.transformer.ln_f(out.hidden_states[48])   # (1, L, D)
+```
+
+**Important:** phoneme embeddings for `block_48_lnf` are therefore:
+
+```
+mean_pool(ln_f(block_48 token states))   ≠   ln_f(mean_pool(block_48 token states))
+```
+
+RMSNorm is non-linear, so order matters. The stored phoneme embeddings are the former.
+
+### PCA diagnostic: `block_48` vs `block_48_lnf`
+
+Results on real phoneme embeddings (`auristream__6ee9aeb6`, 1055 phonemes):
+
+| Layer | PC1 | PC2 | PC1 ~ norm (r) | After L2-norm: PC1 |
+|---|---|---|---|---|
+| `block_48` | **82.9 %** | 2.9 % | **1.000** | 12.8 % |
+| `block_48_lnf` | 12.6 % | 5.6 % | 0.355 | ≈ 12.6 % |
+
+In `block_48`, PC1 is entirely dominated by the L2 norm of the embedding (r = ρ = 1.000).
+After L2-normalization, PC1 drops from 82.9 % to 12.8 %, revealing that the first principal
+component carries no phonemic information — only magnitude.
+
+In `block_48_lnf`, PC1 is not dominated by norm (r ≈ 0.355), and L2-normalization barely
+changes the structure. This is the representation effectively sent to `coch_head`.
 
 ### Interpretation consequences
 
-- **Raw `embedding` analyses** reflect a mix of token identity and absolute position. To
-  isolate token-only representations, subtract `wpe.weight[p]` or compare tokens at
-  identical positions.
-- **Raw `block_48` analyses** include large magnitude effects that `ln_f` would neutralize.
-  For norm-based analyses, distinguish between raw `h48` and `ln_f(h48)`. For geometric
-  analyses (PCA, RSA), the two are nearly equivalent (cosine ≈ 0.997).
+- **`embedding`** is `wte(token_id) + wpe(position)`, not a pure token representation.
+  Norm variation with position is driven by `wpe`, confirmed on real phoneme data (r = 0.734).
+- **Raw `block_48`** carries a large magnitude effect (PC1 = norm, r = 1.000) that `ln_f`
+  neutralizes. Use `block_48` only for magnitude-specific diagnostics.
+- **`block_48_lnf`** is the representation passed to `coch_head`; use it for phonemic geometry
+  (PCA, RSA) and layer-depth comparisons.
+- **Going forward:** interpret `embedding` as `wte + wpe`; prefer `block_48_lnf` over raw
+  `block_48` for geometric analyses; keep raw `block_48` for norm diagnostics only.
 
 ### Phoneme-level diagnostic (`--phoneme-diagnostics`)
 
@@ -590,9 +676,17 @@ holds exactly (`dropout=0.0`, confirmed by check 2).
 | `embedding_position_norm_summary.json` | Pearson + Spearman correlations, mean/std per norm |
 | `embedding_position_norm_diagnostics.png` | Left: 3-curve norm-by-position (embedding, wpe, wte); Right: scatter |
 
-**Interpretation**: If `Pearson(embedding_norm, mean_wpe_norm)` is substantially higher than
-`Pearson(embedding_norm, mean_wte_norm)` and `mean_wte_norm` is approximately flat with
-phoneme position, then the position-dependent norm effect in the `embedding` layer is a
-signature of learned positional embeddings, not acoustic content. The `mean_wte_wpe_cos`
-column further tests whether `wte` and `wpe` are aligned (positive cosine amplifies
-‖wte + wpe‖ beyond each component alone).
+**Confirmed results** (run `auristream__6ee9aeb6`, 1055 phonemes):
+
+| Correlation | Pearson r | Spearman ρ |
+|---|---|---|
+| `embedding_norm` vs `mean_wpe_norm` | **0.734** | **0.786** |
+| `embedding_norm` vs `mean_wte_norm` | 0.264 | — |
+| `embedding_norm` vs `mean_wte_wpe_cos` | 0.099 | — |
+
+`mean_wte_norm` is approximately flat across phoneme positions. `mean_wpe_norm` tracks the
+norm-by-position slope observed in `embedding_norm`. The `wte–wpe` cosine alignment
+(mean ≈ 0.099) contributes negligibly to the norm effect.
+
+**Conclusion:** norm variation in the `embedding` layer over phoneme positions is driven by
+`wpe` (r = 0.734), not by acoustic content (r = 0.264) or wte–wpe alignment (r = 0.099).

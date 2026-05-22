@@ -1011,56 +1011,42 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
 - AuriStream-1B confirmed: `n_layer=48`, `n_head=16`, `n_embd=1280`, `vocab=8192`
 - Token grid: 200 Hz, `L = T // 80`; short clips accepted natively; floor rounding confirmed
 - **Full extraction run** (branch `feat/auristream-extract-hidden-states`):
-  - Run ID: `auristream__9d3f269f` (`reproduce/data/audio/auristream__9d3f269f/`)
-  - Dataset: `subset_male.csv`, 180 items, 5 layers: `embedding block_12 block_24 block_36 block_48`
-  - Activation tensors: `[1280, L]` float32 CPU; mean L ≈ 168.5 tokens (119–237 range)
-  - Extraction pipeline is **separate from codec reconstruction** — no signal metrics produced
+  - Run ID: `auristream__9d3f269f` — 5 layers: `embedding block_12 block_24 block_36 block_48`
+  - **Extended run** `auristream__6ee9aeb6` — 8 layers: `embedding block_01 block_12 block_24 block_36 block_47 block_48 block_48_lnf`
+  - Dataset: `subset_male.csv`, 180 items; activation tensors `[1280, L]` float32 CPU
+  - `block_48_lnf` = `ln_f(hidden_states[48])`, exposed in `swp/audio/models/auristream.py`
   - New files: `swp/audio/models/auristream.py`, `swp/audio/pipeline/representation_extraction.py`,
     `scripts/audio/extract_representations.py`
 - **MFA phoneme embedding pipeline — complete** (branch `feat/auristream-build-phoneme-embeddings`):
   - MFA corpus prepared (`prepare_mfa_corpus.py`): 180 WAV/TXT pairs
   - MFA aligned: 180 TextGrid files in `data/external/paradigm/mfa/subset_male_aligned/`
   - Boundary CSV: `data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv`
-    — 1055 rows, 180 items, ~5.9 phonemes/item (min 3, max 10); zero silent/zero-token rows
-  - Phoneme embeddings: `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/`
-    — shape `[1055, 1280]` float32 per layer; 5 layers; token_selection_rule = center
+    — 1055 rows, 180 items; phoneme embeddings: shape `[1055, 1280]` per layer
   - New files: `swp/audio/phonemes/`, `scripts/audio/{prepare_mfa_corpus,textgrid_to_phoneme_boundaries,build_phoneme_embeddings}.py`
-  - **Not committed:** `data/external/paradigm/mfa/`, `phoneme_boundaries_mfa_subset_male.csv`,
-    `reproduce/data/audio/auristream__9d3f269f/phoneme_embeddings/` (generated data, not versioned)
-- **Embedding and norm sanity checks + phoneme diagnostic** (`scripts/audio/auristream_embedding_sanity_checks.py`):
-  4 synthetic checks confirmed `hidden_states[0] = wte + wpe` exactly (Pearson‖wpe‖/‖h0‖ = 0.9959);
-  `hidden_states[48]` is before `ln_f` (norm spread 199 → 1.4; cosine ≈ 0.997). `--phoneme-diagnostics`
-  adds per-phoneme `embedding_norm`, `mean_wpe_norm`, `mean_wte_norm` (derived via `wte = h0 − wpe`),
-  `mean_wte_wpe_cos`; outputs CSV + JSON + plot. See §11 of `auristream_setup.md`.
-- **PCA + norm analysis — implemented and validated** (branch `feat/auristream-phoneme-pca-norm`):
-  - Script: `scripts/audio/auristream_phoneme_pca_norm.py`
-  - Output: `reproduce/figures/audio/auristream_phonemes/auristream__9d3f269f/`
-  - Per layer: PCA scatter (by position, lexicality, phone, **phoneme type**: vowel/consonant/other)
-    + per-phone focus plots (`--focus-phones AH IH ER`, global coords or `--focus-phone-refit-pca`)
-    + norm-by-position curves (± SEM, split by lexicality and length)
-  - `phoneme_base` (stress stripped) and `phoneme_type` written into all per-layer CSVs
-  - All 5 layers, n=1055 phonemes:
+  - **Not committed:** `data/external/paradigm/mfa/`, phoneme boundary CSV and embeddings (generated data)
+- **Architecture clarifications** (see §11 of `docs/auristream_setup.md`):
+  - `hidden_states[0] = wte(token_id) + wpe(position)` exactly (`use_rope=False`, `dropout=0.0`);
+    `embedding` layer is not a pure token representation
+  - Norm variation in `embedding` is driven by `wpe` (r = 0.734 on real phonemes), not acoustic content (r = 0.264)
+  - `hidden_states[48]` (`block_48`) is before `ln_f`; `block_48_lnf` is the representation passed to `coch_head`
+  - `block_48` PC1 = norm axis (r = 1.000); drops 82.9 % → 12.8 % after L2-norm
+  - `block_48_lnf` PC1 not dominated by norm (r ≈ 0.355); L2-norm leaves structure unchanged
+- **PCA + norm analysis — implemented and validated**:
+  - Script: `scripts/audio/auristream_phoneme_pca_norm.py`; summary: `auristream_phoneme_summary_panels.py`
+  - 8 layers (`auristream__6ee9aeb6`), n = 1055 phonemes:
 
   | Layer | PC1 | PC2 |
   |---|---|---|
   | `embedding` | 14.4 % | 9.6 % |
+  | `block_01` | 16.6 % | 9.6 % |
   | `block_12` | 11.5 % | 6.9 % |
   | `block_24` | 12.6 % | 7.9 % |
   | `block_36` | 11.6 % | 7.7 % |
+  | `block_47` | 11.9 % | 5.9 % |
   | `block_48` | **82.9 %** | 2.9 % |
+  | `block_48_lnf` | 12.6 % | 5.6 % |
 
-- **block_48 diagnostics** (`scripts/audio/auristream_block48_diagnostics.py`):
-  - PC1 ~ L2 norm: r = 1.000, ρ = 1.000 — PC1 is the norm axis
-  - PC1 drops 82.9 % → 12.8 % after L2-normalising embeddings
-  - Interpretation: `block_48` PC1 reflects magnitude, not direction; use L2-normalised
-    embeddings or PC2+ for phoneme-type / position geometry in block_48
-- **Cross-layer summary panels** (`scripts/audio/auristream_phoneme_summary_panels.py`):
-  - 7 panels: PCA by phoneme type / position / lexicality; norm by position (shared-y,
-    free-y, normalised to position 0); norm by position × lexicality
-- **Nafis-comparable views now implemented:** phoneme type (vowel/consonant/other),
-  per-phone PCA in global coordinates, optional per-phone PCA refit
-- **Next step:** Inspect phoneme-type and focus-phone plots; interpret block_48 geometry
-  using L2-normalised embeddings or PC2+.
+- **Next step:** interpret block_48_lnf geometry; compare phoneme-type and position effects across layers.
 
 ### Next phase (original): compare other families of speech models
 
