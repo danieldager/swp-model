@@ -34,10 +34,13 @@ class AuriStreamModel:
 
     Layer names
     -----------
-    "embedding"   initial token embedding     (hidden_states[0])
-    "block_01"    transformer block 1 output  (hidden_states[1])
+    "embedding"      initial token embedding          (hidden_states[0])
+    "block_01"       transformer block 1 output       (hidden_states[1])
     ...
-    "block_N"     transformer block N output  (hidden_states[N])
+    "block_N"        transformer block N output       (hidden_states[N])
+    "block_48_lnf"   block_48 after final RMSNorm     ln_f(hidden_states[48])
+                     = representation passed to coch_head in the full forward pass
+                     (available when n_layer >= 48)
 
     Returned tensors are [D, L] float32 on CPU, matching the [C, T] convention
     of EnCodec/DAC wrappers.  D = n_embd, L = floor(n_samples_16k / hop_length).
@@ -74,12 +77,11 @@ class AuriStreamModel:
         ).to(self.device).eval()
 
         n_layer: int = self._lm.config.n_layer
-        self._layer_names: list[str] = (
-            ["embedding"] + [f"block_{k:02d}" for k in range(1, n_layer + 1)]
-        )
-        self._layer_index: dict[str, int] = {
-            name: i for i, name in enumerate(self._layer_names)
-        }
+        self._n_layer = n_layer
+        _base = ["embedding"] + [f"block_{k:02d}" for k in range(1, n_layer + 1)]
+        _derived = ["block_48_lnf"] if n_layer >= 48 else []
+        self._layer_names: list[str] = _base + _derived
+        self._layer_index: dict[str, int] = {name: i for i, name in enumerate(_base)}
 
     def available_layers(self) -> list[str]:
         return list(self._layer_names)
@@ -106,7 +108,7 @@ class AuriStreamModel:
                   D = n_embd (1280 for AuriStream-1B)
                   L = floor(T / hop_length)
         """
-        unknown = [la for la in layers if la not in self._layer_index]
+        unknown = [la for la in layers if la not in self._layer_names]
         if unknown:
             raise ValueError(
                 f"Unknown layer(s): {unknown}. Available: {self._layer_names}"
@@ -118,14 +120,17 @@ class AuriStreamModel:
             token_ids = self._quantizer(wav_input)["input_ids"]   # (1, L)
             out = self._lm(token_ids, output_hidden_states=True)
             # out.hidden_states: tuple of n_layer+1 tensors, each (1, L, D)
+            # Pre-compute block_48_lnf inside inference_mode if requested.
+            # This matches what the full AuriStream forward does before coch_head.
+            _lnf: torch.Tensor | None = (
+                self._lm.transformer.ln_f(out.hidden_states[48])
+                if "block_48_lnf" in layers else None
+            )
 
         result: dict[str, torch.Tensor] = {}
         for layer_name in layers:
-            idx = self._layer_index[layer_name]
-            h = out.hidden_states[idx]   # (1, L, D)
-            h = h.squeeze(0)             # (L, D)
-            h = h.transpose(0, 1)        # (D, L)  — matches [C, T] convention
-            result[layer_name] = h.float().cpu()
+            h = _lnf if layer_name == "block_48_lnf" else out.hidden_states[self._layer_index[layer_name]]
+            result[layer_name] = h.squeeze(0).transpose(0, 1).float().cpu()  # (D, L)
 
         return result
 
