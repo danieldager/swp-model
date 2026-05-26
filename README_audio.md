@@ -630,11 +630,15 @@ reproduce/scripts/audio/
 ## Step 5 — Canonical xarray export
 
 Builds `xarray.Dataset` files with dimensions `(trials, time, neurons)` from the
-`.pt` activation files produced by Step 1. Required for encoding-model analyses.
+`.pt` activation files produced by Step 1 (codecs) or `extract_representations.py`
+(AuriStream). Required for encoding-model analyses.
 
-Only `encoder_out` and `decoder_in` are supported. `decoder_out` is rejected.
+Any latent `[D, T]` layer is accepted. `decoder_out` (waveform shape `[1, T_audio]`)
+is explicitly rejected. If `--layers` is omitted, all eligible layers from the run
+manifest are used automatically.
 
 ```bash
+# Codec runs (explicit layers)
 python scripts/audio/build_xarray.py \
     --run reproduce/data/audio/encodec__7f7d3b97/ \
     --layers encoder_out decoder_in
@@ -642,6 +646,16 @@ python scripts/audio/build_xarray.py \
 python scripts/audio/build_xarray.py \
     --run reproduce/data/audio/dac__f104bbdd/ \
     --layers encoder_out decoder_in
+
+# AuriStream run (explicit layers)
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6/ \
+    --layers embedding block_01 block_24 block_48_lnf
+
+# Any run — infer all eligible layers from manifest
+python scripts/audio/build_xarray.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6/ \
+    --overwrite
 ```
 
 Outputs written to `{run}/xarray/`:

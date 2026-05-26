@@ -547,8 +547,13 @@ where neurons are the codec channels and time is in seconds from word onset.
 
 ### Eligible layers
 
-Only `encoder_out` and `decoder_in` are included. `decoder_out` is a reconstructed waveform
-(`[1, T_audio]`) and is not a latent multi-unit layer; it is explicitly rejected.
+Any layer producing a latent `[D, T]` tensor is accepted — this includes codec layers
+(`encoder_out`, `decoder_in`) and AuriStream layers (`embedding`, `block_01`, …,
+`block_48_lnf`). The only explicit rejection is `WAVEFORM_LAYERS` (`decoder_out`),
+which carries the reconstructed waveform (`[1, T_audio]`) rather than a latent representation.
+
+If `--layers` is not specified, `build_xarray.py` infers all eligible layers from the
+run manifest automatically.
 
 ### Padding and masking
 
@@ -1046,7 +1051,14 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   | `block_48` | **82.9 %** | 2.9 % |
   | `block_48_lnf` | 12.6 % | 5.6 % |
 
-- **Next step:** interpret block_48_lnf geometry; compare phoneme-type and position effects across layers.
+- **Word-level univariate encoding — validated** (`auristream__6ee9aeb6`, `block_48_lnf`, male subset):
+  - `build_xarray.py` + `run_univariate_encoding.py` + `summarize_univariate_encoding.py` +
+    `plot_univariate_encoding_summary.py` (Steps 5–8) all run without modification for AuriStream
+  - Analysis views completed: `all_items_fi`, `all_items_short_only_fi`, `all_items_long_only_fi`, `words_only_fi`
+  - Fix applied: `xarray_builder.py` whitelist removed (`LATENT_LAYERS` → `WAVEFORM_LAYERS` blacklist);
+    `univariate_plots.py` updated to fall back to actual layer names when codec `_LAYER_ORDER` filter is empty
+- **Next step:** interpret block_48_lnf geometry; compare phoneme-type and position effects across layers;
+  extend word-level encoding to remaining AuriStream layers and all-speakers dataset.
 
 ### Next phase (original): compare other families of speech models
 
