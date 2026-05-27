@@ -1057,7 +1057,18 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   - Analysis views completed: `all_items_fi`, `all_items_short_only_fi`, `all_items_long_only_fi`, `words_only_fi`
   - Fix applied: `xarray_builder.py` whitelist removed (`LATENT_LAYERS` → `WAVEFORM_LAYERS` blacklist);
     `univariate_plots.py` updated to fall back to actual layer names when codec `_LAYER_ORDER` filter is empty
-- **Next step:** interpret block_48_lnf geometry; compare phoneme-type and position effects across layers;
+- **wpe position diagnostics — implemented** (`scripts/audio/auristream_wpe_position_diagnostics.py`):
+  Seven diagnostics targeting the norm-vs-position relationship in the learned `wpe` table:
+  1. Direct wpe norm table (global + used-range slope, monotonicity)
+  2. Random-init control — is the decrease architectural or learned?
+  3. Phoneme-level projection — does projected `mean_wpe_norm` explain `embedding_norm` by phoneme position?
+  4. Position shift control — is the effect absolute-position-table specific?
+  5. Shuffled-position control — does the ordered structure of `wpe` matter?
+  6. Directional geometry — cosine distance by lag, PCA of wpe vectors
+  7. Propagation across layers — does the wpe signal persist in block_48_lnf?
+  Outputs: 15 figures, 5 CSVs, `report.md`, `slide_figures/` with 6 key PNGs.
+  Output dir: `reproduce/figures/audio/auristream_wpe_diagnostics/auristream__6ee9aeb6/`
+- **Next step:** run wpe diagnostics; interpret block_48_lnf geometry;
   extend word-level encoding to remaining AuriStream layers and all-speakers dataset.
 
 ### Next phase (original): compare other families of speech models

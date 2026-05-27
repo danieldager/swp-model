@@ -606,6 +606,9 @@ scripts/audio/
 ├── auristream_phoneme_pca_norm.py             # Step E: PCA + norm-by-position analysis of phoneme embeddings
 ├── auristream_block48_diagnostics.py          # PC1 diagnostics for a specific layer (block_48 focus)
 ├── auristream_phoneme_summary_panels.py       # Cross-layer summary panels from per-layer CSVs
+├── auristream_wpe_position_diagnostics.py     # 7 diagnostics: wpe norm slope, random-init control,
+│                                              #   phoneme projection, shift/shuffle controls,
+│                                              #   directional geometry, layer propagation
 ├── run_mfa_alignment_template.sh              # Step B: MFA alignment template (not executable)
 ├── build_xarray.py                            # Step 5 CLI: canonical xarray export
 ├── run_univariate_encoding.py                 # Step 6 CLI: per-neuron Ridge CV
