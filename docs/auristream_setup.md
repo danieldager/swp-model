@@ -690,3 +690,232 @@ norm-by-position slope observed in `embedding_norm`. The `wte–wpe` cosine alig
 
 **Conclusion:** norm variation in the `embedding` layer over phoneme positions is driven by
 `wpe` (r = 0.734), not by acoustic content (r = 0.264) or wte–wpe alignment (r = 0.099).
+
+---
+
+## 12. Cosine geometry and anisotropy diagnostics
+
+*Run: `auristream__6ee9aeb6`*
+
+### 12a. Scripts and output directories
+
+| Script | Purpose | Output dir |
+|--------|---------|-----------|
+| `auristream_phoneme_cosine_distributions.py` | Phoneme-type cosine histograms (C-C/C-V/V-V), anisotropy, delta | `reproduce/figures/audio/auristream_phoneme_cosine/{run_id}/` |
+| `auristream_wpe_position_diagnostics.py` | wpe norm-vs-position, propagation across layers | `reproduce/figures/audio/auristream_wpe_diagnostics/{run_id}/` |
+| `auristream_token_vs_pooled_anisotropy.py` | Token-level vs phoneme-pooled anisotropy comparison | `reproduce/figures/audio/auristream_token_anisotropy/{run_id}/` |
+| `auristream_verify_block48_lnf.py` | Verify `block_48_lnf = ln_f(block_48)` on saved activations | `reproduce/figures/audio/auristream_verify/{run_id}/` |
+| `auristream_delta_position_diagnostics.py` | Position-specific diagnostics for `block_47 → block_48` delta | `reproduce/figures/audio/auristream_delta_position/{run_id}/` |
+
+### 12b. Raw vs centered cosine
+
+Two cosine modes are computed for all phoneme-type histograms:
+
+| Mode | Definition | Use |
+|------|-----------|-----|
+| `raw` | L2-normalize each vector directly | Nafis-comparable; QC for loading/extraction |
+| `centered` | Subtract per-dimension mean, then L2-normalize | Removes dominant common direction; main diagnostic when raw is saturated |
+
+**Key finding:** raw cosine similarity is near-saturated at `block_48` and `block_48_lnf` — all C-C/C-V/V-V pairs have cosine ≈ 0.998. Centered cosine is necessary to reveal residual phoneme-type geometry.
+
+### 12c. Anisotropy diagnostics
+
+For each layer, the following metrics are computed (`--diagnose` flag):
+
+| Metric | Definition | Primary indicator? |
+|--------|-----------|-------------------|
+| `isotropy_ratio` | `‖mean_vector‖ / mean(‖xᵢ‖)` — 0=isotropic, 1=collapsed | **Yes** |
+| `cos_with_mean_mean` | Average cosine similarity of each vector with the mean direction | **Yes** |
+| `cos_pairs_mean` | Average pairwise cosine (random sample) | **Yes** |
+| `pca_pc1_evr` | PCA PC1 explained variance ratio | Supplementary only |
+
+**Important:** `pca_pc1_evr` is NOT a reliable anisotropy indicator here. sklearn PCA centers internally; a dominant mean direction can saturate raw cosine without necessarily producing large centered PC1 variance. Use `isotropy_ratio` and `cos_with_mean_mean` as primary indicators.
+
+Saved to: `anisotropy_diagnostics.csv`, `anisotropy_diagnostics_block47_block48_block48lnf.csv`
+
+### 12d. block_48 anisotropy: findings
+
+Raw-cosine anisotropy confirmed across all tested layers:
+
+| Layer | isotropy_ratio | cos_pairs_mean (raw) | Interpretation |
+|-------|---------------|---------------------|----------------|
+| `embedding` | moderate | ≈ 0.28 | wpe-dominated norm; moderate direction spread |
+| `block_24` | moderate | ≈ 0.51 | deepening contextual structure |
+| `block_47` | high | ≈ 0.9+ | already anisotropic before last block |
+| `block_48` | **≈ 0.999** | **≈ 1.00** | **extremely anisotropic** |
+| `block_48_lnf` | **≈ 0.999** | **≈ 1.00** | anisotropy preserved after `ln_f` |
+
+### 12e. block_48_lnf = ln_f(block_48) — verified
+
+Script: `auristream_verify_block48_lnf.py`
+
+**Result (3 items, max_abs_error = 0):** extraction is correct. `block_48_lnf` is exactly `ln_f(block_48)` at token level before phoneme pooling.
+
+```bash
+python scripts/audio/auristream_verify_block48_lnf.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --max-items 3
+```
+
+### 12f. Token-level vs phoneme-pooled anisotropy
+
+Script: `auristream_token_vs_pooled_anisotropy.py`
+
+**Result:** anisotropy is consistent between token-level and phoneme-pooled levels. Isotropy ratios are comparable in both representations. Phoneme mean-pooling amplifies but does not create the phenomenon.
+
+```bash
+python scripts/audio/auristream_token_vs_pooled_anisotropy.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --layers block_47 block_48 block_48_lnf
+```
+
+### 12g. Last-block delta: block_48 − block_47
+
+The `--delta-diagnostic` flag in `auristream_phoneme_cosine_distributions.py` computes
+`delta = block_48 − block_47` (phoneme-pooled level) with the following results:
+
+| Metric | Value |
+|--------|-------|
+| `isotropy_ratio(delta)` | ≈ 0.9995 |
+| `cos(delta_i, mean_delta)` | ≈ 0.9995 |
+| `pairwise cos(delta_i, delta_j)` | ≈ 0.9990 |
+| `cos(delta, block_47)` | ≈ 0.106 |
+| `cos(delta, block_48)` | ≈ 0.992 |
+
+**Working interpretation:** the last Transformer block adds a very large, near-common residual
+update that dominates the direction of `block_48`. This is the primary cause of raw-cosine
+saturation in `block_48` and `block_48_lnf`.
+
+**Not yet determined:** whether this near-common delta is uniform across phoneme positions or
+varies with absolute token position, causal context depth, or utterance structure. See §12h.
+
+### 12h. Position-specific delta diagnostics
+
+Script: `auristream_delta_position_diagnostics.py`
+
+Tests whether the near-common `block_48 − block_47` delta depends on:
+- `phoneme_position_from_start` (0, 1, 2, 3, 4, 5+ within item)
+- phoneme type (consonant / vowel)
+- absolute token midpoint position (early / mid / late quantile bins)
+- token-level absolute position (Task B: `token_delta_by_absolute_position.csv`)
+
+Cross-group alignment metric: `cos(group_mean_delta, global_mean_delta)` — if all groups ≈ 1,
+the delta is globally uniform and not position-specific.
+
+```bash
+python scripts/audio/auristream_delta_position_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --overwrite
+```
+
+**Interpretation guide:**
+- All groups: high isotropy + cos(group_mean, global_mean) ≈ 1 → delta is global, not position-specific.
+  The autoregressive / next-token-prediction interpretation remains possible but requires further evidence.
+- Early positions (0–2) stronger than late → causal context depth or beginning-of-sequence effect.
+- Token position explains better than phoneme position → temporal/autoregressive effect more likely.
+
+### 12i. Recommended cosine analysis commands
+
+```bash
+# Full all-layer diagnostic run
+python scripts/audio/auristream_phoneme_cosine_distributions.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --layers embedding block_01 block_12 block_24 block_36 block_47 block_48 block_48_lnf \
+    --analysis-families type \
+    --cosine-modes raw centered \
+    --max-samples-per-category 50000 \
+    --diagnose \
+    --delta-diagnostic \
+    --overwrite
+
+# Focused last-layer run (block_47 / block_48 / block_48_lnf)
+python scripts/audio/auristream_phoneme_cosine_distributions.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --layers block_47 block_48 block_48_lnf \
+    --analysis-families type \
+    --cosine-modes raw centered \
+    --max-samples-per-category 50000 \
+    --diagnose \
+    --focused-last-layers \
+    --delta-diagnostic \
+    --overwrite
+
+# Position-specific delta diagnostics
+python scripts/audio/auristream_delta_position_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --overwrite
+```
+
+### 12j. Block component diagnostics: attn_update vs MLP_update
+
+**Script:** `scripts/audio/auristream_block_component_diagnostics.py`
+
+Generic script that decomposes any Transformer block transition `input → output` into its
+attention and MLP residual updates, using saved token-level activations (no re-extraction).
+
+Architecture (Block.forward, normal path):
+```python
+x = x + attn_scale * attn(norm1(x))   # attn_scale = 1.0 in AuriStream-1B
+x = x + mlp(norm2(x))
+⟹ output = input + attn_update + mlp_update
+```
+
+Module paths (last block): `transformer.h[47].norm1/attn`, `transformer.h[47].norm2/mlp`, `transformer.ln_f`.
+
+#### CLI
+
+```bash
+# Last block: block_47 → block_48
+python scripts/audio/auristream_block_component_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --block-index 47 --input-layer block_47 --output-layer block_48 \
+    --max-items 30 --overwrite
+
+# First block: embedding → block_01
+python scripts/audio/auristream_block_component_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --block-index 0 --input-layer embedding --output-layer block_01 \
+    --max-items 30 --overwrite
+```
+
+Output dirs:
+```
+reproduce/figures/audio/auristream_block_components/auristream__6ee9aeb6/
+  block_47_to_block_48/
+  embedding_to_block_01/
+```
+
+Each transition folder contains:
+`block_component_verification.json`, `block_component_verification.md`,
+`component_anisotropy_token_level.csv`, `component_anisotropy_pooled_level.csv`,
+`component_by_absolute_position.csv`, and 4 summary PNGs.
+
+#### Reconstruction check (pass criterion: max_abs_error < 1e-3)
+
+Both `output_recomp ≈ saved_output` and `input + attn_update + mlp_update ≈ saved_output` must pass.
+For `block_47 → block_48`: reconstruction passes exactly (max_abs = 0).
+
+#### Key scientific result — block_47 → block_48 (30 items confirmed)
+
+| Metric | Value |
+|--------|-------|
+| `attn_update` mean norm / `delta_total` mean norm | **≈ 0.13** |
+| `mlp_update`  mean norm / `delta_total` mean norm | **≈ 0.998** |
+| cos(`attn_update`, `delta_total`) per-token mean  | **≈ 0.06** |
+| cos(`mlp_update`,  `delta_total`) per-token mean  | **≈ 0.999** |
+| `mlp_update` isotropy_ratio                       | **≈ 0.999** |
+| `attn_update` isotropy_ratio                      | much lower  |
+
+**Conclusion:** the near-common residual update in the last block is almost entirely carried
+by the MLP, not by the attention. `attn_update` is small in norm and nearly orthogonal to
+`delta_total`. This points to an **MLP-driven output-preparation** mechanism — possibly related
+to the autoregressive next-token prediction objective — rather than a causal-context effect from
+attention. The autoregressive / causal-context hypothesis would require the attention component
+to dominate, which it does not.
+
+#### Scientific caution
+
+Do not claim this is *caused by* the autoregressive objective without further evidence.
+The MLP in the last block may be specialised for projecting into the cochlear-token prediction
+space, but this is a hypothesis. The `embedding → block_01` comparison (to be run) will test
+whether the MLP-dominant common update is specific to the last block or a broader pattern.

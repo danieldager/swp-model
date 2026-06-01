@@ -1068,8 +1068,39 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   7. Propagation across layers — does the wpe signal persist in block_48_lnf?
   Outputs: 15 figures, 5 CSVs, `report.md`, `slide_figures/` with 6 key PNGs.
   Output dir: `reproduce/figures/audio/auristream_wpe_diagnostics/auristream__6ee9aeb6/`
-- **Next step:** run wpe diagnostics; interpret block_48_lnf geometry;
-  extend word-level encoding to remaining AuriStream layers and all-speakers dataset.
+- **Cosine geometry diagnostics — implemented and validated:**
+  - Script: `auristream_phoneme_cosine_distributions.py` — Family A (C-C / C-V / V-V)
+    in both raw and centered cosine modes, plus anisotropy diagnostics and delta diagnostic
+  - **Key scientific findings** (all on `auristream__6ee9aeb6`, 1055 phonemes):
+    - Raw cosine similarity is near-saturated in `block_48` and `block_48_lnf` (cos ≈ 0.998 for all pairs), making Nafis-style C-C/C-V/V-V comparison uninformative in raw mode for these layers
+    - Anisotropy (`isotropy_ratio`, `cos_with_mean_mean`) is already high in `block_47` and extreme in `block_48`, before `ln_f`; `ln_f` does not create or remove the effect
+    - Anisotropy is consistent between token-level and phoneme-pooled representations — pooling amplifies but does not create it (verified by `auristream_token_vs_pooled_anisotropy.py`)
+    - `block_48_lnf = ln_f(block_48)` verified: max absolute error = 0 on tested items
+    - **Delta `block_48 − block_47` is near-common across all phonemes:** isotropy_ratio ≈ 0.9995, pairwise cos ≈ 0.999, cos(delta, block_47) ≈ 0.106, cos(delta, block_48) ≈ 0.992
+    - **Working interpretation:** the last Transformer block adds a large near-common residual update that dominates the direction of `block_48`. This is a real model property, not an extraction or pooling artefact.
+    - **Not yet interpreted:** whether this is driven by the autoregressive objective or a specific positional structure; position-specific diagnostics run (`auristream_delta_position_diagnostics.py`).
+  - **Centered cosine** is necessary for phonemic geometry in `block_48`/`block_48_lnf`: removes the common direction and reveals residual phoneme-type structure
+  - **PCA PC1 EVR is not a reliable anisotropy indicator here**: PCA centers internally; a dominant mean direction can saturate raw cosine without producing large PC1 variance. Use `isotropy_ratio` and `cos_with_mean_mean` instead.
+  - Output dirs:
+    - `reproduce/figures/audio/auristream_phoneme_cosine/auristream__6ee9aeb6/`
+    - `reproduce/figures/audio/auristream_token_anisotropy/auristream__6ee9aeb6/`
+    - `reproduce/figures/audio/auristream_verify/auristream__6ee9aeb6/`
+    - `reproduce/figures/audio/auristream_delta_position/auristream__6ee9aeb6/`
+  - See `docs/auristream_setup.md` §12 for full technical details and commands.
+- **Block component diagnostics — implemented and validated** (`scripts/audio/auristream_block_component_diagnostics.py`):
+  - Generic script: decomposes any block transition `input → output` into `attn_update` and `mlp_update`
+  - **Key result — `block_47 → block_48` (30 items, token level):**
+    - Reconstruction passes exactly (max_abs = 0)
+    - `mlp_update` norm / `delta_total` norm ≈ **0.998** — MLP carries almost all of the residual update
+    - `attn_update` norm / `delta_total` norm ≈ **0.13** — attention contributes little
+    - cos(`mlp_update`, `delta_total`) ≈ **0.999** — near-perfect alignment
+    - cos(`attn_update`, `delta_total`) ≈ **0.06** — attention is approximately orthogonal to delta
+    - `mlp_update` isotropy_ratio ≈ **0.999** — MLP produces an almost common output vector across all tokens
+  - **Conclusion:** the near-common residual update is driven by the MLP, not attention. The causal-context / autoregressivity hypothesis (which would require the attention component to dominate) is not supported. The last-block MLP may be specialised for output preparation toward `coch_head`.
+  - **Scientific caution:** do not claim MLP dominance is caused by the autoregressive objective without further evidence. The `embedding → block_01` comparison is pending.
+  - Output dir: `reproduce/figures/audio/auristream_block_components/auristream__6ee9aeb6/`
+  - See `docs/auristream_setup.md` §12j for full technical details and commands.
+- **Next step:** run `embedding → block_01` component diagnostics to test whether MLP dominance is specific to the last block; then proceed to Family B (identity × position cosine distributions) and word-level encoding extension to remaining layers and all-speakers dataset.
 
 ### Next phase (original): compare other families of speech models
 
