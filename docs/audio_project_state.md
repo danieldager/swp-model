@@ -1100,7 +1100,19 @@ then analyze phoneme embeddings with PCA and norm as a function of phoneme posit
   - **Scientific caution:** do not claim MLP dominance is caused by the autoregressive objective without further evidence. The `embedding → block_01` comparison is pending.
   - Output dir: `reproduce/figures/audio/auristream_block_components/auristream__6ee9aeb6/`
   - See `docs/auristream_setup.md` §12j for full technical details and commands.
-- **Next step:** run `embedding → block_01` component diagnostics to test whether MLP dominance is specific to the last block; then proceed to Family B (identity × position cosine distributions) and word-level encoding extension to remaining layers and all-speakers dataset.
+- **State/delta C/V cosine diagnostics — implemented and smoke-tested** (`scripts/audio/auristream_state_delta_cosine_diagnostics.py`):
+  - Four analysis units: `phoneme_last_delta` (primary Nafis analogue), `phoneme_last_h`, `token_delta`, `token_h`
+  - Raw and centered cosine distributions (C-C / C-V / V-V), full-range and zoomed panels (x ∈ [−0.5, 0.5] with per-category mean lines)
+  - Full run completed: embedding/block_01/block_24/block_47/block_48_lnf, 50 k pairs per category
+  - Output dir: `reproduce/figures/audio/auristream_state_delta_cosine/auristream__6ee9aeb6/`
+  - See `docs/auristream_setup.md §13` for details.
+- **Identity × position cosine diagnostics — implemented and smoke-tested** (`scripts/audio/auristream_phoneme_identity_position_diagnostics.py`):
+  - Analysis unit: `phoneme_last_delta`; four pair categories (same/different phoneme × same/different word position)
+  - Centered cosine (primary) and raw (QC); magnitude-by-position diagnostic
+  - Full run pending: block_24, block_47, block_48_lnf, 50 k pairs per category
+  - Output dir: `reproduce/figures/audio/auristream_identity_position/auristream__6ee9aeb6/`
+  - See `docs/auristream_setup.md §14` for details.
+- **Next step:** run `embedding → block_01` component diagnostics to test whether MLP dominance is specific to the last block; run full identity × position analysis (block_24/block_47/block_48_lnf); then word-level encoding extension to remaining layers and all-speakers dataset.
 
 ### Next phase (original): compare other families of speech models
 

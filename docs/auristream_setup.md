@@ -1037,3 +1037,122 @@ python scripts/audio/auristream_state_delta_cosine_diagnostics.py \
     --balance-pairs \
     --overwrite
 ```
+
+---
+
+## 14. Identity × position similarity diagnostics
+
+*Script: `scripts/audio/auristream_phoneme_identity_position_diagnostics.py`*
+*Run: `auristream__6ee9aeb6`*
+
+### 14a. Scientific goal
+
+This diagnostic tests whether AuriStream shows **onion-like signatures** in the
+`phoneme_last_delta` representation space:
+
+- **Identity structure in direction**: pairs of Δh_p vectors from the *same phoneme* (at any
+  position) should have higher cosine similarity than pairs from *different phonemes*, if
+  phoneme identity is encoded directionally.
+- **Position structure in magnitude**: ||Δh_p|| should vary systematically with phoneme position
+  from word start, if position is encoded in the magnitude of the state update.
+
+These are descriptive signatures of onion-like organisation, not evidence of an onion mechanism.
+AuriStream is a causal Transformer; its representations arise through self-attention, not through
+an explicit hierarchical architecture.
+
+### 14b. Primary analysis unit
+
+`phoneme_last_delta`: Δh_p = h_{last(p)} − h_{last(p−1)},
+where h_{last(p)} is the AuriStream hidden state at the last cochlear token of phoneme p.
+This is the closest structural analogue of an RNN/LSTM prefix-state delta Δh_t = h_t − h_{t−1}.
+
+### 14c. Four pair categories
+
+Pairs are formed from the pool of all inter-item cross-item `phoneme_last_delta` vectors, using:
+
+| Category | Condition |
+|---|---|
+| `same_phoneme_same_position` | `phoneme_base_i == phoneme_base_j` AND `position_i == position_j` |
+| `same_phoneme_different_position` | `phoneme_base_i == phoneme_base_j` AND `position_i != position_j` |
+| `different_phoneme_same_position` | `phoneme_base_i != phoneme_base_j` AND `position_i == position_j` |
+| `different_phoneme_different_position` | `phoneme_base_i != phoneme_base_j` AND `position_i != position_j` |
+
+`position` = `phoneme_position_from_start` = 0-based phoneme index within the word.
+
+`same_phoneme_same_position` can be the smallest category (some phoneme-position combinations
+are rare). Its count is reported in `qc_summary.csv`; warnings are issued if it falls below 100
+pairs per layer.
+
+### 14d. Cosine modes
+
+| Mode | Definition |
+|------|-----------|
+| `centered` | Subtract layer mean over all phoneme_last_delta vectors, L2-normalize, cosine. Primary. |
+| `raw` | L2-normalize raw vectors, cosine. Reported for QC. |
+
+Both modes use the **same sampled pairs** per layer (drawn once, reused for raw and centered).
+Centered cosine is the primary interpretation; late layers in AuriStream have strong common
+directions (see §12) that raw cosine conflates with geometry.
+
+### 14e. Magnitude diagnostic
+
+For each layer, `magnitude_by_position_phoneme_last_delta.png` plots the mean and standard
+deviation of ||Δh_p|| as a function of `phoneme_position_from_start`, coloured by phoneme type
+(consonant / vowel). If position is encoded in magnitude, ||Δh_p|| should trend monotonically
+with position.
+
+### 14f. Important caveat
+
+This diagnostic is **descriptive**. A separation between `same_phoneme` and `different_phoneme`
+categories in cosine similarity, or a monotone trend in ||Δh_p||, is consistent with onion-like
+organisation but does not establish a causal mechanism. AuriStream is not designed with an
+explicit onion structure; any observed pattern is an emergent property of causal self-attention
+over cochlear tokens.
+
+### 14g. Output directory
+
+```
+reproduce/figures/audio/auristream_identity_position/{run_id}/
+  config.json
+  qc_summary.csv
+  vector_metadata_{layer}_phoneme_last_delta.csv
+  magnitude_position_summary_{layer}_phoneme_last_delta.csv
+  identity_position_pairs_{layer}_phoneme_last_delta.csv
+  identity_position_summary_{layer}_phoneme_last_delta.csv
+  identity_position_pair_composition_{layer}_phoneme_last_delta.csv
+  summary_panel_identity_position_phoneme_last_delta_centered.png      ← primary
+  summary_panel_identity_position_phoneme_last_delta_centered_zoom.png ← zoomed, mean lines
+  summary_panel_identity_position_phoneme_last_delta_raw.png           ← QC
+  magnitude_by_position_phoneme_last_delta.png
+```
+
+### 14h. Commands
+
+**Smoke test (10 items, 1 000 pairs per category):**
+
+```bash
+python scripts/audio/auristream_phoneme_identity_position_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers block_24 block_48_lnf \
+    --max-items 10 \
+    --max-pairs-per-category 1000 \
+    --overwrite
+```
+
+**Full run (all items, 50 000 pairs per category, all priority layers):**
+
+```bash
+python scripts/audio/auristream_phoneme_identity_position_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers block_24 block_47 block_48_lnf \
+    --max-pairs-per-category 50000 \
+    --exclude-intra-item-pairs \
+    --balance-pairs \
+    --overwrite
+```
+
+Cross-reference: §13 for the state/delta C/V cosine diagnostic; §12 for anisotropy context.

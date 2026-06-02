@@ -1022,3 +1022,33 @@ python scripts/audio/auristream_state_delta_cosine_diagnostics.py \
 ```
 
 Output: `reproduce/figures/audio/auristream_state_delta_cosine/{run_id}/`
+
+---
+
+## AuriStream — identity × position similarity diagnostics
+
+Tests for onion-like signatures in `phoneme_last_delta` representations: identity in
+direction (cosine similarity) and position in magnitude (||Δh_p||).
+Four pair categories: same/different phoneme × same/different word position.
+Centered cosine is the primary interpretation.
+See `docs/auristream_setup.md §14` for scientific context and caveat.
+
+```bash
+# Smoke test (10 items)
+python scripts/audio/auristream_phoneme_identity_position_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers block_24 block_48_lnf \
+    --max-items 10 --max-pairs-per-category 1000 --overwrite
+
+# Full run
+python scripts/audio/auristream_phoneme_identity_position_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers block_24 block_47 block_48_lnf \
+    --max-pairs-per-category 50000 --exclude-intra-item-pairs --balance-pairs --overwrite
+```
+
+Output: `reproduce/figures/audio/auristream_identity_position/{run_id}/`
