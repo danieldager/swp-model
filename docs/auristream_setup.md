@@ -919,3 +919,121 @@ Do not claim this is *caused by* the autoregressive objective without further ev
 The MLP in the last block may be specialised for projecting into the cochlear-token prediction
 space, but this is a hypothesis. The `embedding → block_01` comparison (to be run) will test
 whether the MLP-dominant common update is specific to the last block or a broader pattern.
+
+---
+
+## 13. State/delta C/V cosine diagnostics
+
+*Script: `scripts/audio/auristream_state_delta_cosine_diagnostics.py`*
+*Run: `auristream__6ee9aeb6`*
+
+### 13a. Scientific purpose
+
+This diagnostic compares AuriStream representations with RNN/LSTM phoneme-prefix state
+analyses. In the RNN/LSTM reference, an encoder state h_t is computed after processing
+each phoneme prefix s_{0:t}, and pairwise cosine similarities across consonant (C) and
+vowel (V) positions assess C/V separability across layers.
+
+The goal here is a *descriptive C/V cosine diagnostic* — not a proof of onion
+representations or any specific phoneme-type organisation. Raw and centered distributions
+are compared across layers to track how C/V separability evolves from early to late
+AuriStream representations.
+
+### 13b. Analysis units and interpretation
+
+| Unit | Definition | Scientific role |
+|------|-----------|----------------|
+| `phoneme_last_delta` | Δh_p = h_{last(p)} − h_{last(p−1)} | **Primary.** Closest analogue of LSTM Δh_t. |
+| `phoneme_last_h` | h at last cochlear token of phoneme p | **Secondary.** Closest analogue of LSTM h_t after a phoneme prefix. |
+| `token_delta` | Δh_t = h_t − h_{t−1} (cochlear token level) | AuriStream-native control. |
+| `token_h` | h_t for each cochlear token | AuriStream-native control. |
+
+**Why `phoneme_last_delta` is primary:**
+In the RNN/LSTM reference analysis, h_t is the hidden state after the encoder has processed
+the full phoneme prefix up to phoneme p_t. Since AuriStream is a causal Transformer over
+5 ms WavCoch cochlear tokens, the closest causal analogue is the hidden state at the
+*last cochlear token assigned to phoneme p_t*. The corresponding delta
+Δh_p = h_{last(p)} − h_{last(p−1)} therefore analogises LSTM Δh_t = h_t − h_{t−1}.
+
+**Important caveat:**
+AuriStream is a causal Transformer, not an RNN. Δh here is a *structural analogue*,
+not a true recurrent hidden-state update. AuriStream has no LSTM cell state (c_t),
+so Δc is not reproduced.
+
+Mean-pooled phoneme embeddings are *not* used in this diagnostic (they are handled by
+`auristream_phoneme_cosine_distributions.py` and can serve as a later control). This
+script works directly from raw token-level activations to avoid phoneme-level pooling bias.
+
+### 13c. Raw vs centered cosine
+
+| Mode | Definition |
+|------|-----------|
+| `raw` | L2-normalize raw vectors, then compute cosine. |
+| `centered` | Subtract per-dimension mean over the layer × unit sample, then L2-normalize. |
+
+Both modes are computed on the **same sampled pairs** (drawn once per layer × unit,
+then reused for raw and centered). Late AuriStream layers (`block_47`, `block_48_lnf`)
+can have strong common directions (see §12), making raw cosine near-saturated. Centered
+cosine reveals residual C/V geometry after the common direction is removed.
+
+### 13d. Default layers
+
+| Layer | Role |
+|-------|------|
+| `embedding` | Early control: `wte(token_id) + wpe(position)`. |
+| `block_01` | Early Transformer representation. |
+| `block_24` | Mid-layer representation. |
+| `block_47` | Pre-final-block representation. |
+| `block_48_lnf` | Main late representation: post-final RMSNorm, passed to `coch_head`. |
+
+`block_48` (raw) is not included by default due to norm/anisotropy issues (see §12d).
+
+### 13e. Output directory
+
+```
+reproduce/figures/audio/auristream_state_delta_cosine/{run_id}/
+  config.json
+  qc_summary.csv
+  vector_metadata_{layer}_{unit}.csv       ← one row per vector with metadata and norm
+  norm_summary_{layer}_{unit}.csv          ← aggregated norm diagnostics by type/position
+  cosine_pairs_{layer}_{unit}.csv          ← sampled pairs with raw and centered cosines
+  cosine_summary_{layer}_{unit}.csv        ← per-category mean/std/quantiles
+  cosine_distribution_{layer}_{unit}_raw.png
+  cosine_distribution_{layer}_{unit}_centered.png
+  summary_panel_phoneme_last_delta_primary.png        ← primary panel: block_24/47/48_lnf × raw/centered
+  summary_panel_phoneme_last_delta_primary_zoom.png   ← same, x ∈ [−0.5, 0.5] with per-category mean lines
+  summary_panel_phoneme_last_h.png
+  summary_panel_token_delta.png
+  summary_panel_token_delta_zoom.png                  ← null-control, same zoom as primary
+```
+
+### 13f. Commands
+
+**Smoke test (5 items, 1 000 pairs per category):**
+
+```bash
+python scripts/audio/auristream_state_delta_cosine_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers block_24 block_48_lnf \
+    --analysis-units phoneme_last_delta phoneme_last_h token_delta token_h \
+    --max-items 5 \
+    --max-pairs-per-category 1000 \
+    --overwrite
+```
+
+**Full run (all items, 50 000 pairs per category):**
+
+```bash
+python scripts/audio/auristream_state_delta_cosine_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers embedding block_01 block_24 block_47 block_48_lnf \
+    --analysis-units phoneme_last_delta phoneme_last_h token_delta token_h \
+    --max-pairs-per-category 50000 \
+    --exclude-intra-item-pairs \
+    --balance-pairs \
+    --overwrite
+```

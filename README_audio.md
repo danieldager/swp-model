@@ -989,3 +989,36 @@ python scripts/audio/build_final_encoding_report.py \
     --unit-inspection reproduce/figures/audio/encoding/unit_inspection/ \
     --output reproduce/figures/audio/encoding/final/ --overwrite
 ```
+
+---
+
+## AuriStream — state/delta C/V cosine diagnostics
+
+Computes cosine similarity distributions (C-C / C-V / V-V) using AuriStream hidden states
+and their temporal deltas. Analogous to RNN/LSTM phoneme-prefix state analyses.
+
+Primary analysis unit: `phoneme_last_delta` (Δh at last cochlear token of each phoneme).
+See `docs/auristream_setup.md §13` for scientific context and caveat about Δh being a
+structural analogue, not a true recurrent update.
+
+```bash
+# Smoke test (5 items)
+python scripts/audio/auristream_state_delta_cosine_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers block_24 block_48_lnf \
+    --analysis-units phoneme_last_delta phoneme_last_h token_delta token_h \
+    --max-items 5 --max-pairs-per-category 1000 --overwrite
+
+# Full run
+python scripts/audio/auristream_state_delta_cosine_diagnostics.py \
+    --run reproduce/data/audio/auristream__6ee9aeb6 \
+    --dataset data/external/paradigm/processed/subset_male.csv \
+    --boundaries data/external/paradigm/processed/phoneme_boundaries_mfa_subset_male.csv \
+    --layers embedding block_01 block_24 block_47 block_48_lnf \
+    --analysis-units phoneme_last_delta phoneme_last_h token_delta token_h \
+    --max-pairs-per-category 50000 --exclude-intra-item-pairs --balance-pairs --overwrite
+```
+
+Output: `reproduce/figures/audio/auristream_state_delta_cosine/{run_id}/`
