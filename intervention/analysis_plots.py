@@ -10,6 +10,18 @@ import pandas as pd
 import seaborn as sns
 from sklearn.decomposition import PCA
 from swp.datasets.phonemes import get_phoneme_to_id
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    message=".*ChainedAssignmentError.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    module="seaborn",
+)
 
 PLOT_DPI = 150
 FIG_RECT = [0, 0, 1, 0.95]
@@ -185,6 +197,8 @@ def create_merged_df(pred_df: pd.DataFrame, wfe_df: pd.DataFrame, phoneme_featur
     wfe_df["No_Stress_str"] = wfe_df["No_Stress"].apply(lambda x: " ".join(x).strip() if isinstance(x, (list, tuple)) else str(x).strip())
 
     pred_df = pred_df.copy()
+    # =============================================================
+    # target for reverese order 
     pred_df["input_no_eos"] = pred_df["input"].astype(str).str.replace("<EOS>", "", regex=False).str.strip()
     if "match" in pred_df.columns:
         pred_df["match"] = _coerce_match(pred_df["match"])
@@ -294,9 +308,10 @@ def plot_run_summary(run_dir: Path, feature_cols: list[str] | None = None, phone
         phoneme_types = load_phoneme_features()
 
     config = load_run_config(run_dir)
+    embedding_init = config.get('embedding_init', 'none')
     title = (
         f"scale_param={config.get('scale_param')} | state_mode={config.get('state_mode')} | "
-        f"load_embed={config.get('pretrained_embedding')} | train_embed={ config.get('train_embedding', False)}"
+        f"embed_init={embedding_init} | train_embed={ config.get('train_embedding', False)}"
     )
 
     plot_training_history(load_history(run_dir), run_dir, title=title)

@@ -14,6 +14,8 @@ import copy
 import torch.nn.functional as F
 from intervention.scale_intervention_model import ScaleIntervention
 
+
+
 def create_dataloader(
     df: pd.DataFrame,
     phoneme_col: str,
@@ -24,6 +26,11 @@ def create_dataloader(
     max_pos: int = 9,
     random_replace_pos: bool = True,
     test_run: bool = False,
+    repeat_model: torch.nn.Module | None = None,
+    device: torch.device | None = None,
+    rng: np.random.Generator | np.random.RandomState | None = None,
+    max_attempts: int = 3,
+    cache_path: Path | None = None,
 ) -> DataLoader:
     sequences: list[list[int]] = []
     for phonemes in df[phoneme_col]:
@@ -31,6 +38,8 @@ def create_dataloader(
             phonemes = literal_eval(phonemes)
         sequences.append([phoneme_to_id[p] for p in phonemes])
 
+    if rng is None:
+        rng = np.random
     dataset = InterventionDataset(
         sequences,
         len(phoneme_to_id),
@@ -41,6 +50,11 @@ def create_dataloader(
         max_pos=max_pos,
         random_replace_pos=random_replace_pos,
         test_run=test_run,
+        repeat_model=repeat_model,
+        device=device,
+        rng=rng,
+        max_attempts=max_attempts,
+        cache_path=cache_path,
     )
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
@@ -57,6 +71,11 @@ class InterventionDataset(Dataset):
         max_pos: int = 9,
         random_replace_pos: bool = True,
         test_run: bool = False,
+        repeat_model: torch.nn.Module | None = None,
+        device: torch.device | None = None,
+        rng: np.random.Generator | np.random.RandomState | None = None,
+        max_attempts: int = 1,
+        cache_path: Path | None = None,
     ):
         self.vocab_size = vocab_size
         self.pad_id = pad_id
@@ -67,41 +86,113 @@ class InterventionDataset(Dataset):
         self.special_tokens = {pad_id, eos_id, start_id}
         self.random_replace_pos = random_replace_pos
         self.test_run = test_run
+        self.repeat_model = repeat_model
+        self.device = device
+        self.rng = np.random if rng is None else rng
+        self._randint = self.rng.integers if hasattr(self.rng, "integers") else self.rng.randint
+        self.max_attempts = max_attempts
+        self.cache_path = cache_path
 
         self.examples: list[dict[str, int | list[int]]] = []
-        for seq in phoneme_sequences:
+        if self.cache_path is not None and self.cache_path.exists():
+            self.examples = torch.load(self.cache_path, weights_only=False)
+            return
+        for i, seq in enumerate(phoneme_sequences):
             seq = seq.copy()
 
             if self.random_replace_pos:
-                replace_pos = np.random.randint(0, min(self.max_pos, len(seq)))
-                pos_list = [replace_pos]
-            else:
-                pos_list = list(range(min(self.max_pos, len(seq))))
+                attempts = 0
+                while attempts < self.max_attempts:
+                    replace_pos = self._randint(0, min(self.max_pos, len(seq)))
+                    old_token = seq[replace_pos]
+                    modified_seq = seq.copy()
+                    if self.test_run:
+                        new_token = old_token
+                        self.examples.append(
+                            {
+                                "seq": seq,
+                                "modified_seq": modified_seq,
+                                "replace_pos": replace_pos,
+                                "old_token": old_token,
+                                "new_token": new_token,
+                            }
+                        )
+                        break
 
-            for replace_pos in pos_list:
-                old_token = seq[replace_pos]
-                modified_seq = seq.copy()
-                if self.test_run:
-                    new_token = old_token
-                else:
                     valid_tokens = [
                         t
                         for t in range(self.vocab_size)
                         if t != old_token and t not in self.special_tokens
                     ]
-                    new_token = np.random.choice(valid_tokens)
+                    new_token = self.rng.choice(valid_tokens)
                     modified_seq[replace_pos] = new_token
 
-                self.examples.append(
-                    {
-                        "seq": seq,
-                        "modified_seq": modified_seq,
-                        "replace_pos": replace_pos,
-                        "old_token": old_token,
-                        "new_token": new_token,
-                    }
-                )
+                    if self.repeat_model is None or can_repeat(self.repeat_model, modified_seq, self.device):
+                        self.examples.append(
+                            {
+                                "seq": seq,
+                                "modified_seq": modified_seq,
+                                "replace_pos": replace_pos,
+                                "old_token": old_token,
+                                "new_token": new_token,
+                            }
+                        )
+                        break
 
+                    attempts += 1
+            else:
+                pos_list = list(range(min(self.max_pos, len(seq))))
+                for replace_pos in pos_list:
+                    attempt = 0
+                    while attempt < self.max_attempts:
+                        old_token = seq[replace_pos]
+                        modified_seq = seq.copy()
+                        if self.test_run:
+                            new_token = old_token
+                            self.examples.append(
+                                {
+                                    "seq": seq,
+                                    "modified_seq": modified_seq,
+                                    "replace_pos": replace_pos,
+                                    "old_token": old_token,
+                                    "new_token": new_token,
+                                }
+                            )
+                            break
+
+                        valid_tokens = [
+                            t
+                            for t in range(self.vocab_size)
+                            if t != old_token and t not in self.special_tokens
+                        ]
+                        new_token = self.rng.choice(valid_tokens)
+                        modified_seq[replace_pos] = new_token
+
+                        if self.repeat_model is None or can_repeat(self.repeat_model, modified_seq, self.device):
+                            self.examples.append(
+                                {
+                                    "seq": seq,
+                                    "modified_seq": modified_seq,
+                                    "replace_pos": replace_pos,
+                                    "old_token": old_token,
+                                    "new_token": new_token,
+                                }
+                            )
+                            break
+
+                        attempt += 1
+
+        if self.cache_path is not None:
+            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(self.examples, self.cache_path)
+
+    def create_modified_seq(self, source):
+        # random pos, phoneme replacement
+        # check c-v structure of modified_seq is plausible (ccc , vv is not present in the training data)
+        # also check bigram, or trigram of new sequence is present in the training data
+        # check repeat with n attempts
+        pass
+       
     def __len__(self) -> int:
         return len(self.examples)
 
@@ -110,12 +201,17 @@ class InterventionDataset(Dataset):
         seq = example["seq"] + [self.eos_id]
         modified_seq = example["modified_seq"] + [self.eos_id]
 
-        input_padded = seq + [self.pad_id] * max(0, self.max_len - len(seq))
-        target_padded = modified_seq + [self.pad_id] * max(0, self.max_len - len(modified_seq))
+        source_padded = seq + [self.pad_id] * max(0, self.max_len - len(seq))
+        modified_padded = modified_seq + [self.pad_id] * max(0, self.max_len - len(modified_seq))
 
         return {
-            "input": torch.tensor(input_padded[: self.max_len], dtype=torch.long),
-            "target": torch.tensor(target_padded[: self.max_len], dtype=torch.long),
+            # Store the modified sequence as input, and the original sequence as target.
+            # "input": torch.tensor(modified_padded[: self.max_len], dtype=torch.long),
+            # "target": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
+
+            # predict the modified sequence from the original sequence:
+            "input": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
+            "target": torch.tensor(modified_padded[: self.max_len], dtype=torch.long),
             "old_token": torch.tensor(example["old_token"], dtype=torch.long),
             "new_token": torch.tensor(example["new_token"], dtype=torch.long),
             "position": torch.tensor(example["replace_pos"], dtype=torch.long),
@@ -158,7 +254,14 @@ def decode_with_hidden(
             inp = logits.argmax(dim=-1)
 
     return torch.cat(outputs, dim=1)
-
+def can_repeat(model: nn.Module, input_ids: torch.Tensor, device: torch.device) -> bool:
+    model.eval()
+    input_ids = torch.tensor(input_ids, dtype=torch.long).unsqueeze(0).to(device)  # Add batch dimension
+    with torch.no_grad():
+        h, c = get_encoder_hidden(model, input_ids, device)
+        logits = decode_with_hidden(model, h, c, target=input_ids, device=device, teacher_forcing=False)
+        preds = logits.argmax(dim=-1)
+        return torch.equal(preds, input_ids)
 
 def _accuracy(preds: torch.Tensor, targets: torch.Tensor, seq_lens: torch.Tensor) -> float:
     batch_size = preds.shape[0]
@@ -173,14 +276,14 @@ def _accuracy(preds: torch.Tensor, targets: torch.Tensor, seq_lens: torch.Tensor
 class InterventionTrainer:
     def __init__(
         self,
-        model: torch.nn.Module,
+        repeat_model: torch.nn.Module,
         intervention: ScaleIntervention,
         optimizer: torch.optim.Optimizer,
         device: torch.device,
         pad_id: int,
         teacher_forcing: bool = False,
     ):
-        self.model = model
+        self.repeat_model = repeat_model
         self.intervention = intervention
         self.teacher_forcing = teacher_forcing
         self.optimizer = optimizer
@@ -203,9 +306,14 @@ class InterventionTrainer:
         position = batch["position"].to(self.device)
         seq_len = batch["seq_len"]
 
-        h, c = get_encoder_hidden(self.model, input_ids, self.device)
+        h, c = get_encoder_hidden(self.repeat_model, input_ids, self.device)
+        # We encode the corrupted input and then intervene back toward the original token.
+        # The intervention expects (old_token, new_token) in its signature, so we swap them here
+        # h_mod, c_mod = self.intervention.intervene(h, c, new_token, old_token, position)
+
+        # pred modified sequence from the original sequence:
         h_mod, c_mod = self.intervention.intervene(h, c, old_token, new_token, position)
-        logits = decode_with_hidden(self.model, h_mod, c_mod, target_ids, self.device, self.teacher_forcing)
+        logits = decode_with_hidden(self.repeat_model, h_mod, c_mod, target_ids, self.device, self.teacher_forcing)
 
         loss = self._compute_loss(logits, target_ids)
         preds = logits.argmax(dim=-1)
@@ -214,9 +322,10 @@ class InterventionTrainer:
     def _run_loader(self, loader: DataLoader, training: bool) -> tuple[float, float]:
         if training:
             self.intervention.train()
+            self.repeat_model.train()
         else:
             self.intervention.eval()
-        self.model.eval()
+            self.repeat_model.eval()
 
         total_loss = 0.0
         total_acc = 0.0
@@ -249,7 +358,7 @@ class InterventionTrainer:
     @torch.no_grad()
     def evaluate_with_predictions(self, loader: DataLoader, id_to_phoneme: dict[int, str]) -> pd.DataFrame:
         self.intervention.eval()
-        self.model.eval()
+        self.repeat_model.eval()
 
         records: list[dict[str, object]] = []
         for batch in loader:
@@ -371,6 +480,6 @@ class InterventionTrainer:
 
     def save_scale_params(self, save_dir: Path) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
-        params = self.intervention.scale_parameters()
+        params = self.intervention.get_parameters()
         np.savez(save_dir / "scale_params.npz", **params)
 

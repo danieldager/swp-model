@@ -3,7 +3,9 @@ from __future__ import annotations
 from ast import literal_eval
 from pathlib import Path
 from typing import TYPE_CHECKING
+import time
 
+import numpy as np
 import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
@@ -15,6 +17,7 @@ from swp.utils.setup import set_device as get_device
 
 from intervention.analysis_plots import plot_run_summary
 from intervention.core import ScaleIntervention, create_dataloader, InterventionTrainer
+from intervention.embedding_utils import load_token_embedding_from_stats
 
 if TYPE_CHECKING:
     from intervention.grid_search import InterventionConfig
@@ -23,13 +26,15 @@ if TYPE_CHECKING:
 def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = False) -> dict[str, object]:
     save_dir.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(config.seed)
+    np.random.seed(config.seed)
+    rng = np.random.default_rng(config.seed)
 
     device = get_device()
-    model = get_model(config.model_name)
+    repeat_model = get_model(config.model_name)
     state_dict = torch.load(config.weights_path, map_location=device)
-    model.load_state_dict(state_dict)
-    model.to(device)
-    model.eval()
+    repeat_model.load_state_dict(state_dict)
+    repeat_model.to(device)
+    repeat_model.eval()
 
     phoneme_to_id = get_phoneme_to_id()
     id_to_phoneme = {v: k for k, v in phoneme_to_id.items()}
@@ -57,6 +62,12 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
 
     test_df = wfe_df[wfe_df["can_repeat"] == True]
 
+    condition_list = [
+        "real-pseudo",
+        "real-real",
+        "pseudo-real",
+        "pseudo-pseudo",
+    ] if config.dataset_type == "all" else [config.dataset_type]
     train_loader = create_dataloader(
         train_df,
         "No_Stress",
@@ -65,8 +76,18 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         shuffle=True,
         max_len=config.max_seq_len,
         max_pos=max_position,
-        random_replace_pos= not config.train_all_pos,
+        random_replace_pos=not config.train_all_pos,
+        repeat_model=repeat_model,
+        device=device,
+        rng=rng,
+        max_attempts=5,
+        cache_path=Path(f"cache/train_{config.dataset_type}.pt"),
+        lexicality_col=config.lexicality_col,
+        conditions=condition_list,
     )
+    if verbose:
+            print(f"train_loader created with {len(train_loader)} batches, max_position: {max_position}")
+
     val_loader = create_dataloader(
         val_df,
         "No_Stress",
@@ -76,7 +97,17 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         max_len=config.max_seq_len,
         max_pos=max_position,
         random_replace_pos=False,
+        repeat_model=repeat_model,
+        device=device,
+        rng=rng,
+        max_attempts=5,
+        cache_path=Path(f"cache/val_{config.dataset_type}.pt"),
+        lexicality_col=config.lexicality_col,
+        conditions=condition_list,
     )
+    if verbose:
+            print(f"val_loader created with {len(val_loader)} batches.")
+
     test_loader = create_dataloader(
         test_df,
         "No_Stress",
@@ -86,7 +117,30 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         max_len=config.max_seq_len,
         max_pos=max_position,
         random_replace_pos=False,
+        repeat_model=repeat_model,
+        device=device,
+        rng=rng,
+        max_attempts=5,
+        cache_path=Path(f"cache/test_{config.dataset_type}.pt"),
+        lexicality_col=config.lexicality_col,
+        conditions=condition_list,
     )
+    if verbose:
+            print(f"test_loader created with {len(test_loader)} batches.")
+    for repeat_param in repeat_model.parameters():
+        repeat_param.requires_grad = False
+
+    if config.embedding_init == "pretrained":
+        embedding = repeat_model.encoder.embedding
+    elif config.embedding_init == "none":
+        embedding = None
+    else:
+        embedding = load_token_embedding_from_stats(
+            config.embedding_init,
+            Path("states_ds/phoneme_state_embeddings.npz"),
+            phoneme_to_id,
+            repeat_model.encoder.embedding,
+        )
 
     intervention = ScaleIntervention(
         hidden_size=config.hidden_size,
@@ -94,16 +148,18 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         state_mode=config.state_mode,
         scale_param=config.scale_param,
         max_position=max_position,
-        pretrained_embedding=model.encoder.embedding if config.pretrained_embedding else None,
+        pretrained_embedding=embedding,
         train_embedding=config.train_embedding,
     ).to(device)
 
     optimizer = torch.optim.Adam(intervention.parameters(), lr=config.learning_rate)
-    trainer = InterventionTrainer(model, intervention, optimizer, device, pad_id, config.teacher_forcing)
-
+    trainer = InterventionTrainer(repeat_model, intervention, optimizer, device, pad_id, config.teacher_forcing)
+    
     from intervention.grid_search import make_run_name
     run_name = make_run_name(config)
-
+    print(f"Starting experiment: {run_name}")
+    print(f"number of trainable parameters: {sum(p.numel() for p in intervention.parameters() if p.requires_grad)}")
+    start_time = time.perf_counter()
     history = trainer.fit(
         train_loader,
         val_loader,
@@ -113,6 +169,8 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
         test_loader=test_loader,
         verbose=verbose,
     )
+    duration_min = (time.perf_counter() - start_time) / 60.0
+    print(f"Training duration: {duration_min:.2f} minutes")
 
     final_test_loss, final_test_acc = trainer.evaluate(test_loader)
     print(f"{run_name} Test Accuracy: {final_test_acc:.4f}, Final Test Loss: {final_test_loss:.4f}")

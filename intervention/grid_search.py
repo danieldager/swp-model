@@ -22,7 +22,6 @@ class InterventionConfig:
     weights_path: str
     state_mode: str
     scale_param: str
-    pretrained_embedding: bool
     learning_rate: float
     batch_size: int
     hidden_size: int
@@ -35,12 +34,35 @@ class InterventionConfig:
     train_embedding: bool
     teacher_forcing: bool
     train_all_pos: bool
+    embedding_init: str = "none"
+    dataset_type: str = "real-pseudo"
+    lexicality_col: str | None = "Lexicality"
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
+    def get_conditions(self) -> list[str]:
+        if self.dataset_type == "all":
+            return [
+                "real-pseudo",
+                "real-real",
+                "pseudo-real",
+                "pseudo-pseudo",
+            ]
+        if self.dataset_type in [
+            "real-pseudo",
+            "real-real",
+            "pseudo-real",
+            "pseudo-pseudo",
+        ]:
+            return [self.dataset_type]
+        raise ValueError(
+            f"Invalid dataset_type: {self.dataset_type}. "
+            "Use one of real-pseudo, real-real, pseudo-real, pseudo-pseudo, or all."
+        )
+
     def should_skip_config(self) -> bool:
-        return self.pretrained_embedding is False and self.train_embedding is False
+        return self.embedding_init == "none" and self.train_embedding is False
 
     def save_experiment_config(self, save_dir: Path) -> None:
         save_dir.mkdir(parents=True, exist_ok=True)
@@ -54,17 +76,25 @@ def save_history_csv(history: dict[str, list[float]], save_dir: Path) -> None:
 
 
 def make_run_name(config: InterventionConfig) -> str:
+    if config.embedding_init == "pretrained":
+        embedding_part = "init_model_embed"
+    elif config.embedding_init == "none":
+        embedding_part = None
+    else:
+        embedding_part = f"init_{config.embedding_init}"
+
     parts = [
+        f"{config.dataset_type}",
         f"{config.scale_param}",
         f"state_{config.state_mode}",
-        "load_embed" if config.pretrained_embedding else None,
+        embedding_part,
         "train_embed" if config.train_embedding else None,
         "teacher_forcing" if config.teacher_forcing else None,
     ]
     return "-".join(part for part in parts if part is not None)
 
 
-def _run_config(config_dict: dict[str, object], base_save_dir: Path, skip_existing: bool) -> dict[str, object] | None:
+def _run_config(config_dict: dict[str, object], base_save_dir: Path, skip_existing: bool, verbose: bool) -> dict[str, object] | None:
     config = InterventionConfig(**config_dict)
     if config.should_skip_config():
         return None
@@ -73,7 +103,7 @@ def _run_config(config_dict: dict[str, object], base_save_dir: Path, skip_existi
     if skip_existing and run_dir.exists() and (run_dir / "history.csv").exists():
         return load_run_summary_row(config, run_dir)
 
-    history = run_experiment(config, run_dir, verbose=False)
+    history = run_experiment(config, run_dir, verbose=verbose)
     return make_summary_row(config, run_dir, history)
 
 
@@ -81,6 +111,7 @@ def run_grid_search(
     grid: dict[str, list[object]] | Path,
     base_save_dir: Path,
     skip_existing: bool = True,
+    verbose: bool = False
 ) -> list[dict[str, object]]:
     if isinstance(grid, Path):
         grid = load_grid_from_json(grid)
@@ -89,35 +120,38 @@ def run_grid_search(
     summary_rows: list[dict[str, object]] = []
 
     for config_dict in grid_iter(grid):
-        row = _run_config(config_dict, base_save_dir, skip_existing)
+        row = _run_config(config_dict, base_save_dir, skip_existing, verbose)
         if row is not None:
             summary_rows.append(row)
+            update_grid_summary_row(row, base_save_dir)
 
+    # Final save is optional, but keeps the summary consistent if rows were accumulated in memory.
     save_grid_summary(summary_rows, base_save_dir)
     return summary_rows
 
 
-def run_grid_search_parallel(
-    grid: dict[str, list[object]] | Path,
-    base_save_dir: Path,
-    skip_existing: bool = True,
-    n_jobs: int = -1,
-) -> list[dict[str, object]]:
-    if isinstance(grid, Path):
-        grid = load_grid_from_json(grid)
+# def run_grid_search_parallel(
+#     grid: dict[str, list[object]] | Path,
+#     base_save_dir: Path,
+#     skip_existing: bool = True,
+#     verbose: bool = False,
+#     n_jobs: int = -1,
+# ) -> list[dict[str, object]]:
+#     if isinstance(grid, Path):
+#         grid = load_grid_from_json(grid)
 
-    base_save_dir.mkdir(parents=True, exist_ok=True)
-    jobs = list(grid_iter(grid))
+#     base_save_dir.mkdir(parents=True, exist_ok=True)
+#     jobs = list(grid_iter(grid))
 
-    with tqdm_joblib(tqdm(desc="grid search", total=len(jobs))) as progress_bar:
-        summary_rows = Parallel(n_jobs=n_jobs)(
-            delayed(_run_config)(config_dict, base_save_dir, skip_existing)
-            for config_dict in jobs
-        )
+#     with tqdm_joblib(tqdm(desc="grid search", total=len(jobs))) as progress_bar:
+#         summary_rows = Parallel(n_jobs=n_jobs)(
+#             delayed(_run_config)(config_dict, base_save_dir, skip_existing,verbose)
+#             for config_dict in jobs
+#         )
 
-    summary_rows = [row for row in summary_rows if row is not None]
-    save_grid_summary(summary_rows, base_save_dir)
-    return summary_rows
+#     summary_rows = [row for row in summary_rows if row is not None]
+#     save_grid_summary(summary_rows, base_save_dir)
+#     return summary_rows
 
 
 def _last(list_or_none: list[object] | object | None):
@@ -163,10 +197,11 @@ def _base_summary(config: InterventionConfig, run_dir: Path) -> dict[str, object
         "run_dir": str(run_dir),
         "state_mode": config.state_mode,
         "scale_param": config.scale_param,
-        "pretrained_embedding": config.pretrained_embedding,
+        "embedding_init": config.embedding_init,
         "train_embedding": config.train_embedding,
         "teacher_forcing": config.teacher_forcing,
         "train_all_pos": config.train_all_pos,
+        "dataset_type": config.dataset_type,
         "hidden_size": config.hidden_size,
     }
 
