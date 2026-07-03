@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ast import literal_eval
 from pathlib import Path
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,122 @@ import copy
 import torch.nn.functional as F
 from intervention.scale_intervention_model import ScaleIntervention
 
+
+def get_id_to_token_type(
+    id_to_phoneme: dict[int, str],
+    vowels: set[str],
+    consonants: set[str],
+) -> dict[int, str]:
+    return {
+        token_id: ("V" if token in vowels else "C")
+        for token_id, token in id_to_phoneme.items()
+        if token not in {"<PAD>", "<EOS>", "<SOS>"}
+    }
+
+
+def build_train_reference_sets(
+    sequences: list[list[int]],
+    id_to_phoneme: dict[int, str],
+    vowels: set[str],
+    consonants: set[str],
+    special_tokens: set[int] | None = None,
+) -> tuple[set[str], set[tuple[int, int]], set[tuple[int, int, int]], dict[int, str]]:
+    special_tokens = special_tokens or set()
+    id_to_type = get_id_to_token_type(id_to_phoneme, vowels, consonants)
+
+    train_cv_patterns: set[str] = set()
+    train_bigrams: set[tuple[int, int]] = set()
+    train_trigrams: set[tuple[int, int, int]] = set()
+
+    for seq in sequences:
+        clean = [token for token in seq if token not in special_tokens]
+        if not clean:
+            continue
+        train_cv_patterns.add("".join(id_to_type.get(token) for token in clean))
+        for i in range(len(clean) - 1):
+            train_bigrams.add((clean[i], clean[i + 1]))
+        for i in range(len(clean) - 2):
+            train_trigrams.add((clean[i], clean[i + 1], clean[i + 2]))
+
+    return train_cv_patterns, train_bigrams, train_trigrams, id_to_type
+
+
+def build_real_real_pairs(
+    df: pd.DataFrame,
+    phoneme_col: str,
+    phoneme_to_id: dict[str, int],
+) -> list[tuple[list[int], list[int], int, int, int]]:
+    groups: dict[tuple[int, tuple[int, ...]], list[list[int]]] = defaultdict(list)
+    for _, row in df.iterrows():
+        seq = row[phoneme_col]
+        if isinstance(seq, str):
+            seq = literal_eval(seq)
+        seq = [phoneme_to_id[p] for p in seq]
+        for pos in range(len(seq)):
+            key = (pos, tuple(seq[:pos] + seq[pos + 1 :]))
+            groups[key].append(seq)
+
+    pairs: list[tuple[list[int], list[int], int, int, int]] = []
+    for (pos, _), seqs in groups.items():
+        if len(seqs) < 2:
+            continue
+        for i in range(len(seqs)):
+            for j in range(i + 1, len(seqs)):
+                a = seqs[i]
+                b = seqs[j]
+                pairs.append((a, b, pos, a[pos], b[pos]))
+                pairs.append((b, a, pos, b[pos], a[pos]))
+    return pairs
+
+
+class RealRealInterventionDataset(Dataset):
+    def __init__(
+        self,
+        pairs: list[tuple[list[int], list[int], int, int, int]],
+        pad_id: int,
+        eos_id: int,
+        max_len: int = 20,
+    ):
+        self.pairs = pairs
+        self.pad_id = pad_id
+        self.eos_id = eos_id
+        self.max_len = max_len
+
+    def __len__(self) -> int:
+        return len(self.pairs)
+
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
+        source_seq, target_seq, replace_pos, old_token, new_token = self.pairs[idx]
+        source = source_seq + [self.eos_id]
+        target = target_seq + [self.eos_id]
+        source_padded = source + [self.pad_id] * max(0, self.max_len - len(source))
+        target_padded = target + [self.pad_id] * max(0, self.max_len - len(target))
+        return {
+            "input": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
+            "target": torch.tensor(target_padded[: self.max_len], dtype=torch.long),
+            "old_token": torch.tensor(old_token, dtype=torch.long),
+            "new_token": torch.tensor(new_token, dtype=torch.long),
+            "position": torch.tensor(replace_pos, dtype=torch.long),
+            "seq_len": torch.tensor(len(source), dtype=torch.long),
+        }
+
+
+def create_real_real_dataloader(
+    df: pd.DataFrame,
+    phoneme_col: str,
+    phoneme_to_id: dict[str, int],
+    batch_size: int = 32,
+    shuffle: bool = True,
+    max_len: int = 20,
+) -> DataLoader:
+    pairs = build_real_real_pairs(df, phoneme_col, phoneme_to_id)
+    dataset = RealRealInterventionDataset(
+        pairs,
+        phoneme_to_id["<PAD>"],
+        phoneme_to_id["<EOS>"],
+        max_len=max_len,
+    )
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
 
 def create_dataloader(
@@ -31,7 +148,17 @@ def create_dataloader(
     rng: np.random.Generator | np.random.RandomState | None = None,
     max_attempts: int = 3,
     cache_path: Path | None = None,
+    check_repeat: bool = True,
+    check_cv: bool = False,
+    check_n_gram: int = 0,
+    train_cv_patterns: set[str] | None = None,
+    train_bigrams: set[tuple[int, int]] | None = None,
+    train_trigrams: set[tuple[int, int, int]] | None = None,
+    id_to_type: dict[int, str] | None = None,
+    dataset_condition: list[str] | None = None,
 ) -> DataLoader:
+
+
     sequences: list[list[int]] = []
     for phonemes in df[phoneme_col]:
         if isinstance(phonemes, str):
@@ -55,6 +182,14 @@ def create_dataloader(
         rng=rng,
         max_attempts=max_attempts,
         cache_path=cache_path,
+        check_repeat=check_repeat,
+        check_cv=check_cv,
+        check_n_gram=check_n_gram,
+        train_cv_patterns=train_cv_patterns,
+        train_bigrams=train_bigrams,
+        train_trigrams=train_trigrams,
+        id_to_type=id_to_type,
+        dataset_condition=dataset_condition,
     )
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
@@ -76,6 +211,14 @@ class InterventionDataset(Dataset):
         rng: np.random.Generator | np.random.RandomState | None = None,
         max_attempts: int = 1,
         cache_path: Path | None = None,
+        check_repeat: bool = True,
+        check_cv: bool = False,
+        check_n_gram: int = 0,
+        train_cv_patterns: set[str] | None = None,
+        train_bigrams: set[tuple[int, int]] | None = None,
+        train_trigrams: set[tuple[int, int, int]] | None = None,
+        id_to_type: dict[int, str] | None = None,
+        dataset_condition: list[str] | None = None,
     ):
         self.vocab_size = vocab_size
         self.pad_id = pad_id
@@ -92,107 +235,135 @@ class InterventionDataset(Dataset):
         self._randint = self.rng.integers if hasattr(self.rng, "integers") else self.rng.randint
         self.max_attempts = max_attempts
         self.cache_path = cache_path
+        self.check_repeat = check_repeat
+        self.check_cv = check_cv
+        self.check_n_gram = check_n_gram
+        self.train_cv_patterns = train_cv_patterns
+        self.train_bigrams = train_bigrams
+        self.train_trigrams = train_trigrams
+        self.id_to_type = id_to_type
+        self.dataset_condition = dataset_condition
+        if self.check_cv and self.id_to_type is None:
+            raise ValueError("id_to_type is required for CV pattern checking")
+        if self.check_cv and self.train_cv_patterns is None:
+            raise ValueError("train_cv_patterns is required for CV pattern checking")
+        if self.check_n_gram == 2 and self.train_bigrams is None:
+            raise ValueError("train_bigrams is required for bigram checking")
+        if self.check_n_gram == 3 and self.train_trigrams is None:
+            raise ValueError("train_trigrams is required for trigram checking")
 
         self.examples: list[dict[str, int | list[int]]] = []
         if self.cache_path is not None and self.cache_path.exists():
+            print(f"Loading cached dataset from {self.cache_path}")
             self.examples = torch.load(self.cache_path, weights_only=False)
             return
+        print("Creating intervention dataset...")
         for i, seq in enumerate(phoneme_sequences):
             seq = seq.copy()
 
             if self.random_replace_pos:
-                attempts = 0
-                while attempts < self.max_attempts:
-                    replace_pos = self._randint(0, min(self.max_pos, len(seq)))
-                    old_token = seq[replace_pos]
-                    modified_seq = seq.copy()
-                    if self.test_run:
-                        new_token = old_token
-                        self.examples.append(
-                            {
-                                "seq": seq,
-                                "modified_seq": modified_seq,
-                                "replace_pos": replace_pos,
-                                "old_token": old_token,
-                                "new_token": new_token,
-                            }
-                        )
-                        break
+                replace_pos = self._randint(0, min(self.max_pos, len(seq)))
+                result = self.create_modified_seq(
+                    seq,
+                    replace_pos,
+                    self.check_cv,
+                    self.check_n_gram,
+                    check_repeat=self.check_repeat,
+                )
+                if result is None:
+                    continue
 
-                    valid_tokens = [
-                        t
-                        for t in range(self.vocab_size)
-                        if t != old_token and t not in self.special_tokens
-                    ]
-                    new_token = self.rng.choice(valid_tokens)
-                    modified_seq[replace_pos] = new_token
+                modified_seq, old_token, new_token = result
+                self.examples.append(
+                    {
+                        "seq": seq,
+                        "modified_seq": modified_seq,
+                        "replace_pos": replace_pos,
+                        "old_token": old_token,
+                        "new_token": new_token,
+                    }
+                )
 
-                    if self.repeat_model is None or can_repeat(self.repeat_model, modified_seq, self.device):
-                        self.examples.append(
-                            {
-                                "seq": seq,
-                                "modified_seq": modified_seq,
-                                "replace_pos": replace_pos,
-                                "old_token": old_token,
-                                "new_token": new_token,
-                            }
-                        )
-                        break
-
-                    attempts += 1
             else:
                 pos_list = list(range(min(self.max_pos, len(seq))))
                 for replace_pos in pos_list:
-                    attempt = 0
-                    while attempt < self.max_attempts:
-                        old_token = seq[replace_pos]
-                        modified_seq = seq.copy()
-                        if self.test_run:
-                            new_token = old_token
-                            self.examples.append(
-                                {
-                                    "seq": seq,
-                                    "modified_seq": modified_seq,
-                                    "replace_pos": replace_pos,
-                                    "old_token": old_token,
-                                    "new_token": new_token,
-                                }
-                            )
-                            break
+                    result = self.create_modified_seq(
+                        seq,
+                        replace_pos,
+                        self.check_cv,
+                        self.check_n_gram,
+                        check_repeat=self.check_repeat,
+                    )
+                    if result is None:
+                        continue
 
-                        valid_tokens = [
-                            t
-                            for t in range(self.vocab_size)
-                            if t != old_token and t not in self.special_tokens
-                        ]
-                        new_token = self.rng.choice(valid_tokens)
-                        modified_seq[replace_pos] = new_token
-
-                        if self.repeat_model is None or can_repeat(self.repeat_model, modified_seq, self.device):
-                            self.examples.append(
-                                {
-                                    "seq": seq,
-                                    "modified_seq": modified_seq,
-                                    "replace_pos": replace_pos,
-                                    "old_token": old_token,
-                                    "new_token": new_token,
-                                }
-                            )
-                            break
-
-                        attempt += 1
+                    modified_seq, old_token, new_token = result
+                    self.examples.append(
+                        {
+                            "seq": seq,
+                            "modified_seq": modified_seq,
+                            "replace_pos": replace_pos,
+                            "old_token": old_token,
+                            "new_token": new_token,
+                        }
+                    )
 
         if self.cache_path is not None:
             self.cache_path.parent.mkdir(parents=True, exist_ok=True)
             torch.save(self.examples, self.cache_path)
 
-    def create_modified_seq(self, source):
-        # random pos, phoneme replacement
-        # check c-v structure of modified_seq is plausible (ccc , vv is not present in the training data)
-        # also check bigram, or trigram of new sequence is present in the training data
-        # check repeat with n attempts
-        pass
-       
+    def create_modified_seq(
+        self,
+        source_seq: list[int],
+        replace_pos: int,
+        check_cv: bool,
+        check_n_gram: int,
+        check_repeat: bool = True,
+    ) -> tuple[list[int], int, int] | None:
+        old_token = source_seq[replace_pos]
+        if self.test_run:
+            return source_seq.copy(), old_token, old_token
+
+        valid_tokens = [
+            t
+            for t in range(self.vocab_size)
+            if t != old_token and t not in self.special_tokens
+        ]
+
+        for _ in range(self.max_attempts):
+            new_token = self.rng.choice(valid_tokens)
+            modified_seq = source_seq.copy()
+            modified_seq[replace_pos] = new_token
+
+            if check_cv and self.train_cv_patterns is not None:
+                cleaned = [token for token in modified_seq if token not in self.special_tokens]
+                pattern = "".join(self.id_to_type.get(token, "C") for token in cleaned)
+                if pattern not in self.train_cv_patterns:
+                    continue
+
+            if check_n_gram == 2:
+                clean = [token for token in modified_seq if token not in self.special_tokens]
+                if len(clean) >= 2 and any(
+                    tuple(clean[i : i + 2]) not in self.train_bigrams
+                    for i in range(len(clean) - 1)
+                ):
+                    continue
+            elif check_n_gram == 3:
+                clean = [token for token in modified_seq if token not in self.special_tokens]
+                if len(clean) >= 3 and any(
+                    tuple(clean[i : i + 3]) not in self.train_trigrams
+                    for i in range(len(clean) - 2)
+                ):
+                    continue
+
+            if check_repeat and self.repeat_model is not None:
+                if not can_repeat(self.repeat_model, modified_seq, self.device):
+                    continue
+
+            return modified_seq, old_token, new_token
+
+        return None
+
     def __len__(self) -> int:
         return len(self.examples)
 
@@ -204,20 +375,28 @@ class InterventionDataset(Dataset):
         source_padded = seq + [self.pad_id] * max(0, self.max_len - len(seq))
         modified_padded = modified_seq + [self.pad_id] * max(0, self.max_len - len(modified_seq))
 
-        return {
-            # Store the modified sequence as input, and the original sequence as target.
-            # "input": torch.tensor(modified_padded[: self.max_len], dtype=torch.long),
-            # "target": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
+        if self.dataset_condition == "source-modified":
+            return {
+                # predict the modified sequence from the original sequence:
+                "input": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
+                "target": torch.tensor(modified_padded[: self.max_len], dtype=torch.long),
+                "old_token": torch.tensor(example["old_token"], dtype=torch.long),
+                "new_token": torch.tensor(example["new_token"], dtype=torch.long),
+                "position": torch.tensor(example["replace_pos"], dtype=torch.long),
+                "seq_len": torch.tensor(len(seq), dtype=torch.long),
+            }
 
-            # predict the modified sequence from the original sequence:
-            "input": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
-            "target": torch.tensor(modified_padded[: self.max_len], dtype=torch.long),
-            "old_token": torch.tensor(example["old_token"], dtype=torch.long),
-            "new_token": torch.tensor(example["new_token"], dtype=torch.long),
-            "position": torch.tensor(example["replace_pos"], dtype=torch.long),
-            "seq_len": torch.tensor(len(seq), dtype=torch.long),
-        }
-
+        elif self.dataset_condition == "modified-source":
+            return {
+                # Store the modified sequence as input, and the original sequence as target.
+                "input": torch.tensor(modified_padded[: self.max_len], dtype=torch.long),
+                "target": torch.tensor(source_padded[: self.max_len], dtype=torch.long),
+                "old_token": torch.tensor(example["new_token"], dtype=torch.long),
+                "new_token": torch.tensor(example["old_token"], dtype=torch.long),
+                "position": torch.tensor(example["replace_pos"], dtype=torch.long),
+                "seq_len": torch.tensor(len(seq), dtype=torch.long),
+            }
+        # todo, modified-modified and source-source
 
 
 
@@ -307,11 +486,6 @@ class InterventionTrainer:
         seq_len = batch["seq_len"]
 
         h, c = get_encoder_hidden(self.repeat_model, input_ids, self.device)
-        # We encode the corrupted input and then intervene back toward the original token.
-        # The intervention expects (old_token, new_token) in its signature, so we swap them here
-        # h_mod, c_mod = self.intervention.intervene(h, c, new_token, old_token, position)
-
-        # pred modified sequence from the original sequence:
         h_mod, c_mod = self.intervention.intervene(h, c, old_token, new_token, position)
         logits = decode_with_hidden(self.repeat_model, h_mod, c_mod, target_ids, self.device, self.teacher_forcing)
 

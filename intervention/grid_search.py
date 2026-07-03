@@ -37,29 +37,12 @@ class InterventionConfig:
     embedding_init: str = "none"
     dataset_type: str = "real-pseudo"
     lexicality_col: str | None = "Lexicality"
+    check_repeat: bool = True
+    check_cv: bool = False
+    check_n_gram: int = 0
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
-
-    def get_conditions(self) -> list[str]:
-        if self.dataset_type == "all":
-            return [
-                "real-pseudo",
-                "real-real",
-                "pseudo-real",
-                "pseudo-pseudo",
-            ]
-        if self.dataset_type in [
-            "real-pseudo",
-            "real-real",
-            "pseudo-real",
-            "pseudo-pseudo",
-        ]:
-            return [self.dataset_type]
-        raise ValueError(
-            f"Invalid dataset_type: {self.dataset_type}. "
-            "Use one of real-pseudo, real-real, pseudo-real, pseudo-pseudo, or all."
-        )
 
     def should_skip_config(self) -> bool:
         return self.embedding_init == "none" and self.train_embedding is False
@@ -101,7 +84,9 @@ def _run_config(config_dict: dict[str, object], base_save_dir: Path, skip_existi
 
     run_dir = base_save_dir / make_run_name(config)
     if skip_existing and run_dir.exists() and (run_dir / "history.csv").exists():
-        return load_run_summary_row(config, run_dir)
+        srow = load_run_summary_row(config, run_dir)
+        print(f"Skipping existing run: {run_dir} final test acc: {srow['final_test_acc']:.4f})")
+        return srow
 
     history = run_experiment(config, run_dir, verbose=verbose)
     return make_summary_row(config, run_dir, history)

@@ -16,8 +16,36 @@ from swp.utils.models import get_model
 from swp.utils.setup import set_device as get_device
 
 from intervention.analysis_plots import plot_run_summary
-from intervention.core import ScaleIntervention, create_dataloader, InterventionTrainer
+from intervention.core import (
+    ScaleIntervention,
+    build_train_reference_sets,
+    create_dataloader,
+    create_real_real_dataloader,
+    InterventionTrainer,
+)
 from intervention.embedding_utils import load_token_embedding_from_stats
+
+def _safe_train_test_split(
+    df: pd.DataFrame,
+    test_size: float,
+    random_state: int,
+    shuffle: bool = True,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    counts = df["Length"].value_counts()
+    if counts.min() >= 2:
+        return train_test_split(
+            df,
+            test_size=test_size,
+            random_state=random_state,
+            shuffle=shuffle,
+            stratify=df["Length"],
+        )
+    return train_test_split(
+        df,
+        test_size=test_size,
+        random_state=random_state,
+        shuffle=shuffle,
+    )
 
 if TYPE_CHECKING:
     from intervention.grid_search import InterventionConfig
@@ -39,6 +67,10 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
     phoneme_to_id = get_phoneme_to_id()
     id_to_phoneme = {v: k for k, v in phoneme_to_id.items()}
 
+    phoneme_data = pd.read_csv("datasets/phonemes.csv")
+    vowels = set(phoneme_data["Phoneme"][phoneme_data["Type"] == "V"].tolist())
+    consonants = set(phoneme_data["Phoneme"][phoneme_data["Type"] == "C"].tolist())
+
     pad_id = phoneme_to_id["<PAD>"]
     eos_id = phoneme_to_id["<EOS>"]
 
@@ -52,80 +84,152 @@ def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = F
     train_df_all["Length"] = train_df_all["No_Stress"].apply(len)
     max_position = int(train_df_all["Length"].max())
 
-    train_df, val_df = train_test_split(
-        train_df_all,
-        test_size=config.val_ratio,
-        random_state=config.seed,
-        shuffle=True,
-        stratify=train_df_all["Length"],
-    )
+    if config.dataset_type == "real-real":
+        holdout_ratio = 0.4
+        train_df, holdout_df = _safe_train_test_split(
+            train_df_all,
+            test_size=holdout_ratio,
+            random_state=config.seed,
+            shuffle=True,
+        )
+        val_df, test_df = _safe_train_test_split(
+            holdout_df,
+            test_size=0.70,
+            random_state=config.seed,
+            shuffle=True,
+        )
+    else:
+        train_df, val_df = train_test_split(
+            train_df_all,
+            test_size=config.val_ratio,
+            random_state=config.seed,
+            shuffle=True,
+            stratify=train_df_all["Length"],
+        )
+        test_df = wfe_df[wfe_df["can_repeat"] == True]
 
-    test_df = wfe_df[wfe_df["can_repeat"] == True]
-
-    condition_list = [
-        "real-pseudo",
-        "real-real",
-        "pseudo-real",
-        "pseudo-pseudo",
-    ] if config.dataset_type == "all" else [config.dataset_type]
-    train_loader = create_dataloader(
-        train_df,
-        "No_Stress",
-        phoneme_to_id,
-        batch_size=config.batch_size,
-        shuffle=True,
-        max_len=config.max_seq_len,
-        max_pos=max_position,
-        random_replace_pos=not config.train_all_pos,
-        repeat_model=repeat_model,
-        device=device,
-        rng=rng,
-        max_attempts=5,
-        cache_path=Path(f"cache/train_{config.dataset_type}.pt"),
-        lexicality_col=config.lexicality_col,
-        conditions=condition_list,
-    )
-    if verbose:
+    if config.dataset_type == "real-real":
+        train_loader = create_real_real_dataloader(
+            train_df,
+            "No_Stress",
+            phoneme_to_id,
+            batch_size=config.batch_size,
+            shuffle=True,
+            max_len=config.max_seq_len,
+        )
+        if verbose:
             print(f"train_loader created with {len(train_loader)} batches, max_position: {max_position}")
 
-    val_loader = create_dataloader(
-        val_df,
-        "No_Stress",
-        phoneme_to_id,
-        batch_size=config.batch_size,
-        shuffle=False,
-        max_len=config.max_seq_len,
-        max_pos=max_position,
-        random_replace_pos=False,
-        repeat_model=repeat_model,
-        device=device,
-        rng=rng,
-        max_attempts=5,
-        cache_path=Path(f"cache/val_{config.dataset_type}.pt"),
-        lexicality_col=config.lexicality_col,
-        conditions=condition_list,
-    )
-    if verbose:
+        val_loader = create_real_real_dataloader(
+            val_df,
+            "No_Stress",
+            phoneme_to_id,
+            batch_size=config.batch_size,
+            shuffle=False,
+            max_len=config.max_seq_len,
+        )
+        if verbose:
             print(f"val_loader created with {len(val_loader)} batches.")
 
-    test_loader = create_dataloader(
-        test_df,
-        "No_Stress",
-        phoneme_to_id,
-        batch_size=config.batch_size,
-        shuffle=False,
-        max_len=config.max_seq_len,
-        max_pos=max_position,
-        random_replace_pos=False,
-        repeat_model=repeat_model,
-        device=device,
-        rng=rng,
-        max_attempts=5,
-        cache_path=Path(f"cache/test_{config.dataset_type}.pt"),
-        lexicality_col=config.lexicality_col,
-        conditions=condition_list,
-    )
-    if verbose:
+        test_loader = create_real_real_dataloader(
+            test_df,
+            "No_Stress",
+            phoneme_to_id,
+            batch_size=config.batch_size,
+            shuffle=False,
+            max_len=config.max_seq_len,
+        )
+        if verbose:
+            print(f"test_loader created with {len(test_loader)} batches.")
+    else:
+        train_sequences = [
+            [phoneme_to_id[p] for p in seq]
+            for seq in train_df_all["No_Stress"]
+        ]
+        special_tokens = {pad_id, eos_id, phoneme_to_id["<SOS>"]}
+        train_cv_patterns, train_bigrams, train_trigrams, id_to_type = build_train_reference_sets(
+            train_sequences,
+            id_to_phoneme,
+            vowels=vowels,
+            consonants=consonants,
+            special_tokens=special_tokens,
+        )
+        train_loader = create_dataloader(
+            train_df,
+            "No_Stress",
+            phoneme_to_id,
+            batch_size=config.batch_size,
+            shuffle=True,
+            max_len=config.max_seq_len,
+            max_pos=max_position,
+            random_replace_pos=not config.train_all_pos,
+            repeat_model=repeat_model,
+            device=device,
+            rng=rng,
+            max_attempts=5,
+            cache_path=Path(f"cache/train_R_{config.dataset_type}.pt"),
+            check_repeat=config.check_repeat,
+            check_cv=config.check_cv,
+            check_n_gram=config.check_n_gram,
+            train_cv_patterns=train_cv_patterns,
+            train_bigrams=train_bigrams,
+            train_trigrams=train_trigrams,
+            id_to_type=id_to_type,
+            dataset_condition=config.dataset_type if config.dataset_type else "source-modified",
+        )
+        if verbose:
+            print(f"train_loader created with {len(train_loader)} batches, max_position: {max_position}")
+
+        val_loader = create_dataloader(
+            val_df,
+            "No_Stress",
+            phoneme_to_id,
+            batch_size=config.batch_size,
+            shuffle=False,
+            max_len=config.max_seq_len,
+            max_pos=max_position,
+            random_replace_pos=False,
+            repeat_model=repeat_model,
+            device=device,
+            rng=rng,
+            max_attempts=5,
+            cache_path=Path(f"cache/val_R_{config.dataset_type}.pt"),
+            check_repeat=config.check_repeat,
+            check_cv=config.check_cv,
+            check_n_gram=config.check_n_gram,
+            train_cv_patterns=train_cv_patterns,
+            train_bigrams=train_bigrams,
+            train_trigrams=train_trigrams,
+            id_to_type=id_to_type,
+            dataset_condition=config.dataset_type if config.dataset_type else "source-modified",
+        )
+        if verbose:
+            print(f"val_loader created with {len(val_loader)} batches.")
+
+        test_loader = create_dataloader(
+            test_df,
+            "No_Stress",
+            phoneme_to_id,
+            batch_size=config.batch_size,
+            shuffle=False,
+            max_len=config.max_seq_len,
+            max_pos=max_position,
+            random_replace_pos=False,
+            repeat_model=repeat_model,
+            device=device,
+            rng=rng,
+            max_attempts=5,
+            cache_path=Path(f"cache/test_R_{config.dataset_type}.pt"),
+            check_repeat=config.check_repeat,
+            check_cv=config.check_cv,
+            check_n_gram=config.check_n_gram,
+            train_cv_patterns=train_cv_patterns,
+            train_bigrams=train_bigrams,
+            train_trigrams=train_trigrams,
+            id_to_type=id_to_type,
+            dataset_condition=config.dataset_type if config.dataset_type else "source-modified",
+        )
+        if verbose:
             print(f"test_loader created with {len(test_loader)} batches.")
     for repeat_param in repeat_model.parameters():
         repeat_param.requires_grad = False
