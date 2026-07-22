@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
+from typing import Dict
+
 import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict
-ROOT = Path(__file__).resolve().parent
-REPO_ROOT = ROOT.parent
-for path in (ROOT, REPO_ROOT):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
-from intervention.states_extract import StatesDataset
+
+# Allow running as a script; expose the repo root (two levels up from training/).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from swp.utils.datasets import get_phoneme_to_id
 
 VALID_EMBEDDING_INITS = {
@@ -81,6 +82,96 @@ def save_phoneme_mean_median_embeddings(
         delta_state_mean=delta_state_mean,
         delta_state_median=delta_state_median,
     )
+
+
+def save_ngram_mean_median_embeddings(
+    output_path: Path,
+    states_dataset,
+    n: int,
+) -> None:
+    """Per-n-gram mean/median delta stats, computed from the per-step state deltas.
+
+    A window's delta telescopes: sum of the per-step deltas over positions
+    ``t..t+n-1`` equals ``state[t+n-1] - state[t-1]``, i.e. the state change the whole
+    n-gram causes. Keys in the saved npz match the phoneme stats file
+    (``delta_{h,c,state}_{mean,median}``), so ``embedding_init`` names are unchanged;
+    rows are indexed by the ``ngrams`` array of "P1 P2 ..." strings."""
+    from intervention.data.datasets import SPECIAL_PHONEMES
+
+    md = states_dataset.metadata
+    keep = ~md["phoneme"].isin(SPECIAL_PHONEMES)
+
+    keys: list[str] = []
+    dh_rows: list[np.ndarray] = []
+    dc_rows: list[np.ndarray] = []
+    for _, word_md in md[keep].groupby("seq_id", sort=False):
+        word_md = word_md.sort_values("position")
+        phones = word_md["phoneme"].tolist()
+        rows = word_md.index.to_numpy()
+        for i in range(len(phones) - n + 1):
+            keys.append(" ".join(phones[i : i + n]))
+            dh_rows.append(states_dataset.delta_h[rows[i : i + n]].sum(axis=0))
+            dc_rows.append(states_dataset.delta_c[rows[i : i + n]].sum(axis=0))
+
+    keys_arr = np.array(keys)
+    dh = np.stack(dh_rows).astype(np.float32)
+    dc = np.stack(dc_rows).astype(np.float32)
+    dstate = np.concatenate([dh, dc], axis=1)
+
+    ngrams = sorted(set(keys))
+    stats = {name: np.zeros((len(ngrams), arr.shape[1]), dtype=np.float32)
+             for name, arr in [("delta_h_mean", dh), ("delta_h_median", dh),
+                               ("delta_c_mean", dc), ("delta_c_median", dc),
+                               ("delta_state_mean", dstate), ("delta_state_median", dstate)]}
+    counts = np.zeros(len(ngrams), dtype=np.int32)
+    for idx, gram in enumerate(ngrams):
+        mask = keys_arr == gram
+        counts[idx] = int(mask.sum())
+        for prefix, arr in [("delta_h", dh), ("delta_c", dc), ("delta_state", dstate)]:
+            stats[f"{prefix}_mean"][idx] = arr[mask].mean(axis=0)
+            stats[f"{prefix}_median"][idx] = np.median(arr[mask], axis=0)
+
+    np.savez_compressed(Path(output_path), ngrams=np.array(ngrams, dtype=object),
+                        counts=counts, **stats)
+
+
+def load_ngram_embedding_from_stats(
+    embedding_init: str,
+    stats_path: Path,
+    ngram_labels: list[str],
+) -> nn.Embedding:
+    """Embedding table over an n-gram vocabulary, row ``i`` = the ``embedding_init``
+    statistic for ``ngram_labels[i]`` ("P1 P2 ..."). Vocab n-grams missing from the stats
+    file fall back to zero rows (reported); no special tokens exist in this vocabulary."""
+    embedding_init = embedding_init.strip().lower()
+    if embedding_init not in VALID_EMBEDDING_INITS or embedding_init == "pretrained":
+        raise ValueError(f"Invalid n-gram embedding_init={embedding_init!r}; "
+                         f"expected one of {sorted(VALID_EMBEDDING_INITS - {'pretrained'})}")
+    if not stats_path.exists():
+        raise FileNotFoundError(
+            f"n-gram stats file not found: {stats_path} "
+            f"(generate it with `python -m intervention.data.delta_embeddings`)")
+
+    data = np.load(stats_path, allow_pickle=True)
+    row_of = {gram: i for i, gram in enumerate(data["ngrams"])}
+    stats = data[embedding_init].astype(np.float32)
+
+    weights = np.zeros((len(ngram_labels), stats.shape[1]), dtype=np.float32)
+    missing = 0
+    for i, label in enumerate(ngram_labels):
+        row = row_of.get(label)
+        if row is None:
+            missing += 1
+        else:
+            weights[i] = stats[row]
+    if missing:
+        print(f"  [ngram init] {missing}/{len(ngram_labels)} vocab n-grams missing from "
+              f"{stats_path.name}; left as zero rows")
+
+    embedding = nn.Embedding(len(ngram_labels), weights.shape[1])
+    with torch.no_grad():
+        embedding.weight.data.copy_(torch.from_numpy(weights))
+    return embedding
 
 
 def load_token_embedding_from_stats(
@@ -170,9 +261,16 @@ def load_token_embedding_from_stats(
     return embedding
 
 if __name__ == "__main__":
+    from intervention.state_analysis.states_extract import StatesDataset
+
     states_path = Path("states_ds/train_states")
-    output_path = Path("states_ds/phoneme_state_embeddings.npz")
     states_ds = StatesDataset.load(str(states_path))
-    phoneme_to_id = get_phoneme_to_id()
-    save_phoneme_mean_median_embeddings(output_path, states_ds, phoneme_to_id)
+
+    output_path = Path("states_ds/phoneme_state_embeddings.npz")
+    save_phoneme_mean_median_embeddings(output_path, states_ds, get_phoneme_to_id())
     print(f"Saved phoneme mean/median embeddings to {output_path}")
+
+    for n in (2, 3):
+        output_path = Path(f"states_ds/ngram{n}_state_embeddings.npz")
+        save_ngram_mean_median_embeddings(output_path, states_ds, n)
+        print(f"Saved {n}-gram mean/median embeddings to {output_path}")

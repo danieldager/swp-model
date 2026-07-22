@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Optional
-from states_extract import StateExtractor, StatesDataset
+from intervention.state_analysis.states_extract import StateExtractor, StatesDataset
 import os, sys
 sys.path.append(os.path.dirname(os.getcwd()))
 from swp.utils.setup import seed_everything, set_device
@@ -15,7 +15,7 @@ from swp.datasets.phonemes import get_phoneme_to_id
 from ast import literal_eval
 from sklearn.decomposition import PCA
 from typing import Optional
-from utils import test_model_repetition
+from intervention.state_analysis.utils import test_model_repetition
 #%%
 #  Setup
 seed_everything(42)
@@ -77,4 +77,13 @@ extract_states_from_df(train_df, "states_ds/train_states")
 # wfe_new.to_csv("datasets/wfe_with_repetition.csv", index=False)
 
 
+# %%
+ssp_df = pd.read_csv("datasets/ssp.csv", converters=converters)
+extractor = StateExtractor(model, phoneme_to_id, device)
+ssp_ds = StatesDataset.from_dataframe(ssp_df, extractor, word_col="Type")
+ssp_ds.state = np.concatenate([ssp_ds.h, ssp_ds.c], axis=1)
+ssp_ds.delta_state = np.concatenate([ssp_ds.delta_h, ssp_ds.delta_c], axis=1)
+ssp_ds.save("states_ds/ssp_states")
+# %%
+ssp_ds
 # %%

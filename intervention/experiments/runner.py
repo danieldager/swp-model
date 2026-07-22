@@ -1,307 +1,140 @@
+"""Runner: train one intervention for one seed and save its artifacts.
+
+``run_experiment`` is method-agnostic — it dispatches on ``cfg.method.model`` to build
+either the scale or the DAS intervention, then shares the same data, trainer, and I/O.
+It writes ``config.json``, ``history.csv``, ``predictions.csv`` and ``params.npz``
+(the interpretable parameters used for CI/bar plots); the trained weights are only saved
+when ``save_model=True``. Plotting is a separate step (see ``analysis_plots``).
+"""
 from __future__ import annotations
 
-from ast import literal_eval
-from pathlib import Path
-from typing import TYPE_CHECKING
+import json
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.model_selection import train_test_split
 
 from swp.datasets.phonemes import get_phoneme_to_id
-from swp.utils.datasets import get_train_dataset
 from swp.utils.models import get_model
-from swp.utils.setup import set_device as get_device
+from swp.utils.setup import set_device
 
-from intervention.analysis_plots import plot_run_summary
-from intervention.core import (
-    ScaleIntervention,
-    build_train_reference_sets,
-    create_dataloader,
-    create_real_real_dataloader,
-    InterventionTrainer,
-)
-from intervention.embedding_utils import load_token_embedding_from_stats
+from intervention.models.das import DASTrainer, build_das_intervention
+from intervention.config import ExperimentConfig
+from intervention.data import build_loaders
+from intervention.models.additive_intervention import build_scale_intervention
+from intervention.experiments.trainer import InterventionTrainer
 
-def _safe_train_test_split(
-    df: pd.DataFrame,
-    test_size: float,
-    random_state: int,
-    shuffle: bool = True,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    counts = df["Length"].value_counts()
-    if counts.min() >= 2:
-        return train_test_split(
-            df,
-            test_size=test_size,
-            random_state=random_state,
-            shuffle=shuffle,
-            stratify=df["Length"],
-        )
-    return train_test_split(
-        df,
-        test_size=test_size,
-        random_state=random_state,
-        shuffle=shuffle,
-    )
-
-if TYPE_CHECKING:
-    from intervention.grid_search import InterventionConfig
+ROOT = Path(__file__).resolve().parents[1]   # intervention/
+REPO_ROOT = Path(__file__).resolve().parents[2]  # repo root (holds reproduce/weights)
 
 
-def run_experiment(config: InterventionConfig, save_dir: Path, verbose: bool = False) -> dict[str, object]:
+def _resolve_weights(path_str: str) -> Path:
+    """Find the weights file whether the path is absolute or relative to repo/intervention."""
+    candidates = [Path(path_str)] + [base / path_str for base in (REPO_ROOT, ROOT)]
+    for cand in candidates:
+        if cand.exists():
+            return cand.resolve()
+    raise FileNotFoundError(f"Could not find weights at any of: {[str(c) for c in candidates]}")
+
+
+def _load_repeat_model(train_cfg, device) -> torch.nn.Module:
+    model = get_model(train_cfg.model_name)
+    model.load_state_dict(torch.load(_resolve_weights(train_cfg.weights_path), map_location=device))
+    model.to(device).eval()
+    for p in model.parameters():
+        p.requires_grad = False
+    return model
+
+
+def _build_method(cfg: ExperimentConfig, repeat_model, max_position, phoneme_to_id,
+                  device, pad_id, ngram_vocab=None):
+    """Return (intervention, trainer) for the configured method."""
+    if cfg.method.is_das:
+        intervention = build_das_intervention(
+            cfg.method, cfg.train.hidden_size, max_position, span=cfg.data.edit_ngram
+        ).to(device)
+        trainer_cls = DASTrainer
+    else:  # scale
+        intervention = build_scale_intervention(
+            cfg.method, repeat_model, cfg.train.hidden_size, max_position, phoneme_to_id,
+            ngram_vocab=ngram_vocab,
+        ).to(device)
+        trainer_cls = InterventionTrainer
+
+    optimizer = torch.optim.Adam(intervention.parameters(), lr=cfg.train.learning_rate)
+    trainer = trainer_cls(repeat_model, intervention, optimizer, device, pad_id, cfg.train.teacher_forcing)
+    return intervention, trainer
+
+
+def run_experiment(
+    cfg: ExperimentConfig,
+    seed: int,
+    save_dir: Path,
+    cache_dir: Path | None = None,
+    device: torch.device | None = None,
+    save_model: bool = True,
+    verbose: bool = False,
+) -> dict[str, object]:
+    cfg.validate()
+    save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
-    torch.manual_seed(config.seed)
-    np.random.seed(config.seed)
-    rng = np.random.default_rng(config.seed)
-
-    device = get_device()
-    repeat_model = get_model(config.model_name)
-    state_dict = torch.load(config.weights_path, map_location=device)
-    repeat_model.load_state_dict(state_dict)
-    repeat_model.to(device)
-    repeat_model.eval()
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    device = device or set_device()
 
     phoneme_to_id = get_phoneme_to_id()
     id_to_phoneme = {v: k for k, v in phoneme_to_id.items()}
-
-    phoneme_data = pd.read_csv("datasets/phonemes.csv")
-    vowels = set(phoneme_data["Phoneme"][phoneme_data["Type"] == "V"].tolist())
-    consonants = set(phoneme_data["Phoneme"][phoneme_data["Type"] == "C"].tolist())
-
     pad_id = phoneme_to_id["<PAD>"]
-    eos_id = phoneme_to_id["<EOS>"]
 
-    train_df_all = get_train_dataset()
-    wfe_df = pd.read_csv(
-        "datasets/wfe_with_repetition.csv",
-        converters={"Phonemes": literal_eval, "No_Stress": literal_eval},
+    repeat_model = _load_repeat_model(cfg.train, device)
+    loaders, max_position, ngram_vocab = build_loaders(
+        cfg.data, seed, phoneme_to_id, repeat_model, device,
+        batch_size=cfg.train.batch_size, cache_dir=cache_dir, verbose=verbose,
     )
 
-    train_df_all = train_df_all[~train_df_all["Word"].isin(wfe_df["Word"])].copy()
-    train_df_all["Length"] = train_df_all["No_Stress"].apply(len)
-    max_position = int(train_df_all["Length"].max())
+    intervention, trainer = _build_method(cfg, repeat_model, max_position, phoneme_to_id,
+                                          device, pad_id, ngram_vocab=ngram_vocab)
+    n_params = sum(p.numel() for p in intervention.parameters() if p.requires_grad)
+    print(f"[{cfg.run_name()} | seed {seed}] {cfg.method.model}, {n_params} trainable params")
 
-    if config.dataset_type == "real-real":
-        holdout_ratio = 0.4
-        train_df, holdout_df = _safe_train_test_split(
-            train_df_all,
-            test_size=holdout_ratio,
-            random_state=config.seed,
-            shuffle=True,
-        )
-        val_df, test_df = _safe_train_test_split(
-            holdout_df,
-            test_size=0.70,
-            random_state=config.seed,
-            shuffle=True,
-        )
-    else:
-        train_df, val_df = train_test_split(
-            train_df_all,
-            test_size=config.val_ratio,
-            random_state=config.seed,
-            shuffle=True,
-            stratify=train_df_all["Length"],
-        )
-        test_df = wfe_df[wfe_df["can_repeat"] == True]
-
-    if config.dataset_type == "real-real":
-        train_loader = create_real_real_dataloader(
-            train_df,
-            "No_Stress",
-            phoneme_to_id,
-            batch_size=config.batch_size,
-            shuffle=True,
-            max_len=config.max_seq_len,
-        )
-        if verbose:
-            print(f"train_loader created with {len(train_loader)} batches, max_position: {max_position}")
-
-        val_loader = create_real_real_dataloader(
-            val_df,
-            "No_Stress",
-            phoneme_to_id,
-            batch_size=config.batch_size,
-            shuffle=False,
-            max_len=config.max_seq_len,
-        )
-        if verbose:
-            print(f"val_loader created with {len(val_loader)} batches.")
-
-        test_loader = create_real_real_dataloader(
-            test_df,
-            "No_Stress",
-            phoneme_to_id,
-            batch_size=config.batch_size,
-            shuffle=False,
-            max_len=config.max_seq_len,
-        )
-        if verbose:
-            print(f"test_loader created with {len(test_loader)} batches.")
-    else:
-        train_sequences = [
-            [phoneme_to_id[p] for p in seq]
-            for seq in train_df_all["No_Stress"]
-        ]
-        special_tokens = {pad_id, eos_id, phoneme_to_id["<SOS>"]}
-        train_cv_patterns, train_bigrams, train_trigrams, id_to_type = build_train_reference_sets(
-            train_sequences,
-            id_to_phoneme,
-            vowels=vowels,
-            consonants=consonants,
-            special_tokens=special_tokens,
-        )
-        train_loader = create_dataloader(
-            train_df,
-            "No_Stress",
-            phoneme_to_id,
-            batch_size=config.batch_size,
-            shuffle=True,
-            max_len=config.max_seq_len,
-            max_pos=max_position,
-            random_replace_pos=not config.train_all_pos,
-            repeat_model=repeat_model,
-            device=device,
-            rng=rng,
-            max_attempts=5,
-            cache_path=Path(f"cache/train_R_{config.dataset_type}.pt"),
-            check_repeat=config.check_repeat,
-            check_cv=config.check_cv,
-            check_n_gram=config.check_n_gram,
-            train_cv_patterns=train_cv_patterns,
-            train_bigrams=train_bigrams,
-            train_trigrams=train_trigrams,
-            id_to_type=id_to_type,
-            dataset_condition=config.dataset_type if config.dataset_type else "source-modified",
-        )
-        if verbose:
-            print(f"train_loader created with {len(train_loader)} batches, max_position: {max_position}")
-
-        val_loader = create_dataloader(
-            val_df,
-            "No_Stress",
-            phoneme_to_id,
-            batch_size=config.batch_size,
-            shuffle=False,
-            max_len=config.max_seq_len,
-            max_pos=max_position,
-            random_replace_pos=False,
-            repeat_model=repeat_model,
-            device=device,
-            rng=rng,
-            max_attempts=5,
-            cache_path=Path(f"cache/val_R_{config.dataset_type}.pt"),
-            check_repeat=config.check_repeat,
-            check_cv=config.check_cv,
-            check_n_gram=config.check_n_gram,
-            train_cv_patterns=train_cv_patterns,
-            train_bigrams=train_bigrams,
-            train_trigrams=train_trigrams,
-            id_to_type=id_to_type,
-            dataset_condition=config.dataset_type if config.dataset_type else "source-modified",
-        )
-        if verbose:
-            print(f"val_loader created with {len(val_loader)} batches.")
-
-        test_loader = create_dataloader(
-            test_df,
-            "No_Stress",
-            phoneme_to_id,
-            batch_size=config.batch_size,
-            shuffle=False,
-            max_len=config.max_seq_len,
-            max_pos=max_position,
-            random_replace_pos=False,
-            repeat_model=repeat_model,
-            device=device,
-            rng=rng,
-            max_attempts=5,
-            cache_path=Path(f"cache/test_R_{config.dataset_type}.pt"),
-            check_repeat=config.check_repeat,
-            check_cv=config.check_cv,
-            check_n_gram=config.check_n_gram,
-            train_cv_patterns=train_cv_patterns,
-            train_bigrams=train_bigrams,
-            train_trigrams=train_trigrams,
-            id_to_type=id_to_type,
-            dataset_condition=config.dataset_type if config.dataset_type else "source-modified",
-        )
-        if verbose:
-            print(f"test_loader created with {len(test_loader)} batches.")
-    for repeat_param in repeat_model.parameters():
-        repeat_param.requires_grad = False
-
-    if config.embedding_init == "pretrained":
-        embedding = repeat_model.encoder.embedding
-    elif config.embedding_init == "none":
-        embedding = None
-    else:
-        embedding = load_token_embedding_from_stats(
-            config.embedding_init,
-            Path("states_ds/phoneme_state_embeddings.npz"),
-            phoneme_to_id,
-            repeat_model.encoder.embedding,
-        )
-
-    intervention = ScaleIntervention(
-        hidden_size=config.hidden_size,
-        vocab_size=len(phoneme_to_id),
-        state_mode=config.state_mode,
-        scale_param=config.scale_param,
-        max_position=max_position,
-        pretrained_embedding=embedding,
-        train_embedding=config.train_embedding,
-    ).to(device)
-
-    optimizer = torch.optim.Adam(intervention.parameters(), lr=config.learning_rate)
-    trainer = InterventionTrainer(repeat_model, intervention, optimizer, device, pad_id, config.teacher_forcing)
-    
-    from intervention.grid_search import make_run_name
-    run_name = make_run_name(config)
-    print(f"Starting experiment: {run_name}")
-    print(f"number of trainable parameters: {sum(p.numel() for p in intervention.parameters() if p.requires_grad)}")
-    start_time = time.perf_counter()
+    start = time.perf_counter()
     history = trainer.fit(
-        train_loader,
-        val_loader,
-        num_epochs=config.num_epochs,
-        patience=config.patience,
-        min_delta=config.min_delta,
-        test_loader=test_loader,
-        verbose=verbose,
+        loaders["train"], loaders["val"],
+        num_epochs=cfg.train.num_epochs, patience=cfg.train.patience, min_delta=cfg.train.min_delta,
+        test_loader=loaders.get("test"), verbose=verbose,
     )
-    duration_min = (time.perf_counter() - start_time) / 60.0
-    print(f"Training duration: {duration_min:.2f} minutes")
+    test_loss, test_acc = trainer.evaluate(loaders["test"])
+    print(f"[{cfg.run_name()} | seed {seed}] test acc={test_acc:.4f} loss={test_loss:.4f} "
+          f"({(time.perf_counter() - start) / 60:.2f} min)")
 
-    final_test_loss, final_test_acc = trainer.evaluate(test_loader)
-    print(f"{run_name} Test Accuracy: {final_test_acc:.4f}, Final Test Loss: {final_test_loss:.4f}")
+    # --- artifacts ---
+    cfg.save(save_dir / "config.json")
+    pd.DataFrame(history).to_csv(save_dir / "history.csv", index=False)
+    trainer.save_params(save_dir)
 
-    from intervention.grid_search import save_history_csv
+    # For n-gram edits, old/new tokens index the n-gram vocab: persist the id -> "P1 P2"
+    # mapping (for labelling embeddings later) and use it in the predictions CSV.
+    edit_labels = None
+    if ngram_vocab is not None:
+        edit_labels = {i: " ".join(id_to_phoneme[t] for t in gram) for gram, i in ngram_vocab.items()}
+        with open(save_dir / "ngram_vocab.json", "w", encoding="utf-8") as f:
+            json.dump(edit_labels, f, indent=0)
+    trainer.evaluate_with_predictions(
+        loaders["test"], id_to_phoneme, edit_id_to_str=edit_labels
+    ).to_csv(save_dir / "predictions.csv", index=False)
+    if save_model:
+        torch.save(intervention.state_dict(), save_dir / "intervention.pth")
 
-    config.save_experiment_config(save_dir)
-    save_history_csv(history, save_dir)
-    predictions = trainer.evaluate_with_predictions(test_loader, id_to_phoneme)
-    predictions.to_csv(save_dir / "predictions.csv", index=False)
-    trainer.save_scale_params(save_dir)
-    torch.save(intervention.state_dict(), save_dir / "intervention_model.pth")
-    plot_run_summary(
-        save_dir,
-        feature_cols=["position", "Lexicality", "Size", "Morphology", "type-change", "Condition"],
-    )
-
+    best_epoch = int(np.argmin(history["val_loss"]))
     return {
         "run_dir": str(save_dir),
-        "state_mode": config.state_mode,
-        "scale_param": config.scale_param,
-        "train_loss": history["train_loss"],
-        "val_loss": history["val_loss"],
-        "test_loss": history.get("test_loss"),
-        "train_acc": history["train_acc"],
-        "val_acc": history["val_acc"],
-        "test_acc": history.get("test_acc"),
-        "final_test_loss": final_test_loss,
-        "final_test_acc": final_test_acc,
+        "run_name": cfg.run_name(),
+        "seed": seed,
+        "epochs": len(history["val_loss"]),
+        "best_epoch": best_epoch,
+        "val_acc": history["val_acc"][best_epoch],
+        "final_test_loss": test_loss,
+        "final_test_acc": test_acc,
     }

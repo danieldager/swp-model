@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import sys
 from ast import literal_eval
 from pathlib import Path
 import json
+
+# Allow running as a script (`python reporting/plots.py <dir>`) by exposing the repo root.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,8 +72,8 @@ def load_prediction_data(run_dir: Path) -> pd.DataFrame:
     return pd.read_csv(run_dir / "predictions.csv")
 
 
-def load_scale_params(run_dir: Path) -> dict[str, np.ndarray]:
-    return dict(np.load(run_dir / "scale_params.npz", allow_pickle=True))
+def load_params(run_dir: Path) -> dict[str, np.ndarray]:
+    return dict(np.load(run_dir / "params.npz", allow_pickle=True))
 
 
 def plot_training_history(history: dict[str, list[float]] | pd.DataFrame, save_dir: Path, title: str = "") -> None:
@@ -247,12 +253,12 @@ def create_merged_df(pred_df: pd.DataFrame, wfe_df: pd.DataFrame, phoneme_featur
 
 
 def load_wfe_data() -> pd.DataFrame:
-    dataset_dir = Path(__file__).resolve().parent / "datasets"
+    dataset_dir = Path(__file__).resolve().parents[1] / "datasets"
     return pd.read_csv(dataset_dir / "wfe_with_repetition.csv", converters={"Phonemes": literal_eval, "No_Stress": literal_eval})
 
 
 def load_phoneme_features() -> dict[str, dict[str, str]]:
-    dataset_dir = Path(__file__).resolve().parent / "datasets"
+    dataset_dir = Path(__file__).resolve().parents[1] / "datasets"
     phonemes_info = pd.read_csv(dataset_dir / "phonemes.csv")
     return phonemes_info.set_index("Phoneme").to_dict("index")
 
@@ -316,7 +322,7 @@ def plot_run_summary(run_dir: Path, feature_cols: list[str] | None = None, phone
 
     plot_training_history(load_history(run_dir), run_dir, title=title)
 
-    params = load_scale_params(run_dir)
+    params = load_params(run_dir)
     if "scales" in params:
         plot_scale_norms(params["scales"], run_dir, title_suffix=title)
         plot_scale_pca_polar(params["scales"], run_dir, title_suffix=title)
@@ -330,7 +336,7 @@ def plot_run_summary(run_dir: Path, feature_cols: list[str] | None = None, phone
             (run_dir / "analysis_plot_errors.txt").write_text(error_text, encoding="utf-8")
             print(error_text)
     else:
-        print("No embedding key found in scale_params.npz")
+        print("No embedding key found in params.npz")
 
     if feature_cols is not None:
         predictions = load_prediction_data(run_dir)
@@ -342,3 +348,73 @@ def plot_run_summary(run_dir: Path, feature_cols: list[str] | None = None, phone
             (run_dir / "analysis_plot_errors.txt").write_text(error_text, encoding="utf-8")
             print(error_text)
         merged_df.to_csv(run_dir / "merged_predictions.csv", index=False)
+
+
+DEFAULT_FEATURE_COLS = ["position", "Lexicality", "Size", "Morphology", "type-change", "Condition"]
+
+
+def report_run(run_dir: Path, feature_cols: list[str] | None = None) -> None:
+    """Plot the summary figures for a single finished run."""
+    plot_run_summary(Path(run_dir), feature_cols=feature_cols or DEFAULT_FEATURE_COLS)
+
+
+def report_all(results_dir: Path, feature_cols: list[str] | None = None) -> None:
+    """Plot every finished run under ``results_dir`` (recursively; a run == has config.json)."""
+    results_dir = Path(results_dir)
+    run_dirs = sorted({p.parent for p in results_dir.rglob("config.json")})
+    if not run_dirs:
+        print(f"No runs (config.json) found under {results_dir}")
+        return
+    for run_dir in run_dirs:
+        print(f"Plotting {run_dir} ...")
+        try:
+            report_run(run_dir, feature_cols=feature_cols)
+        except Exception as exc:  # keep going; one bad run shouldn't stop the batch
+            print(f"  skipped ({exc})")
+
+
+def plot_cv_scales(run_dir: Path, title_suffix: str = "") -> None:
+    """Mean scale-norm by position with a 95% CI band across CV seeds."""
+    run_dir = Path(run_dir)
+    stacked_path = run_dir / "params_by_seed.npz"
+    if not stacked_path.exists():
+        return
+    data = np.load(stacked_path, allow_pickle=True)
+    if "scales" not in data.files:
+        return
+
+    scales = data["scales"]                              # (n_seeds, n_pos, state_dim)
+    scales = scales.reshape(scales.shape[0], scales.shape[1], -1)
+    norms = np.linalg.norm(scales, axis=-1)             # (n_seeds, n_pos)
+    n = norms.shape[0]
+    mean = norms.mean(axis=0)
+    ci = 1.96 * norms.std(axis=0, ddof=1) / np.sqrt(n) if n > 1 else np.zeros_like(mean)
+
+    x = np.arange(mean.shape[0])
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(x, mean, marker="o", label=f"mean over {n} seeds")
+    ax.fill_between(x, mean - ci, mean + ci, alpha=0.25, label="95% CI")
+    ax.set(xlabel="Position from Start", ylabel="Norm of Scale Vector",
+           title="Scale norm by position (CV)" + (f" - {title_suffix}" if title_suffix else ""))
+    ax.legend()
+    _save_figure(fig, run_dir / "cv_scale_norms_ci.png")
+
+
+def report_cv(run_dir: Path) -> None:
+    """CV-level plot: scale-norm CI band (per-seed run plots come from report_all)."""
+    run_dir = Path(run_dir)
+    summary = json.loads((run_dir / "cv_summary.json").read_text())
+    title = f"{summary.get('run_name', run_dir.name)} | acc={summary.get('final_test_acc_mean', float('nan')):.3f}±{summary.get('final_test_acc_std', 0):.3f}"
+    plot_cv_scales(run_dir, title_suffix=title)
+
+
+if __name__ == "__main__":
+    import sys
+
+    target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results")
+    if (target / "config.json").exists():
+        report_run(target)
+    else:
+        report_all(target)
+        for cv_dir in sorted({p.parent for p in target.rglob("cv_summary.json")}):
+            report_cv(cv_dir)

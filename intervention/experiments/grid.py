@@ -1,239 +1,138 @@
+"""Grid search over configs, each evaluated by cross-validation.
+
+A flat ``{key: [values]}`` grid expands (Cartesian product) into one ``ExperimentConfig``
+per combination; every config is run across its seeds by :func:`intervention.experiments.cross_validation.run_cv`.
+Configs are independent, so they parallelise across CPU processes (``n_jobs > 1``) — the
+right axis of parallelism for a model this small. Results are rolled up into
+``grid_summary.csv`` (one row per config, with ``mean ± std`` metrics).
+"""
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
 from itertools import product
 from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
-from joblib import Parallel, delayed
-from tqdm import tqdm
-from tqdm_joblib import tqdm_joblib
+import torch
 
-from intervention.experiment import run_experiment
+from intervention.config import ExperimentConfig
+from intervention.experiments.cross_validation import run_cv
 
-SUMMARY_FILENAME = "grid_search_summary.csv"
-
-
-@dataclass
-class InterventionConfig:
-    model_name: str
-    weights_path: str
-    state_mode: str
-    scale_param: str
-    learning_rate: float
-    batch_size: int
-    hidden_size: int
-    num_epochs: int
-    patience: int
-    min_delta: float
-    max_seq_len: int
-    val_ratio: float
-    seed: int
-    train_embedding: bool
-    teacher_forcing: bool
-    train_all_pos: bool
-    embedding_init: str = "none"
-    dataset_type: str = "real-pseudo"
-    lexicality_col: str | None = "Lexicality"
-    check_repeat: bool = True
-    check_cv: bool = False
-    check_n_gram: int = 0
-
-    def to_dict(self) -> dict[str, object]:
-        return asdict(self)
-
-    def should_skip_config(self) -> bool:
-        return self.embedding_init == "none" and self.train_embedding is False
-
-    def save_experiment_config(self, save_dir: Path) -> None:
-        save_dir.mkdir(parents=True, exist_ok=True)
-        with open(save_dir / "config.json", "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, indent=2)
+SUMMARY_FILENAME = "grid_summary.csv"
 
 
-def save_history_csv(history: dict[str, list[float]], save_dir: Path) -> None:
-    save_dir.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(history).to_csv(save_dir / "history.csv", index=False)
+def grid_iter(grid: dict[str, Iterable]) -> Iterable[dict]:
+    """Yield one flat config dict per combination in the Cartesian product."""
+    keys = list(grid)
+    for values in product(*(grid[k] for k in keys)):
+        yield dict(zip(keys, values))
 
 
-def make_run_name(config: InterventionConfig) -> str:
-    if config.embedding_init == "pretrained":
-        embedding_part = "init_model_embed"
-    elif config.embedding_init == "none":
-        embedding_part = None
-    else:
-        embedding_part = f"init_{config.embedding_init}"
-
-    parts = [
-        f"{config.dataset_type}",
-        f"{config.scale_param}",
-        f"state_{config.state_mode}",
-        embedding_part,
-        "train_embed" if config.train_embedding else None,
-        "teacher_forcing" if config.teacher_forcing else None,
-    ]
-    return "-".join(part for part in parts if part is not None)
+def load_grid_from_json(json_path: Path) -> dict[str, list]:
+    grid = json.loads(Path(json_path).read_text())
+    if not isinstance(grid, dict):
+        raise ValueError("Grid JSON must be an object mapping parameter names to lists.")
+    return grid
 
 
-def _run_config(config_dict: dict[str, object], base_save_dir: Path, skip_existing: bool, verbose: bool) -> dict[str, object] | None:
-    config = InterventionConfig(**config_dict)
-    if config.should_skip_config():
-        return None
+def _run_one(
+    cfg: ExperimentConfig, base_dir: Path, cache_dir: Path | None,
+    device: torch.device | None, skip_existing: bool, save_model: bool, verbose: bool,
+) -> dict | None:
+    run_dir = Path(base_dir) / cfg.run_name()
+    summary_path = run_dir / "cv_summary.json"
+    if skip_existing and summary_path.exists():
+        print(f"Skipping existing run: {cfg.run_name()}")
+        return json.loads(summary_path.read_text())
+    torch.set_num_threads(1)  # avoid thread oversubscription across parallel workers
+    return run_cv(cfg, base_dir, cache_dir=cache_dir, device=device,
+                  save_model=save_model, verbose=verbose)
 
-    run_dir = base_save_dir / make_run_name(config)
-    if skip_existing and run_dir.exists() and (run_dir / "history.csv").exists():
-        srow = load_run_summary_row(config, run_dir)
-        print(f"Skipping existing run: {run_dir} final test acc: {srow['final_test_acc']:.4f})")
-        return srow
 
-    history = run_experiment(config, run_dir, verbose=verbose)
-    return make_summary_row(config, run_dir, history)
-
-
-def run_grid_search(
-    grid: dict[str, list[object]] | Path,
-    base_save_dir: Path,
+def run_grid(
+    grid: dict[str, list] | Path,
+    base_dir: Path,
+    cache_dir: Path | None = None,
+    n_jobs: int = 1,
+    device: torch.device | None = None,
     skip_existing: bool = True,
-    verbose: bool = False
-) -> list[dict[str, object]]:
-    if isinstance(grid, Path):
+    save_model: bool = False,
+    verbose: bool = False,
+) -> list[dict]:
+    if isinstance(grid, (str, Path)):
         grid = load_grid_from_json(grid)
+    grid = dict(grid)
+    base_dir = Path(base_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
 
-    base_save_dir.mkdir(parents=True, exist_ok=True)
-    summary_rows: list[dict[str, object]] = []
+    # `seeds` is the CV dimension, applied to every config -- not a swept axis.
+    seeds = grid.pop("seeds", None)
+    rows = list(grid_iter(grid))
+    if seeds is not None:
+        for row in rows:
+            row["seeds"] = seeds
+    configs = [ExperimentConfig.from_flat(row) for row in rows]
+    configs = [c for c in configs if not c.method.is_trivial()]  # random frozen embedding => nothing to learn
+    print(f"Grid: {len(configs)} configs x seeds, n_jobs={n_jobs}")
 
-    for config_dict in grid_iter(grid):
-        row = _run_config(config_dict, base_save_dir, skip_existing, verbose)
-        if row is not None:
-            summary_rows.append(row)
-            update_grid_summary_row(row, base_save_dir)
+    if n_jobs == 1:
+        summaries = [_run_one(c, base_dir, cache_dir, device, skip_existing, save_model, verbose) for c in configs]
+    else:
+        # Build each unique dataset ONCE up front. Without this, every worker rebuilds the
+        # full dataset simultaneously (4x peak memory -> the "parallel doesn't work" hang).
+        if cache_dir is not None:
+            _prewarm_cache(configs, cache_dir, skip_existing)
+        from joblib import Parallel, delayed
+        # Workers run on CPU (MPS/CUDA don't share cleanly across processes).
+        summaries = Parallel(n_jobs=n_jobs)(
+            delayed(_run_one)(c, base_dir, cache_dir, torch.device("cpu"), skip_existing, save_model, verbose)
+            for c in configs
+        )
 
-    # Final save is optional, but keeps the summary consistent if rows were accumulated in memory.
-    save_grid_summary(summary_rows, base_save_dir)
-    return summary_rows
-
-
-# def run_grid_search_parallel(
-#     grid: dict[str, list[object]] | Path,
-#     base_save_dir: Path,
-#     skip_existing: bool = True,
-#     verbose: bool = False,
-#     n_jobs: int = -1,
-# ) -> list[dict[str, object]]:
-#     if isinstance(grid, Path):
-#         grid = load_grid_from_json(grid)
-
-#     base_save_dir.mkdir(parents=True, exist_ok=True)
-#     jobs = list(grid_iter(grid))
-
-#     with tqdm_joblib(tqdm(desc="grid search", total=len(jobs))) as progress_bar:
-#         summary_rows = Parallel(n_jobs=n_jobs)(
-#             delayed(_run_config)(config_dict, base_save_dir, skip_existing,verbose)
-#             for config_dict in jobs
-#         )
-
-#     summary_rows = [row for row in summary_rows if row is not None]
-#     save_grid_summary(summary_rows, base_save_dir)
-#     return summary_rows
+    summaries = [r for r in summaries if r is not None]
+    save_grid_summary(summaries, base_dir)
+    return summaries
 
 
-def _last(list_or_none: list[object] | object | None):
-    if list_or_none is None:
-        return None
-    if isinstance(list_or_none, list):
-        return list_or_none[-1] if list_or_none else None
-    return list_or_none
+def _prewarm_cache(configs: list[ExperimentConfig], cache_dir: Path, skip_existing: bool) -> None:
+    """Populate the dataset cache for every unique (data, seed) once, sequentially, so
+    parallel workers only train (and never rebuild the same dataset concurrently).
+    ``build_loaders`` already no-ops when a split's cache file exists."""
+    import torch as _torch
+    from swp.datasets.phonemes import get_phoneme_to_id
+
+    from intervention.data import build_loaders
+    from intervention.experiments.runner import _load_repeat_model
+
+    phoneme_to_id = get_phoneme_to_id()
+    device = _torch.device("cpu")
+    models: dict[tuple[str, str], object] = {}
+    seen: set[tuple] = set()
+    for cfg in configs:
+        model_key = (cfg.train.model_name, cfg.train.weights_path)
+        for seed in cfg.train.seeds:
+            key = (json.dumps(cfg.data.cache_fields(), sort_keys=True), seed, *model_key)
+            if key in seen:
+                continue
+            seen.add(key)
+            if model_key not in models:
+                models[model_key] = _load_repeat_model(cfg.train, device)
+            build_loaders(cfg.data, seed, phoneme_to_id, models[model_key], device,
+                          batch_size=cfg.train.batch_size, cache_dir=cache_dir)
+    print(f"Pre-warmed dataset cache for {len(seen)} unique (data, seed) combos")
 
 
-def _history_stats(history: dict[str, list[float] | float]) -> dict[str, object]:
-    last_epoch = len(history["val_loss"])
-    best_epoch = int(min(range(last_epoch), key=lambda i: history["val_loss"][i]))
-
-    return {
-        "epochs": last_epoch,
-        "best_epoch": best_epoch,
-        "train_loss": _last(history.get("train_loss")),
-        "train_acc": _last(history.get("train_acc")),
-        "val_loss": _last(history.get("val_loss")),
-        "val_acc": _last(history.get("val_acc")),
-        "final_test_loss": _last(history.get("final_test_loss")) or _last(history.get("test_loss")),
-        "final_test_acc": _last(history.get("final_test_acc")) or _last(history.get("test_acc")),
-    }
-
-
-def _history_stats_from_df(history_df: pd.DataFrame) -> dict[str, object]:
-    last_row = history_df.iloc[-1]
-    return {
-        "epochs": len(history_df),
-        "best_epoch": int(history_df["val_loss"].idxmin()),
-        "train_loss": float(last_row["train_loss"]),
-        "train_acc": float(last_row["train_acc"]),
-        "val_loss": float(last_row["val_loss"]),
-        "val_acc": float(last_row["val_acc"]),
-        "final_test_loss": float(last_row["test_loss"]) if "test_loss" in history_df.columns else None,
-        "final_test_acc": float(last_row["test_acc"]) if "test_acc" in history_df.columns else None,
-    }
-
-
-def _base_summary(config: InterventionConfig, run_dir: Path) -> dict[str, object]:
-    return {
-        "run_dir": str(run_dir),
-        "state_mode": config.state_mode,
-        "scale_param": config.scale_param,
-        "embedding_init": config.embedding_init,
-        "train_embedding": config.train_embedding,
-        "teacher_forcing": config.teacher_forcing,
-        "train_all_pos": config.train_all_pos,
-        "dataset_type": config.dataset_type,
-        "hidden_size": config.hidden_size,
-    }
-
-
-def make_summary_row(config: InterventionConfig, run_dir: Path, history: dict[str, list[float]]) -> dict[str, object]:
-    return {**_base_summary(config, run_dir), **_history_stats(history)}
-
-
-def load_run_summary_row(config: InterventionConfig, run_dir: Path) -> dict[str, object]:
-    history_df = pd.read_csv(run_dir / "history.csv")
-    return {**_base_summary(config, run_dir), **_history_stats_from_df(history_df)}
-
-
-def save_grid_summary(rows: list[dict[str, object]], save_dir: Path) -> None:
+def save_grid_summary(rows: list[dict], base_dir: Path) -> None:
+    """One row per config; de-duplicate on run_name, keeping the latest."""
     if not rows:
         return
-
-    save_dir.mkdir(parents=True, exist_ok=True)
-    summary_path = save_dir / SUMMARY_FILENAME
+    base_dir = Path(base_dir)
+    path = base_dir / SUMMARY_FILENAME
     new_df = pd.DataFrame(rows)
-
-    if summary_path.exists():
-        old_df = pd.read_csv(summary_path)
-        old_df = old_df.reindex(columns=new_df.columns)
-        combined = pd.concat([old_df, new_df], ignore_index=True)
-        combined = combined.drop_duplicates(subset=["run_dir"], keep="last")
+    if path.exists():
+        combined = pd.concat([pd.read_csv(path), new_df], ignore_index=True)
+        combined = combined.drop_duplicates(subset=["run_name"], keep="last")
     else:
         combined = new_df
-
-    combined.to_csv(summary_path, index=False)
-
-
-def update_grid_summary_row(row: dict[str, object], save_dir: Path) -> None:
-    save_grid_summary([row], save_dir)
-
-
-def grid_iter(grid: dict[str, Iterable[int | str | float | bool | None]]):
-    keys = list(grid.keys())
-    if not keys:
-        return
-    for instance in product(*grid.values()):
-        yield dict(zip(keys, instance))
-
-
-def load_grid_from_json(json_path: Path) -> dict[str, list[object]]:
-    with open(json_path, "r", encoding="utf-8") as f:
-        grid = json.load(f)
-    if not isinstance(grid, dict):
-        raise ValueError("Grid JSON must contain an object of parameter names to list values.")
-    return grid
+    combined.to_csv(path, index=False)

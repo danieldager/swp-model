@@ -1,8 +1,19 @@
+"""Scale-based intervention: state <- state + scale(position) * (emb(new) - emb(old)).
+
+``ScaleIntervention`` supports several parameterisations of ``scale(position)`` (see the
+class docstring); ``build_scale_intervention`` constructs one from a ``MethodConfig``,
+resolving the token embedding (pretrained / delta-stats / random) along the way.
+"""
+from __future__ import annotations
+
+from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
 class ScaleIntervention(nn.Module):
     """
     Scale-based intervention on LSTM states.
@@ -14,10 +25,7 @@ class ScaleIntervention(nn.Module):
       - concat: intervene on concatenated [h, c]
 
     scale_param:
-      - per_pos: per-position scale parameter
-      - onion: g * gamma^pos + pos * beta + b
-      - linear: pos * beta + b
-      - one_scale: scale * w(position)
+      update
     """
 
     def __init__(
@@ -144,10 +152,14 @@ class ScaleIntervention(nn.Module):
             n_pairs = self.state_dim // 2
             # Learnable frequencies, one per pair of dimensions
             self.rot_freq = nn.Parameter(torch.ones(n_pairs) * 0.1)
-            # Exponential-decay scale on top
-            self.gamma = nn.Parameter(torch.ones(self.state_dim) * 1.5)
-            self.g     = nn.Parameter(torch.ones(self.state_dim))
-            self.b     = nn.Parameter(torch.zeros(self.state_dim))
+            # onion
+            # self.gamma = nn.Parameter(torch.ones(self.state_dim) * 1.5)
+            # self.g     = nn.Parameter(torch.ones(self.state_dim))
+            # self.b     = nn.Parameter(torch.zeros(self.state_dim))
+            self.gamma = nn.Parameter(torch.ones(self.state_dim) * 0.9)
+            self.beta = nn.Parameter(torch.ones(self.state_dim))
+            self.g = nn.Parameter(torch.ones(self.state_dim))
+            self.b = nn.Parameter(torch.zeros(self.state_dim))
 
         elif self.scale_param == "spiral_lie":
             # Lie algebra: skew-symmetric A, R(pos) = expm(pos * A)
@@ -252,6 +264,7 @@ class ScaleIntervention(nn.Module):
             weight = self.position_weight[position]
             return self.scale * weight
         if self.scale_param in ("spiral_rope", "spiral_lie"):
+            # return self.g * self.gamma.pow(pos) + pos * self.beta + self.b
             return self._expo_decay_scale(position, self.gamma, self.g, self.b)
         if self.scale_param.startswith("low_rank"):
             # (max_pos, r) @ (r, state_dim) → lookup for this position
@@ -294,6 +307,21 @@ class ScaleIntervention(nn.Module):
         raise ValueError("scale_param must be one of 'per_pos', 'one_scale', 'onion', 'linear', 'low_rank', 'plane_spiral', 'spiral_expo', 'spiral_rope', or 'spiral_lie'")
 
 
+    def _effective_scale_for_positions(self, position: torch.Tensor) -> torch.Tensor:
+        """Final per-position scale vector actually applied to the delta, *including* the
+        spiral rotation. ``_apply_state`` and ``get_parameters`` both go through this, so
+        the saved ``scales`` are exactly what the trained intervention uses."""
+        scale = self._scale_for_positions(position)
+        # Rotate the scale vector for spiral methods, not the delta,
+        # so the intervention follows the plane_spiral-style parameterization.
+        if self.scale_param == "spiral_rope":
+            scale = self._rope_rotate(scale, position)
+        elif self.scale_param == "spiral_lie":
+            scale = self._lie_rotate(scale, position)
+        elif self.scale_param == "spiral_expo":
+            scale = self._decelerated_rope_rotate(scale, position)
+        return scale
+
     def _apply_state(
         self,
         state: torch.Tensor,
@@ -304,18 +332,7 @@ class ScaleIntervention(nn.Module):
         x = self.embedding(old_token).tanh()
         y = self.embedding(new_token).tanh()
         delta = self.token_proj(y - x)
-
-        scale = self._scale_for_positions(position)
-
-        # Rotate the scale vector for spiral methods, not the delta,
-        # so the intervention follows the plane_spiral-style parameterization.
-        if self.scale_param == "spiral_rope":
-            scale = self._rope_rotate(scale, position)
-        elif self.scale_param == "spiral_lie":
-            scale = self._lie_rotate(scale, position)
-        elif self.scale_param == "spiral_expo":
-            scale = self._decelerated_rope_rotate(scale, position)
-
+        scale = self._effective_scale_for_positions(position)
         return state + scale * delta
 
 
@@ -360,7 +377,7 @@ class ScaleIntervention(nn.Module):
         except StopIteration:
             device = torch.device("cpu")
         pos_t = torch.tensor([pos], dtype=torch.long, device=device)
-        return self._scale_for_positions(pos_t).squeeze(0)
+        return self._effective_scale_for_positions(pos_t).squeeze(0)
 
     def get_parameters(self) -> dict[str, np.ndarray]:
         base = {
@@ -375,7 +392,7 @@ class ScaleIntervention(nn.Module):
             base["scale"] = self.scale.detach().cpu().numpy()
             base["position_weight"] = self.position_weight.detach().cpu().numpy()
             positions = torch.arange(self.max_position, device=self.scale.device)
-            base["scales"] = self._scale_for_positions(positions).detach().cpu().numpy()
+            base["scales"] = self._effective_scale_for_positions(positions).detach().cpu().numpy()
 
         elif self.scale_param == "onion":
             positions = torch.arange(self.max_position, device=self.gamma.device)
@@ -385,7 +402,7 @@ class ScaleIntervention(nn.Module):
                     "beta": self.beta.detach().cpu().numpy(),
                     "g": self.g.detach().cpu().numpy(),
                     "b": self.b.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param == "spiral_rope":
@@ -396,7 +413,7 @@ class ScaleIntervention(nn.Module):
                     "g": self.g.detach().cpu().numpy(),
                     "b": self.b.detach().cpu().numpy(),
                     "rot_freq": self.rot_freq.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param == "spiral_lie":
@@ -407,7 +424,7 @@ class ScaleIntervention(nn.Module):
                     "g": self.g.detach().cpu().numpy(),
                     "b": self.b.detach().cpu().numpy(),
                     "skew_weights": self.skew_weights.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param.startswith("spiral_expo"):
@@ -420,7 +437,7 @@ class ScaleIntervention(nn.Module):
                     "alpha": self.alpha.detach().cpu().numpy(),
                     "gamma_rot": torch.sigmoid(self.gamma_rot_raw.detach()).cpu().numpy(),
                     "phi0": self.phi0.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param == "plane_spiral":
@@ -436,7 +453,7 @@ class ScaleIntervention(nn.Module):
                     "alpha": self.alpha.detach().cpu().numpy(),
                     "gamma_rot": self.gamma_rot.detach().cpu().numpy(),
                     "phi0": self.phi0.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param == "linear":
@@ -445,7 +462,7 @@ class ScaleIntervention(nn.Module):
                 {
                     "beta": self.beta.detach().cpu().numpy(),
                     "b": self.b.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param.startswith("low_rank"):
@@ -454,7 +471,7 @@ class ScaleIntervention(nn.Module):
                 {
                     "scale_basis": self.scale_basis.detach().cpu().numpy(),
                     "scale_coeffs": self.scale_coeffs.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         elif self.scale_param in ("expo_decay", "expo_unbounded"):
@@ -464,9 +481,66 @@ class ScaleIntervention(nn.Module):
                     "gamma": self.gamma.detach().cpu().numpy(),
                     "g": self.g.detach().cpu().numpy(),
                     "b": self.b.detach().cpu().numpy(),
-                    "scales": self._scale_for_positions(positions).detach().cpu().numpy(),
+                    "scales": self._effective_scale_for_positions(positions).detach().cpu().numpy(),
                 }
             )
         else:
             raise ValueError("scale_param must be one of 'per_pos', 'one_scale', 'onion', 'linear', 'low_rank' or 'low_rank-<rank>', 'plane_spiral', 'spiral_expo', 'spiral_rope', or 'spiral_lie'")
         return base
+
+
+# Token-embedding statistics used by the delta_* initialisations.
+_STATS_DIR = Path(__file__).resolve().parents[1] / "states_ds"
+_EMBED_STATS_PATH = _STATS_DIR / "phoneme_state_embeddings.npz"
+
+
+def _resolve_embedding(embedding_init: str, repeat_model, phoneme_to_id) -> nn.Embedding | None:
+    """Pick the token embedding that seeds the (old -> new) delta."""
+    if embedding_init == "pretrained":
+        return repeat_model.encoder.embedding
+    if embedding_init == "none":
+        return None
+    from intervention.data.delta_embeddings import load_token_embedding_from_stats
+    return load_token_embedding_from_stats(
+        embedding_init, _EMBED_STATS_PATH, phoneme_to_id, repeat_model.encoder.embedding
+    )
+
+
+def _resolve_ngram_embedding(embedding_init: str, ngram_vocab, phoneme_to_id) -> nn.Embedding | None:
+    """delta_* over the n-gram vocab (row i = statistic for the n-gram with id i)."""
+    if embedding_init == "none":
+        return None
+    from intervention.data.delta_embeddings import load_ngram_embedding_from_stats
+    id_to_phoneme = {v: k for k, v in phoneme_to_id.items()}
+    labels = [None] * len(ngram_vocab)
+    for gram, idx in ngram_vocab.items():
+        labels[idx] = " ".join(id_to_phoneme[t] for t in gram)
+    n = len(next(iter(ngram_vocab)))
+    return load_ngram_embedding_from_stats(
+        embedding_init, _STATS_DIR / f"ngram{n}_state_embeddings.npz", labels
+    )
+
+
+def build_scale_intervention(method_cfg, repeat_model, hidden_size, max_position,
+                             phoneme_to_id, ngram_vocab=None):
+    """Construct a ``ScaleIntervention`` from a ``MethodConfig`` (``model`` is the
+    parameterisation name, e.g. ``onion`` or ``low_rank-8``).
+
+    With ``ngram_vocab`` (edit_ngram > 1) the embedding table covers the attested n-gram
+    inventory: learned from scratch (embedding_init='none') 
+    initialised from the n-gram delta statistics ('delta_*') and 'pretrained' is rejected by config validation."""
+    if ngram_vocab is not None:
+        vocab_size = len(ngram_vocab)
+        pretrained = _resolve_ngram_embedding(method_cfg.embedding_init, ngram_vocab, phoneme_to_id)
+    else:
+        vocab_size = len(phoneme_to_id)
+        pretrained = _resolve_embedding(method_cfg.embedding_init, repeat_model, phoneme_to_id)
+    return ScaleIntervention(
+        hidden_size=hidden_size,
+        vocab_size=vocab_size,
+        state_mode=method_cfg.state_mode,
+        scale_param=method_cfg.model,
+        max_position=max_position,
+        pretrained_embedding=pretrained,
+        train_embedding=method_cfg.train_embedding,
+    )

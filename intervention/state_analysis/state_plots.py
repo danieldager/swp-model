@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Optional
-from states_extract import StateExtractor, StatesDataset
+from intervention.state_analysis.states_extract import StateExtractor, StatesDataset
 import os, sys
 sys.path.append(os.path.dirname(os.getcwd()))
 from swp.utils.setup import seed_everything, set_device
