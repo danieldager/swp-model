@@ -7,21 +7,19 @@ import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Optional
 from intervention.state_analysis.states_extract import StateExtractor, StatesDataset
-import os, sys
-sys.path.append(os.path.dirname(os.getcwd()))
-from swp.utils.setup import seed_everything, set_device
-from swp.utils.models import get_model
-from swp.datasets.phonemes import get_phoneme_to_id
 from ast import literal_eval
 from sklearn.decomposition import PCA
 from typing import Optional
+from intervention.models.repeat_model import get_model
+from intervention.paths import DATASETS_DIR, STATES_DIR, get_phoneme_to_id, resolve_weights
 from intervention.state_analysis.utils import test_model_repetition
+from intervention.utils import seed_everything, set_device
 #%%
 #  Setup
 seed_everything(42)
 device = set_device()
 model_name = "Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
-weights_path = "../reproduce/weights/1024_75.pth"
+weights_path = resolve_weights("resources/weights/1024_75.pth")
 
 model = get_model(model_name)
 model.load_state_dict(torch.load(weights_path, map_location=device, weights_only=True))
@@ -33,7 +31,7 @@ converters = {"Word": str, "Phonemes": literal_eval, "No_Stress": literal_eval}
 
 
 # Load phoneme categories
-phoneme_data = pd.read_csv("datasets/phonemes.csv")
+phoneme_data = pd.read_csv(DATASETS_DIR / "phonemes.csv")
 vowels = phoneme_data["Phoneme"][phoneme_data["Type"] == "V"].tolist()
 consonants = phoneme_data["Phoneme"][phoneme_data["Type"] == "C"].tolist()
 
@@ -56,13 +54,13 @@ def extract_states_from_df(df, path):
     
 #%%
 
-test_df = pd.read_csv("datasets/wfe.csv", converters=converters)
-extract_states_from_df(test_df, "states_ds/test_states")
+test_df = pd.read_csv(DATASETS_DIR / "wfe.csv", converters=converters)
+extract_states_from_df(test_df, str(STATES_DIR / "test_states"))
 
-#%% 
-from swp.utils.datasets import get_train_dataset
+#%%
+from intervention.paths import get_train_dataset
 train_df = get_train_dataset()
-extract_states_from_df(train_df, "states_ds/train_states")
+extract_states_from_df(train_df, str(STATES_DIR / "train_states"))
 
 #%%
 # # check repetition model prediction on wfe dataset
@@ -78,12 +76,12 @@ extract_states_from_df(train_df, "states_ds/train_states")
 
 
 # %%
-ssp_df = pd.read_csv("datasets/ssp.csv", converters=converters)
+ssp_df = pd.read_csv(DATASETS_DIR / "ssp.csv", converters=converters)
 extractor = StateExtractor(model, phoneme_to_id, device)
 ssp_ds = StatesDataset.from_dataframe(ssp_df, extractor, word_col="Type")
 ssp_ds.state = np.concatenate([ssp_ds.h, ssp_ds.c], axis=1)
 ssp_ds.delta_state = np.concatenate([ssp_ds.delta_h, ssp_ds.delta_c], axis=1)
-ssp_ds.save("states_ds/ssp_states")
+ssp_ds.save(str(STATES_DIR / "ssp_states"))
 # %%
 ssp_ds
 # %%

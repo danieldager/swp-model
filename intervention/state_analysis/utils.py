@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 from scipy import stats
 from sklearn.decomposition import PCA
-from swp.datasets.phonemes import get_phoneme_to_id
+from intervention.paths import get_phoneme_to_id
 
 
 def get_median_angle(ph_embs_2d, mask):

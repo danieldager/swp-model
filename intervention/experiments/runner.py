@@ -16,32 +16,19 @@ import numpy as np
 import pandas as pd
 import torch
 
-from swp.datasets.phonemes import get_phoneme_to_id
-from swp.utils.models import get_model
-from swp.utils.setup import set_device
-
 from intervention.models.das import DASTrainer, build_das_intervention
 from intervention.config import ExperimentConfig
 from intervention.data import build_loaders
 from intervention.models.additive_intervention import build_scale_intervention
+from intervention.models.repeat_model import get_model
 from intervention.experiments.trainer import InterventionTrainer
-
-ROOT = Path(__file__).resolve().parents[1]   # intervention/
-REPO_ROOT = Path(__file__).resolve().parents[2]  # repo root (holds reproduce/weights)
-
-
-def _resolve_weights(path_str: str) -> Path:
-    """Find the weights file whether the path is absolute or relative to repo/intervention."""
-    candidates = [Path(path_str)] + [base / path_str for base in (REPO_ROOT, ROOT)]
-    for cand in candidates:
-        if cand.exists():
-            return cand.resolve()
-    raise FileNotFoundError(f"Could not find weights at any of: {[str(c) for c in candidates]}")
+from intervention.paths import get_phoneme_to_id, resolve_weights
+from intervention.utils import set_device
 
 
 def _load_repeat_model(train_cfg, device) -> torch.nn.Module:
     model = get_model(train_cfg.model_name)
-    model.load_state_dict(torch.load(_resolve_weights(train_cfg.weights_path), map_location=device))
+    model.load_state_dict(torch.load(resolve_weights(train_cfg.weights_path), map_location=device))
     model.to(device).eval()
     for p in model.parameters():
         p.requires_grad = False
@@ -53,7 +40,7 @@ def _build_method(cfg: ExperimentConfig, repeat_model, max_position, phoneme_to_
     """Return (intervention, trainer) for the configured method."""
     if cfg.method.is_das:
         intervention = build_das_intervention(
-            cfg.method, cfg.train.hidden_size, max_position, span=cfg.data.edit_ngram
+            cfg.method, cfg.data, cfg.train.hidden_size, max_position
         ).to(device)
         trainer_cls = DASTrainer
     else:  # scale

@@ -19,21 +19,20 @@ import torch
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 
-from swp.utils.datasets import get_train_dataset
-
 from intervention.config import DataConfig
 from intervention.data.datasets import (
     SPECIAL_PHONEMES,
-    RealRealDataset,
-    SyntheticDataset,
+    Gate,
+    PairDataset,
+    SourceMaker,
     build_ngram_vocab,
-    build_real_real_ngram_pairs,
-    build_real_real_pairs,
+    build_real_real,
     build_reference_sets,
-    build_synthetic_examples,
+    build_synthetic,
 )
+from intervention.data.markov import build_chain
+from intervention.paths import DATASETS_DIR, get_train_dataset
 
-DATASETS_DIR = Path(__file__).resolve().parent.parent / "datasets"
 _SPLIT_INDEX = {"train": 0, "val": 1, "test": 2}  # deterministic RNG stream per split
 
 
@@ -132,19 +131,28 @@ def build_loaders(
     max_position = int(train_df["Length"].max())
     frames = _split_frames(data_cfg.dataset, seed, data_cfg.val_ratio, train_df, wfe_df)
 
-    # Reference sets only matter for the synthetic filters; build once, from all train words.
-    # The n-gram edit inventory (and embedding vocab) comes from the same words, so it is
-    # identical across seeds/splits — cached examples store stable vocab ids.
+    # Reference sets, the n-gram inventory and the Markov chain all come from *all* train
+    # words, so they are identical across seeds/splits and cached examples hold stable ids.
+    all_sequences = [[phoneme_to_id[p] for p in s] for s in train_df["No_Stress"]]
     refs: dict[str, object] = {}
     ngram_vocab: dict[tuple[int, ...], int] | None = None
-    if data_cfg.dataset != "real-real" and (data_cfg.check_cv_pattern or data_cfg.check_n_gram):
-        all_sequences = [[phoneme_to_id[p] for p in s] for s in train_df["No_Stress"]]
+    # The sampled source is a generated sequence too, so it needs the filters even when
+    # the (real-real) edits themselves do not.
+    if data_cfg.check_cv_pattern or data_cfg.check_n_gram:
         refs = build_reference_sets(all_sequences, id_to_phoneme, vowels, special_tokens)
     if data_cfg.edit_ngram > 1:
-        all_sequences = [[phoneme_to_id[p] for p in s] for s in train_df["No_Stress"]]
         ngram_vocab = build_ngram_vocab(all_sequences, data_cfg.edit_ngram)
         if verbose:
             print(f"  ngram vocab: {len(ngram_vocab)} attested {data_cfg.edit_ngram}-grams")
+    # The random-context source always samples from the chain (markov edits do too).
+    chain = build_chain(all_sequences, special_tokens)
+    if verbose:
+        print(f"  markov chain: {sum(len(v) for v in chain['succ'].values())} attested bigrams")
+
+    gate = Gate(special_tokens=special_tokens, check_repeat=data_cfg.check_repeat,
+                check_cv_pattern=data_cfg.check_cv_pattern, check_n_gram=data_cfg.check_n_gram,
+                refs=refs, repeat_model=repeat_model, device=device,
+                eos_id=eos_id, pad_id=pad_id, max_len=data_cfg.max_seq_len)
 
     loaders: dict[str, DataLoader] = {}
     for split, frame in frames.items():
@@ -153,31 +161,31 @@ def build_loaders(
         cache_path = _cache_path(cache_dir, data_cfg.dataset, split, key,
                                  tag="_".join(data_cfg.filter_tokens()))
 
+        # Independent per-(seed, split) RNG -> each split reproducible and cacheable alone.
+        split_rng = np.random.default_rng([seed, _SPLIT_INDEX[split]])
+        source_maker = SourceMaker(
+            gate=gate, rng=split_rng, chain=chain,
+            edit_ngram=data_cfg.edit_ngram, var_ngram=data_cfg.var_ngram,
+        )
+
         if data_cfg.dataset == "real-real":
-            build_pairs = (
-                (lambda f=frame: build_real_real_pairs(f, "No_Stress", phoneme_to_id))
-                if data_cfg.edit_ngram == 1
-                else (lambda f=frame: build_real_real_ngram_pairs(
-                    f, "No_Stress", phoneme_to_id, data_cfg.edit_ngram, ngram_vocab))
-            )
-            pairs = _load_or_build(cache_path, build_pairs, verbose)
-            dataset: Dataset = RealRealDataset(pairs, pad_id, eos_id, data_cfg.max_seq_len)
+            build_fn = lambda f=frame, sm=source_maker: build_real_real(
+                f, "No_Stress", phoneme_to_id, data_cfg.edit_ngram, ngram_vocab, sm,
+                data_cfg.min_word_len)
         else:
             sequences = [[phoneme_to_id[p] for p in s] for s in frame["No_Stress"]]
-            # Independent per-(seed, split) RNG -> each split reproducible and cacheable alone.
-            split_rng = np.random.default_rng([seed, _SPLIT_INDEX[split]])
             random_replace_pos = (split == "train") and not data_cfg.train_all_pos
-            build_fn = lambda s=sequences, rp=random_replace_pos, r=split_rng: build_synthetic_examples(
-                s, vocab_size=len(phoneme_to_id), special_tokens=special_tokens,
-                max_pos=max_position, random_replace_pos=rp, rng=r,
-                repeat_model=repeat_model, device=device,
-                check_repeat=data_cfg.check_repeat, check_cv_pattern=data_cfg.check_cv_pattern,
-                check_n_gram=data_cfg.check_n_gram, refs=refs,
-                edit_ngram=data_cfg.edit_ngram, ngram_vocab=ngram_vocab,
+            build_fn = lambda s=sequences, rp=random_replace_pos, r=split_rng, sm=source_maker: build_synthetic(
+                s, data_cfg.dataset, max_pos=max_position, random_replace_pos=rp, rng=r,
+                edit_ngram=data_cfg.edit_ngram, source_maker=sm,
+                min_word_len=data_cfg.min_word_len,
+                gate=gate, chain=chain, ngram_vocab=ngram_vocab,
+                ngram_list=list(ngram_vocab) if ngram_vocab else None,
+                vocab_size=len(phoneme_to_id), edit_sampler=data_cfg.edit_sampler,
             )
-            examples = _load_or_build(cache_path, build_fn, verbose)
-            dataset = SyntheticDataset(examples, data_cfg.dataset, pad_id, eos_id, data_cfg.max_seq_len)
 
+        examples = _load_or_build(cache_path, build_fn, verbose)
+        dataset: Dataset = PairDataset(examples, pad_id, eos_id, data_cfg.max_seq_len)
         loaders[split] = DataLoader(dataset, batch_size=batch_size, shuffle=(split == "train"))
         if verbose:
             print(f"  {split}_loader: {len(dataset)} examples, {len(loaders[split])} batches")

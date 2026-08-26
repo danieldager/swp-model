@@ -1,14 +1,22 @@
-"""Intervention datasets and the (cache-worthy) example builders.
+"""Intervention examples and the (cache-worthy) builders.
 
-Two families share one batch schema (``input, target, old_token, new_token, position,
-seq_len``):
-  * real-real       — minimal pairs of real words differing at one position
+Every example, whatever the dataset family, is the same four things:
+
+    input   the word the frozen model encodes  (the DAS "base")
+    target  the word it must produce           (the counterfactual)
+    source  the word the intervention reads from
+    position, old_token, new_token             where the edit is and what it swapped
+
+``source`` is always *random-context*: it carries only the phonemes the target needs at
+the edit window (see :func:`keep_window`) and resamples everything else from the attested-
+bigram chain, so the intervention cannot read surrounding context off it.
+
+Two families produce those examples:
+  * real-real       — ordered minimal pairs of real words
   * source/modified — a real word paired with a synthetically edited version
 
-The synthetic edit replaces one phoneme (``edit_ngram=1``) or splices one attested
-bi-/tri-gram over an n-position window (``edit_ngram`` 2 or 3); in the n-gram case
-``old_token``/``new_token`` index the n-gram vocabulary from :func:`build_ngram_vocab`.
-Datasets themselves are cheap — they only pad/tensorise pre-built examples.
+``edit_ngram`` (1|2|3) is the width of the edit; for n > 1 ``old_token``/``new_token``
+index the n-gram vocabulary from :func:`build_ngram_vocab` instead of the phoneme table.
 """
 from __future__ import annotations
 
@@ -19,7 +27,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from intervention.models.repeat_model import can_repeat
+from intervention.data.markov import sample_sequence
+from intervention.models.repeat_model_utils import can_repeat
 
 SPECIAL_PHONEMES = ("<PAD>", "<EOS>", "<SOS>")
 
@@ -88,213 +97,270 @@ def _passes_filters(
     return True
 
 
+class Gate:
+    """The content filters + the frozen-model repeat check, bundled once.
+
+    Applied to every *generated* sequence — synthetic edits and the sampled source.
+    Real lexicon words are never gated, so all three dataset families treat attested
+    words the same way.
+    """
+
+    def __init__(self, *, special_tokens, check_repeat, check_cv_pattern, check_n_gram,
+                 refs, repeat_model, device, eos_id=None, pad_id=0, max_len=20):
+        self.special_tokens = special_tokens
+        self.check_repeat = check_repeat
+        self.check_cv_pattern = check_cv_pattern
+        self.check_n_gram = check_n_gram
+        self.refs = refs
+        self.repeat_model = repeat_model
+        self.device = device
+        # The repeat check runs in the same format the trainer feeds (seq + EOS, padded),
+        # so "repeatable" and "reachable by the intervention" mean the same thing.
+        self.eos_id, self.pad_id, self.max_len = eos_id, pad_id, max_len
+
+    def accepts(self, seq: list[int]) -> bool:
+        if (self.check_cv_pattern or self.check_n_gram) and not _passes_filters(
+            seq, self.special_tokens, self.check_cv_pattern, self.check_n_gram, self.refs
+        ):
+            return False
+        if self.check_repeat and self.repeat_model is not None:
+            return can_repeat(self.repeat_model, seq, self.device,
+                              self.eos_id, self.pad_id, self.max_len)
+        return True
+
+
+# --------------------------------------------------------------------------- #
+# Sampling: one edit sampler, one source sampler
+# --------------------------------------------------------------------------- #
+def sample_edit(
+    seq: list[int],
+    pos: int,
+    n: int,
+    *,
+    gate: Gate,
+    rng: np.random.Generator,
+    chain: dict | None,
+    ngram_vocab: dict[tuple[int, ...], int] | None,
+    ngram_list: list[tuple[int, ...]] | None,
+    vocab_size: int,
+    edit_sampler: str,
+    max_attempts: int = 5,
+) -> tuple[list[int], int, int] | None:
+    """Replace ``seq[pos:pos+n]``; returns ``(modified, old_token, new_token)`` or None.
+
+    ``edit_sampler='uniform'`` draws the replacement without regard to its neighbours
+    (a single phoneme for n=1, an attested n-gram otherwise); ``'markov'`` resamples the
+    window from the attested-bigram chain, so the edit is attested in context.
+    """
+    old_gram = tuple(seq[pos : pos + n])
+    if ngram_vocab is not None and old_gram not in ngram_vocab:
+        return None  # window unattested in the training inventory
+    tok = (lambda g: ngram_vocab[g]) if ngram_vocab is not None else (lambda g: g[0])
+
+    outside = {i: t for i, t in enumerate(seq) if not pos <= i < pos + n}
+    uniform_pool = [t for t in range(vocab_size) if t not in gate.special_tokens]
+
+    for _ in range(max_attempts):
+        if edit_sampler == "markov":
+            modified = sample_sequence(len(seq), outside, chain, rng)
+            if modified is None:
+                continue
+        elif n == 1:
+            modified = seq.copy()
+            modified[pos] = int(rng.choice(uniform_pool))
+        else:
+            gram = ngram_list[int(rng.integers(0, len(ngram_list)))]
+            modified = seq[:pos] + list(gram) + seq[pos + n :]
+
+        new_gram = tuple(modified[pos : pos + n])
+        if new_gram == old_gram:
+            continue
+        if ngram_vocab is not None and new_gram not in ngram_vocab:
+            continue
+        if not gate.accepts(modified):
+            continue
+        return modified, tok(old_gram), tok(new_gram)
+    return None
+
+
+def keep_window(pos: int, length: int, edit_ngram: int, var_ngram: int) -> tuple[int, int]:
+    """Inclusive span of the target the source must carry.
+
+    A DAS variable holds ``var_ngram`` phonemes, so every variable overlapping the edit
+    ``[pos, pos+edit_ngram-1]`` spans somewhere in ``[pos-var_ngram+1, pos+edit_ngram+var_ngram-2]``.
+    That is the whole window the source has to get right; the rest is free to be noise.
+    With ``var_ngram=1, edit_ngram=1`` it collapses to the single edited phoneme.
+    """
+    return max(0, pos - var_ngram + 1), min(length - 1, pos + edit_ngram + var_ngram - 2)
+
+
+def sample_source(
+    target: list[int],
+    pos: int,
+    *,
+    gate: Gate,
+    rng: np.random.Generator,
+    chain: dict,
+    edit_ngram: int,
+    var_ngram: int,
+    max_attempts: int = 5,
+) -> list[int] | None:
+    """A same-length sequence agreeing with ``target`` on :func:`keep_window` only.
+
+    Returns ``None`` if the window already covers the whole word (nothing left to
+    randomise, so the source would just equal the target) or if no sampled filler
+    survives the gate.
+    """
+    lo, hi = keep_window(pos, len(target), edit_ngram, var_ngram)
+    if lo == 0 and hi == len(target) - 1:
+        return None
+    clamped = {i: target[i] for i in range(lo, hi + 1)}
+    for _ in range(max_attempts):
+        cand = sample_sequence(len(target), clamped, chain, rng)
+        if cand is None or cand == target:
+            continue
+        if gate.accepts(cand):
+            return cand
+    return None
+
+
 # --------------------------------------------------------------------------- #
 # Example builders (the expensive, cache-worthy step)
 # --------------------------------------------------------------------------- #
-def build_real_real_pairs(
-    df, phoneme_col: str, phoneme_to_id: dict[str, int]
-) -> list[tuple[list[int], list[int], int, int, int]]:
-    """All ordered minimal pairs (a, b) that differ at exactly one position."""
-    groups: dict[tuple[int, tuple[int, ...]], list[list[int]]] = defaultdict(list)
-    for seq in df[phoneme_col]:
-        seq = literal_eval(seq) if isinstance(seq, str) else seq
-        ids = [phoneme_to_id[p] for p in seq]
-        for pos in range(len(ids)):
-            groups[(pos, tuple(ids[:pos] + ids[pos + 1 :]))].append(ids)
+class SourceMaker:
+    """Attaches a random-context ``source`` to an example, memoised on (target, position).
 
-    pairs: list[tuple[list[int], list[int], int, int, int]] = []
-    for (pos, _), seqs in groups.items():
-        for i in range(len(seqs)):
-            for j in range(i + 1, len(seqs)):
-                a, b = seqs[i], seqs[j]
-                pairs.append((a, b, pos, a[pos], b[pos]))
-                pairs.append((b, a, pos, b[pos], a[pos]))
-    return pairs
+    real-real produces far more pairs than distinct targets, and every source costs a
+    frozen-model forward pass, so the memo is what makes source sampling affordable.
+    """
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self._memo: dict[tuple, list[int] | None] = {}
+
+    def __call__(self, target: list[int], pos: int) -> list[int] | None:
+        key = (tuple(target), pos)
+        if key not in self._memo:
+            self._memo[key] = sample_source(target, pos, **self.kwargs)
+        return self._memo[key]
 
 
-def build_real_real_ngram_pairs(
+def _example(inp, tgt, src, pos, old_token, new_token) -> dict[str, object]:
+    return {"input": inp, "target": tgt, "source": src,
+            "position": pos, "old_token": old_token, "new_token": new_token}
+
+
+def usable_words(sequences: list[list[int]], min_word_len: int) -> list[list[int]]:
+    """Drop words too short to carry a variable or an edit.
+
+    ``min_word_len`` counts *phonemes*, not tokens: EOS and padding are added later by
+    :class:`PairDataset` and are not positions the intervention can address.
+
+    Real words are *not* gated on ``check_repeat``: the filters apply to generated
+    sequences (synthetic edits, sampled sources), never to attested lexicon entries, so
+    every family treats real words identically.
+    """
+    return [s for s in sequences if len(s) >= min_word_len]
+
+
+def build_real_real(
     df, phoneme_col: str, phoneme_to_id: dict[str, int], n: int,
-    ngram_vocab: dict[tuple[int, ...], int],
-) -> list[tuple[list[int], list[int], int, int, int]]:
-    """All ordered pairs of real words that share everything outside one ``n``-position
-    window (any difference inside it counts, matching the synthetic replacement rule).
-    ``old/new_token`` are ids into ``ngram_vocab``; unattested windows are skipped."""
+    ngram_vocab: dict[tuple[int, ...], int] | None,
+    source_maker: SourceMaker, min_word_len: int,
+) -> list[dict[str, object]]:
+    """Ordered pairs of real words that share everything outside one ``n``-position
+    window. For n=1 that is the classic minimal pair; for n>1 any difference inside the
+    window counts and ``old/new_token`` index ``ngram_vocab``."""
+    words = [literal_eval(s) if isinstance(s, str) else s for s in df[phoneme_col]]
+    words = usable_words([[phoneme_to_id[p] for p in s] for s in words], min_word_len)
+
     groups: dict[tuple[int, tuple[int, ...]], list[list[int]]] = defaultdict(list)
-    for seq in df[phoneme_col]:
-        seq = literal_eval(seq) if isinstance(seq, str) else seq
-        ids = [phoneme_to_id[p] for p in seq]
+    for ids in words:
         for pos in range(len(ids) - n + 1):
             groups[(pos, tuple(ids[:pos] + ids[pos + n :]))].append(ids)
 
-    pairs: list[tuple[list[int], list[int], int, int, int]] = []
+    tok = (lambda g: ngram_vocab[g]) if ngram_vocab is not None else (lambda g: g[0])
+    examples: list[dict[str, object]] = []
     for (pos, _), seqs in groups.items():
         for i in range(len(seqs)):
             for j in range(i + 1, len(seqs)):
                 a, b = seqs[i], seqs[j]
                 ga, gb = tuple(a[pos : pos + n]), tuple(b[pos : pos + n])
-                if ga == gb or ga not in ngram_vocab or gb not in ngram_vocab:
+                if ga == gb:
                     continue
-                pairs.append((a, b, pos, ngram_vocab[ga], ngram_vocab[gb]))
-                pairs.append((b, a, pos, ngram_vocab[gb], ngram_vocab[ga]))
-    return pairs
-
-
-def build_synthetic_examples(
-    sequences: list[list[int]],
-    *,
-    vocab_size: int,
-    special_tokens: set[int],
-    max_pos: int,
-    random_replace_pos: bool,
-    rng: np.random.Generator,
-    repeat_model: torch.nn.Module | None,
-    device: torch.device | None,
-    check_repeat: bool,
-    check_cv_pattern: bool,
-    check_n_gram: int,
-    refs: dict[str, object],
-    max_attempts: int = 5,
-    edit_ngram: int = 1,
-    ngram_vocab: dict[tuple[int, ...], int] | None = None,
-) -> list[dict[str, object]]:
-    """For each word, pick edited start position(s) and sample a replacement that survives
-    the enabled filters. ``random_replace_pos`` picks one random position per word;
-    otherwise every valid position (up to ``max_pos``) is used.
-
-    ``edit_ngram = 1`` replaces one phoneme (``old/new_token`` are phoneme ids).
-    ``edit_ngram > 1`` splices in an attested n-gram drawn from ``ngram_vocab``
-    (``old/new_token`` are then ids into that vocabulary); words shorter than the
-    n-gram, or whose edited window is unattested, are skipped."""
-    if edit_ngram > 1 and ngram_vocab is None:
-        raise ValueError("edit_ngram > 1 requires an ngram_vocab")
-    ngram_list = list(ngram_vocab) if ngram_vocab else None
-
-    examples: list[dict[str, object]] = []
-    for seq in sequences:
-        n_starts = min(max_pos, len(seq) - edit_ngram + 1)
-        if n_starts <= 0:
-            continue
-        positions = (
-            [int(rng.integers(0, n_starts))] if random_replace_pos else list(range(n_starts))
-        )
-        for pos in positions:
-            if edit_ngram == 1:
-                edit = _sample_edit(
-                    seq, pos, vocab_size, special_tokens, rng, repeat_model, device,
-                    check_repeat, check_cv_pattern, check_n_gram, refs, max_attempts,
-                )
-            else:
-                edit = _sample_ngram_edit(
-                    seq, pos, edit_ngram, ngram_vocab, ngram_list, special_tokens, rng,
-                    repeat_model, device, check_repeat, check_cv_pattern, check_n_gram,
-                    refs, max_attempts,
-                )
-            if edit is None:
-                continue
-            modified_seq, old_token, new_token = edit
-            examples.append({"seq": seq, "modified_seq": modified_seq,
-                             "replace_pos": pos, "old_token": old_token, "new_token": new_token})
+                if ngram_vocab is not None and (ga not in ngram_vocab or gb not in ngram_vocab):
+                    continue
+                for base, other, g_base, g_other in ((a, b, ga, gb), (b, a, gb, ga)):
+                    src = source_maker(other, pos)
+                    if src is not None:
+                        examples.append(_example(base, other, src, pos, tok(g_base), tok(g_other)))
     return examples
 
 
-def _sample_edit(
-    seq, pos, vocab_size, special_tokens, rng, repeat_model, device,
-    check_repeat, check_cv_pattern, check_n_gram, refs, max_attempts,
-) -> tuple[list[int], int, int] | None:
-    """Draw a single-position replacement that passes every enabled filter."""
-    old_token = seq[pos]
-    valid = [t for t in range(vocab_size) if t != old_token and t not in special_tokens]
-    for _ in range(max_attempts):
-        new_token = int(rng.choice(valid))
-        modified = seq.copy()
-        modified[pos] = new_token
-        if (check_cv_pattern or check_n_gram) and not _passes_filters(
-            modified, special_tokens, check_cv_pattern, check_n_gram, refs
-        ):
-            continue
-        if check_repeat and repeat_model is not None and not can_repeat(repeat_model, modified, device):
-            continue
-        return modified, old_token, new_token
-    return None
+def build_synthetic(
+    sequences: list[list[int]],
+    role: str,
+    *,
+    max_pos: int,
+    random_replace_pos: bool,
+    rng: np.random.Generator,
+    edit_ngram: int,
+    source_maker: SourceMaker,
+    min_word_len: int,
+    **edit_kwargs,
+) -> list[dict[str, object]]:
+    """Edit each word at one random position (or every position) and keep what survives.
 
-
-def _sample_ngram_edit(
-    seq, pos, n, ngram_vocab, ngram_list, special_tokens, rng, repeat_model, device,
-    check_repeat, check_cv_pattern, check_n_gram, refs, max_attempts,
-) -> tuple[list[int], int, int] | None:
-    """Splice an attested n-gram over ``seq[pos:pos+n]``; returns ids into ``ngram_vocab``.
-
-    The replacement may share phonemes with the old n-gram (any attested n-gram != old
-    counts as a counterfactual); the usual content filters still apply to the result."""
-    old_gram = tuple(seq[pos : pos + n])
-    old_id = ngram_vocab.get(old_gram)
-    if old_id is None:  # window unattested in the training inventory (e.g. some test words)
-        return None
-    for _ in range(max_attempts):
-        new_gram = ngram_list[int(rng.integers(0, len(ngram_list)))]
-        if new_gram == old_gram:
+    ``role='source-modified'`` feeds the original and asks for the edited word;
+    ``'modified-source'`` is the reverse. The source is always built against the target.
+    """
+    examples: list[dict[str, object]] = []
+    for seq in usable_words(sequences, min_word_len):
+        n_starts = min(max_pos, len(seq) - edit_ngram + 1)
+        if n_starts <= 0:
             continue
-        modified = seq[:pos] + list(new_gram) + seq[pos + n :]
-        if (check_cv_pattern or check_n_gram) and not _passes_filters(
-            modified, special_tokens, check_cv_pattern, check_n_gram, refs
-        ):
-            continue
-        if check_repeat and repeat_model is not None and not can_repeat(repeat_model, modified, device):
-            continue
-        return modified, old_id, ngram_vocab[new_gram]
-    return None
+        positions = [int(rng.integers(0, n_starts))] if random_replace_pos else range(n_starts)
+        for pos in positions:
+            edit = sample_edit(seq, pos, edit_ngram, rng=rng, **edit_kwargs)
+            if edit is None:
+                continue
+            modified, old_token, new_token = edit
+            if role == "source-modified":
+                inp, tgt, old, new = seq, modified, old_token, new_token
+            else:
+                inp, tgt, old, new = modified, seq, new_token, old_token
+            src = source_maker(tgt, pos)
+            if src is not None:
+                examples.append(_example(inp, tgt, src, pos, old, new))
+    return examples
 
 
 # --------------------------------------------------------------------------- #
-# Datasets (cheap: pad/tensorise pre-built examples)
+# Dataset (cheap: pad/tensorise pre-built examples)
 # --------------------------------------------------------------------------- #
 def _pad(seq: list[int], pad_id: int, max_len: int) -> torch.Tensor:
     seq = seq + [pad_id] * max(0, max_len - len(seq))
     return torch.tensor(seq[:max_len], dtype=torch.long)
 
 
-class RealRealDataset(Dataset):
-    def __init__(self, pairs, pad_id: int, eos_id: int, max_len: int = 20):
-        self.pairs, self.pad_id, self.eos_id, self.max_len = pairs, pad_id, eos_id, max_len
+class PairDataset(Dataset):
+    """Pads pre-built examples. ``input``/``target``/``source`` are always equal length,
+    so ``seq_len`` describes all three and ``seq_len - 1`` is the phoneme count."""
 
-    def __len__(self) -> int:
-        return len(self.pairs)
-
-    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        src, tgt, pos, old_token, new_token = self.pairs[idx]
-        return {
-            "input": _pad(src + [self.eos_id], self.pad_id, self.max_len),
-            "target": _pad(tgt + [self.eos_id], self.pad_id, self.max_len),
-            "old_token": torch.tensor(old_token, dtype=torch.long),
-            "new_token": torch.tensor(new_token, dtype=torch.long),
-            "position": torch.tensor(pos, dtype=torch.long),
-            "seq_len": torch.tensor(len(src) + 1, dtype=torch.long),
-        }
-
-
-class SyntheticDataset(Dataset):
-    """``role`` (the dataset name) swaps which of the original/edited word is input vs target."""
-
-    def __init__(self, examples, role: str, pad_id: int, eos_id: int, max_len: int = 20):
-        self.examples, self.role = examples, role
-        self.pad_id, self.eos_id, self.max_len = pad_id, eos_id, max_len
+    def __init__(self, examples: list[dict], pad_id: int, eos_id: int, max_len: int = 20):
+        self.examples, self.pad_id, self.eos_id, self.max_len = examples, pad_id, eos_id, max_len
 
     def __len__(self) -> int:
         return len(self.examples)
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         ex = self.examples[idx]
-        original = ex["seq"] + [self.eos_id]
-        modified = ex["modified_seq"] + [self.eos_id]
-        if self.role == "source-modified":         # original in -> predict edited
-            inp, tgt, old_token, new_token = original, modified, ex["old_token"], ex["new_token"]
-        else:                                       # modified-source: edited in -> predict original
-            inp, tgt, old_token, new_token = modified, original, ex["new_token"], ex["old_token"]
         return {
-            "input": _pad(inp, self.pad_id, self.max_len),
-            "target": _pad(tgt, self.pad_id, self.max_len),
-            "old_token": torch.tensor(old_token, dtype=torch.long),
-            "new_token": torch.tensor(new_token, dtype=torch.long),
-            "position": torch.tensor(ex["replace_pos"], dtype=torch.long),
-            "seq_len": torch.tensor(len(original), dtype=torch.long),
+            "input": _pad(ex["input"] + [self.eos_id], self.pad_id, self.max_len),
+            "target": _pad(ex["target"] + [self.eos_id], self.pad_id, self.max_len),
+            "source": _pad(ex["source"] + [self.eos_id], self.pad_id, self.max_len),
+            "old_token": torch.tensor(ex["old_token"], dtype=torch.long),
+            "new_token": torch.tensor(ex["new_token"], dtype=torch.long),
+            "position": torch.tensor(ex["position"], dtype=torch.long),
+            "seq_len": torch.tensor(len(ex["input"]) + 1, dtype=torch.long),
         }

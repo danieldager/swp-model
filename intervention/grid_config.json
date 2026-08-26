@@ -1,13 +1,18 @@
 {
   "model_name": ["Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"],
-  "weights_path": ["reproduce/weights/1024_75.pth"],
-  "dataset": ["source-modified", "modified-source"],
-  "model": [ "spiral_rope"],
-  "state_mode": ["concat"],
-  "edit_ngram": [2],
-  "seeds": [42, 43, 44, 45],
+  "weights_path": ["resources/weights/1024_75.pth"],
 
-  "embedding_init": ["none"],
+  "dataset": [ "source-modified"],
+  "model": ["spiral_rope"],
+  "state_mode": ["concat"],
+  "seeds": [42,43,44],
+
+  "edit_ngram": [1],
+  "var_ngram": [1],
+  "edit_sampler": ["uniform"],
+  "reg_loss": [0.001],
+
+  "embedding_init": ["delta_state_mean"],
   "train_embedding": [true],
   "teacher_forcing": [false],
   "train_all_pos": [false],
@@ -20,6 +25,6 @@
   "max_seq_len": [20],
   "val_ratio": [0.05],
   "check_repeat": [true],
-  "check_cv_pattern": [false],
-  "check_n_gram": [0]
+  "check_cv_pattern": [false, true],
+  "check_n_gram": [0,2,3]
 }

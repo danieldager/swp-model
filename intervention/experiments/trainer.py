@@ -22,7 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from intervention.models.repeat_model import decode_with_hidden, get_encoder_hidden
+from intervention.models.repeat_model_utils import decode_with_hidden, get_encoder_hidden
 
 
 def count_correct(preds: torch.Tensor, targets: torch.Tensor, seq_lens: torch.Tensor) -> int:
@@ -77,7 +77,8 @@ class InterventionTrainer:
     # -- loops --------------------------------------------------------------- #
     def _run_loader(self, loader: DataLoader, training: bool) -> tuple[float, float]:
         self.intervention.train(training)
-        self.repeat_model.train(training)
+        # self.repeat_model.train(training)
+        self.repeat_model.eval()
 
         loss_sum, correct, total = 0.0, 0, 0
         for batch in loader:
@@ -126,6 +127,7 @@ class InterventionTrainer:
                 input_ids = batch["input"][i, :sl].tolist()
                 records.append({
                     "input": " ".join(id_to_phoneme[t] for t in input_ids),
+                    "source": " ".join(id_to_phoneme[t] for t in batch["source"][i, :sl].tolist()),
                     "target": " ".join(id_to_phoneme[t] for t in target_ids),
                     "prediction": " ".join(id_to_phoneme[p] for p in pred_ids),
                     "position": batch["position"][i].item(),

@@ -36,6 +36,24 @@ def load_grid_from_json(json_path: Path) -> dict[str, list]:
     return grid
 
 
+def dedupe_configs(configs: list[ExperimentConfig]) -> list[ExperimentConfig]:
+    """Collapse configs that validation made byte-identical.
+
+    Sweeping an axis the chosen method ignores (``embedding_init`` under DAS, ``var_ngram``
+    under a scale method) used to yield N configs that share a ``run_name`` — so they raced
+    on one output directory and only the last survived. They are now literally the same
+    config, and running one of them is running all of them.
+    """
+    seen: set[str] = set()
+    unique: list[ExperimentConfig] = []
+    for cfg in configs:
+        key = json.dumps(cfg.to_flat(), sort_keys=True, default=str)
+        if key not in seen:
+            seen.add(key)
+            unique.append(cfg)
+    return unique
+
+
 def _run_one(
     cfg: ExperimentConfig, base_dir: Path, cache_dir: Path | None,
     device: torch.device | None, skip_existing: bool, save_model: bool, verbose: bool,
@@ -74,6 +92,7 @@ def run_grid(
             row["seeds"] = seeds
     configs = [ExperimentConfig.from_flat(row) for row in rows]
     configs = [c for c in configs if not c.method.is_trivial()]  # random frozen embedding => nothing to learn
+    configs = dedupe_configs(configs)  # `from_flat` validates, which drops ignored fields
     print(f"Grid: {len(configs)} configs x seeds, n_jobs={n_jobs}")
 
     if n_jobs == 1:
@@ -100,10 +119,10 @@ def _prewarm_cache(configs: list[ExperimentConfig], cache_dir: Path, skip_existi
     parallel workers only train (and never rebuild the same dataset concurrently).
     ``build_loaders`` already no-ops when a split's cache file exists."""
     import torch as _torch
-    from swp.datasets.phonemes import get_phoneme_to_id
 
     from intervention.data import build_loaders
     from intervention.experiments.runner import _load_repeat_model
+    from intervention.paths import get_phoneme_to_id
 
     phoneme_to_id = get_phoneme_to_id()
     device = _torch.device("cpu")

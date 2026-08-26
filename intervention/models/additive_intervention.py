@@ -6,12 +6,12 @@ resolving the token embedding (pretrained / delta-stats / random) along the way.
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from intervention.paths import state_stats_path
 
 
 class ScaleIntervention(nn.Module):
@@ -489,9 +489,8 @@ class ScaleIntervention(nn.Module):
         return base
 
 
-# Token-embedding statistics used by the delta_* initialisations.
-_STATS_DIR = Path(__file__).resolve().parents[1] / "states_ds"
-_EMBED_STATS_PATH = _STATS_DIR / "phoneme_state_embeddings.npz"
+# Token-embedding statistics used by the delta_* initialisations (see resources/embeddings).
+_EMBED_STATS_PATH = state_stats_path(1)
 
 
 def _resolve_embedding(embedding_init: str, repeat_model, phoneme_to_id) -> nn.Embedding | None:
@@ -507,7 +506,14 @@ def _resolve_embedding(embedding_init: str, repeat_model, phoneme_to_id) -> nn.E
 
 
 def _resolve_ngram_embedding(embedding_init: str, ngram_vocab, phoneme_to_id) -> nn.Embedding | None:
-    """delta_* over the n-gram vocab (row i = statistic for the n-gram with id i)."""
+    """delta_* over the n-gram vocab (row i = statistic for the n-gram with id i).
+
+    Only ``'none'`` is reachable from a config: ``ExperimentConfig.validate`` rejects every
+    ``delta_*`` value once ``edit_ngram > 1``, because seeding an n-gram table from delta
+    statistics was tried and did not train. The branch below is kept for calling the loader
+    directly (it works — see ``load_ngram_embedding_from_stats``), so reviving the idea does
+    not mean rewriting it.
+    """
     if embedding_init == "none":
         return None
     from intervention.data.delta_embeddings import load_ngram_embedding_from_stats
@@ -517,7 +523,7 @@ def _resolve_ngram_embedding(embedding_init: str, ngram_vocab, phoneme_to_id) ->
         labels[idx] = " ".join(id_to_phoneme[t] for t in gram)
     n = len(next(iter(ngram_vocab)))
     return load_ngram_embedding_from_stats(
-        embedding_init, _STATS_DIR / f"ngram{n}_state_embeddings.npz", labels
+        embedding_init, state_stats_path(n), labels
     )
 
 
@@ -527,8 +533,9 @@ def build_scale_intervention(method_cfg, repeat_model, hidden_size, max_position
     parameterisation name, e.g. ``onion`` or ``low_rank-8``).
 
     With ``ngram_vocab`` (edit_ngram > 1) the embedding table covers the attested n-gram
-    inventory: learned from scratch (embedding_init='none') 
-    initialised from the n-gram delta statistics ('delta_*') and 'pretrained' is rejected by config validation."""
+    inventory and is always learned from scratch: config validation rejects both
+    'pretrained' (no n-gram counterpart) and the 'delta_*' n-gram statistics (tried, did
+    not train). Without it the table is over phonemes, where all three remain available."""
     if ngram_vocab is not None:
         vocab_size = len(ngram_vocab)
         pretrained = _resolve_ngram_embedding(method_cfg.embedding_init, ngram_vocab, phoneme_to_id)

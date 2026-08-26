@@ -1,0 +1,13 @@
+# Kept in sync with pyproject.toml. Prefer `pip install -e .` — this file is here for
+# environments that install requirements before the package itself.
+torch>=2.5.1
+numpy>=1.26
+pandas>=2.2.3
+scipy>=1.15.1
+scikit-learn>=1.6.1
+joblib>=1.4
+matplotlib>=3.10.0
+seaborn>=0.13.2
+plotly>=5.24
+xarray>=2024.7
+tqdm>=4.66.0

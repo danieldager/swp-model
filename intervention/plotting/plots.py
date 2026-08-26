@@ -1,21 +1,16 @@
 from __future__ import annotations
 
 import sys
-from ast import literal_eval
 from pathlib import Path
 import json
-
-# Allow running as a script (`python reporting/plots.py <dir>`) by exposing the repo root.
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn.decomposition import PCA
-from swp.datasets.phonemes import get_phoneme_to_id
+
+from intervention.paths import get_phoneme_features, get_phoneme_to_id, get_wfe_dataset
 import warnings
 
 warnings.filterwarnings(
@@ -253,14 +248,11 @@ def create_merged_df(pred_df: pd.DataFrame, wfe_df: pd.DataFrame, phoneme_featur
 
 
 def load_wfe_data() -> pd.DataFrame:
-    dataset_dir = Path(__file__).resolve().parents[1] / "datasets"
-    return pd.read_csv(dataset_dir / "wfe_with_repetition.csv", converters={"Phonemes": literal_eval, "No_Stress": literal_eval})
+    return get_wfe_dataset()
 
 
 def load_phoneme_features() -> dict[str, dict[str, str]]:
-    dataset_dir = Path(__file__).resolve().parents[1] / "datasets"
-    phonemes_info = pd.read_csv(dataset_dir / "phonemes.csv")
-    return phonemes_info.set_index("Phoneme").to_dict("index")
+    return get_phoneme_features()
 
 
 def plot_accuracy_by_feature(predictions: pd.DataFrame, save_dir: Path, feature_col: str, title_suffix: str = "") -> None:

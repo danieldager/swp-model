@@ -6,22 +6,21 @@ import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Optional
 from intervention.state_analysis.states_extract import StateExtractor, StatesDataset
-import os, sys
-sys.path.append(os.path.dirname(os.getcwd()))
-from swp.utils.setup import seed_everything, set_device
-from swp.utils.models import get_model
-from swp.datasets.phonemes import get_phoneme_to_id
 from ast import literal_eval
 from sklearn.decomposition import PCA
 from typing import Optional
 import plotly.graph_objects as go
 import plotly.colors as pc
 
+from intervention.models.repeat_model import get_model
+from intervention.paths import DATASETS_DIR, STATES_DIR, get_phoneme_to_id, resolve_weights
+from intervention.utils import seed_everything, set_device
+
 #  Setup
 seed_everything(42)
 device = set_device()
 model_name = "Ua_LSTM_h128_l1_v42_d0.0_t0.0_s1"
-weights_path = "../reproduce/weights/1024_75.pth"
+weights_path = resolve_weights("resources/weights/1024_75.pth")
 
 model = get_model(model_name)
 model.load_state_dict(torch.load(weights_path, map_location=device, weights_only=True))
@@ -33,12 +32,12 @@ converters = {"Word": str, "Phonemes": literal_eval, "No_Stress": literal_eval}
 
 extractor = StateExtractor(model, phoneme_to_id, device)
 # Load phoneme categories
-phoneme_data = pd.read_csv("datasets/phonemes.csv")
+phoneme_data = pd.read_csv(DATASETS_DIR / "phonemes.csv")
 vowels = phoneme_data["Phoneme"][phoneme_data["Type"] == "V"].tolist()
 consonants = phoneme_data["Phoneme"][phoneme_data["Type"] == "C"].tolist()
 # load datasets (StatesDataset)
-train_ds = StatesDataset.load("states_ds/train_states") # train dataset with 30k real words
-test_ds = StatesDataset.load("states_ds/test_states") # 1200 words real and pseudo words
+train_ds = StatesDataset.load(str(STATES_DIR / "train_states")) # train dataset with 30k real words
+test_ds = StatesDataset.load(str(STATES_DIR / "test_states")) # 1200 words real and pseudo words
 
 
 def norms(embeddings: np.ndarray) -> np.ndarray:
@@ -336,7 +335,7 @@ if __name__ == "__main__":
 
     df = test_ds.metadata[words_mask].copy()
     # merge with wfe (all columns) by matching word
-    wfe = pd.read_csv("datasets/wfe_with_repetition.csv", converters=converters)
+    wfe = pd.read_csv(DATASETS_DIR / "wfe_with_repetition.csv", converters=converters)
     df = df.merge(wfe, left_on="word", right_on="Word", how="left")
 
     for f in ["Lexicality", "Size", "Morphology", "Length", "can_repeat"]:

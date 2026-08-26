@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Dict
 
@@ -8,12 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-# Allow running as a script; expose the repo root (two levels up from training/).
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-from swp.utils.datasets import get_phoneme_to_id
+from intervention.paths import get_phoneme_to_id, state_stats_path
 
 VALID_EMBEDDING_INITS = {
     "pretrained",
@@ -142,7 +136,11 @@ def load_ngram_embedding_from_stats(
 ) -> nn.Embedding:
     """Embedding table over an n-gram vocabulary, row ``i`` = the ``embedding_init``
     statistic for ``ngram_labels[i]`` ("P1 P2 ..."). Vocab n-grams missing from the stats
-    file fall back to zero rows (reported); no special tokens exist in this vocabulary."""
+    file fall back to zero rows (reported); no special tokens exist in this vocabulary.
+
+    Kept working but currently unused: n-gram edits on a scale method learn their table from
+    scratch, and ``ExperimentConfig.validate`` rejects the ``delta_*`` values that would land
+    here. Call it directly to experiment with the initialisation again."""
     embedding_init = embedding_init.strip().lower()
     if embedding_init not in VALID_EMBEDDING_INITS or embedding_init == "pretrained":
         raise ValueError(f"Invalid n-gram embedding_init={embedding_init!r}; "
@@ -266,11 +264,12 @@ if __name__ == "__main__":
     states_path = Path("states_ds/train_states")
     states_ds = StatesDataset.load(str(states_path))
 
-    output_path = Path("states_ds/phoneme_state_embeddings.npz")
+    output_path = state_stats_path(1)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     save_phoneme_mean_median_embeddings(output_path, states_ds, get_phoneme_to_id())
     print(f"Saved phoneme mean/median embeddings to {output_path}")
 
     for n in (2, 3):
-        output_path = Path(f"states_ds/ngram{n}_state_embeddings.npz")
+        output_path = state_stats_path(n)
         save_ngram_mean_median_embeddings(output_path, states_ds, n)
         print(f"Saved {n}-gram mean/median embeddings to {output_path}")

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "intervention"
+version = "0.1.0"
+description = "Causal interventions on the hidden states of a phoneme repeat model"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.5.1",
+    "numpy>=1.26",
+    "pandas>=2.2.3",
+    "scipy>=1.15.1",
+    "scikit-learn>=1.6.1",
+    "joblib>=1.4",
+    "matplotlib>=3.10.0",
+    "seaborn>=0.13.2",
+    "plotly>=5.24",
+    "xarray>=2024.7",
+    "tqdm>=4.66.0",
+]
+
+[project.scripts]
+intervention = "intervention.main:main"
+
+[tool.setuptools]
+# Flat layout: this directory *is* the ``intervention`` package, so the subpackages are
+# listed explicitly rather than discovered (discovery would name them ``data``, ``models``,
+# ... at top level and collide with anything else installed).
+package-dir = { "intervention" = "." }
+packages = [
+    "intervention",
+    "intervention.data",
+    "intervention.experiments",
+    "intervention.models",
+    "intervention.plotting",
+    "intervention.state_analysis",
+]
+
+[tool.setuptools.package-data]
+intervention = [
+    "resources/weights/*.pth",
+    "resources/phonemes/*.json",
+    "resources/datasets/*.csv",
+    "resources/embeddings/*.npz",
+    "grid_config.json",
+]
